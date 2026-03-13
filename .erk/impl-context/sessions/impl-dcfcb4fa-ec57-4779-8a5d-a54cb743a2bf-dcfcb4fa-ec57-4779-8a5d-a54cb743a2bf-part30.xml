@@ -1,0 +1,837 @@
+<session>
+  <meta source="agent-aef2ba8" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update all references to old class names in docs/learned/ directory. Replace:
+- `PlanBackend` → `ManagedPrBackend`
+- `PlannedPRBackend` → `GitHubManagedPrBackend`
+- `FakePlanBackend` → `FakeManagedPrBackend` (in testing docs)
+- `GitHubPlanBackend` → stay as is if talking about the deleted old class, but use `GitHubManagedPrBackend` for the current implementation
+- `.get_plan(` → `.get_managed_pr(` (when referring to backend methods)
+- `.create_plan(` → `.create_managed_pr(` (when referring to backend methods)
+- `.close_plan(` → `.close_managed_pr(` (when referring to backend methods)
+- `.list_plans(` → `.list_managed_prs(` (when referring to backend methods)
+
+Files to update (found via grep):
+1. docs/learned/testing/backend-testing-composition.md
+2. docs/learned/testing/tripwires.md
+3. docs/learned/testing/fake-github-testing.md
+4. docs/learned/testing/context-builder-signatures.md
+5. docs/learned/testing/cli-testing.md
+6. docs/learned/testing/index.md
+7. docs/learned/testing/dual-backend-testing.md
+
+Important:
+- Be careful with historical references - if the doc says "After PR #8210, GitHubPlanStore was deleted" that's historical and the wording may be ok
+- The provider name "github-draft-pr" should NOT be changed (serialization name)
+- Focus on class name references and method name references
+- Read each file, make the replacements, and write it back
+- Use the Edit tool with replace_all where appropriate
+</user>
+  <assistant>I'll help you update all references to the old class names in the docs/learned/ directory. Let me start by reading all the files that need to be updated.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DgNh4iNLQjrhw5q9FeFmUG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013j4VFhmgBZpREeh4oovJ2i">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ave8QFExbWAsc44dQXzepK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WrMq5a9YjhPAn6WB9oueeR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015RsSqQZ7i5b8LGqwCJipZp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KWshmHS5U5Ju5oydLKxN7v">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/index.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JSsbMvQV3T47zRMLaZ8qiQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16383" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16383, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DgNh4iNLQjrhw5q9FeFmUG">
+     1→---
+     2→title: Backend Testing Composition
+     3→read_when:
+     4→  - "testing code that uses PlanBackend"
+     5→  - "deciding whether to fake a backend or gateway"
+     6→  - "writing tests for exec scripts with backend operations"
+     7→tripwires:
+     8→  - action: "creating a FakePlanBackend for testing caller code"
+     9→    warning: "Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers."
+    10→last_audited: "2026-02-16 14:20 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Backend Testing Composition
+    15→
+    16→Pattern for testing code that uses Backend ABCs. The key insight: inject fake gateways into real backends, rather than creating fake backends.
+    17→
+    18→## Core Pattern
+    19→
+    20→```python
+    21→# Correct: real backend with fake gateway
+    22→fake_github = FakeGitHub()
+    23→fake_issues = FakeGitHubIssues()
+    24→backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    25→
+    26→# Wrong: fake backend for testing callers
+    27→fake_backend = FakePlanBackend()  # Only for ABC contract tests
+    28→```
+    29→
+    30→### Why Real Backend + Fake Gateway
+
+... [58 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013j4VFhmgBZpREeh4oovJ2i">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [123 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    59→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    67→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    69→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    77→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    95→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   105→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   115→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   127→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   129→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   139→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   141→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <tool_result tool="toolu_01Ave8QFExbWAsc44dQXzepK">
+     1→---
+     2→title: FakeGitHubIssues Dual-Comment Parameters
+     3→read_when:
+     4→  - "setting up FakeGitHubIssues in a test"
+     5→  - "test fails with empty comments from FakeGitHubIssues"
+     6→  - "choosing between comments and comments_with_urls parameters"
+     7→tripwires:
+     8→  - action: "passing string values to comments_with_urls parameter of FakeGitHubIssues"
+     9→    warning: "comments_with_urls requires IssueComment objects, not strings. Strings cause silent empty-list returns. Match the parameter to the ABC getter method your code calls."
+    10→  - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_context"
+    11→    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+    12→  - action: "asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()"
+    13→    warning: "PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations."
+    14→    score: 6
+    15→---
+    16→
+    17→# FakeGitHubIssues Dual-Comment Parameters
+    18→
+    19→## Why Two Comment Parameters Exist
+    20→
+    21→&lt;!-- Source: erk_shared/gateway/github/issues/abc.py, GitHubIssues.get_issue_comments --&gt;
+    22→&lt;!-- Source: erk_shared/gateway/github/issues/abc.py, GitHubIssues.get_issue_comments_with_urls --&gt;
+    23→
+    24→The `GitHubIssues` ABC exposes two distinct comment-retrieval methods: `get_issue_comments()` returns plain body strings, while `get_issue_comments_with_urls()` returns full `IssueComment` objects (with id, url, body, and author). These serve different use cases — simple body inspection vs. operations that need comment identity (reactions, updates, URL linking).
+    25→
+    26→&lt;!-- Source: erk_shared/gateway/github/issues/fake.py, FakeGitHubIssues.__init__ --&gt;
+    27→
+    28→`FakeGitHubIssues` mirrors this split with two constructor parameters: `comments` (for body strings) and `comments_with_urls` (for `IssueComment` objects). Each parameter feeds exactly one getter method. They are completely independent stores — populating one does not affect the other.
+    29→
+    30→## The Pitfall: Silent Type Mismatch
+
+... [45 lines omitted] ...
+
+    32→Because both parameters are dicts keyed by issue number, it's easy to pass the wrong type to the wrong parameter. The failure mode is silent: the getter returns an empty list rather than raising a type error, because it's querying the unpopulated store.
+  </tool_result>
+  <tool_result tool="toolu_01WrMq5a9YjhPAn6WB9oueeR">
+     1→---
+     2→title: context_for_test() Dual Implementations
+     3→read_when:
+     4→  - "using context_for_test() in tests"
+     5→  - "choosing between erk-shared and src/erk test context"
+     6→  - "debugging TypeError from context_for_test()"
+     7→tripwires:
+     8→  - action: "using context_for_test() with wrong parameter name for issues"
+     9→    warning: "erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError."
+    10→---
+    11→
+    12→# context_for_test() Dual Implementations
+    13→
+    14→Two separate `context_for_test()` functions exist in the codebase. They have different parameter names and serve different test scopes.
+    15→
+    16→## erk-shared Implementation
+    17→
+    18→&lt;!-- Source: tests/fakes/tests/shared_context.py, context_for_test --&gt;
+    19→
+    20→**Location:** `tests/fakes/tests/shared_context.py`
+    21→
+    22→**Key parameter:** `github_issues=` (not `issues=`)
+    23→
+    24→Always defaults to PlannedPRBackend. Used for isolated unit tests that only need erk-shared dependencies.
+    25→
+    26→## src/erk Implementation
+    27→
+    28→&lt;!-- Source: tests/test_utils/test_context.py, context_for_test --&gt;
+    29→
+    30→**Location:** `tests/test_utils/test_context.py`
+
+... [22 lines omitted] ...
+
+    46→Using `issues=` with the erk-shared version or `github_issues=` with the src/erk version causes a `TypeError` at runtime. The parameter names are intentionally different due to the different dependency scopes.
+  </tool_result>
+  <tool_result tool="toolu_015RsSqQZ7i5b8LGqwCJipZp">
+     1→---
+     2→title: CLI Testing Patterns
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "writing tests for erk CLI commands"
+     7→  - "using ErkContext.for_test()"
+     8→  - "testing Click commands with context"
+     9→tripwires:
+    10→  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
+    11→    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
+    12→    score: 7
+    13→  - action: "renaming a user-facing string in CLI output and updating related test assertions"
+    14→    warning: "Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout."
+    15→    score: 6
+    16→  - action: "passing mix_stderr parameter to CliRunner"
+    17→    warning: "Click 8.3.1 CliRunner no longer accepts mix_stderr parameter. Use CliRunner() or CliRunner(env={}) instead."
+    18→---
+    19→
+    20→# CLI Testing Patterns
+    21→
+    22→This document covers testing patterns specific to erk CLI commands that use `ErkContext` for dependency injection.
+    23→
+    24→## Overview
+    25→
+    26→Erk CLI commands use Click's context system (`@click.pass_context`) to receive dependencies. Testing these commands requires passing a test context via the `obj` parameter to `CliRunner.invoke()`.
+    27→
+    28→## The ErkContext.for_test() Pattern
+    29→
+    30→`ErkContext.for_test()` is the canonical factory method for creating test contexts with fake dependencies.
+
+... [491 lines omitted] ...
+
+   148→### Pattern 4: Testing Error Handling
+   150→When testing error paths:
+   166→    # Assert: Command exits with error
+   356→- [ ] Test both success and error paths
+  </tool_result>
+  <tool_result tool="toolu_01KWshmHS5U5Ju5oydLKxN7v">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Testing Documentation
+     5→
+     6→- **[admin-command-testing.md](admin-command-testing.md)** — writing tests for admin CLI commands, using FakeGitHubAdmin in tests, testing permission-related CLI commands
+     7→- **[alias-verification-pattern.md](alias-verification-pattern.md)** — enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
+     8→- **[artifact-distribution-sync.md](artifact-distribution-sync.md)** — adding portable skills to codex_portable_skills(), modifying pyproject.toml force-include entries, understanding bundled skill testing and distribution
+     9→- **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that uses PlanBackend, deciding whether to fake a backend or gateway, writing tests for exec scripts with backend operations
+    10→- **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
+    11→- **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
+    12→- **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
+    13→- **[context-builder-signatures.md](context-builder-signatures.md)** — using context_for_test() in tests, choosing between erk-shared and src/erk test context, debugging TypeError from context_for_test()
+    14→- **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
+    15→- **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features, creating test helpers for plan store operations
+    16→- **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides
+    17→- **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PLAN_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
+    18→- **[erk-package-info-pattern.md](erk-package-info-pattern.md)** — working with ErkPackageInfo or bundled paths, understanding is_in_erk_repo detection, writing tests that need ErkPackageInfo
+    19→- **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, adding failure injection to a fake gateway for batch operations
+    20→- **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
+    21→- **[fake-api-migration-pattern.md](fake-api-migration-pattern.md)** — writing tests that use FakePromptExecutor, choosing between the two FakePromptExecutor implementations, encountering old-style output=/should_fail= patterns in test code
+    22→- **[fake-git-divergence.md](fake-git-divergence.md)** — testing branch divergence scenarios, configuring FakeGit for force-push tests, writing tests that involve ahead/behind commit counts
+    23→- **[fake-github-api-reference.md](fake-github-api-reference.md)** — writing tests that need fake GitHub PR or issue data, understanding FakeLocalGitHub.create_pr() auto-registration, using mutation tracking in LocalGitHub fake tests
+    24→- **[fake-github-mutation-tracking.md](fake-github-mutation-tracking.md)** — asserting against FakeLocalGitHub mutations in tests, adding a new mutation tracking list to FakeLocalGitHub or FakeGitHubIssues, understanding tuple formats in fake gateway tracking lists
+    25→- **[fake-github-testing.md](fake-github-testing.md)** — setting up FakeGitHubIssues in a test, test fails with empty comments from FakeGitHubIssues, choosing between comments and comments_with_urls parameters
+    26→- **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, choosing between frozen dataclass fakes and **init**-based fakes, writing tests that assert on method call parameters
+    27→- **[gateway-fake-testing-exemplar.md](gateway-fake-testing-exemplar.md)** — writing tests for gateway fakes that return discriminated unions, deciding whether mutation tracking should occur on error paths, implementing a new fake gateway method with error injection
+    28→- **[hook-testing.md](hook-testing.md)** — writing tests for any hook (PreToolUse, UserPromptSubmit, ExitPlanMode), creating a new hook implementation, testing hooks that read from stdin or check capabilities
+    29→- **[import-conflict-resolution.md](import-conflict-resolution.md)** — resolving merge conflicts during rebase, fixing import conflicts after consolidation, rebasing after shared module changes
+    30→- **[integration-test-speed.md](integration-test-speed.md)** — integration test is slow, test takes too long, pytest --durations shows slow test
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JSsbMvQV3T47zRMLaZ8qiQ">
+     1→---
+     2→title: Plan Storage Testing
+     3→read_when:
+     4→  - "writing tests that involve plan storage"
+     5→  - "testing plan-related features"
+     6→  - "creating test helpers for plan store operations"
+     7→tripwires:
+     8→  - action: "writing plan storage tests that parametrize across both backends"
+     9→    warning: "After PR #8210, only the PlannedPRBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use PlannedPRBackend directly."
+    10→  - action: "using isinstance() to detect plan backend type in application code"
+    11→    warning: "Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API."
+    12→    score: 7
+    13→---
+    14→
+    15→# Plan Storage Testing
+    16→
+    17→&gt; **Note:** After PR #8210, the `GitHubPlanStore` class and `PlanStore` ABC were deleted. Only `PlannedPRBackend` exists. This document describes the test infrastructure for the current single-backend architecture.
+    18→
+    19→## Test Helpers
+    20→
+    21→All plan test helpers are in `tests/test_utils/plan_helpers.py`.
+    22→
+    23→### `create_plan_store_with_plans()`
+    24→
+    25→Creates a `PlannedPRBackend` pre-populated with plans, backed by `FakeGitHub`.
+    26→
+    27→&lt;!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans --&gt;
+    28→
+    29→See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[PlannedPRBackend, FakeGitHub]` — the backend and its backing fake for assertions.
+    30→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll update each file with the appropriate replacements. Let me start with the systematic updates:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012JS4CaVxMDA9f2giZrZhFF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md</param>
+    <param name="old_string">---
+title: Backend Testing Composition
+read_when:
+  - "testing code that uses PlanBackend"...[truncated 307 chars]...BC contract across providers."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+---</param>
+    <param name="new_string">---
+title: Backend Testing Composition
+read_when:
+  - "testing code that uses ManagedPrBac...[truncated 323 chars]...BC contract across providers."
+last_audited: "2026-02-16 14:20 PT"
+audit_result: clean
+---</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B14sxqpaH9ZoBthuDUYFjY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md</param>
+    <param name="old_string">```python
+# Correct: real backend with fake gateway
+fake_github = FakeGitHub()
+fake_issues...[truncated 92 chars]...nd for testing callers
+fake_backend = FakePlanBackend()  # Only for ABC contract tests
+```</param>
+    <param name="new_string">```python
+# Correct: real backend with fake gateway
+fake_github = FakeGitHub()
+fake_issues...[truncated 103 chars]...r testing callers
+fake_backend = FakeManagedPrBackend()  # Only for ABC contract tests
+```</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018rgk1ktQx3BSUJrSGRrudf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md</param>
+    <param name="old_string">## When to Use Fake Backends
+
+Fake backends are appropriate only for validating the ABC co...[truncated 56 chars]...dPRBackend` and a hypothetical alternative backend implement the same interface correctly.</param>
+    <param name="new_string">## When to Use Fake Backends
+
+Fake backends are appropriate only for validating the ABC co...[truncated 62 chars]...dPrBackend` and a hypothetical alternative backend implement the same interface correctly.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FidfUFvHNQj95ZA1dsyUEz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition...[truncated 83 chars]...nto PlannedPRBackend. Fake backends are only for validating ABC contract across providers.</param>
+    <param name="new_string">**creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Compos...[truncated 94 chars]...tHubManagedPrBackend. Fake backends are only for validating ABC contract across providers.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WHVdBN2dbdBtLQib5haJzL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()** → Read...[truncated 159 chars]...Issues.added_comments). Check the correct fake when testing planned-PR comment operations.</param>
+    <param name="new_string">**asserting on FakeGitHubIssues.added_comments for GitHubManagedPrBackend.add_comment()** ...[truncated 171 chars]...Issues.added_comments). Check the correct fake when testing planned-PR comment operations.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016yYxr4aJzSgs4yPfFjmCxA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**using isinstance() to detect plan backend type in application code** → Read [Plan Storag...[truncated 124 chars]...tance checks couple to implementation classes. The provider name string is the stable API.</param>
+    <param name="new_string">**using isinstance() to detect plan backend type in application code** → Read [Plan Storag...[truncated 130 chars]...tance checks couple to implementation classes. The provider name string is the stable API.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D92gsmHHs4patGQTyifUB7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**writing plan storage tests that parametrize across both backends** → Read [Plan Storage ...[truncated 80 chars]...bPlanStore class was deleted. New plan-related tests should use PlannedPRBackend directly.</param>
+    <param name="new_string">**writing plan storage tests that parametrize across both backends** → Read [Plan Storage ...[truncated 92 chars]...tore class was deleted. New plan-related tests should use GitHubManagedPrBackend directly.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FVdE7decBEAQbKEkCsiNAR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md</param>
+    <param name="old_string">  - action: "asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment...[truncated 116 chars]...omments). Check the correct fake when testing planned-PR comment operations."
+    score: 6</param>
+    <param name="new_string">  - action: "asserting on FakeGitHubIssues.added_comments for GitHubManagedPrBackend.add_c...[truncated 128 chars]...omments). Check the correct fake when testing planned-PR comment operations."
+    score: 6</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KwzUEyD47EDYrAVWBouvEY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md</param>
+    <param name="old_string">Always defaults to PlannedPRBackend. Used for isolated unit tests that only need erk-shared dependencies.</param>
+    <param name="new_string">Always defaults to GitHubManagedPrBackend. Used for isolated unit tests that only need erk-shared dependencies.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Xds92sTH8XijvTRacsBuF4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+    <param name="old_string">## Pattern 6: FakeGitHub with Shared FakeGitHubIssues
+
+When testing code that uses both `PlanBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:</param>
+    <param name="new_string">## Pattern 6: FakeGitHub with Shared FakeGitHubIssues
+
+When testing code that uses both `ManagedPrBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UrY3kTeoAetGNUcf9QCXKq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+    <param name="old_string">    # Both plan_backend metadata writes and direct issue queries
+    # see the same data b...[truncated 198 chars]...perates on a different instance and metadata writes are invisible to your test assertions.</param>
+    <param name="new_string">    # Both managed_pr_backend metadata writes and direct issue queries
+    # see the same ...[truncated 210 chars]...perates on a different instance and metadata writes are invisible to your test assertions.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GVZMWLcPshP5ncAqmahrvv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/index.md</param>
+    <param name="old_string">- **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that...[truncated 10 chars]...ether to fake a backend or gateway, writing tests for exec scripts with backend operations</param>
+    <param name="new_string">- **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that...[truncated 15 chars]...ether to fake a backend or gateway, writing tests for exec scripts with backend operations</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KoEFGzztDFNg3uAPst97E6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md</param>
+    <param name="old_string">  - action: "writing plan storage tests that parametrize across both backends"
+    warning...[truncated 588 chars]...is document describes the test infrastructure for the current single-backend architecture.</param>
+    <param name="new_string">  - action: "writing plan storage tests that parametrize across both backends"
+    warning...[truncated 612 chars]...is document describes the test infrastructure for the current single-backend architecture.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014QeNxF3uKefy9LNuCG55Mc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md</param>
+    <param name="old_string">### `create_plan_store_with_plans()`
+
+Creates a `PlannedPRBackend` pre-populated with plan...[truncated 194 chars]...s `tuple[PlannedPRBackend, FakeGitHub]` — the backend and its backing fake for assertions.</param>
+    <param name="new_string">### `create_plan_store_with_plans()`
+
+Creates a `GitHubManagedPrBackend` pre-populated wit...[truncated 206 chars]...le[GitHubManagedPrBackend, FakeGitHub]` — the backend and its backing fake for assertions.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G8Kgcd3ioQ1SYKAkuaraGB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md</param>
+    <param name="old_string">## Convention
+
+After PR #8210, only the PlannedPRBackend exists. Use `create_plan_store_with_plans()` for all new tests.</param>
+    <param name="new_string">## Convention
+
+After PR #8210, only the GitHubManagedPrBackend exists. Use `create_plan_store_with_plans()` for all new tests.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LiC6xadCWrgDWcGkrefPyd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md</param>
+    <param name="old_string">## Assertion Patterns
+
+Tests should use `PlannedPRBackend` directly:</param>
+    <param name="new_string">## Assertion Patterns
+
+Tests should use `GitHubManagedPrBackend` directly:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="20286" cache_read_input_tokens="16383" cache_creation="{'ephemeral_5m_input_tokens': 20286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012JS4CaVxMDA9f2giZrZhFF">
+The file /home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01B14sxqpaH9ZoBthuDUYFjY">
+The file /home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018rgk1ktQx3BSUJrSGRrudf">
+The file /home/runner/work/erk/erk/docs/learned/testing/backend-testing-composition.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FidfUFvHNQj95ZA1dsyUEz">
+The file /home/runner/work/erk/erk/docs/learned/testing/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WHVdBN2dbdBtLQib5haJzL">
+The file /home/runner/work/erk/erk/docs/learned/testing/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016yYxr4aJzSgs4yPfFjmCxA">
+The file /home/runner/work/erk/erk/docs/learned/testing/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01D92gsmHHs4patGQTyifUB7">
+The file /home/runner/work/erk/erk/docs/learned/testing/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FVdE7decBEAQbKEkCsiNAR">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KwzUEyD47EDYrAVWBouvEY">
+The file /home/runner/work/erk/erk/docs/learned/testing/context-builder-signatures.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Xds92sTH8XijvTRacsBuF4">
+The file /home/runner/work/erk/erk/docs/learned/testing/cli-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UrY3kTeoAetGNUcf9QCXKq">
+The file /home/runner/work/erk/erk/docs/learned/testing/cli-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GVZMWLcPshP5ncAqmahrvv">
+The file /home/runner/work/erk/erk/docs/learned/testing/index.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KoEFGzztDFNg3uAPst97E6">
+The file /home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_014QeNxF3uKefy9LNuCG55Mc">
+The file /home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01G8Kgcd3ioQ1SYKAkuaraGB">
+The file /home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LiC6xadCWrgDWcGkrefPyd">
+The file /home/runner/work/erk/erk/docs/learned/testing/dual-backend-testing.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if there are any additional references I need to update. Let me search for any remaining references that might need updating:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="5277" cache_read_input_tokens="36669" cache_creation="{'ephemeral_5m_input_tokens': 5277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RisQgsvCA5oxRTHnopi6r9">
+    <param name="pattern">plan_backend\.(get|create|close|list)_(plan|managed_pr)\(</param>
+    <param name="path">docs/learned/testing</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="5277" cache_read_input_tokens="36669" cache_creation="{'ephemeral_5m_input_tokens': 5277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XtgpKyXwD3Js6kSCEFKnGy">
+    <param name="pattern">build_workspace_test_context.*plan_backend</param>
+    <param name="path">docs/learned/testing</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="5277" cache_read_input_tokens="36669" cache_creation="{'ephemeral_5m_input_tokens': 5277, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RisQgsvCA5oxRTHnopi6r9">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01XtgpKyXwD3Js6kSCEFKnGy">
+docs/learned/testing/tripwires.md:65:**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
+docs/learned/testing/fake-github-testing.md:11:    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+  </tool_result>
+  <assistant>I found a couple more references to update. Let me fix those:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="599" cache_read_input_tokens="41946" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016NHvs6UuNxYtyDEkWy8jDL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/tripwires.md</param>
+    <param name="old_string">**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Rea...[truncated 152 chars]...thout it, plan_backend operates on a different instance and metadata writes are invisible.</param>
+    <param name="new_string">**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Rea...[truncated 158 chars]...it, managed_pr_backend operates on a different instance and metadata writes are invisible.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="599" cache_read_input_tokens="41946" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MJ7dkFHLcSXcDoGNwaKkUo">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md</param>
+    <param name="old_string">  - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_cont...[truncated 96 chars]...hout it, plan_backend operates on a different instance and metadata writes are invisible."</param>
+    <param name="new_string">  - action: "creating custom FakeGitHubIssues without passing to build_workspace_test_cont...[truncated 102 chars]...t, managed_pr_backend operates on a different instance and metadata writes are invisible."</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="599" cache_read_input_tokens="41946" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="564" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016NHvs6UuNxYtyDEkWy8jDL">
+The file /home/runner/work/erk/erk/docs/learned/testing/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MJ7dkFHLcSXcDoGNwaKkUo">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-github-testing.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify that I've covered all the necessary changes by doing a final check for any remaining old class names:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="789" cache_read_input_tokens="42545" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01D4T4obTasjUGY1wQqBmDqh">
+    <param name="pattern">PlannedPRBackend|FakePlanBackend|PlanBackend[^s]</param>
+    <param name="path">docs/learned/testing</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="789" cache_read_input_tokens="42545" cache_creation="{'ephemeral_5m_input_tokens': 789, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D4T4obTasjUGY1wQqBmDqh">
+docs/learned/testing/cli-testing.md:338:        "my_module.PlannedPRBackend",
+docs/learned/testing/environment-variable-isolation.md:32:After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `PlannedPRBackend`.
+docs/learned/testing/environment-variable-isolation.md:52:    plan_store=PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
+  </tool_result>
+  <assistant>Let me update these remaining references:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="350" cache_read_input_tokens="43334" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xo3quHE8MXfTN1Ev3HH6Ec">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="350" cache_read_input_tokens="43334" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xo3quHE8MXfTN1Ev3HH6Ec">
+     1→---
+     2→title: Environment Variable Isolation in Tests
+     3→read_when:
+     4→  - "debugging systematic test failures across many test files"
+     5→  - "working with ERK_PLAN_BACKEND in tests"
+     6→  - "understanding why tests behave differently based on environment"
+     7→  - "writing tests that involve plan backend selection"
+     8→tripwires:
+     9→  - action: "debugging 100+ unexpected test failures with no obvious cause"
+    10→    warning: "Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911."
+    11→    score: 6
+    12→---
+    13→
+    14→# Environment Variable Isolation in Tests
+    15→
+    16→## The `ERK_PLAN_BACKEND` Contamination Pattern
+    17→
+    18→&gt; **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"planned_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
+    19→
+    20→Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment caused **125+ test failures** when running the full test suite.
+    21→
+    22→### Root Cause
+    23→
+    24→`context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` creates a test `ErkContext`. After PR #7971, the plan backend selection uses a tautological comparison that always takes the planned-PR path, regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
+    25→
+    26→&lt;!-- Source: packages/erk-shared/src/erk_shared/context/testing.py, context_for_test --&gt;
+    27→
+    28→See `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py`.
+    29→
+    30→## `context_for_test()` Implementation
+
+... [49 lines omitted] ...
+
+    63→If you see 100+ unexpected failures:
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014RvJuqW86cJQya64S3dJH5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md</param>
+    <param name="old_string">After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `PlannedPRBackend`.</param>
+    <param name="new_string">After PR #8210, `context_for_test()` in `packages/erk-shared/src/erk_shared/context/testing.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `GitHubManagedPrBackend`.</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1542" cache_read_input_tokens="43684" cache_creation="{'ephemeral_5m_input_tokens': 1542, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011XHycSG43yDdxo4xvZiHps">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md</param>
+    <param name="old_string">```python
+ctx = context_for_test(
+    plan_store=PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
+    ...
+)
+```</param>
+    <param name="new_string">```python
+ctx = context_for_test(
+    plan_store=GitHubManagedPrBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime()),
+    ...
+)
+```</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1542" cache_read_input_tokens="43684" cache_creation="{'ephemeral_5m_input_tokens': 1542, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DM4LxRGFNAi5uAFAWWJMXS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md</param>
+    <param name="old_string">    # Mock the factory that creates the dependency
+    monkeypatch.setattr(
+        "my_module.PlannedPRBackend",
+        lambda github: fake_backend,
+    )</param>
+    <param name="new_string">    # Mock the factory that creates the dependency
+    monkeypatch.setattr(
+        "my_module.GitHubManagedPrBackend",
+        lambda github: fake_backend,
+    )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1542" cache_read_input_tokens="43684" cache_creation="{'ephemeral_5m_input_tokens': 1542, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014RvJuqW86cJQya64S3dJH5">
+The file /home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_011XHycSG43yDdxo4xvZiHps">
+The file /home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DM4LxRGFNAi5uAFAWWJMXS">
+The file /home/runner/work/erk/erk/docs/learned/testing/cli-testing.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do one final comprehensive check to make sure I've caught all the references:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="926" cache_read_input_tokens="45226" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014PEqaFU1jrASL67w7XHJmZ">
+    <param name="pattern">PlannedPRBackend|FakePlanBackend|GitHubPlanBackend</param>
+    <param name="path">docs/learned/testing</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="926" cache_read_input_tokens="45226" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KE4ixwjupckjMwrYbiNeZA">
+    <param name="pattern">\.get_plan\(|\.create_plan\(|\.close_plan\(|\.list_plans\(</param>
+    <param name="path">docs/learned/testing</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="926" cache_read_input_tokens="45226" cache_creation="{'ephemeral_5m_input_tokens': 926, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KE4ixwjupckjMwrYbiNeZA">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_014PEqaFU1jrASL67w7XHJmZ">
+No files found
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes are complete by doing a summary check:</assistant>
+  <usage input_tokens="32" cache_creation_input_tokens="420" cache_read_input_tokens="46152" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BazycCz74cQ2wPfEg5m2jA">
+    <param name="command">git diff --stat docs/learned/testing/</param>
+    <param name="description">Show summary of changes made to testing docs</param>
+  </tool_use>
+  <usage input_tokens="32" cache_creation_input_tokens="420" cache_read_input_tokens="46152" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BazycCz74cQ2wPfEg5m2jA">
+ docs/learned/testing/backend-testing-composition.md    | 12 ++++++------
+ docs/learned/testing/cli-testing.md                    |  8 ++++----
+ docs/learned/testing/context-builder-signatures.md     |  2 +-
+ docs/learned/testing/dual-backend-testing.md           | 14 +++++++-------
+ docs/learned/testing/environment-variable-isolation.md |  4 ++--
+ docs/learned/testing/fake-github-testing.md            |  6 +++---
+ docs/learned/testing/index.md                          |  2 +-
+ docs/learned/testing/tripwires.md                      | 10 +++++-----
+ 8 files changed, 29 insertions(+), 29 deletions(-)
+  </tool_result>
+  <assistant>Excellent! Let me verify the actual content of the changes by reviewing a sample of the key changes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="338" cache_read_input_tokens="46572" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DjkjMeWD4RGpcj25EgCiYm">
+    <param name="command">git diff docs/learned/testing/backend-testing-composition.md | head -50</param>
+    <param name="description">Show sample of changes to backend-testing-composition.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="338" cache_read_input_tokens="46572" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DjkjMeWD4RGpcj25EgCiYm">
+diff --git a/docs/learned/testing/backend-testing-composition.md b/docs/learned/testing/backend-testing-composition.md
+index 32221f8b5..07bbaf43e 100644
+--- a/docs/learned/testing/backend-testing-composition.md
++++ b/docs/learned/testing/backend-testing-composition.md
+@@ -1,12 +1,12 @@
+ ---
+ title: Backend Testing Composition
+ read_when:
+-  - "testing code that uses PlanBackend"
++  - "testing code that uses ManagedPrBackend"
+   - "deciding whether to fake a backend or gateway"
+   - "writing tests for exec scripts with backend operations"
+ tripwires:
+-  - action: "creating a FakePlanBackend for testing caller code"
+-    warning: "Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers."
++  - action: "creating a FakeManagedPrBackend for testing caller code"
++    warning: "Use real backend + fake gateway instead. FakeGitHub injected into GitHubManagedPrBackend. Fake backends are only for validating ABC contract across providers."
+ last_audited: "2026-02-16 14:20 PT"
+ audit_result: clean
+ ---
+@@ -21,10 +21,10 @@ Pattern for testing code that uses Backend ABCs. The key insight: inject fake ga
+ # Correct: real backend with fake gateway
+ fake_github = FakeGitHub()
+ fake_issues = FakeGitHubIssues()
+-backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
++backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+ 
+ # Wrong: fake backend for testing callers
+-fake_backend = FakePlanBackend()  # Only for ABC contract tests
++fake_backend = FakeManagedPrBackend()  # Only for ABC contract tests
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me also verify the dual-backend-testing.md changes:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="915" cache_read_input_tokens="46910" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DNN3nnt1z1NZejm6U4RViN">
+    <param name="command">git diff docs/learned/testing/dual-backend-testing.md</param>
+    <param name="description">Show changes to dual-backend-testing.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="915" cache_read_input_tokens="46910" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DNN3nnt1z1NZejm6U4RViN">
+diff --git a/docs/learned/testing/dual-backend-testing.md b/docs/learned/testing/dual-backend-testing.md
+index 6dc53f392..36e42f591 100644
+--- a/docs/learned/testing/dual-backend-testing.md
++++ b/docs/learned/testing/dual-backend-testing.md
+@@ -6,15 +6,15 @@ read_when:
+   - "creating test helpers for plan store operations"
+ tripwires:
+   - action: "writing plan storage tests that parametrize across both backends"
+-    warning: "After PR #8210, only the PlannedPRBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use PlannedPRBackend directly."
++    warning: "After PR #8210, only the GitHubManagedPrBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use GitHubManagedPrBackend directly."
+   - action: "using isinstance() to detect plan backend type in application code"
+-    warning: "Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API."
++    warning: "Use managed_pr_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API."
+     score: 7
+ ---
+ 
+ # Plan Storage Testing
+ 
+-&gt; **Note:** After PR #8210, the `GitHubPlanStore` class and `PlanStore` ABC were deleted. Only `PlannedPRBackend` exists. This document describes the test infrastructure for the current single-backend architecture.
++&gt; **Note:** After PR #8210, the `GitHubPlanStore` class and `PlanStore` ABC were deleted. Only `GitHubManagedPrBackend` exists. This document describes the test infrastructure for the current single-backend architecture.
+ 
+ ## Test Helpers
+ 
+@@ -22,11 +22,11 @@ All plan test helpers are in `tests/test_utils/plan_helpers.py`.
+ 
+ ### `create_plan_store_with_plans()`
+ 
+-Creates a `PlannedPRBackend` pre-populated with plans, backed by `FakeGitHub`.
++Creates a `GitHubManagedPrBackend` pre-populated with plans, backed by `FakeGitHub`.
+ 
+
+... [24 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! All the changes look correct. Let me create a summary of all the updates made:
+
+## Summary
+
+I've successfully updated all references to the old class names in the `docs/learned/testing/` directory. Here's what was changed:
+
+### Files Updated (8 files):
+
+1. **docs/learned/testing/backend-testing-composition.md**
+   - `PlanBackend` → `ManagedPrBackend` in frontmatter
+   - `FakePlanBackend` → `FakeManagedPrBackend`
+   - `PlannedPRBackend` → `GitHubManagedPrBackend` in code examples
+
+2. **docs/learned/testing/tripwires.md**
+   - `FakePlanBackend` → `FakeManagedPrBackend`
+   - `PlannedPRBackend` → `GitHubManagedPrBackend`
+   - `plan_backend.get_provider_name()` → `managed_pr_backend.get_provider_name()`
+   - `plan_backend operates` → `managed_pr_backend operates`
+
+3. **docs/learned/testing/fake-github-testing.md**
+   - `PlannedPRBackend.add_comment()` → `GitHubManagedPrBackend.add_comment()`
+   - `PlannedPRBackend routes` → `GitHubManagedPrBackend routes`
+   - `plan_backend operates` → `managed_pr_backend operates`
+
+4. **docs/learned/testing/context-builder-signatures.md**
+   - `PlannedPRBackend` → `GitHubManagedPrBackend` (default backend reference)
+
+5. **docs/learned/testing/cli-testing.md**
+   - `PlanBackend` → `ManagedPrBackend` in Pattern 6 description
+   - `plan_backend metadata` → `managed_pr_backend metadata`
+   - `plan_backend operates` → `managed_pr_backend operates`
+   - `PlannedPRBackend` → `GitHubManagedPrBackend` in monkeypatch example
+
+6. **docs/learned/testing/index.md**
+   - `PlanBackend` → `ManagedPrBackend` in document description
+
+7. **docs/learned/testing/dual-backend-testing.md**
+   - All occurrences of `PlannedPRBackend` → `GitHubManagedPrBackend`
+   - `plan_backend.get_provider_name()` → `managed_pr_backend.get_provider_name()`
+   - Updated return type documentation
+
+8. **docs/learned/testing/environment-variable-isolation.md**
+   - `PlannedPRBackend` → `GitHubManagedPrBackend` in code examples
+
+### Key Points Preserved:
+
+- ✅ Historical references to "After PR #8210, GitHubPlanStore was deleted" remain unchanged (these are historical)
+- ✅ The provider name "github-draft-pr" was NOT changed (serialization name)
+- ✅ All class name references updated
+- ✅ All method references updated (though no explicit `.get_plan()` etc. were found in these docs)
+- ✅ Consistent renaming: `PlanBackend` → `ManagedPrBackend`, `PlannedPRBackend` → `GitHubManagedPrBackend`, `FakePlanBackend` → `FakeManagedPrBackend`
+
+All changes maintain the semantic meaning of the documentation while reflecting the new class naming convention.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1174" cache_read_input_tokens="47825" cache_creation="{'ephemeral_5m_input_tokens': 1174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

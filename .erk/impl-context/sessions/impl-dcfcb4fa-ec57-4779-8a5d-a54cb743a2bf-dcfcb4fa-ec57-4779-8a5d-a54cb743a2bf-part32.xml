@@ -1,0 +1,1059 @@
+<session>
+  <meta source="agent-afb9df6" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>I need to find all places where the LibCST agent over-broadly renamed `plan_id` keyword arguments to `pr_id` in function calls, where the underlying function still has `plan_id` as a parameter. 
+
+The rename was supposed to ONLY apply to ManagedPrBackend methods. But it appears the LibCST rename changed `plan_id` to `pr_id` (or `pr_number`) in many call sites across the codebase, even for non-backend functions.
+
+Please search for:
+
+1. All functions in the codebase that have `plan_id` as a parameter (search for `def.*plan_id` in .py files in src/ and packages/). These are functions that were NOT renamed and should still be called with `plan_id=`.
+
+2. Then check if any callers of those functions now use `pr_id=` or `pr_number=` instead of `plan_id=`.
+
+Focus on these files/directories:
+- /home/runner/work/erk/erk/src/
+- /home/runner/work/erk/erk/packages/
+- /home/runner/work/erk/erk/tests/
+
+Do NOT modify any files. Report all findings.</user>
+  <assistant>I'll help you find all mismatched keyword argument renamings. Let me start by searching for functions with `plan_id` parameters and then check for calls using the wrong keyword names.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19163" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19163, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XtdeKBjmAGqNdeRKCjYmvN">
+    <param name="pattern">def\s+\w+\([^)]*plan_id</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19163" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19163, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TptuN6P4oyiFR378mmJ1Ha">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*.py" -type f | head -20</param>
+    <param name="description">List some Python files in src to verify structure</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19163" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19163, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TptuN6P4oyiFR378mmJ1Ha">
+/home/runner/work/erk/erk/src/erk/capabilities/hooks.py
+/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py
+/home/runner/work/erk/erk/src/erk/capabilities/reviews/tripwires.py
+/home/runner/work/erk/erk/src/erk/capabilities/reviews/dignified_python.py
+/home/runner/work/erk/erk/src/erk/capabilities/reviews/__init__.py
+/home/runner/work/erk/erk/src/erk/capabilities/reviews/dignified_code_simplifier.py
+/home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_rebase.py
+/home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_address.py
+/home/runner/work/erk/erk/src/erk/capabilities/workflows/learn.py
+/home/runner/work/erk/erk/src/erk/capabilities/workflows/__init__.py
+/home/runner/work/erk/erk/src/erk/capabilities/workflows/erk_impl.py
+/home/runner/work/erk/erk/src/erk/capabilities/workflows/one_shot.py
+/home/runner/work/erk/erk/src/erk/capabilities/reminders/devrun.py
+/home/runner/work/erk/erk/src/erk/capabilities/reminders/tripwires.py
+/home/runner/work/erk/erk/src/erk/capabilities/reminders/dignified_python.py
+/home/runner/work/erk/erk/src/erk/capabilities/reminders/__init__.py
+/home/runner/work/erk/erk/src/erk/capabilities/reminders/explore_docs.py
+/home/runner/work/erk/erk/src/erk/capabilities/__init__.py
+/home/runner/work/erk/erk/src/erk/capabilities/ruff_format.py
+/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py
+  </tool_result>
+  <tool_result tool="toolu_01XtdeKBjmAGqNdeRKCjYmvN">
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:56:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:68:    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:32:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:60:    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+  </tool_result>
+  <assistant>Let me search more comprehensively for all function definitions with `plan_id` parameters:</assistant>
+  <usage input_tokens="582" cache_creation_input_tokens="533" cache_read_input_tokens="19163" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NcKFqKVgiFjrVFkk1HRuLL">
+    <param name="pattern">def\s+\w+\([^)]*\bplan_id\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="582" cache_creation_input_tokens="533" cache_read_input_tokens="19163" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SWKkz265odKo5ymGGpJPRJ">
+    <param name="pattern">def\s+\w+\([^)]*\bplan_id\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="582" cache_creation_input_tokens="533" cache_read_input_tokens="19163" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FquxVf84aycKgwVMFkab3k">
+    <param name="pattern">def\s+\w+\([^)]*\bplan_id\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="582" cache_creation_input_tokens="533" cache_read_input_tokens="19163" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FquxVf84aycKgwVMFkab3k">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01SWKkz265odKo5ymGGpJPRJ">
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:56:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:68:    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:32:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:60:    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_01NcKFqKVgiFjrVFkk1HRuLL">
+No matches found
+  </tool_result>
+  <assistant>Great! I found functions with `plan_id` parameters. Now let me search for calls to these functions to see if any use the renamed `pr_id` or `pr_number`:</assistant>
+  <usage input_tokens="264" cache_creation_input_tokens="1148" cache_read_input_tokens="19696" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RadomEShka96q6hSCWAGsv">
+    <param name="pattern">close_plan\s*\([^)]*\bpr_id\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="264" cache_creation_input_tokens="1148" cache_read_input_tokens="19696" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Qwcu6e8vk3MjLLSvfEA8AE">
+    <param name="pattern">close_plan\s*\([^)]*\bpr_number\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="264" cache_creation_input_tokens="1148" cache_read_input_tokens="19696" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NQfpWKryg6GPE1AS8iAtmm">
+    <param name="pattern">dispatch_to_queue\s*\([^)]*\bpr_id\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="264" cache_creation_input_tokens="1148" cache_read_input_tokens="19696" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TTtVZUvSE3C6Axju8KFo3M">
+    <param name="pattern">dispatch_to_queue\s*\([^)]*\bpr_number\b</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="264" cache_creation_input_tokens="1148" cache_read_input_tokens="19696" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NQfpWKryg6GPE1AS8iAtmm">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01Qwcu6e8vk3MjLLSvfEA8AE">
+tests/fakes/gateway/command_executor.py:68:    def close_plan(self, pr_number: int, pr_url: str) -&gt; list[int]:
+src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_plan(pr_number, pr_url)
+  </tool_result>
+  <tool_result tool="toolu_01RadomEShka96q6hSCWAGsv">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01TTtVZUvSE3C6Axju8KFo3M">
+tests/fakes/gateway/pr_service.py:70:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+tests/fakes/gateway/command_executor.py:81:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+tests/fakes/gateway/plan_data_provider.py:122:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/pr_service/real.py:129:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py:51:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+  </tool_result>
+  <assistant>Good! I'm finding mismatches. Let me look more carefully at the actual calls:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1347" cache_read_input_tokens="20844" cache_creation="{'ephemeral_5m_input_tokens': 1347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KuiKyBkfRT3zLXDRwQkkCg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">505</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1347" cache_read_input_tokens="20844" cache_creation="{'ephemeral_5m_input_tokens': 1347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013QvzCDwyeMqrHHNvh4dxr3">
+    <param name="pattern">\.close_plan\s*\(</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1347" cache_read_input_tokens="20844" cache_creation="{'ephemeral_5m_input_tokens': 1347, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KuiKyBkfRT3zLXDRwQkkCg">
+   505→            self._command_running = False
+   506→            return
+   507→
+   508→        success = True
+   509→        # Error boundary: catch all exceptions from HTTP operations to display
+   510→        # them in the output panel rather than crashing the TUI.
+   511→        try:
+   512→            self.app.call_from_thread(panel.append_line, "Closing linked PRs...")
+   513→            closed_prs = self._executor.close_plan(pr_number, pr_url)
+   514→
+   515→            if closed_prs:
+   516→                pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+   517→                self.app.call_from_thread(panel.append_line, f"Closed PRs: {pr_list}")
+   518→
+   519→            self.app.call_from_thread(panel.append_line, f"Closed PR #{pr_number}")
+   520→        except Exception as e:
+   521→            self.app.call_from_thread(panel.append_line, f"Error: {e}")
+   522→            success = False
+   523→
+   524→        self.app.call_from_thread(panel.set_completed, success)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_013QvzCDwyeMqrHHNvh4dxr3">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me search for all calls to `close_plan` and `dispatch_to_queue`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2800" cache_read_input_tokens="22191" cache_creation="{'ephemeral_5m_input_tokens': 2800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XNWiP7fgLhdubcC5PG7oBx">
+    <param name="pattern">\.close_plan\s*\(</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2800" cache_read_input_tokens="22191" cache_creation="{'ephemeral_5m_input_tokens': 2800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Y21HxAjJqCzFRzakMc4kn6">
+    <param name="pattern">\.dispatch_to_queue\s*\(</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2800" cache_read_input_tokens="22191" cache_creation="{'ephemeral_5m_input_tokens': 2800, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y21HxAjJqCzFRzakMc4kn6">
+No matches found
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <tool_result tool="toolu_01XNWiP7fgLhdubcC5PG7oBx">
+tests/unit/fakes/test_fake_command_executor.py:25:    executor.close_plan(123, "https://github.com/test/repo/issues/123")
+tests/unit/fakes/test_fake_command_executor.py:26:    executor.close_plan(456, "https://github.com/test/repo/issues/456")
+tests/unit/fakes/test_fake_command_executor.py:58:    result = executor.close_plan(123, "https://github.com/test/repo/issues/123")
+tests/unit/fakes/test_fake_command_executor.py:66:    result = executor.close_plan(123, "https://github.com/test/repo/issues/123")
+src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_plan(pr_number, pr_url)
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <assistant>Let me get more context on these calls and check if they're using positional vs keyword arguments:</assistant>
+  <usage input_tokens="52" cache_creation_input_tokens="708" cache_read_input_tokens="24991" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E83uJ5ZUrysJ5hBYcjvJQR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py</param>
+  </tool_use>
+  <usage input_tokens="52" cache_creation_input_tokens="708" cache_read_input_tokens="24991" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KN3TtXjoZsFxyCWHcmDWqK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py</param>
+  </tool_use>
+  <usage input_tokens="52" cache_creation_input_tokens="708" cache_read_input_tokens="24991" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E83uJ5ZUrysJ5hBYcjvJQR">
+     1→"""Tests for FakeCommandExecutor."""
+     2→
+     3→from tests.fakes.gateway.command_executor import FakeCommandExecutor
+     4→
+     5→
+     6→def test_tracks_opened_urls() -&gt; None:
+     7→    """Fake executor tracks URLs that were opened."""
+     8→    executor = FakeCommandExecutor()
+     9→    executor.open_url("https://example.com")
+    10→    executor.open_url("https://github.com")
+    11→    assert executor.opened_urls == ["https://example.com", "https://github.com"]
+    12→
+    13→
+    14→def test_tracks_copied_texts() -&gt; None:
+    15→    """Fake executor tracks texts that were copied to clipboard."""
+    16→    executor = FakeCommandExecutor()
+    17→    executor.copy_to_clipboard("erk implement 123")
+    18→    executor.copy_to_clipboard("erk pr dispatch 456")
+    19→    assert executor.copied_texts == ["erk implement 123", "erk pr dispatch 456"]
+    20→
+    21→
+    22→def test_tracks_closed_plans() -&gt; None:
+    23→    """Fake executor tracks plans that were closed."""
+    24→    executor = FakeCommandExecutor()
+    25→    executor.close_plan(123, "https://github.com/test/repo/issues/123")
+    26→    executor.close_plan(456, "https://github.com/test/repo/issues/456")
+    27→    assert executor.closed_plans == [
+    28→        (123, "https://github.com/test/repo/issues/123"),
+    29→        (456, "https://github.com/test/repo/issues/456"),
+    30→    ]
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KN3TtXjoZsFxyCWHcmDWqK">
+     1→"""Abstract interface for executing palette commands."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→
+     6→class CommandExecutor(ABC):
+     7→    """Abstract interface for executing palette commands.
+     8→
+     9→    This ABC defines the operations that commands can perform.
+    10→    Real and fake implementations handle the actual execution.
+    11→    """
+    12→
+    13→    @abstractmethod
+    14→    def open_url(self, url: str) -&gt; None:
+    15→        """Open URL in browser.
+    16→
+    17→        Args:
+    18→            url: The URL to open
+    19→        """
+    20→        ...
+    21→
+    22→    @abstractmethod
+    23→    def copy_to_clipboard(self, text: str) -&gt; None:
+    24→        """Copy text to clipboard.
+    25→
+    26→        Args:
+    27→            text: The text to copy
+    28→        """
+    29→        ...
+    30→
+
+... [43 lines omitted] ...
+
+    50→            severity: Optional severity level ("information", "warning", "error")
+  </tool_result>
+  <assistant>Let me check the fake implementations to understand what parameters they have:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7411" cache_read_input_tokens="25699" cache_creation="{'ephemeral_5m_input_tokens': 7411, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E2ph7nXk4AxTG7UkHqGY1a">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7411" cache_read_input_tokens="25699" cache_creation="{'ephemeral_5m_input_tokens': 7411, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N3GMSckSBncBynQHEDBm3i">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/real.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7411" cache_read_input_tokens="25699" cache_creation="{'ephemeral_5m_input_tokens': 7411, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E2ph7nXk4AxTG7UkHqGY1a">
+     1→"""Fake command executor for testing TUI command palette."""
+     2→
+     3→from erk_shared.gateway.command_executor.abc import CommandExecutor
+     4→
+     5→
+     6→class FakeCommandExecutor(CommandExecutor):
+     7→    """In-memory fake for testing command execution.
+     8→
+     9→    Tracks all operations performed for assertion in tests.
+    10→    """
+    11→
+    12→    def __init__(self) -&gt; None:
+    13→        """Initialize with empty tracking state."""
+    14→        self._opened_urls: list[str] = []
+    15→        self._copied_texts: list[str] = []
+    16→        self._closed_plans: list[tuple[int, str]] = []
+    17→        self._notifications: list[str] = []
+    18→        self._refresh_count: int = 0
+    19→        self._close_pr_return: list[int] = []
+    20→        self._dispatched_to_queue: list[tuple[int, str]] = []
+    21→
+    22→    @property
+    23→    def opened_urls(self) -&gt; list[str]:
+    24→        """URLs that were opened in browser."""
+    25→        return list(self._opened_urls)
+    26→
+    27→    @property
+    28→    def copied_texts(self) -&gt; list[str]:
+    29→        """Texts that were copied to clipboard."""
+    30→        return list(self._copied_texts)
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01N3GMSckSBncBynQHEDBm3i">
+     1→"""Real implementation of CommandExecutor for production use."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import Any, Protocol
+     5→
+     6→from erk_shared.gateway.command_executor.abc import CommandExecutor
+     7→
+     8→
+     9→class NotifyFn(Protocol):
+    10→    """Protocol for notify function with keyword-only severity parameter."""
+    11→
+    12→    def __call__(self, message: str, severity: str | None) -&gt; None: ...
+    13→
+    14→
+    15→class RealCommandExecutor(CommandExecutor):
+    16→    """Production executor using injected dependencies.
+    17→
+    18→    Uses callables for each operation to decouple from concrete implementations.
+    19→    """
+    20→
+    21→    def __init__(
+    22→        self,
+    23→        *,
+    24→        browser_launch: Callable[[str], Any],
+    25→        clipboard_copy: Callable[[str], Any],
+    26→        close_plan_fn: Callable[[int, str], list[int]],
+    27→        notify_fn: NotifyFn,
+    28→        refresh_fn: Callable[[], None],
+    29→        dispatch_to_queue_fn: Callable[[int, str], None],
+    30→    ) -&gt; None:
+
+... [46 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I see the mismatch. Let me search for all the other instances and check for any additional mismatches in the codebase:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2475" cache_read_input_tokens="33110" cache_creation="{'ephemeral_5m_input_tokens': 2475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01673cntBzGRryenqUZPk11K">
+    <param name="pattern">\.dispatch_to_queue\(</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2475" cache_read_input_tokens="33110" cache_creation="{'ephemeral_5m_input_tokens': 2475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011pCWTkt4SKfChCpzYomAWX">
+    <param name="pattern">self\._executor\.close_plan\(</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2475" cache_read_input_tokens="33110" cache_creation="{'ephemeral_5m_input_tokens': 2475, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01673cntBzGRryenqUZPk11K">
+No matches found
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <tool_result tool="toolu_011pCWTkt4SKfChCpzYomAWX">
+src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_plan(pr_number, pr_url)
+  </tool_result>
+  <assistant>Now let me check what type of `_executor` is being used and verify the full context of the mismatch:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="546" cache_read_input_tokens="35585" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATkxkkskGXQpvQquRKqPaj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="546" cache_read_input_tokens="35585" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ATkxkkskGXQpvQquRKqPaj">
+     1→"""Modal screen showing detailed plan information as an Action Hub."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from collections.abc import Callable
+     7→from pathlib import Path
+     8→from typing import TYPE_CHECKING
+     9→
+    10→from textual import work
+    11→from textual.app import ComposeResult
+    12→from textual.binding import Binding
+    13→from textual.containers import Container, Vertical
+    14→from textual.screen import ModalScreen
+    15→from textual.timer import Timer
+    16→from textual.widgets import Label
+    17→
+    18→from erk.tui.commands.provider import PlanCommandProvider
+    19→from erk.tui.commands.registry import get_copy_text
+    20→from erk.tui.commands.types import CommandContext
+    21→from erk.tui.data.types import PrRowData
+    22→from erk.tui.views.types import ViewMode
+    23→from erk.tui.widgets.clickable_link import ClickableLink
+    24→from erk.tui.widgets.command_output import CommandOutputPanel
+    25→from erk.tui.widgets.copyable_label import CopyableLabel
+    26→from erk_shared.gateway.command_executor.abc import CommandExecutor
+    27→
+    28→if TYPE_CHECKING:
+    29→    from erk_shared.gateway.browser.abc import BrowserLauncher
+    30→    from erk_shared.gateway.clipboard.abc import Clipboard
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Let me search for where `_executor` is defined and initialized in this file:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1477" cache_read_input_tokens="36131" cache_creation="{'ephemeral_5m_input_tokens': 1477, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BxYmB3Bq8Cy67tWt7m6TaF">
+    <param name="pattern">self\._executor\s*=</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1477" cache_read_input_tokens="36131" cache_creation="{'ephemeral_5m_input_tokens': 1477, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Meq9yTyXB5YkuyfsUFvUfX">
+    <param name="pattern">_executor.*CommandExecutor</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1477" cache_read_input_tokens="36131" cache_creation="{'ephemeral_5m_input_tokens': 1477, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BxYmB3Bq8Cy67tWt7m6TaF">
+253:        self._executor = executor
+  </tool_result>
+  <tool_result tool="toolu_01Meq9yTyXB5YkuyfsUFvUfX">
+26:from erk_shared.gateway.command_executor.abc import CommandExecutor
+  </tool_result>
+  <assistant>Let me get the constructor context for the PlanDetailScreen:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="507" cache_read_input_tokens="37608" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013C8WF25cZbHbwMC82yjFJN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">235</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="507" cache_read_input_tokens="37608" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="130" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013C8WF25cZbHbwMC82yjFJN">
+   235→        cmux_integration: bool = False,
+   236→    ) -&gt; None:
+   237→        """Initialize with plan row data.
+   238→
+   239→        Args:
+   240→            row: PrRowData containing all plan information
+   241→            clipboard: Optional clipboard interface for copy operations
+   242→            browser: Optional browser launcher interface for opening URLs
+   243→            executor: Optional command executor for palette commands
+   244→            repo_root: Path to repository root for running commands
+   245→            auto_open_palette: If True, open command palette on mount
+   246→            view_mode: The current view mode (for generating correct copy text)
+   247→            cmux_integration: Whether cmux workspace integration is enabled
+   248→        """
+   249→        super().__init__()
+   250→        self._row = row
+   251→        self._clipboard = clipboard
+   252→        self._browser = browser
+   253→        self._executor = executor
+   254→        self._repo_root = repo_root
+   255→        self._view_mode = view_mode
+   256→        self._cmux_integration = cmux_integration
+   257→        self._output_panel: CommandOutputPanel | None = None
+   258→        self._command_running = False
+   259→        self._auto_open_palette = auto_open_palette
+   260→        self._running_process: subprocess.Popen[str] | None = None
+   261→        self._stream_timeout_timer: Timer | None = None
+   262→        self._stream_timeout_seconds: float = 0.0
+   263→        self._on_success_callback: Callable[[], None] | None = None
+   264→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me search for other potential mismatches - any other functions with `plan_id` parameters that might be receiving renamed arguments:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="665" cache_read_input_tokens="38115" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MVb7PgeTAXSk7Qs4i3eApt">
+    <param name="command">grep -r "def.*plan_id" --include="*.py" src packages tests 2&gt;/dev/null | grep -v ".pyc"</param>
+    <param name="description">Find all function definitions with plan_id parameter</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="665" cache_read_input_tokens="38115" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MVb7PgeTAXSk7Qs4i3eApt">
+packages/erk-statusline/tests/test_statusline.py:    def test_plan_ref_json_non_numeric_plan_id_returns_none(self) -&gt; None:
+packages/erk-shared/tests/unit/github/test_objective_issues.py:    def test_non_numeric_plan_id_returns_error(self, tmp_path: Path) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py:def test_sets_plan_id_when_branch_has_plan(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py:def test_returns_state_unchanged_when_plan_id_none(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/land/test_land_learn.py:def test_returns_early_when_plan_id_is_none(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:def test_no_plan_id_from_branch(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py:def test_plan_id_from_impl_folder(tmp_path: Path) -&gt; None:
+tests/unit/plan_store/test_planned_pr_backend.py:def test_resolve_plan_id_for_branch_finds_created_pr() -&gt; None:
+tests/unit/plan_store/test_planned_pr_backend.py:def test_resolve_plan_id_for_branch_returns_none_for_unknown() -&gt; None:
+tests/unit/plan_store/test_plan_backend_interface.py:def test_plan_identifier_is_string(
+tests/commands/pr/test_log.py:def test_log_with_invalid_plan_identifier() -&gt; None:
+  </tool_result>
+  <assistant>Good! The `bash` grep confirms we only have the two methods from CommandExecutor. Now let me look for any other methods that might have been missed. Let me search for calls with mismatched parameter names more broadly:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="959" cache_read_input_tokens="38780" cache_creation="{'ephemeral_5m_input_tokens': 959, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VDM4S84XRYHjqamrCiK9Ld">
+    <param name="command">grep -rn "close_plan.*pr_number\|dispatch_to_queue.*pr_number" --include="*.py" /home/runner/work/erk/erk 2&gt;/dev/null | head -30</param>
+    <param name="description">Find calls with pr_number parameter</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="959" cache_read_input_tokens="38780" cache_creation="{'ephemeral_5m_input_tokens': 959, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VDM4S84XRYHjqamrCiK9Ld">
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py:62:def test_close_plan_returns_configured_pr_numbers() -&gt; None:
+/home/runner/work/erk/erk/tests/fakes/gateway/pr_service.py:70:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py:68:    def close_plan(self, pr_number: int, pr_url: str) -&gt; list[int]:
+/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py:81:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+/home/runner/work/erk/erk/tests/fakes/gateway/plan_data_provider.py:122:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr_service/real.py:129:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py:51:    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+/home/runner/work/erk/erk/src/erk/tui/actions/palette.py:206:                self._dispatch_to_queue_async(op_id, row.pr_number)
+/home/runner/work/erk/erk/src/erk/tui/operations/workers.py:326:    def _dispatch_to_queue_async(self: ErkDashApp, op_id: str, pr_number: int) -&gt; None:
+/home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py:519:        app._dispatch_to_queue_async(op_id, row.pr_number)
+/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_plan(pr_number, pr_url)
+/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py:847:                    self.app._dispatch_to_queue_async(op_id, row.pr_number)
+  </tool_result>
+  <assistant>Now let me check the PrService methods to see if there are similar mismatches:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2992" cache_read_input_tokens="39739" cache_creation="{'ephemeral_5m_input_tokens': 2992, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AZLuRCNeBbVEiYadM7GfUz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2992" cache_read_input_tokens="39739" cache_creation="{'ephemeral_5m_input_tokens': 2992, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wmfn3ghn1uCp7FnTQCkLBo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr_service/real.py</param>
+    <param name="offset">120</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2992" cache_read_input_tokens="39739" cache_creation="{'ephemeral_5m_input_tokens': 2992, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AZLuRCNeBbVEiYadM7GfUz">
+     1→"""Domain service ABC for PR operations (no TUI type dependencies)."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.browser.abc import BrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+     9→
+    10→
+    11→class PrService(ABC):
+    12→    """Abstract base class for PR domain operations.
+    13→
+    14→    Contains operations that are independent of TUI display concerns:
+    15→    closing PRs, dispatching, fetching content, and GitHub PR data.
+    16→    No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path."""
+    23→        ...
+    24→
+    25→    @property
+    26→    @abstractmethod
+    27→    def clipboard(self) -&gt; Clipboard:
+    28→        """Get the clipboard interface for copy operations."""
+    29→        ...
+    30→
+
+... [114 lines omitted] ...
+
+   124→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <tool_result tool="toolu_01Wmfn3ghn1uCp7FnTQCkLBo">
+   120→            if pr.state == "OPEN":
+   121→                self._http_client.patch(
+   122→                    f"repos/{owner}/{repo}/pulls/{pr.number}",
+   123→                    data={"state": "closed"},
+   124→                )
+   125→                closed_prs.append(pr.number)
+   126→
+   127→        return closed_prs
+   128→
+   129→    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+   130→        """Dispatch a PR to the implementation queue.
+   131→
+   132→        Args:
+   133→            pr_number: The PR number to dispatch
+   134→            pr_url: The PR URL (unused, kept for interface consistency)
+   135→        """
+   136→        subprocess.run(
+   137→            ["erk", "pr", "dispatch", str(pr_number), "-f"],
+   138→            cwd=self._location.root,
+   139→            check=True,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good! Now let me check the fakes to see what those have as parameters:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2331" cache_read_input_tokens="42731" cache_creation="{'ephemeral_5m_input_tokens': 2331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WkHAS2b9wmtCnsC5BHxVD7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/pr_service.py</param>
+    <param name="offset">60</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2331" cache_read_input_tokens="42731" cache_creation="{'ephemeral_5m_input_tokens': 2331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Mqbq3xsrppCMvQyuPiQ31B">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/plan_data_provider.py</param>
+    <param name="offset">115</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2331" cache_read_input_tokens="42731" cache_creation="{'ephemeral_5m_input_tokens': 2331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WkHAS2b9wmtCnsC5BHxVD7">
+    60→
+    61→        Args:
+    62→            pr_number: The PR number to close
+    63→            pr_url: The PR URL (unused in fake)
+    64→
+    65→        Returns:
+    66→            Empty list (no PRs closed in fake)
+    67→        """
+    68→        return []
+    69→
+    70→    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+    71→        """Fake dispatch to queue implementation.
+    72→
+    73→        Args:
+    74→            pr_number: The PR number to dispatch
+    75→            pr_url: The PR URL (unused in fake)
+    76→        """
+    77→
+    78→    def fetch_pr_content(self, pr_number: int, pr_body: str) -&gt; str | None:
+    79→        """Fake PR content fetch implementation.
+    80→
+    81→        Args:
+    82→            pr_number: The GitHub PR number
+    83→            pr_body: The PR body (unused in fake)
+    84→
+    85→        Returns:
+    86→            The configured PR content for this PR, or None
+    87→        """
+    88→        return self._pr_content_by_pr_number.get(pr_number)
+    89→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Mqbq3xsrppCMvQyuPiQ31B">
+   115→
+   116→        Returns:
+   117→            Empty list (no PRs closed in fake)
+   118→        """
+   119→        self._plans = [p for p in self._plans if p.pr_number != pr_number]
+   120→        return []
+   121→
+   122→    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+   123→        """Fake dispatch to queue implementation.
+   124→
+   125→        Tracks the dispatch without actually dispatching.
+   126→
+   127→        Args:
+   128→            pr_number: The PR number to dispatch
+   129→            pr_url: The PR URL (unused in fake)
+   130→        """
+   131→        # Just track the call - actual dispatch is complex and not needed for UI tests
+   132→        pass
+   133→
+   134→    def fetch_runs(self) -&gt; list[RunRowData]:
+   135→        """Return canned run data.
+   136→
+   137→        Returns:
+   138→            List of canned RunRowData
+   139→        """
+   140→        return list(self._runs)
+   141→
+   142→    def set_runs(self, runs: list[RunRowData]) -&gt; None:
+   143→        """Update the canned run data.
+   144→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have a clear picture. Let me search for any calls to `close_pr` on PrService to see if those also have mismatches:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1229" cache_read_input_tokens="45062" cache_creation="{'ephemeral_5m_input_tokens': 1229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BrWZcWvqCdmE19gqhizTeq">
+    <param name="command">grep -rn "\.close_pr\(" --include="*.py" /home/runner/work/erk/erk 2&gt;/dev/null</param>
+    <param name="description">Find all close_pr calls</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1229" cache_read_input_tokens="45062" cache_creation="{'ephemeral_5m_input_tokens': 1229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BrWZcWvqCdmE19gqhizTeq">
+Exit code 2
+  </tool_result>
+  <assistant>Let me try a different approach:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="203" cache_read_input_tokens="46291" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Sy2MHNbHjJqv4rUVathqvv">
+    <param name="pattern">\.close_pr\(</param>
+    <param name="type">py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="203" cache_read_input_tokens="46291" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sy2MHNbHjJqv4rUVathqvv">
+tests/unit/fakes/test_fake_github.py:1137:    ops.close_pr(sentinel_path(), pr_number)
+tests/unit/fakes/test_fake_github.py:1150:    ops.close_pr(sentinel_path(), 999)
+tests/unit/gateways/remote_github/test_real_remote_github.py:730:    remote.close_pr(owner="o", repo="r", number=42)
+tests/tui/data/test_provider.py:534:        closed_prs = service.close_pr(123, "https://github.com/test/repo/issues/123")
+tests/tui/data/test_provider.py:610:        closed_prs = service.close_pr(123, "https://github.com/test/repo/issues/123")
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:252:        self._github.close_pr(repo_root, pr_num)
+src/erk/cli/commands/wt/delete_cmd.py:100:        ctx.github.close_pr(repo_root, pr.number)
+src/erk/cli/commands/navigation_helpers.py:107:            ctx.github.close_pr(repo_root, pr_details.number)
+src/erk/cli/commands/pr/close_cmd.py:45:            remote.close_pr(owner=repo_id.owner, repo=repo_id.repo, number=pr.number)
+src/erk/tui/operations/workers.py:39:            closed_prs = self._service.close_pr(pr_number, pr_url)
+src/erk/core/workflow_smoke_test.py:153:            ctx.github.close_pr(repo.root, pr_number)
+  </tool_result>
+  <assistant>Good! Now let me check the specific call in workers.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="724" cache_read_input_tokens="46494" cache_creation="{'ephemeral_5m_input_tokens': 724, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HUCcB2XtG934JZcTAAHBmN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">30</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="724" cache_read_input_tokens="46494" cache_creation="{'ephemeral_5m_input_tokens': 724, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HUCcB2XtG934JZcTAAHBmN">
+    30→
+    31→        Args:
+    32→            op_id: Operation identifier for status bar tracking
+    33→            pr_number: The plan identifier
+    34→            pr_url: The plan URL
+    35→        """
+    36→        # Error boundary: catch all exceptions from the close operation to display
+    37→        # them as toast notifications rather than crashing the TUI.
+    38→        try:
+    39→            closed_prs = self._service.close_pr(pr_number, pr_url)
+    40→            # Success toast
+    41→            if closed_prs:
+    42→                msg = f"Closed PR #{pr_number} (and {len(closed_prs)} linked PRs)"
+    43→            else:
+    44→                msg = f"Closed PR #{pr_number}"
+    45→            self.call_from_thread(self._finish_operation, op_id=op_id)
+    46→            self.call_from_thread(self.notify, msg, timeout=3)
+    47→            # Trigger data refresh
+    48→            self.call_from_thread(self.action_refresh)
+    49→        except Exception as e:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! This is a match. PrService.close_pr uses `pr_number` but is being called with positional arguments. Let me check if there are calls using keyword arguments:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="540" cache_read_input_tokens="47218" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YVHyvooHJqiFZSaiE5QsgS">
+    <param name="command">grep -A2 "\.close_pr\|\.dispatch_to_queue" /home/runner/work/erk/erk/src/erk/tui/operations/workers.py 2&gt;/dev/null | head -30</param>
+    <param name="description">Check workers.py for close_pr and dispatch calls</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="540" cache_read_input_tokens="47218" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="175" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YVHyvooHJqiFZSaiE5QsgS">
+            closed_prs = self._service.close_pr(pr_number, pr_url)
+            # Success toast
+            if closed_prs:
+  </tool_result>
+  <assistant>Let me check the full workers.py for all method calls and whether they use keyword arguments:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="360" cache_read_input_tokens="47758" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0159XLgyd5beHbzC7E6MFzi8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="360" cache_read_input_tokens="47758" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0159XLgyd5beHbzC7E6MFzi8">
+     1→"""Background worker methods for TUI operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→import uuid
+     8→from typing import TYPE_CHECKING
+     9→
+    10→from textual import work
+    11→
+    12→from erk.tui.operations.logic import extract_learn_plan_number, last_output_line
+    13→
+    14→if TYPE_CHECKING:
+    15→    from erk.tui.app import ErkDashApp
+    16→
+    17→
+    18→class BackgroundWorkersMixin:
+    19→    """Mixin providing all @work(thread=True) background worker methods.
+    20→
+    21→    Methods access self._provider, self._run_streaming_operation,
+    22→    self._start_operation, self._finish_operation, self._update_operation,
+    23→    self.call_from_thread, self.notify, and self.action_refresh
+    24→    which are provided by ErkDashApp at runtime through inheritance.
+    25→    """
+    26→
+    27→    @work(thread=True)
+    28→    def _close_pr_async(self: ErkDashApp, op_id: str, pr_number: int, pr_url: str) -&gt; None:
+    29→        """Close plan in background thread with toast notifications.
+    30→
+
+... [55 lines omitted] ...
+
+    36→        # Error boundary: catch all exceptions from the close operation to display
+    49→        except Exception as e:
+    50→            # Error toast
+    54→                f"Failed to close PR #{pr_number}: {e}",
+    55→                severity="error",
+  </tool_result>
+  <assistant>Let me continue reading workers.py to find the dispatch call:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1324" cache_read_input_tokens="48118" cache_creation="{'ephemeral_5m_input_tokens': 1324, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Czm2DeDjBe6fDytvwS5hBA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">310</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1324" cache_read_input_tokens="48118" cache_creation="{'ephemeral_5m_input_tokens': 1324, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Czm2DeDjBe6fDytvwS5hBA">
+   310→            if obj_result.success:
+   311→                self.call_from_thread(
+   312→                    self.notify, f"Updated objective #{objective_issue}", timeout=3
+   313→                )
+   314→            else:
+   315→                error_msg = last_output_line(obj_result)
+   316→                self.call_from_thread(
+   317→                    self.notify,
+   318→                    f"Failed to update objective #{objective_issue}: {error_msg}",
+   319→                    severity="error",
+   320→                    timeout=5,
+   321→                )
+   322→
+   323→        self.call_from_thread(self._finish_operation, op_id=op_id)
+   324→
+   325→    @work(thread=True)
+   326→    def _dispatch_to_queue_async(self: ErkDashApp, op_id: str, pr_number: int) -&gt; None:
+   327→        """Dispatch plan to queue in background thread with toast."""
+   328→        result = self._run_streaming_operation(
+   329→            op_id=op_id,
+   330→            command=["erk", "pr", "dispatch", str(pr_number)],
+   331→        )
+   332→        self.call_from_thread(self._finish_operation, op_id=op_id)
+   333→        if result.success:
+   334→            self.call_from_thread(self.notify, f"Dispatched PR #{pr_number} to queue", timeout=3)
+   335→            self.call_from_thread(self.action_refresh)
+   336→        else:
+   337→            error_msg = last_output_line(result)
+   338→            self.call_from_thread(
+   339→                self.notify,
+
+... [15 lines omitted] ...
+
+   340→                f"Failed to dispatch PR #{pr_number}: {error_msg}",
+   341→                severity="error",
+  </tool_result>
+  <assistant>Great! Now let me create a comprehensive search to find all instances where functions with `plan_id` parameters are being called, and any calls using keyword arguments with `pr_id` or `pr_number` that don't match:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="942" cache_read_input_tokens="49442" cache_creation="{'ephemeral_5m_input_tokens': 942, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MD6UEfh9SN31iSZQjpRmw2">
+    <param name="command">grep -n "plan_id=" --include="*.py" -r /home/runner/work/erk/erk/src /home/runner/work/erk...[truncated 1 chars]...er/work/erk/erk/packages 2&gt;/dev/null | grep -E "(close_plan|dispatch_to_queue)" | head -20</param>
+    <param name="description">Find keyword argument calls with plan_id</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="942" cache_read_input_tokens="49442" cache_creation="{'ephemeral_5m_input_tokens': 942, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MD6UEfh9SN31iSZQjpRmw2">
+
+  </tool_result>
+  <assistant>Now let me create a comprehensive summary based on what I've found:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="253" cache_read_input_tokens="50384" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016jpAfTGwsBgoqRWUuGueA2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="253" cache_read_input_tokens="50384" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016jpAfTGwsBgoqRWUuGueA2">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <assistant>Let me create a final comprehensive verification to make sure I have all the mismatches:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="50637" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MQEUJ38oG4Ho5PNUUthoeu">
+    <param name="command">find . -name "*.py" -type f | xargs grep -l "def close_plan\|def dispatch_to_queue" | grep -v __pycache__</param>
+    <param name="description">Find all files defining close_plan or dispatch_to_queue</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="50637" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MQEUJ38oG4Ho5PNUUthoeu">
+./tests/fakes/gateway/pr_service.py
+./tests/fakes/gateway/command_executor.py
+./tests/fakes/gateway/plan_data_provider.py
+./packages/erk-shared/src/erk_shared/gateway/command_executor/real.py
+./packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py
+./packages/erk-shared/src/erk_shared/gateway/pr_service/real.py
+./packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py
+  </tool_result>
+  <assistant>Perfect! Now let me create a detailed report by examining the exact state of parameters in each implementation:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="330" cache_read_input_tokens="50905" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018F7BZ6YY2ZFyvRKFiLxswM">
+    <param name="command">echo "=== ABC (CommandExecutor) ===" &amp;&amp; grep -A2 "def close_plan\|def dispatch_to_queue" p...[truncated 259 chars]...&amp; grep -A2 "def close_plan\|def dispatch_to_queue" tests/fakes/gateway/command_executor.py</param>
+    <param name="description">Compare CommandExecutor implementations</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="330" cache_read_input_tokens="50905" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018F7BZ6YY2ZFyvRKFiLxswM">
+=== ABC (CommandExecutor) ===
+    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+        """Close plan and linked PRs.
+
+--
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+        """Dispatch plan to queue for remote AI implementation.
+
+
+=== Real (CommandExecutor) ===
+    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+        """Close plan and linked PRs."""
+        return self._close_plan_fn(plan_id, plan_url)
+--
+    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+        """Dispatch plan to implementation queue."""
+        self._dispatch_to_queue_fn(plan_id, plan_url)
+
+=== Fake (CommandExecutor) ===
+    def close_plan(self, pr_number: int, pr_url: str) -&gt; list[int]:
+        """Track plan close and return configured PRs."""
+        self._closed_plans.append((pr_number, pr_url))
+--
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+        """Track queue dispatch."""
+        self._dispatched_to_queue.append((pr_number, pr_url))
+  </tool_result>
+  <assistant>Excellent! Now let me check PrService as well:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="741" cache_read_input_tokens="51235" cache_creation="{'ephemeral_5m_input_tokens': 741, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N1P5Z8GTxZDMLwTJVeLqxV">
+    <param name="command">echo "=== ABC (PrService) ===" &amp;&amp; grep -A1 "def close_pr\|def dispatch_to_queue" packages/...[truncated 217 chars]...) ===" &amp;&amp; grep -A1 "def close_pr\|def dispatch_to_queue" tests/fakes/gateway/pr_service.py</param>
+    <param name="description">Compare PrService implementations</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="741" cache_read_input_tokens="51235" cache_creation="{'ephemeral_5m_input_tokens': 741, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N1P5Z8GTxZDMLwTJVeLqxV">
+=== ABC (PrService) ===
+    def close_pr(self, pr_number: int, pr_url: str) -&gt; list[int]:
+        """Close a PR and its linked PRs.
+--
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+        """Dispatch a PR to the implementation queue.
+
+=== Real (PrService) ===
+    def close_pr(self, pr_number: int, pr_url: str) -&gt; list[int]:
+        """Close a PR and its linked PRs using direct HTTP calls.
+--
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+        """Dispatch a PR to the implementation queue.
+
+=== Fake (PrService) ===
+    def close_pr(self, pr_number: int, pr_url: str) -&gt; list[int]:
+        """Fake close PR implementation.
+--
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:
+        """Fake dispatch to queue implementation.
+  </tool_result>
+  <assistant>Perfect! Now I have the complete picture. Let me compile the final report:
+
+## Summary Report: LibCST Rename Mismatch Analysis
+
+I've completed a thorough search of the codebase for functions with `plan_id` parameters that may have been incorrectly renamed by the LibCST agent. Here are my findings:
+
+### CRITICAL MISMATCH FOUND
+
+**CommandExecutor Interface - Parameter Name Mismatch**
+
+The `CommandExecutor` ABC has **NOT been fully updated**. The fake implementation was renamed but the abstract interface and real implementations were not.
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py`**
+- Lines 32-42: `close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]`
+- Lines 60-67: `dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None`
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/real.py`**
+- Line 56: `def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:`
+- Line 68: `def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:`
+
+**File: `/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py`** (RENAMED)
+- Line 68: `def close_plan(self, pr_number: int, pr_url: str) -&gt; list[int]:` 
+- Line 81: `def dispatch_to_queue(self, pr_number: int, pr_url: str) -&gt; None:`
+
+### Call Site Mismatch
+
+**File: `/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py`**
+- Line 513: `closed_prs = self._executor.close_plan(pr_number, pr_url)`
+
+This call is using positional arguments, so it works. However, the parameter names are now **inconsistent** across the interface:
+
+- ABC and Real implementation: `plan_id`
+- Fake implementation: `pr_number`
+
+### Test Files Affected
+
+**File: `/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py`**
+- Lines 25-26, 58, 66: Tests calling `executor.close_plan(123, "...")` with positional arguments (works, but inconsistent)
+
+### CORRECTLY RENAMED (No Issues)
+
+The `PrService` interface was correctly and fully renamed:
+
+**Correct implementations** (all have `pr_number`):
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr_service/abc.py` - Lines 38, 51
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr_service/real.py` - Lines 117, 129
+- `/home/runner/work/erk/erk/tests/fakes/gateway/pr_service.py` - Lines 70
+- `/home/runner/work/erk/erk/tests/fakes/gateway/plan_data_provider.py` - Line 122
+
+All PrService implementations consistently use `pr_number` parameter names.
+
+### Root Cause
+
+The LibCST agent **partially renamed** the `CommandExecutor` interface:
+- It renamed the fake implementation: `plan_id` → `pr_number`
+- It **did NOT rename** the ABC interface and real implementation (they still have `plan_id`)
+
+This creates an interface contract mismatch where the fake doesn't match its ABC.
+
+### Files Requiring Fixes
+
+1. **`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py`**
+   - Rename `plan_id` → `plan_number` in `close_plan()` method (line 32)
+   - Rename `plan_id` → `plan_number` in `dispatch_to_queue()` method (line 60)
+
+2. **`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/real.py`**
+   - Rename `plan_id` → `plan_number` in `close_plan()` method (line 56)
+   - Rename `plan_id` → `plan_number` in `dispatch_to_queue()` method (line 68)
+   - Update parameter name in function calls (lines 58, 70)
+
+Note: The correct parameter name should be `plan_number` (not `pr_number`) to avoid confusion with the `pr_url` parameter which refers to GitHub PR URLs, not plan identifiers.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="561" cache_read_input_tokens="51976" cache_creation="{'ephemeral_5m_input_tokens': 561, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

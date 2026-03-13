@@ -1,0 +1,967 @@
+<session>
+  <meta source="agent-a297c44" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform systematic method renames across the entire codebase using LibCST.
+
+The methods to rename are on the `ManagedPrBackend` class (ABC in `packages/erk-shared/src/erk_shared/plan_store/backend.py`) and its implementation `GitHubManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`.
+
+**Method renames to perform:**
+
+| Old Method | New Method |
+|-----------|-----------|
+| `get_plan` | `get_managed_pr` |
+| `list_plans` | `list_managed_prs` |
+| `create_plan` | `create_managed_pr` |
+| `close_plan` | `close_managed_pr` |
+| `update_plan_content` | `update_managed_pr_content` |
+| `update_plan_title` | `update_managed_pr_title` |
+| `get_plan_for_branch` | `get_managed_pr_for_branch` |
+| `resolve_plan_id_for_branch` | `resolve_pr_number_for_branch` |
+| `find_sessions_for_plan` | `find_sessions_for_managed_pr` |
+
+**Methods that should NOT be renamed (keep as-is):**
+- `ensure_plan_header` 
+- `get_provider_name`
+- `get_metadata_field`
+- `get_all_metadata_fields`
+- `get_comments`
+- `update_metadata`
+- `add_comment`
+- `add_label`
+- `post_event`
+- `_convert_to_plan` (private helper)
+
+The renames should cover:
+1. Method definitions (def statements) in both `backend.py` and `planned_pr.py`
+2. All method call sites across the codebase: `something.get_plan(...)` → `something.get_managed_pr(...)`  
+3. Self-calls within the class: `self.get_plan(...)` → `self.get_managed_pr(...)`
+4. String literals that reference these method names
+
+Search scope: `src/`, `packages/`, `tests/`
+
+IMPORTANT: These are METHOD names on objects, not standalone functions. The old names are common words so you must ONLY rename them when they appear as:
+- Method definitions (`def get_plan(self, ...`)
+- Method calls on objects (`something.get_plan(...)`, `self.get_plan(...)`, `backend.get_plan(...)`)
+- Do NOT rename standalone function calls, standalone variable names, or imports that happen to match
+- Do NOT rename dict key strings or JSON fields
+
+The simplest approach: Use sed/Edit for the method definitions in the two core files, then use grep + sed across the codebase for `.old_method(` → `.new_method(` patterns on each method name.
+</user>
+  <assistant>I'll help you perform these systematic method renames across the codebase. Let me start by understanding the structure and then create a careful renaming strategy.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="6519" cache_read_input_tokens="18902" cache_creation="{'ephemeral_5m_input_tokens': 6519, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KqWXVXahD4554VBahTkuCM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="6519" cache_read_input_tokens="18902" cache_creation="{'ephemeral_5m_input_tokens': 6519, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MrZQA7tePXmAJbAXhCgFRz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="6519" cache_read_input_tokens="18902" cache_creation="{'ephemeral_5m_input_tokens': 6519, 'ephemeral_1h_input_tokens': 0}" output_tokens="190" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KqWXVXahD4554VBahTkuCM">
+     1→"""Abstract interface for plan storage backends.
+     2→
+     3→ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+    11→    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_plan(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [442 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+   165→            RuntimeError: If provider fails or plan not found
+   196→            RuntimeError: If plan not found
+   201→            raise RuntimeError(msg)
+   310→            RuntimeError: If provider fails
+   329→            PlanHeaderNotFoundError: If plan has no plan-header metadata block
+   330→            RuntimeError: If provider fails or plan not found
+   352→            RuntimeError: If plan not found or update fails
+   365→            RuntimeError: If provider fails, plan not found, or invalid identifier
+   384→            RuntimeError: If plan not found or update fails
+   406→            RuntimeError: If provider fails or plan not found
+   425→            RuntimeError: If provider fails or plan not found
+   442→            RuntimeError: If plan not found
+   464→            RuntimeError: If provider fails or plan not found
+  </tool_result>
+  <tool_result tool="toolu_01MrZQA7tePXmAJbAXhCgFRz">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "[erk-pr]" title prefix identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
+
+... [693 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+   243→            RuntimeError: If PR not found
+   249→            raise RuntimeError(msg)
+   286→            RuntimeError: If branch_name not in metadata or creation fails
+   290→            raise RuntimeError("branch_name is required in metadata for GitHubManagedPrBackend")
+   372→        # Add labels with retry on transient errors
+   382→                _logger.warning(
+   383→                    "Failed to add labels to PR #%d: %s",
+   385→                    label_result.failed_labels,
+   467→            PlanHeaderNotFoundError: If PR body has no plan-header metadata block
+   468→            RuntimeError: If PR not found or update fails
+   474→            raise RuntimeError(msg)
+   478→            raise PlanHeaderNotFoundError("plan-header block not found in PR body")
+   518→            RuntimeError: If PR not found
+   524→            raise RuntimeError(msg)
+   555→            RuntimeError: If PR not found or update fails
+   561→            raise RuntimeError(msg)
+   584→            RuntimeError: If PR not found
+   590→            raise RuntimeError(msg)
+   610→            RuntimeError: If PR not found
+   616→            raise RuntimeError(msg)
+   635→            RuntimeError: If PR not found
+   641→            raise RuntimeError(msg)
+   698→            RuntimeError: If PR not found
+  </tool_result>
+  <assistant>Now let me search for all call sites of these methods across the codebase to understand the scope:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CrX4fTZjYbW6hmVZCndfwR">
+    <param name="pattern">\.get_plan\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016iwKyu8w2voLbaYkGxQD6A">
+    <param name="pattern">\.list_plans\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014jLY7hNFaKQFFBP7zAaZHT">
+    <param name="pattern">\.create_plan\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QCrG1otK61tYRQvyz1D2ku">
+    <param name="pattern">\.close_plan\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KYADdgqxABHCJycdFLkTLY">
+    <param name="pattern">\.update_plan_content\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N8gtvxXn6pLHobK4impUKB">
+    <param name="pattern">\.update_plan_title\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SYowpvRQ5ogx6as1poN314">
+    <param name="pattern">\.get_plan_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LKsDTRoHnF6j95JHQfno7F">
+    <param name="pattern">\.resolve_plan_id_for_branch\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LF6v8b5j5HxXQtWbLxJAmy">
+    <param name="pattern">\.find_sessions_for_plan\(</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14577" cache_read_input_tokens="25421" cache_creation="{'ephemeral_5m_input_tokens': 14577, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014jLY7hNFaKQFFBP7zAaZHT">
+Found 11 files
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py
+tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+packages/erk-shared/src/erk_shared/context/helpers.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+  </tool_result>
+  <tool_result tool="toolu_01N8gtvxXn6pLHobK4impUKB">
+Found 2 files
+src/erk/cli/commands/exec/scripts/plan_update.py
+tests/unit/plan_store/test_plan_backend_interface.py
+  </tool_result>
+  <tool_result tool="toolu_01QCrG1otK61tYRQvyz1D2ku">
+Found 8 files
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/fakes/test_fake_command_executor.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/exec/scripts/close_pr.py
+src/erk/cli/commands/exec/scripts/close_prs.py
+  </tool_result>
+  <tool_result tool="toolu_01SYowpvRQ5ogx6as1poN314">
+Found 5 files
+tests/unit/plan_store/test_planned_pr_backend.py
+src/erk/core/plan_context_provider.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+  </tool_result>
+  <tool_result tool="toolu_01CrX4fTZjYbW6hmVZCndfwR">
+Found 20 files
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/plan_store/test_plan_backend_interface.py
+src/erk/cli/commands/pr/metadata_helpers.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/branch/create_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_016iwKyu8w2voLbaYkGxQD6A">
+Found 3 files
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/plan_store/test_plan_backend_interface.py
+src/erk/cli/commands/wt/delete_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01LKsDTRoHnF6j95JHQfno7F">
+Found 13 files
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+tests/unit/plan_store/test_planned_pr_backend.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/reconcile_pipeline.py
+src/erk/cli/commands/pr/view/operation.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/land_stack.py
+src/erk/cli/commands/implement_shared.py
+  </tool_result>
+  <tool_result tool="toolu_01LF6v8b5j5HxXQtWbLxJAmy">
+Found 4 files
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+tests/unit/plan_store/test_plan_backend_interface.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/land_learn.py
+  </tool_result>
+  <tool_result tool="toolu_01KYADdgqxABHCJycdFLkTLY">
+Found 3 files
+src/erk/cli/commands/exec/scripts/plan_update.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/plan_store/test_plan_backend_interface.py
+  </tool_result>
+  <assistant>Good! I can see the scope. Now I'll use a simple approach: I'll perform sed-style replacements using the Read/Write tool for each method call pattern. Let me start by creating a systematic plan and execute it:
+
+1. First, rename the method definitions in the two core files
+2. Then, rename all call sites across the codebase
+
+Let me start with the ABC definitions:</assistant>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FhAQ57s648m91yQo4X9Qv3">
+    <param name="command">sed -i 's/def get_plan(/def get_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename get_plan method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015uNkAi9zC72rmpDkAuhdzK">
+    <param name="command">sed -i 's/def list_plans(/def list_managed_prs(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename list_plans method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VBr8TkNkxWmpVMPj5S4Dh6">
+    <param name="command">sed -i 's/def create_plan(/def create_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename create_plan method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013KtUNkSPgfGmT79SY7EjA8">
+    <param name="command">sed -i 's/def close_plan(/def close_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename close_plan method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Sj7XGyezpNz4bybpdnpe4N">
+    <param name="command">sed -i 's/def update_plan_content(/def update_managed_pr_content(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename update_plan_content method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XpPVzkf8v44Ukxv21kKqi5">
+    <param name="command">sed -i 's/def update_plan_title(/def update_managed_pr_title(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename update_plan_title method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MfVewc1z7BkBWGvbX6LAqf">
+    <param name="command">sed -i 's/def get_plan_for_branch(/def get_managed_pr_for_branch(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename get_plan_for_branch method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UUFUaHEbA5FW5FDR1HFUQj">
+    <param name="command">sed -i 's/def resolve_plan_id_for_branch(/def resolve_pr_number_for_branch(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename resolve_plan_id_for_branch method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019zDhv5k3B5dT458R5yf2Kc">
+    <param name="command">sed -i 's/def find_sessions_for_plan(/def find_sessions_for_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Rename find_sessions_for_plan method definition in ABC</param>
+  </tool_use>
+  <usage input_tokens="539" cache_creation_input_tokens="2155" cache_read_input_tokens="39998" cache_creation="{'ephemeral_5m_input_tokens': 2155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FhAQ57s648m91yQo4X9Qv3">
+
+  </tool_result>
+  <tool_result tool="toolu_015uNkAi9zC72rmpDkAuhdzK">
+
+  </tool_result>
+  <tool_result tool="toolu_01VBr8TkNkxWmpVMPj5S4Dh6">
+
+  </tool_result>
+  <tool_result tool="toolu_013KtUNkSPgfGmT79SY7EjA8">
+
+  </tool_result>
+  <tool_result tool="toolu_01Sj7XGyezpNz4bybpdnpe4N">
+
+  </tool_result>
+  <tool_result tool="toolu_01XpPVzkf8v44Ukxv21kKqi5">
+
+  </tool_result>
+  <tool_result tool="toolu_01MfVewc1z7BkBWGvbX6LAqf">
+
+  </tool_result>
+  <tool_result tool="toolu_01UUFUaHEbA5FW5FDR1HFUQj">
+
+  </tool_result>
+  <tool_result tool="toolu_019zDhv5k3B5dT458R5yf2Kc">
+
+  </tool_result>
+  <assistant>Now update the implementation file:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019r8c7E9NoxttjJiXZGojZX">
+    <param name="command">sed -i 's/def get_plan(/def get_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename get_plan in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CW8qpgtgxbNGp4cTE7PG9C">
+    <param name="command">sed -i 's/def list_plans(/def list_managed_prs(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename list_plans in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T62c97MDXnsmHdN7WTaw7T">
+    <param name="command">sed -i 's/def create_plan(/def create_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename create_plan in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U8DVDkBVuuPTnQZgMHphWs">
+    <param name="command">sed -i 's/def close_plan(/def close_managed_pr(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename close_plan in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UhVmT7xioHuoS81VxPmW9H">
+    <param name="command">sed -i 's/def update_plan_content(/def update_managed_pr_content(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename update_plan_content in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013jAfSKpKWdKZ6jDkasucjX">
+    <param name="command">sed -i 's/def update_plan_title(/def update_managed_pr_title(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename update_plan_title in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019PX8dn6isZ3eo11G2yLT95">
+    <param name="command">sed -i 's/def get_plan_for_branch(/def get_managed_pr_for_branch(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename get_plan_for_branch in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0181UA8nuBjRF3tjfct8YML5">
+    <param name="command">sed -i 's/def resolve_plan_id_for_branch(/def resolve_pr_number_for_branch(/g' packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Rename resolve_plan_id_for_branch in implementation</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1967" cache_read_input_tokens="42153" cache_creation="{'ephemeral_5m_input_tokens': 1967, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019r8c7E9NoxttjJiXZGojZX">
+
+  </tool_result>
+  <tool_result tool="toolu_01CW8qpgtgxbNGp4cTE7PG9C">
+
+  </tool_result>
+  <tool_result tool="toolu_01T62c97MDXnsmHdN7WTaw7T">
+
+  </tool_result>
+  <tool_result tool="toolu_01U8DVDkBVuuPTnQZgMHphWs">
+
+  </tool_result>
+  <tool_result tool="toolu_01UhVmT7xioHuoS81VxPmW9H">
+
+  </tool_result>
+  <tool_result tool="toolu_013jAfSKpKWdKZ6jDkasucjX">
+
+  </tool_result>
+  <tool_result tool="toolu_019PX8dn6isZ3eo11G2yLT95">
+
+  </tool_result>
+  <tool_result tool="toolu_0181UA8nuBjRF3tjfct8YML5">
+
+  </tool_result>
+  <assistant>Now rename all call sites across the codebase. I'll use find + sed to do this efficiently:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HBYei93RtjivWxSyuSAoAU">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.get_plan(/.get_managed_pr(/g' {} +</param>
+    <param name="description">Rename all .get_plan( calls to .get_managed_pr(</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HepmJbQ7VPwZ8MRfSQseeM">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.list_plans(/.list_managed_prs(/g' {} +</param>
+    <param name="description">Rename all .list_plans( calls to .list_managed_prs(</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013XjJtgRka6LDtLgGxhzn4L">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.create_plan(/.create_managed_pr(/g' {} +</param>
+    <param name="description">Rename all .create_plan( calls to .create_managed_pr(</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017oaEs3KVk4p2DM5cSL9C2C">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.close_plan(/.close_managed_pr(/g' {} +</param>
+    <param name="description">Rename all .close_plan( calls to .close_managed_pr(</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013zCWM8PGDaEjKY8D72UdDS">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.update_plan_content(/.update_managed_pr_content(/g' {} +</param>
+    <param name="description">Rename all .update_plan_content( calls</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UmWMQUCpuvfcQx1CvSqvRJ">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.update_plan_title(/.update_managed_pr_title(/g' {} +</param>
+    <param name="description">Rename all .update_plan_title( calls</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Su7zbtx4z551FPYifFPvSe">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.get_plan_for_branch(/.get_managed_pr_for_branch(/g' {} +</param>
+    <param name="description">Rename all .get_plan_for_branch( calls</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PoFoT9RoR9dQg2PS3bgyB8">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.resolve_plan_id_for_branch(/.resolve_pr_number_for_branch(/g' {} +</param>
+    <param name="description">Rename all .resolve_plan_id_for_branch( calls</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0145zUmRFbHYpYNib7E7B986">
+    <param name="command">find src packages tests -name "*.py" -type f -exec sed -i 's/\.find_sessions_for_plan(/.find_sessions_for_managed_pr(/g' {} +</param>
+    <param name="description">Rename all .find_sessions_for_plan( calls</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1213" cache_read_input_tokens="44120" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HBYei93RtjivWxSyuSAoAU">
+
+  </tool_result>
+  <tool_result tool="toolu_01HepmJbQ7VPwZ8MRfSQseeM">
+
+  </tool_result>
+  <tool_result tool="toolu_013XjJtgRka6LDtLgGxhzn4L">
+
+  </tool_result>
+  <tool_result tool="toolu_017oaEs3KVk4p2DM5cSL9C2C">
+
+  </tool_result>
+  <tool_result tool="toolu_013zCWM8PGDaEjKY8D72UdDS">
+
+  </tool_result>
+  <tool_result tool="toolu_01UmWMQUCpuvfcQx1CvSqvRJ">
+
+  </tool_result>
+  <tool_result tool="toolu_01Su7zbtx4z551FPYifFPvSe">
+
+  </tool_result>
+  <tool_result tool="toolu_01PoFoT9RoR9dQg2PS3bgyB8">
+
+  </tool_result>
+  <tool_result tool="toolu_0145zUmRFbHYpYNib7E7B986">
+
+  </tool_result>
+  <assistant>Now let me verify the changes by checking a few key files and running a quick validation:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1368" cache_read_input_tokens="45333" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GiQGxyr5LHgBoRE1SjksiR">
+    <param name="command">git diff --stat packages/erk-shared/src/erk_shared/plan_store/backend.py packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="description">Show stats of changes to core files</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1368" cache_read_input_tokens="45333" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CWLyV4EvcbyjVsuEadxw6S">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/plan_store/backend.py | head -100</param>
+    <param name="description">Preview changes to ABC file</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1368" cache_read_input_tokens="45333" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014n3Qn9KUdajyPN8Ce1Xi4E">
+    <param name="command">git diff --name-only | wc -l</param>
+    <param name="description">Count total files modified</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1368" cache_read_input_tokens="45333" cache_creation="{'ephemeral_5m_input_tokens': 1368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GiQGxyr5LHgBoRE1SjksiR">
+ .../src/erk_shared/plan_store/backend.py           | 34 +++++++++++-----------
+ .../src/erk_shared/plan_store/planned_pr.py        | 24 +++++++--------
+ 2 files changed, 29 insertions(+), 29 deletions(-)
+  </tool_result>
+  <tool_result tool="toolu_01CWLyV4EvcbyjVsuEadxw6S">
+diff --git a/packages/erk-shared/src/erk_shared/plan_store/backend.py b/packages/erk-shared/src/erk_shared/plan_store/backend.py
+index ea251fe70..84d65dc9a 100644
+--- a/packages/erk-shared/src/erk_shared/plan_store/backend.py
++++ b/packages/erk-shared/src/erk_shared/plan_store/backend.py
+@@ -1,15 +1,15 @@
+ """Abstract interface for plan storage backends.
+ 
+-PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+-and should NOT have fake implementations. To test code that uses a PlanBackend,
++ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
++and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+ inject fake gateways into the real backend implementation.
+ 
+ Example:
+     # Testing with fake gateway
+     fake_issues = FakeGitHubIssues()
+     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+-    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+-    result = backend.create_plan(...)
++    backend = GitHubManagedPrBackend(fake_github, fake_issues, time=FakeTime())
++    result = backend.create_managed_pr(...)
+ 
+     # Assert on gateway mutations
+     assert fake_issues.created_issues[0][0] == "expected title"
+@@ -48,7 +48,7 @@ from erk_shared.sessions.discovery import SessionsForPlan
+ # ---------------------------------------------------------------------------
+ 
+ 
+-class PlanBackend(ABC):
++class ManagedPrBackend(ABC):
+
+... [70 lines omitted] ...
+
+             RuntimeError: If plan not found
+             raise RuntimeError(msg)
+  </tool_result>
+  <tool_result tool="toolu_014n3Qn9KUdajyPN8Ce1Xi4E">
+95
+  </tool_result>
+  <assistant>Great! Let me see more of the diff and check a few usage files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1920" cache_read_input_tokens="46701" cache_creation="{'ephemeral_5m_input_tokens': 1920, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019Cv6iy2DbPBPtvTcSpsWZ1">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/plan_store/backend.py | grep -E "^[-+].*def (get_plan|list_plans|create_plan|close_plan|update_plan|find_sessions|resolve_plan|get_plan_for)" | head -20</param>
+    <param name="description">Show method definition changes</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1920" cache_read_input_tokens="46701" cache_creation="{'ephemeral_5m_input_tokens': 1920, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014fCMSS2u3bumVdndoiSbLW">
+    <param name="command">git diff src/erk/cli/commands/pr/close_cmd.py | head -50</param>
+    <param name="description">Check changes in a usage file</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1920" cache_read_input_tokens="46701" cache_creation="{'ephemeral_5m_input_tokens': 1920, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MjcSfM3PcFGbhdh1U3HDJh">
+    <param name="command">git diff src/erk/cli/commands/implement.py | head -50</param>
+    <param name="description">Check changes in implement command</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1920" cache_read_input_tokens="46701" cache_creation="{'ephemeral_5m_input_tokens': 1920, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MjcSfM3PcFGbhdh1U3HDJh">
+diff --git a/src/erk/cli/commands/implement.py b/src/erk/cli/commands/implement.py
+index 794b7a374..c60a90d54 100644
+--- a/src/erk/cli/commands/implement.py
++++ b/src/erk/cli/commands/implement.py
+@@ -164,7 +164,7 @@ def _implement_from_issue(
+ 
+     # Fetch plan from GitHub
+     ctx.console.info("Fetching plan from GitHub...")
+-    result = ctx.plan_store.get_plan(repo.root, plan_number)
++    result = ctx.plan_store.get_managed_pr(repo.root, plan_number)
+     if isinstance(result, PlanNotFound):
+         user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+         raise SystemExit(1)
+  </tool_result>
+  <tool_result tool="toolu_014fCMSS2u3bumVdndoiSbLW">
+diff --git a/src/erk/cli/commands/pr/close_cmd.py b/src/erk/cli/commands/pr/close_cmd.py
+index 1719b656d..33c1b3ec8 100644
+--- a/src/erk/cli/commands/pr/close_cmd.py
++++ b/src/erk/cli/commands/pr/close_cmd.py
+@@ -49,10 +49,10 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -&gt; None
+     objective_id: int | None = None
+     if not isinstance(ctx.repo, NoRepoSentinel):
+         repo_root = ctx.repo.root
+-        result = ctx.plan_store.get_plan(repo_root, str(number))
++        result = ctx.plan_store.get_managed_pr(repo_root, str(number))
+         if not isinstance(result, PlanNotFound):
+             objective_id = result.objective_id
+-        ctx.plan_store.close_plan(repo_root, identifier)
++        ctx.plan_store.close_managed_pr(repo_root, identifier)
+     else:
+         remote.close_issue(owner=repo_id.owner, repo=repo_id.repo, number=number)
+  </tool_result>
+  <tool_result tool="toolu_019Cv6iy2DbPBPtvTcSpsWZ1">
+-    def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+-    def list_plans(self, repo_root: Path, query: PlanQuery) -&gt; list[Plan]:
+-    def find_sessions_for_plan(
++    def find_sessions_for_managed_pr(
+-    def get_plan_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+-    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+-    def create_plan(
+-    def update_plan_content(
+-    def close_plan(self, repo_root: Path, plan_id: str) -&gt; None:
+-    def update_plan_title(
+  </tool_result>
+  <assistant>Perfect! The renames are working. Now let me verify there are no syntax errors by running a quick Python syntax check and also check for any remaining old method names:</assistant>
+  <usage input_tokens="607" cache_creation_input_tokens="654" cache_read_input_tokens="48621" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T8XPUT8CURQYc6eX7H25s3">
+    <param name="command">python -m py_compile packages/erk-shared/src/erk_shared/plan_store/backend.py packages/erk-shared/src/erk_shared/plan_store/planned_pr.py &amp;&amp; echo "Syntax check passed"</param>
+    <param name="description">Check Python syntax of core files</param>
+  </tool_use>
+  <usage input_tokens="607" cache_creation_input_tokens="654" cache_read_input_tokens="48621" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WVTdpgDACTihs24My5wiMQ">
+    <param name="command">grep -n "\.get_plan(" packages/erk-shared/src/erk_shared/plan_store/backend.py packages/erk-shared/src/erk_shared/plan_store/planned_pr.py || echo "No old method calls found"</param>
+    <param name="description">Verify no old get_plan calls remain</param>
+  </tool_use>
+  <usage input_tokens="607" cache_creation_input_tokens="654" cache_read_input_tokens="48621" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W4dekoLZNFugQYzXRZL88J">
+    <param name="command">git diff --name-only | head -20</param>
+    <param name="description">List modified files</param>
+  </tool_use>
+  <usage input_tokens="607" cache_creation_input_tokens="654" cache_read_input_tokens="48621" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T8XPUT8CURQYc6eX7H25s3">
+Syntax check passed
+  </tool_result>
+  <tool_result tool="toolu_01WVTdpgDACTihs24My5wiMQ">
+No old method calls found
+  </tool_result>
+  <tool_result tool="toolu_01W4dekoLZNFugQYzXRZL88J">
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/context/helpers.py
+packages/erk-shared/src/erk_shared/learn/tracking.py
+packages/erk-shared/src/erk_shared/plan_store/__init__.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+packages/erk-shared/tests/unit/github/test_objective_issues.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/cli/commands/exec/scripts/close_pr.py
+src/erk/cli/commands/exec/scripts/close_prs.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/exec/scripts/handle_no_changes.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+  </tool_result>
+  <assistant>Good! Now let me check the docstrings in the ABC to see if we need to update any references:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1574" cache_read_input_tokens="49275" cache_creation="{'ephemeral_5m_input_tokens': 1574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018HqZtK8oFAj5pBYTJ8mAFW">
+    <param name="command">grep -n "get_plan:" packages/erk-shared/src/erk_shared/plan_store/backend.py || echo "No docstring refs found"</param>
+    <param name="description">Check for old method names in docstrings</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1574" cache_read_input_tokens="49275" cache_creation="{'ephemeral_5m_input_tokens': 1574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cg2rS6Jn8skzGbxC7cBPUU">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/plan_store/backend.py | grep -A2 -B2 "Read operations" | head -20</param>
+    <param name="description">Check docstring section updates</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1574" cache_read_input_tokens="49275" cache_creation="{'ephemeral_5m_input_tokens': 1574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018HqZtK8oFAj5pBYTJ8mAFW">
+58:        get_plan: Fetch a plan by identifier
+  </tool_result>
+  <tool_result tool="toolu_01Cg2rS6Jn8skzGbxC7cBPUU">
+     Provides the full read/write interface for plan storage backends.
+@@ -72,7 +72,7 @@ class PlanBackend(ABC):
+     # Read operations
+ 
+     @abstractmethod
+  </tool_result>
+  <assistant>I need to update the docstring that lists the methods. Let me read the file and fix it:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="459" cache_read_input_tokens="50849" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KV6XFX3HC6HnSwvpwSVkGg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">50</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="459" cache_read_input_tokens="50849" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KV6XFX3HC6HnSwvpwSVkGg">
+    50→
+    51→class ManagedPrBackend(ABC):
+    52→    """Abstract interface for plan storage operations.
+    53→
+    54→    Provides the full read/write interface for plan storage backends.
+    55→    Implementations provide backend-specific storage for plans.
+    56→
+    57→    Read operations:
+    58→        get_plan: Fetch a plan by identifier
+    59→        list_plans: Query plans by criteria
+    60→        get_provider_name: Get the provider name
+    61→        close_plan: Close a plan
+    62→        get_metadata_field: Get a single metadata field value
+    63→
+    64→    Write operations:
+    65→        create_plan: Create a new plan
+    66→        update_metadata: Update plan metadata
+    67→        update_plan_content: Update plan content body
+    68→        add_comment: Add a comment to a plan
+    69→        post_event: Combined metadata update + optional comment
+    70→    """
+    71→
+    72→    # Read operations
+    73→
+    74→    @abstractmethod
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I need to update the docstring to use the new method names:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="499" cache_read_input_tokens="51308" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BazrwmDnGH7TDvK1FMLP29">
+    <param name="command">sed -i 's/get_plan: Fetch a plan by identifier/get_managed_pr: Fetch a plan by identifier/' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Update docstring for get_managed_pr</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="499" cache_read_input_tokens="51308" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016FgcKBjxqh4vja1VC5KxFg">
+    <param name="command">sed -i 's/list_plans: Query plans by criteria/list_managed_prs: Query plans by criteria/' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Update docstring for list_managed_prs</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="499" cache_read_input_tokens="51308" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RGNS3naEEuWPhspJCH7CX7">
+    <param name="command">sed -i 's/close_plan: Close a plan/close_managed_pr: Close a plan/' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Update docstring for close_managed_pr</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="499" cache_read_input_tokens="51308" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YSHz9AptbFmuMhug4sjPLi">
+    <param name="command">sed -i 's/create_plan: Create a new plan/create_managed_pr: Create a new plan/' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Update docstring for create_managed_pr</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="499" cache_read_input_tokens="51308" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Xu5XeumRrW1RJBaL6B43N9">
+    <param name="command">sed -i 's/update_plan_content: Update plan content body/update_managed_pr_content: Update plan content body/' packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Update docstring for update_managed_pr_content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="499" cache_read_input_tokens="51308" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BazrwmDnGH7TDvK1FMLP29">
+
+  </tool_result>
+  <tool_result tool="toolu_016FgcKBjxqh4vja1VC5KxFg">
+
+  </tool_result>
+  <tool_result tool="toolu_01RGNS3naEEuWPhspJCH7CX7">
+
+  </tool_result>
+  <tool_result tool="toolu_01YSHz9AptbFmuMhug4sjPLi">
+
+  </tool_result>
+  <tool_result tool="toolu_01Xu5XeumRrW1RJBaL6B43N9">
+
+  </tool_result>
+  <assistant>Now let me check if there are any other references to these old method names in comments or strings:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="830" cache_read_input_tokens="51807" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Tba3X9qvWMBKVjaw36rism">
+    <param name="command">git diff | grep -E "^\+.*get_managed_pr" | wc -l</param>
+    <param name="description">Count get_managed_pr additions</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="830" cache_read_input_tokens="51807" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JKwuet1CwqSE4LdWrkcYrs">
+    <param name="command">git diff | grep -E "^\-.*get_plan\(" | wc -l</param>
+    <param name="description">Count get_plan deletions</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="830" cache_read_input_tokens="51807" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CFpZfWyYRRxWDeK19k7SiZ">
+    <param name="command">git diff --stat | tail -5</param>
+    <param name="description">Show final diff stats</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="830" cache_read_input_tokens="51807" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JKwuet1CwqSE4LdWrkcYrs">
+32
+  </tool_result>
+  <tool_result tool="toolu_01CFpZfWyYRRxWDeK19k7SiZ">
+ tests/unit/cli/commands/test_implement_shared.py   |  10 +-
+ tests/unit/fakes/test_fake_command_executor.py     |   8 +-
+ .../unit/plan_store/test_plan_backend_interface.py | 176 ++++++++++-----------
+ tests/unit/plan_store/test_planned_pr_backend.py   |  78 ++++-----
+ 95 files changed, 583 insertions(+), 582 deletions(-)
+  </tool_result>
+  <tool_result tool="toolu_01Tba3X9qvWMBKVjaw36rism">
+43
+  </tool_result>
+  <assistant>Excellent! The refactoring is complete. Let me now run a comprehensive check to verify all the changes are correct:</assistant>
+  <usage input_tokens="179" cache_creation_input_tokens="395" cache_read_input_tokens="52637" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015XWyYo365N7sjvZm9f1rHG">
+    <param name="command">grep -r "\.get_plan\(" src packages tests --include="*.py" | grep -v "Binary" | wc -l</param>
+    <param name="description">Check for any remaining .get_plan( calls</param>
+  </tool_use>
+  <usage input_tokens="179" cache_creation_input_tokens="395" cache_read_input_tokens="52637" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013qkwZpvmPTBrsS7xX4doms">
+    <param name="command">grep -r "\.list_plans\(" src packages tests --include="*.py" | grep -v "Binary" | wc -l</param>
+    <param name="description">Check for any remaining .list_plans( calls</param>
+  </tool_use>
+  <usage input_tokens="179" cache_creation_input_tokens="395" cache_read_input_tokens="52637" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UGSFfHEwxHdepgU84qbHec">
+    <param name="command">grep -r "\.create_plan\(" src packages tests --include="*.py" | grep -v "Binary" | wc -l</param>
+    <param name="description">Check for any remaining .create_plan( calls</param>
+  </tool_use>
+  <usage input_tokens="179" cache_creation_input_tokens="395" cache_read_input_tokens="52637" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EzMJKEePX9sWuczpHJsLwN">
+    <param name="command">grep -r "def get_plan\(" src packages tests --include="*.py" | wc -l</param>
+    <param name="description">Check for any remaining get_plan definitions</param>
+  </tool_use>
+  <usage input_tokens="179" cache_creation_input_tokens="395" cache_read_input_tokens="52637" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013qkwZpvmPTBrsS7xX4doms">
+0
+grep: Unmatched ( or \(
+  </tool_result>
+  <tool_result tool="toolu_015XWyYo365N7sjvZm9f1rHG">
+0
+grep: Unmatched ( or \(
+  </tool_result>
+  <tool_result tool="toolu_01UGSFfHEwxHdepgU84qbHec">
+0
+grep: Unmatched ( or \(
+  </tool_result>
+  <tool_result tool="toolu_01EzMJKEePX9sWuczpHJsLwN">
+0
+grep: Unmatched ( or \(
+  </tool_result>
+  <assistant>Need to escape the parentheses for grep:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="831" cache_read_input_tokens="53032" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014wzu34Qm2rzzvPgTb8viNP">
+    <param name="command">grep -r "\.get_plan(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Check for remaining .get_plan calls (fixed)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="831" cache_read_input_tokens="53032" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016nPujaomgaEgJtDVe8UPCW">
+    <param name="command">grep -r "\.list_plans(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Check for remaining .list_plans calls</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="831" cache_read_input_tokens="53032" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013XgmFGz8TvmSFK11RcUNci">
+    <param name="command">grep -r "def get_plan(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Check for remaining get_plan definitions</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="831" cache_read_input_tokens="53032" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TpSP5PcxDcZA1NHvxGPycZ">
+    <param name="command">grep -r "def get_managed_pr(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Verify get_managed_pr definitions exist</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="831" cache_read_input_tokens="53032" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014wzu34Qm2rzzvPgTb8viNP">
+0
+  </tool_result>
+  <tool_result tool="toolu_016nPujaomgaEgJtDVe8UPCW">
+0
+  </tool_result>
+  <tool_result tool="toolu_013XgmFGz8TvmSFK11RcUNci">
+0
+  </tool_result>
+  <tool_result tool="toolu_01TpSP5PcxDcZA1NHvxGPycZ">
+2
+  </tool_result>
+  <assistant>Perfect! Let me verify the new method names are present:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="596" cache_read_input_tokens="53863" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013quHB9ksXQiWEvN632TGDp">
+    <param name="command">grep -r "\.get_managed_pr(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Count get_managed_pr call sites</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="596" cache_read_input_tokens="53863" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QwvYuj8PJj3gjz5SU4k6gB">
+    <param name="command">grep -r "\.create_managed_pr(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Count create_managed_pr call sites</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="596" cache_read_input_tokens="53863" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DennStHDzxC1YgRt3HB9qw">
+    <param name="command">grep -r "\.list_managed_prs(" src packages tests --include="*.py" 2&gt;/dev/null | wc -l</param>
+    <param name="description">Count list_managed_prs call sites</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="596" cache_read_input_tokens="53863" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012WGZc3jmvVY19zvQkfvj2B">
+    <param name="command">git diff --shortstat</param>
+    <param name="description">Show final diff summary</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="596" cache_read_input_tokens="53863" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012WGZc3jmvVY19zvQkfvj2B">
+ 95 files changed, 583 insertions(+), 582 deletions(-)
+  </tool_result>
+  <tool_result tool="toolu_01QwvYuj8PJj3gjz5SU4k6gB">
+38
+  </tool_result>
+  <tool_result tool="toolu_01DennStHDzxC1YgRt3HB9qw">
+6
+  </tool_result>
+  <tool_result tool="toolu_013quHB9ksXQiWEvN632TGDp">
+30
+  </tool_result>
+  <assistant>Excellent! Now let me create a summary by sampling a few key files to show the changes:</assistant>
+  <usage input_tokens="100" cache_creation_input_tokens="499" cache_read_input_tokens="54459" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QXZcX3rG5UFQDTPJBwEL5c">
+    <param name="command">git diff packages/erk-shared/src/erk_shared/plan_store/backend.py | grep "^@@" | wc -l</param>
+    <param name="description">Count diff hunks in ABC file</param>
+  </tool_use>
+  <usage input_tokens="100" cache_creation_input_tokens="499" cache_read_input_tokens="54459" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,1003 @@
+<session>
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01UQYfz3EgWS1JVBFpkkVThU">
+src/erk/tui/actions/navigation.py:30:    action_copy_checkout, action_close_pr, and helpers.
+src/erk/tui/actions/navigation.py:121:            close_plan_fn=self._service.close_pr,
+src/erk/tui/actions/navigation.py:314:    def action_close_pr(self: ErkDashApp) -&gt; None:
+src/erk/tui/actions/navigation.py:327:        self._close_pr_async(op_id, row.pr_number, row.pr_url)
+src/erk/tui/actions/palette.py:108:        elif command_id == "copy_close_pr":
+src/erk/tui/actions/palette.py:194:        elif command_id == "close_pr":
+src/erk/tui/actions/palette.py:198:                self._close_pr_async(op_id, row.pr_number, row.pr_url)
+src/erk/tui/operations/workers.py:28:    def _close_pr_async(self: ErkDashApp, op_id: str, pr_number: int, pr_url: str) -&gt; None:
+src/erk/tui/operations/workers.py:39:            closed_prs = self._service.close_pr(pr_number, pr_url)
+src/erk/tui/commands/types.py:54:        id: Unique identifier for the command (e.g., "close_pr")
+src/erk/tui/commands/registry.py:43:def _display_close_pr(ctx: CommandContext) -&gt; str:
+src/erk/tui/commands/registry.py:44:    """Display name for close_pr command."""
+src/erk/tui/commands/registry.py:152:def _display_copy_close_pr(ctx: CommandContext) -&gt; str:
+src/erk/tui/commands/registry.py:153:    """Display name for copy_close_pr command."""
+src/erk/tui/commands/registry.py:239:            id="close_pr",
+src/erk/tui/commands/registry.py:246:            get_display_name=_display_close_pr,
+src/erk/tui/commands/registry.py:467:            id="copy_close_pr",
+src/erk/tui/commands/registry.py:474:            get_display_name=_display_copy_close_pr,
+src/erk/tui/data/provider_abc.py:14:    (close_pr, dispatch, fetch_content, etc.) live in PrService.
+src/erk/tui/data/real_provider.py:70:    Domain operations (close_pr, dispatch, etc.) are on PrService.
+src/erk/tui/screens/objective_nodes_screen.py:484:        if command_id == "close_pr":
+src/erk/tui/screens/objective_nodes_screen.py:485:            self._action_close_pr(row)
+src/erk/tui/screens/objective_nodes_screen.py:501:    def _action_close_pr(self, row: PrRowData) -&gt; None:
+src/erk/tui/screens/objective_nodes_screen.py:509:        app._close_pr_async(op_id, row.pr_number, row.pr_url)
+src/erk/tui/screens/plan_detail_screen.py:467:    def run_close_pr_in_process(
+src/erk/tui/screens/plan_detail_screen.py:489:        self._run_close_pr_worker(pr_number, pr_url)
+src/erk/tui/screens/plan_detail_screen.py:492:    def _run_close_pr_worker(
+src/erk/tui/screens/plan_detail_screen.py:497:        """Worker: close plan using executor's close_pr_fn.
+src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_managed_pr(pr_number, pr_url)
+src/erk/tui/screens/plan_detail_screen.py:728:        elif command_id == "copy_close_pr":
+
+... [2 lines omitted] ...
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. **Initial Request**: The user triggered `/erk:plan-implement 9198` which is a command to implement plan #9198 - a semantic rename of `PlanBackend` ABC to `ManagedPrBackend`.
+
+2. **Plan Setup**: 
+   - `erk exec setup-impl --issue 9198` was run successfully
+   - Branch: `plnd/O9109-rename-planbackend-m-03-10-2345`
+   - PR #9198: "Semantic rename of plan_store ABC to ManagedPrBackend"
+
+3. **Plan Details (from plan.md)**:
+   - Part of Objective #9109, Node 5.1
+   - Rename `PlanBackend` → `ManagedPrBackend`
+   - Rename `PlannedPRBackend` → `GitHubManagedPrBackend`
+   - Rename 9 methods (get_plan → get_managed_pr, etc.)
+   - Rename parameter `plan_id` → `pr_number`
+   - Some methods NOT renamed (ensure_plan_header, get_provider_name, etc.)
+   - Out of scope: type renames (Plan, PlanNotFound, etc.), package directory rename, plan-header metadata block key
+
+4. **Phase A - Class Renames**: Launched libcst-refactor agent (ab0ba69) which:
+   - Created a LibCST transformer script
+   - Renamed PlanBackend → ManagedPrBackend across 70 files
+   - Renamed PlannedPRBackend → GitHubManagedPrBackend
+   - Preserved "github-draft-pr" serialization name
+   - Verification: 0 remaining old references
+
+5. **Phase A - Method Renames**: Launched libcst-refactor agent (a297c44) which:
+   - Used sed to rename method definitions in backend.py and planned_pr.py
+   - Used find+sed to rename .old_method( → .new_method( across all files
+   - 95 files modified, 583 insertions, 582 deletions
+   - Updated docstrings in the class to reference new method names
+   - Verification: 0 remaining old method call patterns
+
+6. **Phase A - Parameter Renames**: 
+   - Used replace_all to change `plan_id` → `pr_number` in backend.py and planned_pr.py
+   - This created shadowing issues: `pr_number = int(pr_number)` where parameter is str
+
+7. **Docstring Updates**:
+   - Updated __init__.py docstring
+   - Updated backend.py module docstring and class docstring
+   - Updated planned_pr.py module docstring and class docstring
+   - Fixed stale docstring references (get_plan → get_managed_pr, etc.)
+   - Updated resolve_pr_number_for_branch docstring
+
+8. **Verification - First Round** (3 parallel agents):
+   - **ty (ab545ac)**: 33 errors found
+     - `pr_number = int(pr_number)` shadowing in planned_pr.py (15 errors)
+     - `plan_id` keyword arg in learn_cmd.py (2 errors)
+     - `close_managed_pr` on CommandExecutor in TUI (1 error)
+   - **ruff (acd47f9)**: 11 E501 line-too-long errors (class names got longer)
+   - **pytest (a9d4cfa)**: 1 test failure - `plan_id` keyword arg in test_plan_backend_interface.py
+
+9. **Fixes Applied**:
+   - Fixed `pr_number = int(pr_number)` → `pr_num = int(pr_number)` in all methods of planned_pr.py (get_managed_pr, get_comments, close_managed_pr, get_metadata_field, get_all_metadata_fields, update_metadata, update_managed_pr_content, update_managed_pr_title, add_label, add_comment, ensure_plan_header)
+   - Fixed `plan_id=pr_id` → `pr_number=pr_id` in learn_cmd.py
+   - Fixed `plan_id=pr_id` → `pr_number=pr_id` in test_plan_backend_interface.py (3 locations)
+   - Also updated `pr_number` → `pr_num` in ensure_plan_header for the update_pr_body call
+
+10. **Documentation Updates**: Launched 2 parallel agents:
+    - docs/learned agent (aef2ba8) - updating references in docs/learned/testing/*.md
+    - .claude/skills agent (a770805) - updating references in .claude/skills/fake-driven-testing/references/*.md
+
+11. **Remaining Issues Identified but NOT yet fixed**:
+    - TUI `close_managed_pr` on CommandExecutor - this was an over-broad sed rename. The `_executor.close_plan()` is NOT a ManagedPrBackend method, it's a TUI executor method that was incorrectly renamed.
+    - 11 ruff E501 line-length errors from longer class names
+    - Need to check status of docs/learned and skills update agents
+    - Need to re-run verification after fixes
+
+12. **Current State**: Was investigating the `close_managed_pr` on CommandExecutor in plan_detail_screen.py, which was incorrectly renamed by the sed command (it's not a ManagedPrBackend method, it's a TUI command executor method).
+
+Summary:
+1. Primary Request and Intent:
+   The user triggered `/erk:plan-implement 9198` to implement PR #9198: "Semantic rename of plan_store ABC to ManagedPrBackend". This is part of Objective #9109, Node 5.1 — a plan→pr terminology rename. The implementation involves:
+   - Renaming class `PlanBackend` → `ManagedPrBackend` (ABC)
+   - Renaming class `PlannedPRBackend` → `GitHubManagedPrBackend` (implementation)
+   - Renaming 9 methods on these classes (e.g., `get_plan` → `get_managed_pr`)
+   - Renaming parameter `plan_id: str` → `pr_number: str` on all ABC methods
+   - Updating all importers, call sites, tests, docstrings, and documentation
+   - Preserving serialization names (e.g., `"github-draft-pr"` provider name)
+   - NOT renaming: types (Plan, PlanNotFound, etc.), package directory, plan-header metadata key, or generic methods (ensure_plan_header, get_provider_name, etc.)
+
+2. Key Technical Concepts:
+   - LibCST for systematic Python code refactoring (class and method renames)
+   - ManagedPrBackend ABC pattern (backend composes gateways, not a gateway itself)
+   - Parameter shadowing issue: `pr_number: str` parameter vs `pr_number = int(pr_number)` local
+   - Serialization name preservation (provider name "github-draft-pr" must not change)
+   - Systematic rename checklist from docs/learned/refactoring/systematic-rename-checklist.md
+   - Post-refactoring documentation audit from docs/learned/refactoring tripwires
+   - Branch: `plnd/O9109-rename-planbackend-m-03-10-2345`
+   - Python 3.11 (requires-python = "&gt;=3.11")
+
+3. Files and Code Sections:
+
+   - **`packages/erk-shared/src/erk_shared/plan_store/backend.py`** — ABC definition file. Class renamed from `PlanBackend` to `ManagedPrBackend`. 9 methods renamed. Parameter `plan_id` → `pr_number`. Module docstring updated. Class docstring updated. Stale method references in docstrings fixed.
+   
+   - **`packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`** — Implementation file. Class renamed from `PlannedPRBackend` to `GitHubManagedPrBackend`. 9 method overrides renamed. Parameter `plan_id` → `pr_number`. Local variable `pr_number = int(plan_id)` became `pr_num = int(pr_number)` to avoid shadowing. Module and class docstrings updated.
+     ```python
+     # Pattern in each method - BEFORE:
+     def get_managed_pr(self, repo_root: Path, pr_number: str) -&gt; Plan | PlanNotFound:
+         pr_number = int(pr_number)  # BAD: shadows str param with int
+         result = self._github.get_pr(repo_root, pr_number)
+     
+     # Pattern in each method - AFTER fix:
+     def get_managed_pr(self, repo_root: Path, pr_number: str) -&gt; Plan | PlanNotFound:
+         pr_num = int(pr_number)  # GOOD: no shadowing
+         result = self._github.get_pr(repo_root, pr_num)
+     ```
+
+   - **`packages/erk-shared/src/erk_shared/plan_store/__init__.py`** — Module docstring updated to reference "managed PR" instead of "plan storage".
+
+   - **`packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`** — Docstring already updated by class rename agent (`GitHubManagedPrBackend.create_managed_pr()`). No further changes needed.
+
+   - **`packages/erk-shared/src/erk_shared/plan_store/conversion.py`** — No old class name references remain; no changes needed.
+
+   - **`packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`** — Already updated by class/method rename agents.
+
+   - **`packages/erk-shared/src/erk_shared/plan_workflow.py`** — No old class name references; `plan_store` package reference is out of scope.
+
+   - **`src/erk/cli/commands/learn/learn_cmd.py`** — Fixed keyword arg `plan_id=pr_id` → `pr_number=pr_id` on line 154.
+     ```python
+     sessions_for_plan = ctx.plan_backend.find_sessions_for_managed_pr(
+         repo_root,
+         pr_number=pr_id,  # was plan_id=pr_id
+     )
+     ```
+
+   - **`tests/unit/plan_store/test_plan_backend_interface.py`** — Fixed 3 keyword args: `plan_id=` → `pr_number=` on lines 168, 188, 206.
+
+   - **`src/erk/tui/screens/plan_detail_screen.py`** — Has an INCORRECTLY renamed `close_managed_pr` on a TUI CommandExecutor (line 513). This was NOT a ManagedPrBackend method — it was `_executor.close_plan()` on a TUI executor class that got caught by the sed `s/.close_plan(/.close_managed_pr(/g`. **This still needs to be reverted.**
+
+   - **70+ files across src/, packages/, tests/** — Class names and method call sites updated by LibCST and sed agents.
+
+   - **docs/learned/testing/*.md** (7 files) — Being updated by agent aef2ba8 (references to old class/method names).
+
+   - **`.claude/skills/fake-driven-testing/references/*.md`** (2 files) — Being updated by agent a770805.
+
+4. Errors and fixes:
+   - **ty: `pr_number = int(pr_number)` shadowing (15 errors in planned_pr.py)**:
+     - Caused by renaming `plan_id` → `pr_number` parameter, which created `pr_number: str` parameter shadowed by `pr_number = int(pr_number)` local.
+     - Fixed by renaming local variable from `pr_number` to `pr_num` in all 11 methods of planned_pr.py.
+   
+   - **ty: `plan_id` keyword arg in learn_cmd.py (2 errors)**:
+     - `find_sessions_for_managed_pr(repo_root, plan_id=pr_id)` — parameter was renamed to `pr_number`.
+     - Fixed: changed to `pr_number=pr_id`.
+   
+   - **ty: `close_managed_pr` on CommandExecutor (1 error)**:
+     - The sed `s/.close_plan(/.close_managed_pr(/g` incorrectly renamed a TUI executor method that is NOT on ManagedPrBackend.
+     - **NOT YET FIXED** — needs to be reverted to `close_plan`.
+   
+   - **ruff: 11 E501 line-too-long errors**:
+     - Caused by longer class names (GitHubManagedPrBackend &gt; PlannedPRBackend).
+     - **NOT YET FIXED** — need to break long lines.
+   
+   - **pytest: `plan_id` keyword arg in test_plan_backend_interface.py**:
+     - `backend.add_comment(repo_root=..., plan_id=pr_id, body=...)` — parameter renamed to `pr_number`.
+     - Fixed: changed 3 occurrences of `plan_id=` to `pr_number=`.
+
+5. Problem Solving:
+   - Used LibCST agent for safe class renames across 70 files (preserving syntax, handling imports, type annotations, string literals)
+   - Used sed for method renames (simpler pattern: `.old_method(` → `.new_method(`)
+   - Sed was over-broad on `.close_plan(` → `.close_managed_pr(` — caught a TUI executor method that isn't part of ManagedPrBackend
+   - Parameter rename `plan_id` → `pr_number` was done with replace_all in the two core files, which created type shadowing that was then manually fixed
+
+6. All user messages:
+   - The initial `/erk:plan-implement 9198` command (automated workflow trigger) — this is the only explicit user action. Everything else has been automated plan execution with tool results.
+
+7. Pending Tasks:
+   - **Fix TUI bug**: Revert `self._executor.close_managed_pr(pr_number, pr_url)` back to `self._executor.close_plan(pr_number, pr_url)` in `src/erk/tui/screens/plan_detail_screen.py:513` — this was incorrectly renamed by sed
+   - **Fix ruff E501 errors**: 11 line-too-long violations in 4 files (plan_update.py, shared_context.py, test_close_pr.py, test_get_plan_metadata.py)
+   - **Check docs/learned agent (aef2ba8) completion**: Verify documentation was updated correctly
+   - **Check .claude/skills agent (a770805) completion**: Verify skill references were updated
+   - **Check for other over-broad sed renames**: The sed `find ... -exec sed -i 's/\.close_plan(/.close_managed_pr(/g'` may have renamed other non-backend methods. Need to grep for `close_managed_pr` and verify all occurrences are legitimate.
+   - **Check for other incorrectly renamed methods**: Similar issue may exist for other method names (e.g., `.get_plan(` could have been renamed on non-backend objects)
+   - **Re-run ty, ruff, pytest** after all fixes
+   - **Run full test suite**: `pytest tests/` to catch missed call sites
+   - **Grep for leftover references in docs**: Per systematic-rename-checklist.md
+   - **Steps 9-13 of plan-implement**: Signal ended, upload session, cleanup impl context, run CI, submit PR
+
+8. Current Work:
+   I was investigating the `close_managed_pr` on CommandExecutor error in `src/erk/tui/screens/plan_detail_screen.py`. The sed command `find src packages tests -name "*.py" -type f -exec sed -i 's/\.close_plan(/.close_managed_pr(/g' {} +` incorrectly renamed a TUI executor method call from `.close_plan(` to `.close_managed_pr(`. I had just grep'd the TUI directory to understand the executor pattern and confirmed it's NOT a ManagedPrBackend method. I also need to check if similar over-broad renames happened with other method names on non-backend objects (e.g., `.get_plan(` on objects that aren't ManagedPrBackend).
+
+   Additionally, two background agents (aef2ba8 for docs/learned, a770805 for .claude/skills) were still running/recently completed but their final results haven't been checked yet.
+
+9. Optional Next Step:
+   Fix the over-broad sed renames. The immediate action is to:
+   1. Revert `self._executor.close_managed_pr(pr_number, pr_url)` → `self._executor.close_plan(pr_number, pr_url)` in `src/erk/tui/screens/plan_detail_screen.py:513`
+   2. Grep for ALL occurrences of each renamed method to check for other false-positive renames on non-backend objects (especially `.close_managed_pr(`, `.get_managed_pr(`, `.list_managed_prs(` on objects that are not `ManagedPrBackend`)
+   3. Check the docs/learned and skills update agents' results
+   4. Fix the 11 ruff E501 line-length errors
+   5. Re-run ty, ruff, and pytest to verify all fixes.
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>
+
+I'll continue fixing the remaining issues. Let me pick up where I left off.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20609" cache_read_input_tokens="20432" cache_creation="{'ephemeral_5m_input_tokens': 20609, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CmwofqzNqRe8wMZxyMo1Ja">
+    <param name="todos">[{'content': 'Phase A: Rename ABC and implementation classes in backend.py and planned_pr....[truncated 1876 chars]...: ty, ruff, pytest', 'status': 'pending', 'activeForm': 'Re-running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20609" cache_read_input_tokens="20432" cache_creation="{'ephemeral_5m_input_tokens': 20609, 'ephemeral_1h_input_tokens': 0}" output_tokens="554" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CmwofqzNqRe8wMZxyMo1Ja">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me first fix the TUI close_plan revert and simultaneously check for other over-broad sed renames.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="41041" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01C8y3juJu1Y78X9KxgMvM6c">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">505</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="41041" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NFvbmA4Pmx9t9dyyksTHvY">
+    <param name="pattern">\.close_managed_pr\(</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="41041" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01F6qhkxP7Vg34RSUfmxvty8">
+    <param name="pattern">\.get_managed_pr\(</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="41041" cache_creation="{'ephemeral_5m_input_tokens': 680, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C8y3juJu1Y78X9KxgMvM6c">
+   505→            self._command_running = False
+   506→            return
+   507→
+   508→        success = True
+   509→        # Error boundary: catch all exceptions from HTTP operations to display
+   510→        # them in the output panel rather than crashing the TUI.
+   511→        try:
+   512→            self.app.call_from_thread(panel.append_line, "Closing linked PRs...")
+   513→            closed_prs = self._executor.close_managed_pr(pr_number, pr_url)
+   514→
+   515→            if closed_prs:
+   516→                pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+   517→                self.app.call_from_thread(panel.append_line, f"Closed PRs: {pr_list}")
+   518→
+   519→            self.app.call_from_thread(panel.append_line, f"Closed PR #{pr_number}")
+   520→        except Exception as e:
+   521→            self.app.call_from_thread(panel.append_line, f"Error: {e}")
+   522→            success = False
+   523→
+   524→        self.app.call_from_thread(panel.set_completed, success)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01NFvbmA4Pmx9t9dyyksTHvY">
+tests/unit/plan_store/test_plan_backend_interface.py:153:    backend.close_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:196:        plan_backend.close_managed_pr(Path("/repo"), "99999999")
+tests/unit/fakes/test_fake_command_executor.py:25:    executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+tests/unit/fakes/test_fake_command_executor.py:26:    executor.close_managed_pr(456, "https://github.com/test/repo/issues/456")
+tests/unit/fakes/test_fake_command_executor.py:58:    result = executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+tests/unit/fakes/test_fake_command_executor.py:66:    result = executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+src/erk/cli/commands/wt/delete_cmd.py:142:    ctx.plan_store.close_managed_pr(repo_root, str(pr_number))
+src/erk/cli/commands/objective_helpers.py:50:    ctx.plan_store.close_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/close_cmd.py:55:        ctx.plan_store.close_managed_pr(repo_root, identifier)
+src/erk/cli/commands/exec/scripts/close_prs.py:173:            backend.close_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/close_pr.py:59:        backend.close_managed_pr(repo_root, pr_id)
+src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_managed_pr(pr_number, pr_url)
+  </tool_result>
+  <tool_result tool="toolu_01F6qhkxP7Vg34RSUfmxvty8">
+tests/unit/plan_store/test_planned_pr_backend.py:263:    plan = backend.get_managed_pr(Path("/repo"), result.pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:107:    plan = plan_backend.get_managed_pr(Path("/repo"), result.pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:149:    plan_before = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:155:    plan_after = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:178:    result = plan_backend.get_managed_pr(Path("/repo"), "99999999")
+tests/unit/plan_store/test_plan_backend_interface.py:217:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:228:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:241:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:254:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:415:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+tests/unit/plan_store/test_plan_backend_interface.py:628:    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+packages/erk-shared/src/erk_shared/plan_store/backend.py:198:        plan = self.get_managed_pr(repo_root, pr_number)
+src/erk/cli/commands/implement.py:167:    result = ctx.plan_store.get_managed_pr(repo.root, plan_number)
+src/erk/cli/commands/wt/create_cmd.py:672:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number_parsed))
+src/erk/cli/commands/objective_helpers.py:40:    result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/branch/create_cmd.py:137:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/branch/checkout_cmd.py:547:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/shared.py:161:    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/shared.py:201:    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/dispatch_cmd.py:222:    result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/metadata_helpers.py:44:    plan_result = plan_backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/pr/close_cmd.py:52:        result = ctx.plan_store.get_managed_pr(repo_root, str(number))
+src/erk/cli/commands/land_learn.py:226:    plan_result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/plan_update.py:113:    plan_result = backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/push_session.py:300:    plan_result = backend.get_managed_pr(repo_root, pr_number_str)
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:59:    result = backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/impl_signal.py:406:    plan_result = backend.get_managed_pr(repo_root, plan_ref.pr_id)
+src/erk/cli/commands/exec/scripts/get_plan_info.py:47:    plan = backend.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:184:        plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:218:    plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number))
+  </tool_result>
+  <assistant>I can see the issue. The `close_managed_pr` on `self._executor` in the TUI and in the test for fake command executor is NOT a ManagedPrBackend method. Let me check the executor interface to understand what needs to be reverted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2619" cache_read_input_tokens="41721" cache_creation="{'ephemeral_5m_input_tokens': 2619, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0116T2LVGiuBvTfwWuTTua1D">
+    <param name="pattern">close_managed_pr|close_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2619" cache_read_input_tokens="41721" cache_creation="{'ephemeral_5m_input_tokens': 2619, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NxDed1rGxd16rfYdG9wVpv">
+    <param name="pattern">close_managed_pr|close_plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2619" cache_read_input_tokens="41721" cache_creation="{'ephemeral_5m_input_tokens': 2619, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01RpnPrgrtPvta854TfPb9ZL">
+    <param name="pattern">close_managed_pr|close_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2619" cache_read_input_tokens="41721" cache_creation="{'ephemeral_5m_input_tokens': 2619, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NxDed1rGxd16rfYdG9wVpv">
+25:    executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+26:    executor.close_managed_pr(456, "https://github.com/test/repo/issues/456")
+55:def test_close_plan_returns_empty_list_by_default() -&gt; None:
+56:    """close_plan returns empty list by default (no linked PRs)."""
+58:    result = executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+62:def test_close_plan_returns_configured_pr_numbers() -&gt; None:
+63:    """close_plan returns configured PR numbers when set."""
+66:    result = executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+  </tool_result>
+  <tool_result tool="toolu_0116T2LVGiuBvTfwWuTTua1D">
+src/erk/tui/actions/navigation.py:121:            close_plan_fn=self._service.close_pr,
+src/erk/tui/screens/plan_detail_screen.py:513:            closed_prs = self._executor.close_managed_pr(pr_number, pr_url)
+  </tool_result>
+  <tool_result tool="toolu_01RpnPrgrtPvta854TfPb9ZL">
+Found 2 files
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/actions/navigation.py
+  </tool_result>
+  <assistant>Now let me find the CommandExecutor definition to understand the interface:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="44340" cache_creation="{'ephemeral_5m_input_tokens': 1211, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015RRMThPytLtb7cL6SERCED">
+    <param name="pattern">class CommandExecutor|class.*Executor.*Protocol|def close_managed_pr|def close_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="44340" cache_creation="{'ephemeral_5m_input_tokens': 1211, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HgkzQ5osJ2EKNMf71M1Dp5">
+    <param name="pattern">class.*CommandExecutor|def close_managed_pr</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1211" cache_read_input_tokens="44340" cache_creation="{'ephemeral_5m_input_tokens': 1211, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015RRMThPytLtb7cL6SERCED">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01HgkzQ5osJ2EKNMf71M1Dp5">
+tests/fakes/gateway/command_executor.py:6:class FakeCommandExecutor(CommandExecutor):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NwBapNqaq1RbBES5tHrKPJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/command_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="761" cache_read_input_tokens="45551" cache_creation="{'ephemeral_5m_input_tokens': 761, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BYTLdCiKG8bHCmEAA5EBQU">
+    <param name="pattern">class CommandExecutor</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="761" cache_read_input_tokens="45551" cache_creation="{'ephemeral_5m_input_tokens': 761, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NwBapNqaq1RbBES5tHrKPJ">
+     1→"""Fake command executor for testing TUI command palette."""
+     2→
+     3→from erk_shared.gateway.command_executor.abc import CommandExecutor
+     4→
+     5→
+     6→class FakeCommandExecutor(CommandExecutor):
+     7→    """In-memory fake for testing command execution.
+     8→
+     9→    Tracks all operations performed for assertion in tests.
+    10→    """
+    11→
+    12→    def __init__(self) -&gt; None:
+    13→        """Initialize with empty tracking state."""
+    14→        self._opened_urls: list[str] = []
+    15→        self._copied_texts: list[str] = []
+    16→        self._closed_plans: list[tuple[int, str]] = []
+    17→        self._notifications: list[str] = []
+    18→        self._refresh_count: int = 0
+    19→        self._close_pr_return: list[int] = []
+    20→        self._dispatched_to_queue: list[tuple[int, str]] = []
+    21→
+    22→    @property
+    23→    def opened_urls(self) -&gt; list[str]:
+    24→        """URLs that were opened in browser."""
+    25→        return list(self._opened_urls)
+    26→
+    27→    @property
+    28→    def copied_texts(self) -&gt; list[str]:
+    29→        """Texts that were copied to clipboard."""
+    30→        return list(self._copied_texts)
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BYTLdCiKG8bHCmEAA5EBQU">
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:6:class CommandExecutor(ABC):
+  </tool_result>
+  <assistant>Good - the FakeCommandExecutor has `close_plan` (correctly NOT renamed). The ABC also has `close_plan`. Now let me check the ABC and fix the call sites:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1399" cache_read_input_tokens="46312" cache_creation="{'ephemeral_5m_input_tokens': 1399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TgV7BX57YTXmroSdMyqaQW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1399" cache_read_input_tokens="46312" cache_creation="{'ephemeral_5m_input_tokens': 1399, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TgV7BX57YTXmroSdMyqaQW">
+     1→"""Abstract interface for executing palette commands."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→
+     6→class CommandExecutor(ABC):
+     7→    """Abstract interface for executing palette commands.
+     8→
+     9→    This ABC defines the operations that commands can perform.
+    10→    Real and fake implementations handle the actual execution.
+    11→    """
+    12→
+    13→    @abstractmethod
+    14→    def open_url(self, url: str) -&gt; None:
+    15→        """Open URL in browser.
+    16→
+    17→        Args:
+    18→            url: The URL to open
+    19→        """
+    20→        ...
+    21→
+    22→    @abstractmethod
+    23→    def copy_to_clipboard(self, text: str) -&gt; None:
+    24→        """Copy text to clipboard.
+    25→
+    26→        Args:
+    27→            text: The text to copy
+    28→        """
+    29→        ...
+    30→
+
+... [43 lines omitted] ...
+
+    50→            severity: Optional severity level ("information", "warning", "error")
+  </tool_result>
+  <assistant>The CommandExecutor ABC has `close_plan` — correctly NOT renamed. The TUI screen and the test file were incorrectly renamed. Let me fix those:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1256" cache_read_input_tokens="47711" cache_creation="{'ephemeral_5m_input_tokens': 1256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01F7TcxWuDF3hBwkmw1RHXiy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="old_string">            closed_prs = self._executor.close_managed_pr(pr_number, pr_url)</param>
+    <param name="new_string">            closed_prs = self._executor.close_plan(pr_number, pr_url)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1256" cache_read_input_tokens="47711" cache_creation="{'ephemeral_5m_input_tokens': 1256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RzeHcb4RXK1RvXyB5iwhZn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1256" cache_read_input_tokens="47711" cache_creation="{'ephemeral_5m_input_tokens': 1256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F7TcxWuDF3hBwkmw1RHXiy">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RzeHcb4RXK1RvXyB5iwhZn">
+     1→"""Tests for FakeCommandExecutor."""
+     2→
+     3→from tests.fakes.gateway.command_executor import FakeCommandExecutor
+     4→
+     5→
+     6→def test_tracks_opened_urls() -&gt; None:
+     7→    """Fake executor tracks URLs that were opened."""
+     8→    executor = FakeCommandExecutor()
+     9→    executor.open_url("https://example.com")
+    10→    executor.open_url("https://github.com")
+    11→    assert executor.opened_urls == ["https://example.com", "https://github.com"]
+    12→
+    13→
+    14→def test_tracks_copied_texts() -&gt; None:
+    15→    """Fake executor tracks texts that were copied to clipboard."""
+    16→    executor = FakeCommandExecutor()
+    17→    executor.copy_to_clipboard("erk implement 123")
+    18→    executor.copy_to_clipboard("erk pr dispatch 456")
+    19→    assert executor.copied_texts == ["erk implement 123", "erk pr dispatch 456"]
+    20→
+    21→
+    22→def test_tracks_closed_plans() -&gt; None:
+    23→    """Fake executor tracks plans that were closed."""
+    24→    executor = FakeCommandExecutor()
+    25→    executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+    26→    executor.close_managed_pr(456, "https://github.com/test/repo/issues/456")
+    27→    assert executor.closed_plans == [
+    28→        (123, "https://github.com/test/repo/issues/123"),
+    29→        (456, "https://github.com/test/repo/issues/456"),
+    30→    ]
+
+... [54 lines omitted] ...
+  </tool_result>
+  <assistant>Now fix the test file — revert `close_managed_pr` → `close_plan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="48967" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KjFMxmsFd92X7VSaTkYKLf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py</param>
+    <param name="old_string">    executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+    executor.close_managed_pr(456, "https://github.com/test/repo/issues/456")</param>
+    <param name="new_string">    executor.close_plan(123, "https://github.com/test/repo/issues/123")
+    executor.close_plan(456, "https://github.com/test/repo/issues/456")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="48967" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0114RfqrgSEaTqFLg9o8e5e9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py</param>
+    <param name="old_string">    result = executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")
+   ...[truncated 203 chars]...0])
+    result = executor.close_managed_pr(123, "https://github.com/test/repo/issues/123")</param>
+    <param name="new_string">    result = executor.close_plan(123, "https://github.com/test/repo/issues/123")
+    asser...[truncated 191 chars]...89, 790])
+    result = executor.close_plan(123, "https://github.com/test/repo/issues/123")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="48967" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KjFMxmsFd92X7VSaTkYKLf">
+The file /home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0114RfqrgSEaTqFLg9o8e5e9">
+The file /home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me also check if there's a real implementation of the CommandExecutor that also got wrongly renamed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1107" cache_read_input_tokens="50869" cache_creation="{'ephemeral_5m_input_tokens': 1107, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01LrsGZYXpgxrYbmEkHws5u9">
+    <param name="pattern">class.*CommandExecutor</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1107" cache_read_input_tokens="50869" cache_creation="{'ephemeral_5m_input_tokens': 1107, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LrsGZYXpgxrYbmEkHws5u9">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01A5mcchmDcopa5EE2rGhJey">
+    <param name="pattern">class.*CommandExecutor</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="51976" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A5mcchmDcopa5EE2rGhJey">
+tests/fakes/gateway/command_executor.py:6:class FakeCommandExecutor(CommandExecutor):
+packages/erk-shared/src/erk_shared/gateway/command_executor/real.py:15:class RealCommandExecutor(CommandExecutor):
+packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py:6:class CommandExecutor(ABC):
+  </tool_result>
+  <assistant>Let me check the real implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="52157" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BdVNHa6G2oXRipY7RqwnGi">
+    <param name="pattern">close_managed_pr|close_plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="52157" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BdVNHa6G2oXRipY7RqwnGi">
+26:        close_plan_fn: Callable[[int, str], list[int]],
+36:            close_plan_fn: Function to close plan and linked PRs
+43:        self._close_plan_fn = close_plan_fn
+56:    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+58:        return self._close_plan_fn(plan_id, plan_url)
+  </tool_result>
+  <assistant>Good — the real implementation has `close_plan` (not renamed). The ABC, real, and fake implementations all have `close_plan`. The only files that were incorrectly renamed were the TUI screen and the test file, which I've now fixed.
+
+Now let me check for other potential over-broad renames. The methods that were renamed are: `get_plan`, `list_plans`, `create_plan`, `close_plan`, `update_plan_content`, `update_plan_title`, `get_plan_for_branch`, `resolve_plan_id_for_branch`, `find_sessions_for_plan`. Let me check if any of these got renamed on non-backend objects:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="52773" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01WWUMY1ec418jK1cBWADNcL">
+    <param name="todos">[{'content': 'Phase A: Rename ABC and implementation classes in backend.py and planned_pr....[truncated 1878 chars]...: ty, ruff, pytest', 'status': 'pending', 'activeForm': 'Re-running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="52773" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="771" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WWUMY1ec418jK1cBWADNcL">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me check for other over-broad renames. The key concern is methods like `get_managed_pr`, `create_managed_pr`, `list_managed_prs` being called on objects that aren't ManagedPrBackend:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="53046" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013Vpc7uxibSDmJ56TDnXdiV">
+    <param name="description">Check over-broad sed renames</param>
+    <param name="prompt">Search the Python codebase for any occurrences of the following renamed method names being...[truncated 1026 chars]...rk/erk/erk/packages/ and /home/runner/work/erk/erk/tests/
+
+Report any suspicious findings.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="53046" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01XHGjuHpDbdyQhLfCHvRWS4">
+    <param name="description">Find ruff E501 violations</param>
+    <param name="prompt">Run `ruff check --select E501 src/ packages/ tests/` in the directory /home/runner/work/er...[truncated 40 chars]...e paths, line numbers, and the offending lines so I can fix them. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="53046" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XHGjuHpDbdyQhLfCHvRWS4">
+ruff check passed with violations found: 11 line-too-long errors
+
+Here are the exact file paths, line numbers, and offending lines:
+
+**1. /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py:122**
+- Line length: 104 &gt; 100
+- Offending line:
+  ```python
+  backend.update_managed_pr_content(repo_root, pr_id, plan_content.strip(), summary=summary or "")
+  ```
+
+**2. /home/runner/work/erk/erk/tests/fakes/tests/shared_context.py:191**
+- Line length: 103 &gt; 100
+- Offending line:
+  ```python
+  resolved_plan_store = GitHubManagedPrBackend(resolved_github, resolved_issues, time=FakeTime())
+  ```
+
+**3. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py:72**
+- Line length: 105 &gt; 100
+- Offending line:
+  ```python
+  # Verify the user comment was added (via GitHubManagedPrBackend -&gt; FakeLocalGitHub.create_pr_comment)
+  ```
+
+**4-11. /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py (8 occurrences)**
+
+- **Line 94**: Length 104 &gt; 100
+  ```python
+  github=fake_github, plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime())
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013Vpc7uxibSDmJ56TDnXdiV">
+Perfect! Now let me provide a detailed final report with the specific file locations:
+
+## Final Report: Renamed Method Verification
+
+I have completed a comprehensive search of the Python codebase for all occurrences of the renamed methods. Here are the findings:
+
+### Search Coverage
+- Searched: `/home/runner/work/erk/erk/src/`, `/home/runner/work/erk/erk/packages/`, `/home/runner/work/erk/erk/tests/`
+- All searches done on `.py` files only
+
+### Methods Verified (9 total)
+1. `.get_managed_pr(`
+2. `.create_managed_pr(`
+3. `.close_managed_pr(`
+4. `.list_managed_prs(`
+5. `.update_managed_pr_content(`
+6. `.update_managed_pr_title(`
+7. `.get_managed_pr_for_branch(`
+8. `.resolve_pr_number_for_branch(`
+9. `.find_sessions_for_managed_pr(`
+
+### Findings by Method
+
+**`.get_managed_pr()` - 19 usages in src/erk/cli/commands/**
+All correct usage pattern (ctx.plan_store or ctx.plan_backend):
+- `/home/runner/work/erk/erk/src/erk/cli/commands/implement.py:167`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py:672`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py:40`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/branch/create_cmd.py:137`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py:547`
+
+... [81 lines omitted] ...
+  </tool_result>
+  <assistant>No over-broad renames found. Now let me fix the 11 ruff E501 line-length errors:</assistant>
+  <usage input_tokens="886" cache_creation_input_tokens="3377" cache_read_input_tokens="53859" cache_creation="{'ephemeral_5m_input_tokens': 3377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Jwwti35PAwmV7qUrtQ2UHx">
+    <param name="todos">[{'content': 'Phase A: Rename ABC and implementation classes in backend.py and planned_pr....[truncated 1880 chars]...: ty, ruff, pytest', 'status': 'pending', 'activeForm': 'Re-running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="886" cache_creation_input_tokens="3377" cache_read_input_tokens="53859" cache_creation="{'ephemeral_5m_input_tokens': 3377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jwwti35PAwmV7qUrtQ2UHx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the affected lines and fix them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="57236" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YBtPXvVMbBnoVXpH8FocZM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="offset">118</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="57236" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CKtN9CesJ9G87gKZrYanZA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py</param>
+    <param name="offset">187</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="57236" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UYzhTThAQAptbZpDunYe7W">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py</param>
+    <param name="offset">68</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="57236" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EFPPb8mmQAhFmoR53Ps8hS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py</param>
+    <param name="offset">89</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="57236" cache_creation="{'ephemeral_5m_input_tokens': 1570, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YBtPXvVMbBnoVXpH8FocZM">
+   118→    assert not isinstance(plan_result, PlanNotFound)
+   119→
+   120→    # Step 3: Update plan content via ManagedPrBackend
+   121→    try:
+   122→        backend.update_managed_pr_content(repo_root, pr_id, plan_content.strip(), summary=summary or "")
+   123→    except RuntimeError as e:
+   124→        _handle_update_error(f"Failed to update comment: {e}", cause=e)
+   125→
+   126→    # Step 4: Update issue title from plan content
+   127→    new_title = extract_title_from_plan(plan_content)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01CKtN9CesJ9G87gKZrYanZA">
+   187→    resolved_plan_store: ManagedPrBackend
+   188→    if plan_store is not None:
+   189→        resolved_plan_store = plan_store
+   190→    else:
+   191→        resolved_plan_store = GitHubManagedPrBackend(resolved_github, resolved_issues, time=FakeTime())
+   192→
+   193→    return ErkContext(
+   194→        git=resolved_git,
+   195→        github=resolved_github,
+   196→        github_admin=github_admin if github_admin is not None else FakeGitHubAdmin(),
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01UYzhTThAQAptbZpDunYe7W">
+    68→    assert output["pr_number"] == 42
+    69→    # GitHubManagedPrBackend.add_comment returns string ID from FakeLocalGitHub (starts at 1000000)
+    70→    assert output["comment_id"] == "1000000"
+    71→
+    72→    # Verify the user comment was added (via GitHubManagedPrBackend -&gt; FakeLocalGitHub.create_pr_comment)
+    73→    assert len(fake_github.pr_comments) &gt;= 1
+    74→    # First PR comment is the user's comment
+    75→    pr_number, comment_body = fake_github.pr_comments[0]
+    76→    assert pr_number == 42
+    77→    assert comment_body == "Closing: work is done."
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01EFPPb8mmQAhFmoR53Ps8hS">
+    89→
+    90→    result = runner.invoke(
+    91→        get_plan_metadata,
+    92→        ["3509", "objective_issue"],
+    93→        obj=ErkContext.for_test(
+    94→            github=fake_github, plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime())
+    95→        ),
+    96→    )
+    97→
+    98→    assert result.exit_code == 0
+    99→    output = json.loads(result.output)
+   100→    assert output["success"] is True
+   101→    assert output["value"] == 3400
+   102→    assert output["pr_number"] == 3509
+   103→    assert output["field"] == "objective_issue"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me fix all these line-length issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1560" cache_read_input_tokens="58806" cache_creation="{'ephemeral_5m_input_tokens': 1560, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01FzgWYiAo1NgU9372nnqaGg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="old_string">        backend.update_managed_pr_content(repo_root, pr_id, plan_content.strip(), summary=summary or "")</param>
+    <param name="new_string">        backend.update_managed_pr_content(
+            repo_root, pr_id, plan_content.strip(), summary=summary or ""
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1560" cache_read_input_tokens="58806" cache_creation="{'ephemeral_5m_input_tokens': 1560, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XtHAs1z6zSXz9234kbG5Xe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py</param>
+    <param name="old_string">        resolved_plan_store = GitHubManagedPrBackend(resolved_github, resolved_issues, time=FakeTime())</param>
+    <param name="new_string">        resolved_plan_store = GitHubManagedPrBackend(
+            resolved_github, resolved_issues, time=FakeTime()
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1560" cache_read_input_tokens="58806" cache_creation="{'ephemeral_5m_input_tokens': 1560, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0113yMy2hgxstPcVJvFYkwd4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py</param>
+    <param name="old_string">    # Verify the user comment was added (via GitHubManagedPrBackend -&gt; FakeLocalGitHub.create_pr_comment)</param>
+    <param name="new_string">    # Verify the user comment was added
+    # (via GitHubManagedPrBackend -&gt; FakeLocalGitHub.create_pr_comment)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1560" cache_read_input_tokens="58806" cache_creation="{'ephemeral_5m_input_tokens': 1560, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FzgWYiAo1NgU9372nnqaGg">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XtHAs1z6zSXz9234kbG5Xe">
+The file /home/runner/work/erk/erk/tests/fakes/tests/shared_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0113yMy2hgxstPcVJvFYkwd4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_close_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the 8 occurrences in test_get_plan_metadata.py. They all have the same pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="60366" cache_creation="{'ephemeral_5m_input_tokens': 1120, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fimy8vm4q5MNjVuaPUbCpZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1120" cache_read_input_tokens="60366" cache_creation="{'ephemeral_5m_input_tokens': 1120, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fimy8vm4q5MNjVuaPUbCpZ">
+     1→"""Unit tests for get_plan_metadata exec command.
+     2→
+     3→Tests GitHub issue plan-header metadata extraction.
+     4→Uses FakeGitHubIssues for fast, reliable testing without subprocess mocking.
+     5→"""
+     6→
+     7→import json
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.gateway.github.issues.types import IssueInfo
+    15→from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+    16→from tests.fakes.gateway.github import FakeLocalGitHub
+    17→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    18→from tests.fakes.gateway.time import FakeTime
+    19→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    20→
+    21→
+    22→def make_plan_header_body(
+    23→    schema_version: str = "2",
+    24→    created_at: str = "2025-11-25T14:37:43.513418+00:00",
+    25→    created_by: str = "testuser",
+    26→    worktree_name: str = "test-worktree",
+    27→    objective_issue: int | None = 3400,
+    28→) -&gt; str:
+    29→    """Create a test issue body with plan-header metadata block."""
+    30→    objective_line = (
+
+... [289 lines omitted] ...
+
+    36→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   133→    """Test that a nonexistent field returns null, not an error."""
+   206→    # Should succeed with null value, not error
+   215→# Error Cases
+   220→    """Test error when issue doesn't exist."""
+   236→    assert output["error"] == "issue_not_found"
+   285→def test_json_output_structure_error() -&gt; None:
+   286→    """Test JSON output structure on error."""
+   304→    assert "error" in output
+   309→    assert isinstance(output["error"], str)
+  </tool_result>
+  <assistant>All 8 occurrences have the same pattern. Let me use replace_all:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4241" cache_read_input_tokens="61486" cache_creation="{'ephemeral_5m_input_tokens': 4241, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JZjtgL5ndzA1b6KEovzTUW">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py</param>
+    <param name="old_string">            github=fake_github, plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime())</param>
+    <param name="new_string">            github=fake_github,
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4241" cache_read_input_tokens="61486" cache_creation="{'ephemeral_5m_input_tokens': 4241, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JZjtgL5ndzA1b6KEovzTUW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py has been updated. All occurrences of '            github=fake_github, plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime())' were successfully replaced with '            github=fake_github,
+            plan_store=GitHubManagedPrBackend(fake_github, fake_gh, time=FakeTime()),'.
+  </tool_result>
+  <assistant>Now let me run verification to check everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="65727" cache_creation="{'ephemeral_5m_input_tokens': 770, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015YDDjsHCDznPmV7UUKk9T7">
+    <param name="todos">[{'content': 'Phase A: Rename ABC and implementation classes in backend.py and planned_pr....[truncated 1882 chars]..., ruff, pytest', 'status': 'in_progress', 'activeForm': 'Re-running verification checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="65727" cache_creation="{'ephemeral_5m_input_tokens': 770, 'ephemeral_1h_input_tokens': 0}" output_tokens="627" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015YDDjsHCDznPmV7UUKk9T7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01Y7NSXwYaGCdtcQXwDjsPm2">
+    <param name="description">Run ty type checker</param>
+    <param name="prompt">Run `ty check src/ packages/ tests/` in /home/runner/work/erk/erk and report all errors. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="66497" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Uj19TPixia3YrmPomoGT5V">
+    <param name="description">Run ruff linter</param>
+    <param name="prompt">Run `ruff check src/ packages/ tests/` in /home/runner/work/erk/erk and report any errors. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="66497" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_018MD4iY9cUeFqmUHqszi2RE">
+    <param name="description">Run pytest plan_store tests</param>
+    <param name="prompt">Run `pytest tests/unit/plan_store/ -x -q` in /home/runner/work/erk/erk and report the results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="66497" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y7NSXwYaGCdtcQXwDjsPm2">
+**Type checking passed:** No errors found in `src/`, `packages/`, or `tests/` directories.
+
+All type checks are clean. The codebase passes PyRight type verification.
+agentId: abd641b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01Uj19TPixia3YrmPomoGT5V">
+ruff check passed: All checks passed!
+
+The command successfully ran with no linting violations detected in the `src/`, `packages/`, and `tests/` directories.
+agentId: a838ff9 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_018MD4iY9cUeFqmUHqszi2RE">
+**pytest passed: 162 tests passed in 0.23s**
+
+All tests in `tests/unit/plan_store/` passed successfully with no failures.
+agentId: a559e71 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All three checks pass. Now let me run the full test suite and do a final grep for leftover references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="67166" cache_creation="{'ephemeral_5m_input_tokens': 628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01LaPVZzKw716wcr6HEfuFBK">
+    <param name="description">Run full test suite</param>
+    <param name="prompt">Run `pytest tests/ -x -q --timeout=30` in /home/runner/work/erk/erk and report the results. Do NOT modify any files. If there are failures, report the full error output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="67166" cache_creation="{'ephemeral_5m_input_tokens': 628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_012qoTcbDUZaRrtEhiWNwfnk">
+    <param name="description">Grep leftover old references</param>
+    <param name="prompt">Run this grep in /home/runner/work/erk/erk to find any leftover old references:
+
+Search fo...[truncated 813 chars]...ce (like a comment or docstring) or something that needs fixing.
+
+Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="67166" cache_creation="{'ephemeral_5m_input_tokens': 628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012qoTcbDUZaRrtEhiWNwfnk">
+Excellent! The grep search results show that the old references have been successfully removed. Here's what I found:
+
+## Summary
+
+**Good News:** All the old plan backend class names and method names have been properly cleaned up. No references to:
+- `PlanBackend` (old class name)
+- `PlannedPRBackend` (old implementation class)
+- `.get_plan()`
+- `.create_plan()`
+- `.list_plans()`
+- `.update_plan_content()`
+- `.update_plan_title()`
+- `.get_plan_for_branch()`
+- `.resolve_plan_id_for_branch()`
+- `.find_sessions_for_plan()`
+
+**Only Valid Reference Found:**
+
+The only matches are for `.close_plan()` which is **LEGITIMATE** - this method IS part of the `CommandExecutor` interface and is used in:
+
+1. `/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py` (lines 25, 26, 58, 66) - Tests for the fake executor
+2. `/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py` (line 513) - TUI code calling `CommandExecutor.close_plan()`
+
+These are all correct usages on the `CommandExecutor` interface, not the old `ManagedPrBackend`/`PlanBackend` interfaces.
+
+## Conclusion
+
+The semantic rename of `plan_store` ABC to `ManagedPrBackend` has been completed successfully with no leftover old method references in the active codebase.
+agentId: a4cdc45 (for resuming to continue this agent's work if needed)
+  </tool_result>
+</session>
