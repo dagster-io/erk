@@ -1083,9 +1083,7 @@ def _land_target(
             user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
         user_output(f"Would delete branch '{branch}'")
         if upstack_navigation:
-            user_output(
-                f"Would navigate upstack to child branch '{target.target_child_branch}'"
-            )
+            user_output(f"Would navigate upstack to child branch '{target.target_child_branch}'")
         else:
             user_output(f"Would navigate to {target_path}")
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
