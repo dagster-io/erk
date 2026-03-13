@@ -13,7 +13,7 @@ The status line displays (left to right):
 - **Branch**: `(br:branch-name)` - Current git branch (combined with worktree if names match)
 - **Current directory**: `(cwd:path)` - Relative path from git root (only shown if not at root)
 - **Dirty indicator**: `✗` - Shows when there are uncommitted changes
-- **GitHub PR info**: `(gh:#123 plan:#456 st:XX chks:XX)`:
+- **GitHub PR info**: `(pr:#123 plan:#456 st:XX chks:XX 🤖)`:
   - `#123` - PR number
   - `plan:#456` - Associated issue number from `.impl/issue.json`
   - `st:` - PR state emoji: `👀` published, `🚧` draft, `🎉` merged, `⛔` closed, `💥` conflicts
