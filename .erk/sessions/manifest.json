@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "pr_number": 9242,
+  "sessions": [
+    {
+      "session_id": "6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-13T16:50:13.088078+00:00",
+      "files": [
+        "impl-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-part1.xml",
+        "impl-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-part2.xml",
+        "impl-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-part3.xml",
+        "impl-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 24,
+      "raw_size_kb": 3529,
+      "xml_size_kb": 211,
+      "git_branch": "plnd/remove-pr-issue-linkage-03-13-1722"
+    }
+  ]
+}
