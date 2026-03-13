@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix `erk land --up` broken cd path for upstack navigation"
+}
