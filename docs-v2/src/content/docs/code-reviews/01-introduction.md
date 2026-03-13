@@ -1,7 +1,8 @@
 ---
-title: The pr-address workflow 
+title: /erk:pr-address
 description: erk incorporates code review directly in your agentic engineering workflow
 ---
+
 `erk` can query GitHub code reviews for unresolved comments and discussions, addresses them locally, and resolves them—all within your agentic workflow. In a world of AI-assisted authoring and code review, PR feedback volume can be high. This workflow manages that workload while leaving you in total control.
 
 ### Addressing Feedback
@@ -42,16 +43,15 @@ You can treat the code review as a continuation of your session, directly prompt
 
 The workflow is:
 
-* Author the PR.
-* Review the PR yourself, leaving comments and discussions where appropriate.
-* Run the pr-address workflow locally.
+- Author the PR.
+- Review the PR yourself, leaving comments and discussions where appropriate.
+- Run the pr-address workflow locally.
 
 Another use case is reviewing remote coding workflows that have never been present on your machine. A PR is a useful way to review code written by an agent that you will be accountable for.
 
-#### Fellow Humans 
+#### Fellow Humans
 
 Naturally you can use this to address feedback from your fellow human collaborators. We don't recommend doing this blindly, except for trivial, uncontroversial feedback. That said, as usage of the system becomes more universal within an org, you may find that collaborators begin writing prompts for you to execute on your local copy, effectively turning the code review into a collaborative, agentic coding session.
-
 
 #### System of record for feedback and best practices.
 
@@ -81,9 +81,7 @@ Comments are grouped into ordered batches by complexity and processed from simpl
 
 Each batch is a self-contained cycle: apply fixes, run CI, commit, resolve the GitHub threads, and report progress. False positives are given an explanatory reply and resolved without code changes.
 
-
-
 ### Reference
 
-* `pr-address`
-* `preview-pr-address`
+- `pr-address`
+- `preview-pr-address`

@@ -1,43 +1,27 @@
 ---
-title: Erk Code Reviews 
-description: Code
+title: Use erk reviews
+description: Erk comes with automated PR content review
 ---
 
-Erk runs automated code reviews on every pull request. A single GitHub Actions workflow discovers review files, matches them against changed files, and runs each review as a parallel matrix job. The result is inline PR comments and a summary — no manual setup per review.
+Erk comes with lightweight review agents that run automatically when a published PR is updated. These agents complement the [pr-address workflow](/code-reviews/02-addressing-review-feedback/)—reviews flag issues, and the author uses address workflow to resolve them.
 
-## The two-phase pattern
+You can install pre-defined reviews that come with erk (e.g. `dignified-python`) or build your own.
 
-Code reviews happen in two phases.
+### Adversarial Review
 
-**Phase 1: CI-based detection.** When a PR is opened or updated, cheap models (Haiku) run mechanical checks — style conformance, test coverage gaps, code simplification opportunities. Sonnet handles judgment-heavy reviews like tripwire detection and documentation audits. Each review posts inline comments on specific lines plus a summary comment on the PR.
+Erk reviews are be designed to be focused and adversarial.
 
-**Phase 2: Human-steered resolution.** A human reads the flagged issues and decides what to act on. Running `/erk:pr-address` invokes a powerful model that classifies each comment, groups them into ordered batches by complexity, and resolves them under human oversight. Pre-existing issues in moved code are auto-resolved. Complex changes require explicit approval.
+In AI-enabled projects, engineers typically use skills and markdown files to steer and guide authoring agents. While these are helpful, agents frequently violate the guidelines in those files. Models may improve to the point where this is no longer a problem, but for now it is the state of affairs.
 
-## Convention-based discovery
+We have found that special-purpose review agents, narrowly targeted to find code that violates specific skills, are more effective at ensuring adherence. Their context is free of everything that accumulates prior to and during authoring. With clean context, they can focus exclusively on review and only on the code that has changed. Additionally, this can be done with cheaper, smaller models—critical given that automated code review can rack up massive inference bills.
 
-Reviews are markdown files in `.erk/reviews/`. Each file declares a `paths` glob pattern in its frontmatter. The CI workflow runs `erk exec discover-reviews` to match changed PR files against these patterns, then launches matching reviews as parallel GitHub Actions matrix jobs. Adding a new review means dropping a markdown file — no workflow edits needed.
+Many specialized agents also make attribution much accurate. You can see which agent flagged what issue and why. When you observe code that violates your sensibilities, it more clear who should have detected the error, and where to add the rules. These specialized agents are also more straightforward to build evals for that more generalized, ambitious agents.
 
-## Model selection
+By using many specialized agents in parallel you get increased speed, lower cost, and more accurate attribution and observability.
 
-| Review | Model | Rationale |
-|--------|-------|-----------|
-| Test coverage | Haiku | Mechanical file matching and line counting |
-| Dignified Python | Haiku | Pattern matching against a known rule set |
-| Code simplifier | Haiku | Structural analysis with clear heuristics |
-| Tripwires | Sonnet | Requires reading linked docs and judging exceptions |
-| Doc audit | Sonnet | Requires cross-referencing source code against prose |
+### Skill-Based Review
 
-Haiku reviews run fast and cost little. Sonnet reviews take longer but handle nuance — reading documentation, weighing exceptions, comparing source to claims.
-
-## What reviews check
-
-- **Test coverage**: Flags new source files without corresponding test files.
-- **Dignified Python**: Enforces LBYL patterns, frozen dataclasses, absolute imports, and other project conventions.
-- **Code simplifier**: Identifies opportunities to reduce complexity — unnecessary abstractions, dead code, redundant logic.
-- **Tripwires**: Matches code changes against documented rules (subprocess wrappers, gateway patterns, path handling) and verifies exceptions before flagging.
-- **Doc audit**: Checks `docs/learned/` files for verbatim source copies, inaccurate claims, and drift risk.
-
-## What's next
+A common pattern is for a review to wrap a skill. For example, the `dignified-python` skill encodes a set of coding standards, and the `dignified-python` reviewer is its counterpart. The reviewer instructs the agent to load the skill files and examine the current diff for violations. It also highlights particularly important rules inline to increase adherence.
 
 - [Addressing review feedback](/code-reviews/02-addressing-review-feedback/) — resolve PR comments using the pr-address workflow
 - [Creating a review](/code-reviews/03-creating-a-review/) — add a new automated review to your project

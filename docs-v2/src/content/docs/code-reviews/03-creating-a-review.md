@@ -3,6 +3,8 @@ title: Creating a review
 description: Add a new automated code review to your project
 ---
 
+# TODO: Under Construction
+
 Reviews are markdown files in `.erk/reviews/`. Drop a file, and the CI workflow picks it up automatically — no workflow edits needed.
 
 ## Before you start
@@ -10,6 +12,8 @@ Reviews are markdown files in `.erk/reviews/`. Drop a file, and the CI workflow 
 Check whether an existing review already covers your quality dimension. If a review targets the same files with the same tools and checks a related concern, extend it with an additional step rather than creating a new file. Create a new review when the concern is distinct (different model, different file patterns, or fundamentally different analysis).
 
 ## The review file
+
+TODO: make create review skill
 
 A minimal review file:
 
@@ -32,6 +36,7 @@ Run `gh pr diff` and extract files matching `src/**/*.py`.
 ## Step 2: Check Import Patterns
 
 For each file, verify:
+
 - No relative imports (`from .module import X`)
 - No `import *` statements
 - No import-time side effects beyond static constants
@@ -44,20 +49,21 @@ For each violation:
 ## Step 4: Summary Comment
 
 ### Files Reviewed
+
 - `file.py`: N issues
 ```
 
 ### Frontmatter fields
 
-| Field | Description |
-|-------|-------------|
-| `name` | Display name shown in CI logs and PR comments |
-| `paths` | Glob patterns matching files this review cares about. The discovery step skips reviews that don't match any changed file. |
-| `marker` | HTML comment used for deduplication. The review updates its own summary comment rather than posting duplicates. |
-| `model` | Which Claude model runs the review. See [model selection](#model-selection). |
-| `timeout_minutes` | Maximum runtime before the CI job is killed |
-| `allowed_tools` | Tool permissions granted to the model during the review |
-| `enabled` | Set to `false` to disable without deleting |
+| Field             | Description                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | Display name shown in CI logs and PR comments                                                                             |
+| `paths`           | Glob patterns matching files this review cares about. The discovery step skips reviews that don't match any changed file. |
+| `marker`          | HTML comment used for deduplication. The review updates its own summary comment rather than posting duplicates.           |
+| `model`           | Which Claude model runs the review. See [model selection](#model-selection).                                              |
+| `timeout_minutes` | Maximum runtime before the CI job is killed                                                                               |
+| `allowed_tools`   | Tool permissions granted to the model during the review                                                                   |
+| `enabled`         | Set to `false` to disable without deleting                                                                                |
 
 ## Writing review instructions
 
@@ -69,6 +75,7 @@ Use explicit classification taxonomies. Tell the model exactly what categories e
 
 ```markdown
 Classify each code block as:
+
 - VERBATIM: Copies source code that will go stale
 - CONCEPTUAL: Illustrates a pattern without copying implementation
 - TEMPLATE: Provides a starting point the reader modifies
@@ -84,9 +91,9 @@ The first version gives the model a decision tree. The second relies on vibes.
 
 ## Model selection
 
-| Choose | When |
-|--------|------|
-| Haiku | The check is mechanical — pattern matching, file existence, line counting. Fast and cheap. |
+| Choose | When                                                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------- |
+| Haiku  | The check is mechanical — pattern matching, file existence, line counting. Fast and cheap.                        |
 | Sonnet | The check requires judgment — reading documentation, weighing exceptions, cross-referencing source against prose. |
 
 Start with Haiku. Upgrade to Sonnet only if you find the model missing violations that require contextual reasoning.
