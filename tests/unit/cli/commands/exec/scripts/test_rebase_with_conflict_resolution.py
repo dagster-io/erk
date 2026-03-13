@@ -9,7 +9,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
-    CONFLICT_RESOLUTION_PROMPT,
+    RESOLVE_CONFLICTS_COMMAND,
     RebaseError,
     RebaseSuccess,
     _build_summary_prompt,
@@ -78,7 +78,7 @@ def test_rebase_already_up_to_date(tmp_path: Path) -> None:
     assert result.commits_behind == 0
     assert result.conflicts_resolved == ()
     # Claude should not be invoked when already up-to-date
-    assert len(fake_claude.prompt_calls) == 0
+    assert len(fake_claude.command_calls) == 0
 
 
 def test_rebase_success_no_conflicts(tmp_path: Path) -> None:
@@ -105,7 +105,7 @@ def test_rebase_success_no_conflicts(tmp_path: Path) -> None:
     assert result.commits_behind == 3
     assert result.conflicts_resolved == ()
     # Claude should not be invoked when no conflicts
-    assert len(fake_claude.prompt_calls) == 0
+    assert len(fake_claude.command_calls) == 0
     # Push should have been called
     assert len(fake_git.pushed_branches) == 1
     pushed = fake_git.pushed_branches[0]
@@ -149,7 +149,7 @@ def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -> None:
     assert result.commits_behind == 2
     assert "src/config.py" in result.conflicts_resolved
     # Claude should have been invoked once to resolve the conflict
-    assert len(fake_claude.prompt_calls) == 1
+    assert len(fake_claude.command_calls) == 1
 
 
 def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
@@ -160,12 +160,7 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
         rebase_in_progress=True,  # Stays in progress (Claude can't resolve)
         conflicted_files=["src/config.py"],
     )
-    fake_claude = FakePromptExecutor(
-        prompt_results=[
-            PromptResult(success=False, output="", error="conflict resolution failed"),
-        ]
-        * 3,
-    )
+    fake_claude = FakePromptExecutor()
 
     result = _rebase_with_conflict_resolution_impl(
         git=fake_git,
@@ -181,7 +176,7 @@ def test_rebase_fails_after_max_attempts(tmp_path: Path) -> None:
     assert result.error == "rebase-failed"
     assert "3 attempts" in result.message
     # Claude should have been called max_attempts times
-    assert len(fake_claude.prompt_calls) == 3
+    assert len(fake_claude.command_calls) == 3
 
 
 def test_rebase_fetch_failure(tmp_path: Path) -> None:
@@ -329,8 +324,8 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     assert "Error:" in result.output
 
 
-def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
-    """Test that conflict resolution uses the expected prompt."""
+def test_conflict_resolution_uses_correct_command(tmp_path: Path) -> None:
+    """Test that conflict resolution uses the shared system command."""
     # Create a callable that simulates rebase being in progress initially,
     # then cleared after Claude is invoked (simulating successful resolution)
     call_count = 0
@@ -359,12 +354,12 @@ def test_conflict_resolution_uses_correct_prompt(tmp_path: Path) -> None:
         max_attempts=5,
     )
 
-    # Verify the conflict resolution prompt was used
-    assert len(fake_claude.prompt_calls) == 1
-    prompt_call = fake_claude.prompt_calls[0]
-    assert prompt_call.prompt == CONFLICT_RESOLUTION_PROMPT
-    assert prompt_call.dangerous is True
-    assert prompt_call.cwd == tmp_path
+    # Verify the shared resolve-conflicts-core command was used
+    assert len(fake_claude.command_calls) == 1
+    command_call = fake_claude.command_calls[0]
+    assert command_call.command == RESOLVE_CONFLICTS_COMMAND
+    assert command_call.dangerous is True
+    assert command_call.worktree_path == tmp_path
 
 
 def test_model_parameter_passed_correctly(tmp_path: Path) -> None:
@@ -411,12 +406,7 @@ def test_max_attempts_parameter(tmp_path: Path) -> None:
         rebase_in_progress=True,  # Stays in progress
         conflicted_files=["src/config.py"],
     )
-    fake_claude = FakePromptExecutor(
-        prompt_results=[
-            PromptResult(success=False, output="", error="conflict resolution failed"),
-        ]
-        * 2,
-    )
+    fake_claude = FakePromptExecutor()
 
     test_ctx = ErkContext.for_test(
         cwd=tmp_path,
@@ -441,4 +431,4 @@ def test_max_attempts_parameter(tmp_path: Path) -> None:
     assert result.exit_code == 1
     assert "2 attempts" in result.output
     # Claude should have been called exactly 2 times
-    assert len(fake_claude.prompt_calls) == 2
+    assert len(fake_claude.command_calls) == 2
