@@ -18,6 +18,7 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     # Should contain shell variable definitions
@@ -46,6 +47,7 @@ def test_render_land_execution_script_includes_usage_comment() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     assert "# Usage: source land.sh <pr_number> <branch> [flags...]" in script
@@ -64,6 +66,7 @@ def test_render_land_execution_script_includes_shift_and_passthrough() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     # Should shift past PR number and branch
@@ -86,6 +89,7 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     # These should be hardcoded in the script
@@ -110,6 +114,7 @@ def test_render_land_execution_script_without_static_flags() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     assert "--worktree-path" not in script
@@ -137,6 +142,7 @@ def test_render_land_execution_script_does_not_bake_user_flags() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     # User flags should NOT be hardcoded - they come from "$@"
@@ -159,6 +165,7 @@ def test_render_land_execution_script_includes_cd_command() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/path/to/target"),
+        upstack_navigation=False,
     )
 
     assert "cd /path/to/target" in script
@@ -177,6 +184,7 @@ def test_render_land_execution_script_bakes_no_cleanup_when_cleanup_declined() -
         skip_learn=False,
         cleanup_confirmed=False,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     assert "--no-cleanup" in script
@@ -195,6 +203,7 @@ def test_render_land_execution_script_omits_no_cleanup_when_cleanup_confirmed() 
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     assert "--no-cleanup" not in script
@@ -213,6 +222,7 @@ def test_render_land_execution_script_stops_on_execute_failure() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     assert "|| return 1" in script
@@ -237,6 +247,59 @@ def test_render_land_execution_script_has_header_comment() -> None:
         skip_learn=False,
         cleanup_confirmed=True,
         target_path=Path("/repo"),
+        upstack_navigation=False,
     )
 
     assert script.startswith("# erk land deferred execution\n")
+
+
+def test_render_land_execution_script_upstack_uses_command_substitution() -> None:
+    """When upstack_navigation=True, script captures stdout for cd target."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        plan_number=None,
+        use_graphite=False,
+        skip_learn=False,
+        cleanup_confirmed=True,
+        target_path=None,
+        upstack_navigation=True,
+    )
+
+    # Should use command substitution to capture the resolved path
+    assert "TARGET_DIR=$(" in script
+    assert 'cd "$TARGET_DIR"' in script
+
+    # Should NOT have a hardcoded cd path
+    lines = script.splitlines()
+    hardcoded_cd_lines = [line for line in lines if line.startswith("cd /")]
+    assert len(hardcoded_cd_lines) == 0, "Should not have hardcoded cd path for upstack"
+
+    # Should still guard against failure
+    assert "|| return 1" in script
+
+
+def test_render_land_execution_script_non_upstack_uses_hardcoded_cd() -> None:
+    """When upstack_navigation=False, script uses hardcoded cd to trunk path."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        plan_number=None,
+        use_graphite=False,
+        skip_learn=False,
+        cleanup_confirmed=True,
+        target_path=Path("/repo"),
+        upstack_navigation=False,
+    )
+
+    # Should use hardcoded path
+    assert "cd /repo" in script
+
+    # Should NOT use command substitution
+    assert "TARGET_DIR=" not in script
