@@ -71,7 +71,10 @@ class TestRunErkJson:
         assert json.loads(result) == {
             "success": False,
             "error_type": "cli_subprocess_error",
-            "message": "HTTP 422 for repos/dagster-io/internal/issues/123/labels: Validation Failed",
+            "message": (
+                "HTTP 422 for repos/dagster-io/internal/issues/123/labels: "
+                "Validation Failed"
+            ),
         }
 
     @patch("erk_mcp.server.subprocess.run")
