@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9241,
+  "sessions": [
+    {
+      "session_id": "726b2fa5-b146-4e76-899f-9344b6780139",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-13T17:19:32.509636+00:00",
+      "files": [
+        "planning-726b2fa5-b146-4e76-899f-9344b6780139-726b2fa5-b146-4e76-899f-9344b6780139.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 12,
+      "raw_size_kb": 289,
+      "xml_size_kb": 42,
+      "git_branch": "plnd/rename-docs-v2-docs-site-03-13-1457"
+    }
+  ]
+}
