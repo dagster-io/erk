@@ -1,0 +1,821 @@
+<session>
+  <meta branch="plnd/remove-plan-review-refs-03-10-1109" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01HVpUaxkKs4jnJBJtBwg6oJ">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DhjQS7tvMTAdP1Nu6hrr9D">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+    <param name="old_string">The symptom: "Wait, this is plan review mode? But I already classified the feedback as code comments..."</param>
+    <param name="new_string">The symptom: "Wait, this is plan file mode? But I already classified the feedback as code comments..."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="76764" cache_creation="{'ephemeral_5m_input_tokens': 295, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DhjQS7tvMTAdP1Nu6hrr9D">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DkfbUqrhGQ3c8iF7ZC8BCF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+    <param name="old_string">The `/erk:pr-address` command uses Phase 0 detection with a two-step cascade to determine ...[truncated 1376 chars]...lly match both, but label-based mode is the intended signal from the plan review workflow.</param>
+    <param name="new_string">The `/erk:pr-address` command uses Phase 0 detection to determine which workflow to follow...[truncated 667 chars]...onals.
+
+**No mode leakage**: Each mode's phases never see another mode's context or logic.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="77059" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DkfbUqrhGQ3c8iF7ZC8BCF">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the anti-patterns and related patterns to remove plan-review references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="77267" cache_creation="{'ephemeral_5m_input_tokens': 1040, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017fij1GmmuNDceuu7pUirAC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+    <param name="old_string">3. Check if plan review mode
+4. ERROR: Should have checked this before Phase 1 started</param>
+    <param name="new_string">3. Check if plan file mode
+4. ERROR: Should have checked this before Phase 1 started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="77267" cache_creation="{'ephemeral_5m_input_tokens': 1040, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017fij1GmmuNDceuu7pUirAC">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017KQZezk2Lde7d6HBvsS6hh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+    <param name="old_string">- If plan review: classify differently
+
+### Phase 2: Generate
+
+- If plan review: generate differently
+
+### Phase 3: Apply
+
+- If plan review: apply differently</param>
+    <param name="new_string">- If plan file: classify differently
+
+### Phase 2: Generate
+
+- If plan file: generate differently
+
+### Phase 3: Apply
+
+- If plan file: apply differently</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="78307" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017KQZezk2Lde7d6HBvsS6hh">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SKKMuF8W8e9qyetXFp6M1k">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+    <param name="old_string">1. Try to generate code fixes
+2. Realize the PR has a plan review label
+3. Abort with erro...[truncated 99 chars]...
+**Correct approach**: Phase 0 detects label and branches to plan review flow immediately.</param>
+    <param name="new_string">1. Try to generate code fixes
+2. Realize the PR is a plan-only PR
+3. Abort with error
+```
+...[truncated 95 chars]...*Correct approach**: Phase 0 detects plan file and branches to plan file flow immediately.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="78530" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SKKMuF8W8e9qyetXFp6M1k">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the "Label-Driven Branching" related pattern and update the state machine example:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="79033" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PkctkmiFwZJpN7Fciv1p4x">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+    <param name="old_string">## Related Patterns
+
+### Label-Driven Branching
+
+Phase 0 detection often uses GitHub PR la...[truncated 480 chars]...e is determined, transitions within that mode never cross to the other mode's transitions.</param>
+    <param name="new_string">## Related Patterns
+
+### State Machine Entry Point
+
+Phase 0 detection is a state machine e...[truncated 188 chars]...e is determined, transitions within that mode never cross to the other mode's transitions.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="79033" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PkctkmiFwZJpN7Fciv1p4x">
+The file /home/runner/work/erk/erk/docs/learned/architecture/phase-zero-detection-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>Also remove the "Label-Based Detection" mechanism from the Detection Mechanisms section since the `erk-plan-review` label was the only concrete use of it and the general pattern info is less useful now:
+
+Actually, let me keep the Label-Based Detection section since it's a general pattern reference, not specific to erk-plan-review. Let me check if it mentions erk-plan-review specifically... it doesn't, so it's fine to keep as a general reference.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="79355" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01WyMTDZKwCWzcYFXz5yHCcF">
+    <param name="todos">[{'content': 'Remove erk-plan-review label gating from GitHub workflow files', 'status': '...[truncated 1034 chars]... verification grep and tests', 'status': 'pending', 'activeForm': 'Running verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="675" cache_read_input_tokens="79355" cache_creation="{'ephemeral_5m_input_tokens': 675, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WyMTDZKwCWzcYFXz5yHCcF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 6: workflow-gating-patterns.md — Remove Negation Pattern and Combining Draft and Label Checks sections**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="80030" cache_creation="{'ephemeral_5m_input_tokens': 517, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K5LQt83UVz6EXd2uyz5sov">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="80030" cache_creation="{'ephemeral_5m_input_tokens': 517, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K5LQt83UVz6EXd2uyz5sov">
+     1→---
+     2→title: GitHub Actions Workflow Gating Patterns
+     3→read_when:
+     4→  - adding conditional execution to GitHub Actions workflows
+     5→  - implementing label-based CI skipping
+     6→  - understanding why CI was skipped on a PR
+     7→tripwires:
+     8→  - action: "Use !contains() pattern for label-based gating"
+     9→    warning: "Negation is critical — contains() without ! skips all push events"
+    10→    score: 5
+    11→  - action: "Add branches-ignore for ephemeral branch patterns"
+    12→    warning: "Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing"
+    13→    score: 4
+    14→  - action: "using branches-ignore for planned/* branches"
+    15→    warning: "planned/ branches contain both metadata AND code. Use paths-ignore instead to skip CI only when commits touch exclusively metadata paths (.erk/impl-context/**, .worker-impl/**)."
+    16→    score: 4
+    17→last_audited: "2026-02-16 14:20 PT"
+    18→audit_result: edited
+    19→---
+    20→
+    21→# GitHub Actions Workflow Gating Patterns
+    22→
+    23→GitHub Actions offers multiple mechanisms for controlling workflow execution. Choosing the right layer for each gate determines both safety and cost efficiency.
+    24→
+    25→## Why Multiple Gating Layers Exist
+    26→
+    27→GitHub Actions evaluates conditions at different points in the workflow lifecycle:
+    28→
+    29→&lt;!-- Source: .github/workflows/ci.yml, on: triggers, job if: conditions, step if: conditions --&gt;
+    30→
+
+... [159 lines omitted] ...
+
+   165→| Upstream job failure                            | Downstream job `if:`                | Use `needs.job.result` or job outputs               |
+  </tool_result>
+  <assistant>This file needs significant rewriting. Let me remove the label-specific sections and update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3262" cache_read_input_tokens="80547" cache_creation="{'ephemeral_5m_input_tokens': 3262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0172obbj6Z7YiLowaFVibifh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">---
+title: GitHub Actions Workflow Gating Patterns
+read_when:
+  - adding conditional execu...[truncated 689 chars]...orker-impl/**)."
+    score: 4
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
+---</param>
+    <param name="new_string">---
+title: GitHub Actions Workflow Gating Patterns
+read_when:
+  - adding conditional execu...[truncated 467 chars]...orker-impl/**)."
+    score: 4
+last_audited: "2026-02-16 14:20 PT"
+audit_result: edited
+---</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3262" cache_read_input_tokens="80547" cache_creation="{'ephemeral_5m_input_tokens': 3262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0172obbj6Z7YiLowaFVibifh">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the Negation Pattern section and Combining Draft and Label Checks section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="83809" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017RuP6mVJEpauugT4ef5R1Z">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">## The Negation Pattern for Label Checks
+
+&lt;!-- Source: .github/workflows/ci.yml, check-sub...[truncated 2066 chars]...t + not labeled (ready code) → both checks pass, job runs
+
+## The ready_for_review Trigger</param>
+    <param name="new_string">## Draft Gating
+
+&lt;!-- Source: .github/workflows/ci.yml, check-submission job --&gt;
+
+The `che...[truncated 143 chars]...n.outputs.skip` while retaining the draft check directly.
+
+## The ready_for_review Trigger</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="605" cache_read_input_tokens="83809" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="819" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017RuP6mVJEpauugT4ef5R1Z">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the "When Job-Level Conditions Aren't Enough" section and "Plan-Review Branch Gating" section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1131" cache_read_input_tokens="84414" cache_creation="{'ephemeral_5m_input_tokens': 1131, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015CGzSgDRFvfFczXgJkGiBk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">The job-level `if:` can cheaply skip draft PRs and `erk-plan-review` PRs before runner all...[truncated 15 chars]...ed" marker lives in the PR body and depends on the current HEAD SHA, so the workflow must:</param>
+    <param name="new_string">The job-level `if:` can cheaply skip draft PRs before runner allocation. But the "local review passed" marker lives in the PR body and depends on the current HEAD SHA, so the workflow must:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1131" cache_read_input_tokens="84414" cache_creation="{'ephemeral_5m_input_tokens': 1131, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015CGzSgDRFvfFczXgJkGiBk">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now remove the Plan-Review Branch Gating section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="85545" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RP9cotEdZFa1fe9wN2krU5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">## Plan-Review Branch Gating
+
+Plan-review branches are gated via the `erk-plan-review` **l...[truncated 369 chars]...ns Label Queries](github-actions-label-queries.md).
+
+## Decision Table: Which Layer to Use</param>
+    <param name="new_string">## Decision Table: Which Layer to Use</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="289" cache_read_input_tokens="85545" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="279" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RP9cotEdZFa1fe9wN2krU5">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Update the decision table to remove the label row and the "Why Not Use Step-Level" section to remove the plan-review reference:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="85834" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Xye1U4mzV9zBn8FzTVTJJ3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">| What you're checking                            | Use this layer                      | ...[truncated 1095 chars]...ownstream job `if:`                | Use `needs.job.result` or job outputs               |</param>
+    <param name="new_string">| What you're checking                            | Use this layer                      | ...[truncated 951 chars]...ownstream job `if:`                | Use `needs.job.result` or job outputs               |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="85834" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xye1U4mzV9zBn8FzTVTJJ3">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01E5MZaFpig3nEbVTLeBR1Sf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md</param>
+    <param name="old_string">A: Cost and queue pressure. Job-level conditions prevent runner allocation. If a pull_requ...[truncated 50 chars]...ects it before GitHub allocates a runner, saving CI minutes and reducing queue contention.</param>
+    <param name="new_string">A: Cost and queue pressure. Job-level conditions prevent runner allocation. For example, a...[truncated 12 chars]...ects it before GitHub allocates a runner, saving CI minutes and reducing queue contention.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="666" cache_read_input_tokens="86425" cache_creation="{'ephemeral_5m_input_tokens': 666, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E5MZaFpig3nEbVTLeBR1Sf">
+The file /home/runner/work/erk/erk/docs/learned/ci/workflow-gating-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01BmiK2nMt661vTUzDTaA6Gv">
+    <param name="todos">[{'content': 'Remove erk-plan-review label gating from GitHub workflow files', 'status': '...[truncated 1036 chars]... verification grep and tests', 'status': 'pending', 'activeForm': 'Running verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="87091" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="371" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BmiK2nMt661vTUzDTaA6Gv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 7: Remaining CI docs — minor updates**
+
+Now let me update the remaining docs. Starting with `job-ordering-strategy.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="87617" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0191zmuzpCrqDXd3mrSH8cYS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md</param>
+    <param name="old_string">**`check-submission`** runs first with no dependencies. It checks whether the PR is a draf...[truncated 50 chars]...all downstream jobs. This prevents wasted compute on PRs that aren't ready for validation.</param>
+    <param name="new_string">**`check-submission`** runs first with no dependencies. It checks whether the PR is a draf...[truncated 21 chars]...all downstream jobs. This prevents wasted compute on PRs that aren't ready for validation.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="87617" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0191zmuzpCrqDXd3mrSH8cYS">
+The file /home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md has been updated successfully.
+  </tool_result>
+  <assistant>Now `github-actions-label-filtering.md` — this entire doc is about the `erk-plan-review` label pattern. Since the label is gone, this doc needs significant rewriting to be a general reference or should be mostly removed. The plan says "remove plan-review examples". Let me rewrite it to be a general label filtering reference without erk-plan-review specifics:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="88030" cache_creation="{'ephemeral_5m_input_tokens': 299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HxtGzt5pufDx3rPm3Uru6A">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/github-actions-label-filtering.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="88030" cache_creation="{'ephemeral_5m_input_tokens': 299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HxtGzt5pufDx3rPm3Uru6A">
+     1→---
+     2→title: GitHub Actions Label Filtering Reference
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - debugging why label-based CI gating isn't working
+     7→  - implementing label-based workflow conditions
+     8→  - confused about .*.name syntax vs array filtering
+     9→tripwires:
+    10→  - action: GitHub Actions cannot interpolate Python constants
+    11→    warning: label strings must be hardcoded in YAML
+    12→  - action: using this pattern
+    13→    warning:
+    14→      Always use negation (!contains) for safe defaults on push events without
+    15→      PR context
+    16→---
+    17→
+    18→# GitHub Actions Label Filtering Reference
+    19→
+    20→## Why Label Filtering Is Non-Obvious
+    21→
+    22→GitHub Actions label checks are counterintuitive because:
+    23→
+    24→1. **The syntax hides array operations** — `.*.name` is property extraction, not dot notation
+    25→2. **Event context matters** — `pull_request.labels` is available only on PR events, not push events
+    26→3. **Negation determines safe defaults** — `!contains()` ensures push events run CI, `contains()` would skip them
+    27→
+    28→This document explains the WHY behind the pattern, not the syntax itself.
+    29→
+    30→## The Safe Default Problem
+
+... [110 lines omitted] ...
+  </tool_result>
+  <assistant>This doc is almost entirely about the `erk-plan-review` label. Since that label is gone, the doc's content is now purely historical/reference. Let me rewrite it to be a general label filtering reference:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="88329" cache_creation="{'ephemeral_5m_input_tokens': 2287, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_017Cg4dFgvvyPAZQKYnshWfR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/github-actions-label-filtering.md</param>
+    <param name="content">---
+title: GitHub Actions Label Filtering Reference
+last_audited: "2026-02-16 14:20 PT"
+au...[truncated 4000 chars]...Actions Label Queries](github-actions-label-queries.md) - Push event label checks via API
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2287" cache_read_input_tokens="88329" cache_creation="{'ephemeral_5m_input_tokens': 2287, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Cg4dFgvvyPAZQKYnshWfR">
+The file /home/runner/work/erk/erk/docs/learned/ci/github-actions-label-filtering.md has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→---
+     2→title: GitHub Actions Label Filtering Reference
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - debugging why label-based CI gating isn't working
+     7→  - implementing label-based workflow conditions
+     8→  - confused about .*.name syntax vs array filtering
+     9→tripwires:
+    10→  - action: GitHub Actions cannot interpolate Python constants
+    11→    warning: label strings must be hardcoded in YAML
+    12→  - action: using label-based gating
+    13→    warning:
+    14→      Always use negation (!contains) for safe defaults on push events without
+    15→      PR context
+    16→---
+    17→
+    18→# GitHub Actions Label Filtering Reference
+    19→
+    20→## Why Label Filtering Is Non-Obvious
+    21→
+    22→GitHub Actions label checks are counterintuitive because:
+    23→
+    24→1. **The syntax hides array operations** — `.*.name` is property extraction, not dot notation
+    25→2. **Event context matters** — `pull_request.labels` is available only on PR events, not push events
+    26→3. **Negation determines safe defaults** — `!contains()` ensures push events run CI, `contains()` would skip them
+    27→
+    28→This document explains the WHY behind the pattern, not the syntax itself.
+    29→
+
+... [71 lines omitted] ...
+  </tool_result>
+  <assistant>Now update `github-actions-label-queries.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2990" cache_read_input_tokens="90616" cache_creation="{'ephemeral_5m_input_tokens': 2990, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NsTMMT7iZjUDvg3Tu5PKCw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2990" cache_read_input_tokens="90616" cache_creation="{'ephemeral_5m_input_tokens': 2990, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NsTMMT7iZjUDvg3Tu5PKCw">
+     1→---
+     2→title: GitHub Actions Label Queries
+     3→read_when:
+     4→  - "checking PR labels in GitHub Actions workflows"
+     5→  - "working with push event workflows"
+     6→  - "implementing CI gating based on PR labels"
+     7→tripwires:
+     8→  - score: 6
+     9→    action: "Label checks in push event workflows"
+    10→    warning: "Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API."
+    11→    context: "The asymmetry exists because push events don't have github.event.pull_request in their context. Defense-in-depth: Keep job-level checks for pull_request events (fast path), add step-level API queries for push events (required path)."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# GitHub Actions Label Queries
+    17→
+    18→## The Asymmetry Problem
+    19→
+    20→GitHub Actions workflows face a fundamental asymmetry in how PR labels are accessed:
+    21→
+    22→**pull_request events**: The `github.event.pull_request` context is populated, so labels are available via `github.event.pull_request.labels.*.name` at job evaluation time (before any steps run).
+    23→
+    24→**push events**: The `github.event.pull_request` context does **not exist**. There is no PR context at job evaluation time, even if the push is to a branch with an open PR.
+    25→
+    26→This asymmetry is architectural, not a bug. Push events are branch operations; GitHub Actions doesn't implicitly resolve "what PR is this branch associated with?" until you ask via the API.
+    27→
+    28→## Why This Matters for CI Gating
+    29→
+    30→Any workflow that wants to make decisions based on PR labels must handle both event types correctly:
+
+... [91 lines omitted] ...
+  </tool_result>
+  <assistant>Update the example and anti-pattern to use a generic label instead of `erk-plan-review`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1984" cache_read_input_tokens="93606" cache_creation="{'ephemeral_5m_input_tokens': 1984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Vacat6hT6HSqrCKWu2sTu1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md</param>
+    <param name="old_string">    if printf '%s' "$LABELS" | grep -q 'erk-plan-review'; then</param>
+    <param name="new_string">    if printf '%s' "$LABELS" | grep -q 'skip-ci'; then</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1984" cache_read_input_tokens="93606" cache_creation="{'ephemeral_5m_input_tokens': 1984, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vacat6hT6HSqrCKWu2sTu1">
+The file /home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TkHFaXVvDtVXTzCHE9VLSk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md</param>
+    <param name="old_string">A: Job-level conditions are evaluated before runner allocation. If a pull_request event ha...[truncated 36 chars]...revents GitHub from even starting a runner, saving CI minutes and reducing queue pressure.</param>
+    <param name="new_string">A: Job-level conditions are evaluated before runner allocation. If a pull_request event ha...[truncated 21 chars]...revents GitHub from even starting a runner, saving CI minutes and reducing queue pressure.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="95590" cache_creation="{'ephemeral_5m_input_tokens': 497, 'ephemeral_1h_input_tokens': 0}" output_tokens="209" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TkHFaXVvDtVXTzCHE9VLSk">
+The file /home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UPsf1QRvgc7ketLof3HFQq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md</param>
+    <param name="old_string">  !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')</param>
+    <param name="new_string">  !contains(github.event.pull_request.labels.*.name, 'skip-ci')</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="96087" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="165" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UPsf1QRvgc7ketLof3HFQq">
+The file /home/runner/work/erk/erk/docs/learned/ci/github-actions-label-queries.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `label-rename-checklist.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="96342" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0159tToaGSJGXhziZyq5T8TG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="96342" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="92" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0159tToaGSJGXhziZyq5T8TG">
+     1→---
+     2→title: CI Label Rename Checklist
+     3→read_when:
+     4→  - renaming a GitHub label used in CI automation
+     5→  - updating label references across the codebase
+     6→  - debugging why CI label checks aren't working after a rename
+     7→tripwires:
+     8→  - action: "Renaming a GitHub label used in CI automation"
+     9→    warning: "Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates."
+    10→    score: 6
+    11→last_audited: "2026-02-16 14:20 PT"
+    12→audit_result: clean
+    13→---
+    14→
+    15→# CI Label Rename Checklist
+    16→
+    17→## Why Label Renames Are Dangerous
+    18→
+    19→GitHub Actions label checks use **string literals in YAML that cannot be validated statically**. Unlike code references that fail at compile time, label mismatches fail silently:
+    20→
+    21→- Boolean expressions evaluate to `false` when label names don't match
+    22→- No errors are thrown at workflow parse time or runtime
+    23→- PRs with the label run CI when they should skip (or vice versa)
+    24→- No obvious indicators point to the mismatch
+    25→
+    26→The problem: **labels connect Python constants, YAML workflow conditions, and prose documentation across three different file formats with zero static validation**.
+    27→
+    28→## The Coordination Challenge
+    29→
+    30→&lt;!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL --&gt;
+
+... [94 lines omitted] ...
+  </tool_result>
+  <assistant>Remove the `PLAN_REVIEW_LABEL` references from the checklist doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2183" cache_read_input_tokens="96553" cache_creation="{'ephemeral_5m_input_tokens': 2183, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PzZMLWuzyHDUMkfEP6uewD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL --&gt;
+
+Label definitions start in P...[truncated 71 chars]...polated into GitHub Actions YAML. The disconnect between definition and use creates drift:</param>
+    <param name="new_string">Label definitions may start in Python constants but cannot be interpolated into GitHub Actions YAML. The disconnect between definition and use creates drift:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2183" cache_read_input_tokens="96553" cache_creation="{'ephemeral_5m_input_tokens': 2183, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PzZMLWuzyHDUMkfEP6uewD">
+The file /home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016t59dJ92pAVtnrNQK5xyDS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md</param>
+    <param name="old_string">- [Phase Zero Detection Pattern](../architecture/phase-zero-detection-pattern.md) — Uses label checks for plan review mode</param>
+    <param name="new_string">- [Phase Zero Detection Pattern](../architecture/phase-zero-detection-pattern.md) — Phase 0 detection patterns</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="98736" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016t59dJ92pAVtnrNQK5xyDS">
+The file /home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `ci-failure-summarization.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="99016" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PEr1z1ak4Y9YrzPbmGSM5f">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/ci-failure-summarization.md</param>
+    <param name="old_string">- **Conditions**: Only on PRs, only when at least one job fails, skips plan review PRs, requires `CLAUDE_ENABLED != 'false'`</param>
+    <param name="new_string">- **Conditions**: Only on PRs, only when at least one job fails, requires `CLAUDE_ENABLED != 'false'`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="99016" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PEr1z1ak4Y9YrzPbmGSM5f">
+The file /home/runner/work/erk/erk/docs/learned/ci/ci-failure-summarization.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `fake-github-mutation-tracking.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="99498" cache_creation="{'ephemeral_5m_input_tokens': 242, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018prcCtRr7sEU9h4zJDHgCR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md</param>
+    <param name="old_string">| `_added_labels`            | `(pr_number, label)`                              | `(42, "erk-plan-review")`                        |</param>
+    <param name="new_string">| `_added_labels`            | `(pr_number, label)`                              | `(42, "erk-pr")`                                 |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="99498" cache_creation="{'ephemeral_5m_input_tokens': 242, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018prcCtRr7sEU9h4zJDHgCR">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012mMULHvXNEXfXzosirY9Sh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md</param>
+    <param name="old_string">assert fake_github.added_labels == [(42, "erk-plan-review")]</param>
+    <param name="new_string">assert fake_github.added_labels == [(42, "erk-pr")]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="99740" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012mMULHvXNEXfXzosirY9Sh">
+The file /home/runner/work/erk/erk/docs/learned/testing/fake-github-mutation-tracking.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01VnsFCnLqQBihiXyfsJVAs8">
+    <param name="todos">[{'content': 'Remove erk-plan-review label gating from GitHub workflow files', 'status': '...[truncated 1038 chars]...ification grep and tests', 'status': 'in_progress', 'activeForm': 'Running verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="100254" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="371" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VnsFCnLqQBihiXyfsJVAs8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 8: Verification — Run grep to check for remaining references**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="100454" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SMxZdrjZ81AYr6TC7vFrit">
+    <param name="pattern">plan-review|plan_review|PLAN_REVIEW</param>
+    <param name="path">/home/runner/work/erk/erk/.github</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="100454" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UYSVekH7jub1tSm6A2ZiAT">
+    <param name="pattern">plan-review|plan_review|PLAN_REVIEW</param>
+    <param name="path">/home/runner/work/erk/erk/.claude/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="100454" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MwBHsbgBkno9dS4j7cTsKP">
+    <param name="pattern">plan-review|plan_review|PLAN_REVIEW</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="100454" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012RR5j9oCu8ww26BzH2xYBA">
+    <param name="pattern">plan-review|plan_review|PLAN_REVIEW</param>
+    <param name="path">/home/runner/work/erk/erk/docs</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="100454" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016VdPtmJZui6Ycwt1e2fwHN">
+    <param name="pattern">plan-review|plan_review|PLAN_REVIEW</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="100454" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MwBHsbgBkno9dS4j7cTsKP">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_016VdPtmJZui6Ycwt1e2fwHN">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01UYSVekH7jub1tSm6A2ZiAT">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_012RR5j9oCu8ww26BzH2xYBA">
+docs/learned/ci/label-rename-checklist.md:110:This checklist was created after PR #6400 fixed a `plan-review` → `erk-plan-review` mismatch that caused CI to run on PRs that should have been skipped. The label was renamed in the constant but not updated in workflow files, creating silent divergence.
+  </tool_result>
+  <tool_result tool="toolu_01SMxZdrjZ81AYr6TC7vFrit">
+No matches found
+  </tool_result>
+  <assistant>One remaining reference in `label-rename-checklist.md` in the historical context section. Let me update it:</assistant>
+  <usage input_tokens="192" cache_creation_input_tokens="906" cache_read_input_tokens="100867" cache_creation="{'ephemeral_5m_input_tokens': 906, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011WRJngJf4qhDtov9NgGc7E">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md</param>
+    <param name="old_string">## Historical Context
+
+This checklist was created after PR #6400 fixed a `plan-review` → `...[truncated 76 chars]...was renamed in the constant but not updated in workflow files, creating silent divergence.</param>
+    <param name="new_string">## Historical Context
+
+This checklist was created after PR #6400 fixed a label name mismat...[truncated 53 chars]...was renamed in the constant but not updated in workflow files, creating silent divergence.</param>
+  </tool_use>
+  <usage input_tokens="192" cache_creation_input_tokens="906" cache_read_input_tokens="100867" cache_creation="{'ephemeral_5m_input_tokens': 906, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011WRJngJf4qhDtov9NgGc7E">
+The file /home/runner/work/erk/erk/docs/learned/ci/label-rename-checklist.md has been updated successfully.
+  </tool_result>
+  <assistant>Let me re-verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="101773" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018Tj8SmcxvjyjynZVEh8Px9">
+    <param name="pattern">plan-review|plan_review|PLAN_REVIEW</param>
+    <param name="path">/home/runner/work/erk/erk/docs</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="499" cache_read_input_tokens="101773" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Tj8SmcxvjyjynZVEh8Px9">
+No matches found
+  </tool_result>
+  <assistant>Zero matches across all target directories. Now let me run the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="102272" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015bLETSUQSh61sH2eKWcKzo">
+    <param name="description">Run test_get_pr_view tests</param>
+    <param name="prompt">Run this command and report results:
+uv run pytest tests/unit/cli/commands/exec/scripts/test_get_pr_view.py -v</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="102272" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015bLETSUQSh61sH2eKWcKzo">
+Perfect! The tests have completed successfully.
+
+**pytest passed: 6 tests passed in 2.50s**
+
+All 6 tests in `tests/unit/cli/commands/exec/scripts/test_get_pr_view.py` passed successfully.
+agentId: ad28a4c (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 6 tests pass. Let me mark the verification as complete:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="102929" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 102929, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SxyghdNqYmdx7GqBqBjTcr">
+    <param name="todos">[{'content': 'Remove erk-plan-review label gating from GitHub workflow files', 'status': '...[truncated 1036 chars]...erification grep and tests', 'status': 'completed', 'activeForm': 'Running verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102929" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 102929, 'ephemeral_1h_input_tokens': 0}" output_tokens="385" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SxyghdNqYmdx7GqBqBjTcr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="102929" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01C5qEyW4uTgfTdE22mP9obk">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="102929" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C5qEyW4uTgfTdE22mP9obk">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9169
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017RKWLKja2n32BP6hwNiAxv">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="103356" cache_creation="{'ephemeral_5m_input_tokens': 145, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017RKWLKja2n32BP6hwNiAxv">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H2LvQ5yR4x8A8dpn7w89sx">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="103501" cache_creation="{'ephemeral_5m_input_tokens': 127, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H2LvQ5yR4x8A8dpn7w89sx">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <assistant>Now let me run the CI checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="103628" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01R9nGtAjpnB5RaFHY83H8Rp">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run these commands and report results:
+1. uv run ruff check src/ tests/
+2. uv run ruff format --check src/ tests/
+3. uv run pytest tests/unit/ -x --timeout=60 -q</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="103628" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R9nGtAjpnB5RaFHY83H8Rp">
+Perfect! All three commands completed. Here's the summary:
+
+## Results
+
+**ruff check** passed: All checks passed!
+
+**ruff format** passed: 1307 files already formatted
+
+**pytest** passed: All unit tests passed (100% complete)
+
+Note: The `--timeout=60` flag is not available in the pytest configuration. The tests were run without the timeout flag, and all 1300+ unit tests completed successfully with the `-x` (fail-on-first) flag.
+agentId: a7198e4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now let me submit the PR:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="405" cache_read_input_tokens="103734" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011XnnpqbcW7JmH2ABsEKpK8">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="405" cache_read_input_tokens="103734" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011XnnpqbcW7JmH2ABsEKpK8">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9169 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9169
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (35,745 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KdXVThaBBr9ZACtEFeaUg8">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="104139" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KdXVThaBBr9ZACtEFeaUg8">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9169
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GqCqHeNjcvBQLLHbXk7hk3">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="104580" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GqCqHeNjcvBQLLHbXk7hk3">
+Exit code 1
+Checking PR #9169 for branch plnd/remove-plan-review-refs-03-10-1109...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9169)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context check failed because the cleanup didn't fully work. Let me clean it up properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="104807" cache_creation="{'ephemeral_5m_input_tokens': 180, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01W8Bv1fEvYUNq6GxvgXLe5Z">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="104807" cache_creation="{'ephemeral_5m_input_tokens': 180, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W8Bv1fEvYUNq6GxvgXLe5Z">
+plan.md
+plnd--remove-plan-review-refs-03-10-1109
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EK6gFaWdsBjrCEDg58ERd3">
+    <param name="command">git ls-files .erk/impl-context/</param>
+    <param name="description">Check if impl-context is tracked</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="104987" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EK6gFaWdsBjrCEDg58ERd3">
+
+  </tool_result>
+  <assistant>The files aren't git-tracked, they're just local untracked files. Let me remove the directory and try the cleanup again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="105248" cache_creation="{'ephemeral_5m_input_tokens': 112, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01P87D5nhm6PLteFSPUvwB1m">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Remove impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="105248" cache_creation="{'ephemeral_5m_input_tokens': 112, 'ephemeral_1h_input_tokens': 0}" output_tokens="124" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P87D5nhm6PLteFSPUvwB1m">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014zc723v1xRYQHVQzpp6yqW">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="105360" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014zc723v1xRYQHVQzpp6yqW">
+Checking PR #9169 for branch plnd/remove-plan-review-refs-03-10-1109...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of changes:
+
+**PR #9169**: https://github.com/dagster-io/erk/pull/9169
+
+### Changes Made
+
+**Functional (workflows):**
+- `.github/workflows/ci.yml` — Removed `!contains(...'erk-plan-review')` from `check-submission`, `no-impl-context`, and `ci-summarize` job conditions
+- `.github/workflows/code-reviews.yml` — Removed `!contains(...'erk-plan-review')` from `discover` job condition
+
+**Command:**
+- `.claude/commands/erk/pr-address.md` — Removed plan-review label check from Phase 0, renumbered steps (file-based check is now step 1, default is step 2)
+
+**Test:**
+- `tests/unit/cli/commands/exec/scripts/test_get_pr_view.py` — Removed `erk-plan-review` from test label tuple
+
+**Documentation (6 docs):**
+- `docs/learned/erk/pr-address-workflows.md` — Removed entire Plan Review Mode section, simplified Plan File Mode comparison table
+- `docs/learned/architecture/phase-zero-detection-pattern.md` — Reduced cascade from 3-step to 2-step (file-based + default), removed label-based subsection
+- `docs/learned/ci/workflow-gating-patterns.md` — Removed Negation Pattern, Combining Draft and Label Checks, and Plan-Review Branch Gating sections
+- `docs/learned/ci/github-actions-label-filtering.md` — Replaced erk-plan-review examples with generic examples
+- `docs/learned/ci/github-actions-label-queries.md` — Replaced erk-plan-review references with generic label examples
+- `docs/learned/ci/label-rename-checklist.md` — Removed PLAN_REVIEW_LABEL constant references
+- `docs/learned/ci/ci-failure-summarization.md` — Removed plan-review skip mention
+- `docs/learned/ci/job-ordering-strategy.md` — Removed plan-review mention from check-submission description
+- `docs/learned/testing/fake-github-mutation-tracking.md` — Replaced erk-plan-review with erk-pr in example
+
+**Verification**: Zero matches for `plan-review|plan_review|PLAN_REVIEW` across `.github/`, `.claude/commands/`, `tests/`, `docs/`, and `src/`. All 1300+ unit tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="105597" cache_creation="{'ephemeral_5m_input_tokens': 152, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
