@@ -1,0 +1,1033 @@
+<session>
+  <meta source="agent-a74f543" />
+  <meta branch="plnd/rename-reason-to-comment-03-10-1342" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search the codebase for remaining references to "reason" in the context of RoadmapNode or roadmap operations. Specifically:
+
+1. Search for `reason` in all Python files under `src/` and `packages/` and `tests/` that might be related to RoadmapNode or roadmap operations
+2. Look for patterns like `reason=`, `.reason`, `"reason"`, `--reason` in files related to objectives/roadmaps
+3. Exclude files I've already updated:
+   - packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+   - packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+   - src/erk/cli/commands/exec/scripts/update_objective_node.py
+   - src/erk/cli/commands/exec/scripts/add_objective_node.py
+   - src/erk/cli/commands/exec/scripts/objective_render_roadmap.py
+   - tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+   - tests/unit/cli/commands/exec/scripts/test_add_objective_node.py
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Look especially in test files for roadmap parsing, any other exec scripts, and any shared module tests.</user>
+  <assistant>I'll help you search for remaining references to "reason" in the context of RoadmapNode. Let me start by checking the documentation as instructed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19196" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19196, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LiE8fi9fqfrJh1xKM5Lvxx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19196" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19196, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FwuDiHizh9U3A9qJhHiPas">
+    <param name="pattern">reason|RoadmapNode|roadmap</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19196" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19196, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LiE8fi9fqfrJh1xKM5Lvxx">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FwuDiHizh9U3A9qJhHiPas">
+Found 111 files
+docs/learned/uncategorized/tripwires.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/action-inventory.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/cli-test-error-assertions.md
+docs/learned/testing/devrun-agent.md
+docs/learned/testing/fake-api-migration-pattern.md
+docs/learned/reviews/development.md
+docs/learned/reviews/test-coverage-agent.md
+docs/learned/sessions/context-analysis.md
+docs/learned/sessions/discovery-fallback.md
+docs/learned/sessions/session-accumulation.md
+docs/learned/reference/index.md
+docs/learned/reference/objective-summary-format.md
+docs/learned/reference/tripwires.md
+docs/learned/pr-operations/commit-message-generation.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/workflow-markers.md
+docs/learned/planning/schema-v3-migration.md
+docs/learned/planning/session-preprocessing.md
+docs/learned/planning/sub-agent-context-limitations.md
+docs/learned/planning/token-optimization-patterns.md
+docs/learned/planning/tripwire-worthiness-criteria.md
+docs/learned/planning/planned-pr-context-local-preprocessing.md
+docs/learned/planning/learn-vs-implementation-plans.md
+docs/learned/planning/lifecycle.md
+docs/learned/planning/metadata-block-fallback.md
+docs/learned/planning/one-shot-workflow.md
+docs/learned/planning/complete-inventory-protocol.md
+
+... [82 lines omitted] ...
+
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>Good! There's documentation on roadmap topics. Let me read the relevant roadmap documentation files.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2918" cache_read_input_tokens="19196" cache_creation="{'ephemeral_5m_input_tokens': 2918, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G2dSFy3uXEiFqy4Xv1fcAd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-format-versioning.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2918" cache_read_input_tokens="19196" cache_creation="{'ephemeral_5m_input_tokens': 2918, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KCGnmX5tKT5q7rRMHcNSKS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-mutation-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2918" cache_read_input_tokens="19196" cache_creation="{'ephemeral_5m_input_tokens': 2918, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LN5V2W6Wg586BUCvkp9L7s">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/roadmap-parser.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2918" cache_read_input_tokens="19196" cache_creation="{'ephemeral_5m_input_tokens': 2918, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G2dSFy3uXEiFqy4Xv1fcAd">
+     1→---
+     2→title: Roadmap Format Versioning
+     3→read_when:
+     4→  - extending the roadmap table format with new columns
+     5→  - planning backward-compatible parser changes to roadmap tables
+     6→  - understanding roadmap column format history
+     7→tripwires:
+     8→  - action: "adding columns to the roadmap table format"
+     9→    warning: "Read this doc to understand the header-based detection and rendering strategy before adding columns."
+    10→  - action: "referencing a 'plan' field on RoadmapNode"
+    11→    warning: "The plan field was removed (PR #8128). RoadmapNode has: id, description, status, pr, depends_on, slug. Plan references are no longer tracked in the roadmap."
+    12→last_audited: "2026-02-26 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# Roadmap Format Versioning
+    17→
+    18→This document captures the design thinking around the roadmap table format, including the current 4-column canonical format and historical context.
+    19→
+    20→## Current State: 4-Column Format (Canonical)
+    21→
+    22→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, RoadmapNode --&gt;
+    23→
+    24→The `RoadmapNode` dataclass has six fields (`id`, `description`, `status`, `pr`, `depends_on`, `slug`). The `pr` field holds a PR reference (`"#123"`) for both in-progress and landed PRs and is `str | None`. The `depends_on` field holds explicit dependencies (`tuple[str, ...] | None`), and `slug` holds a kebab-case identifier (`str | None`). The `plan` field was removed in PR #8128 — plan references are no longer tracked in the roadmap table.
+    25→
+    26→The canonical rendered table format:
+    27→
+    28→```markdown
+    29→| Node | Description | Status      | PR   |
+    30→| ---- | ----------- | ----------- | ---- |
+
+... [50 lines omitted] ...
+
+    46→Previous formats are no longer actively parsed by `parse_roadmap()`. The parser requires v2+ YAML frontmatter and returns a legacy format error for non-v2+ content. Historical formats included a separate Plan column and a combined PR column with `plan #N` syntax.
+    59→- **v2/v3/v4 parsing**: `parse_roadmap()` accepts all three schema versions. Returns a legacy format error for non-v2/v3/v4 content (no table-parsing fallback)
+  </tool_result>
+  <tool_result tool="toolu_01KCGnmX5tKT5q7rRMHcNSKS">
+     1→---
+     2→title: Roadmap Mutation Patterns
+     3→read_when:
+     4→  - "deciding between surgical vs full-body roadmap updates"
+     5→  - "choosing how to update an objective roadmap after a workflow event"
+     6→  - "understanding race condition risks in roadmap table mutations"
+     7→tripwires:
+     8→  - action: "using full-body update for single-cell changes"
+     9→    warning: "Full-body updates replace the entire table. For single-node PR updates, use surgical update (update-objective-node) to preserve other cells and avoid race conditions."
+    10→  - action: "using surgical update for complete table rewrites"
+    11→    warning: "Surgical updates only change one node. For rewriting roadmaps after landing PRs (status + layout changes), use full-body update (system:objective-update-with-landed-pr)."
+    12→  - action: "directly mutating issue body markdown without using either command"
+    13→    warning: "Direct body mutation skips status computation. The surgical command writes computed status atomically; bypassing it leaves status stale. See roadmap-mutation-semantics.md."
+    14→  - action: "using None/empty string interchangeably in update-objective-node parameters"
+    15→    warning: "None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values."
+    16→last_audited: "2026-02-25 18:00 PT"
+    17→audit_result: edited
+    18→---
+    19→
+    20→# Roadmap Mutation Patterns
+    21→
+    22→Erk has two distinct strategies for mutating objective roadmap tables, each optimized for different workflow events. Choosing the wrong one creates race conditions or data loss. This document explains **when to use which** and **why the split exists**.
+    23→
+    24→## Why Two Patterns?
+    25→
+    26→The roadmap table is a 4-column markdown table stored in a GitHub issue comment (`| Node | Description | Status | PR |`). The YAML frontmatter in the issue body is the source of truth; the comment table is a rendered view. Two fundamentally different mutation shapes arise from different workflow events:
+    27→
+    28→- **Single-node updates** (plan saved, PR created): Only the status/PR of one step changes. The YAML frontmatter is updated surgically, then the comment table is deterministically re-rendered from YAML.
+    29→
+    30→- **Full-body rewrites** (PR landed): Landing a PR may trigger structural changes — marking multiple steps done, updating descriptions, or adding narrative text. The `objective-apply-landed-update` command handles batch updates.
+
+... [88 lines omitted] ...
+
+   112→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — LBYL error patterns used by both commands
+  </tool_result>
+  <tool_result tool="toolu_01LN5V2W6Wg586BUCvkp9L7s">
+     1→---
+     2→title: Roadmap Parser
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding how roadmap nodes are parsed"
+     7→  - "working with objective roadmap check or update commands"
+     8→  - "debugging roadmap parsing issues"
+     9→  - "using erk objective check or erk exec update-objective-node"
+    10→tripwires:
+    11→  - action: "implementing roadmap parsing functionality"
+    12→    warning: "The parser is regex-based, not LLM-based. Do not reference LLM inference."
+    13→  - action: "creating or modifying roadmap step IDs"
+    14→    warning: "Step IDs should use plain numbers (1.1, 2.1), not letter format (1A.1, 1B.1)."
+    15→---
+    16→
+    17→# Roadmap Parser
+    18→
+    19→This document describes how erk parses and mutates objective roadmap tables using regex-based parsing.
+    20→
+    21→## Overview
+    22→
+    23→Erk uses deterministic regex parsing to extract structured data from objective roadmap markdown tables. Two commands expose this functionality:
+    24→
+    25→- **`erk objective check`** — parse and validate a roadmap, returning human-readable or structured JSON output
+    26→- **`erk exec update-objective-node`** — surgically update a specific step's PR column
+    27→
+    28→Both commands share the parser in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`.
+    29→
+    30→## Check Command
+
+... [104 lines omitted] ...
+
+    49→The parser emits warnings (not errors) for:
+   106→The parser accepts both formats but emits a validation warning for letter-format IDs. All templates now use plain numbers.
+  </tool_result>
+  <assistant>Good! The documentation is clear that `reason` has been removed from `RoadmapNode`. Now let me search the codebase for any remaining references to "reason" in the context of roadmap/RoadmapNode operations. I'll search systematically in Python files.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6367" cache_read_input_tokens="22114" cache_creation="{'ephemeral_5m_input_tokens': 6367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01C6kFy44cBN4GbafZFR25yd">
+    <param name="pattern">\.reason|"reason"|'reason'|reason\s*=</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6367" cache_read_input_tokens="22114" cache_creation="{'ephemeral_5m_input_tokens': 6367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HrZkTXsw2JK4nSgesmMT3k">
+    <param name="pattern">\.reason|"reason"|'reason'|reason\s*=</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6367" cache_read_input_tokens="22114" cache_creation="{'ephemeral_5m_input_tokens': 6367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VXLNnAsYGdmDZB9MYoULqr">
+    <param name="pattern">\.reason|"reason"|'reason'|reason\s*=</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6367" cache_read_input_tokens="22114" cache_creation="{'ephemeral_5m_input_tokens': 6367, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HrZkTXsw2JK4nSgesmMT3k">
+Found 13 files
+packages/erk-statusline/tests/test_context.py
+packages/erk-shared/tests/unit/github/test_retry.py
+packages/erk-shared/src/erk_shared/subprocess_utils.py
+packages/erk-shared/src/erk_shared/naming.py
+packages/erk-shared/src/erk_shared/gateway/pr/graphite_enhance.py
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/retry.py
+packages/erk-shared/src/erk_shared/gateway/github/status_history.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py
+packages/erk-shared/src/erk_shared/gateway/github/parsing.py
+packages/erk-shared/src/erk_shared/gateway/github/label_ops.py
+packages/erk-dev/src/erk_dev/commands/audit_collect/command.py
+  </tool_result>
+  <tool_result tool="toolu_01C6kFy44cBN4GbafZFR25yd">
+Found 17 files
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/core/health_checks/managed_artifacts.py
+src/erk/cli/ensure.py
+src/erk/cli/commands/slot/list_cmd.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/exec/scripts/upload_impl_session.py
+src/erk/cli/commands/exec/scripts/set_local_review_marker.py
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/normalize_tripwire_candidates.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_link_pr.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/cleanup_impl_context.py
+src/erk/cli/commands/artifact/check.py
+src/erk/artifacts/artifact_health.py
+src/erk/artifacts/staleness.py
+  </tool_result>
+  <tool_result tool="toolu_01VXLNnAsYGdmDZB9MYoULqr">
+Found 27 files
+tests/unit/gateways/graphite/test_graphite_disabled.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/erk_dev/test_audit_collect.py
+tests/unit/cli/test_ensure.py
+tests/unit/cli/commands/objective/test_list_cmd_helpers.py
+tests/unit/cli/commands/land/pipeline/test_merge_pr.py
+tests/unit/cli/commands/land/pipeline/test_resolve_target.py
+tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py
+tests/unit/cli/commands/land/pipeline/test_validate_pr.py
+tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+tests/unit/cli/commands/land/test_resolvers.py
+tests/unit/cli/commands/land/test_validate_pr_for_landing.py
+tests/unit/cli/commands/exec/scripts/test_upload_impl_session.py
+tests/unit/cli/commands/exec/scripts/test_push_session.py
+tests/unit/cli/commands/exec/scripts/test_set_local_review_marker.py
+tests/unit/cli/commands/exec/scripts/test_objective_link_pr.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_cleanup_impl_context.py
+tests/tui/screens/test_objective_nodes_screen.py
+tests/shared/github/test_status_history.py
+tests/shared/github/test_tripwire_candidates_metadata.py
+tests/core/utils/test_naming.py
+tests/artifacts/test_artifact_health.py
+tests/artifacts/test_missing.py
+tests/artifacts/test_orphans.py
+tests/artifacts/test_staleness.py
+  </tool_result>
+  <assistant>Good! Now let me check if any of these files have references specifically related to RoadmapNode or roadmap operations. Let me search more specifically for "reason" in contexts related to roadmap or RoadmapNode. First, let me check files in the roadmap module to be sure, then check the exec scripts mentioned:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1754" cache_read_input_tokens="28481" cache_creation="{'ephemeral_5m_input_tokens': 1754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Q4vD2nvuLzWozeraAmZU32">
+    <param name="pattern">reason</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1754" cache_read_input_tokens="28481" cache_creation="{'ephemeral_5m_input_tokens': 1754, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q4vD2nvuLzWozeraAmZU32">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:46:    reason: str
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:56:            f"Invalid tripwire candidates: {self.reason}\n"
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:183:            reason=f"Expected JSON object, got {type(data).__name__}",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:190:            reason="Missing or invalid 'candidates' list in JSON",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:198:                reason=f"Candidate at index {i} is not an object",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:206:                reason=f"Candidate at index {i} missing 'action' string",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:211:                reason=f"Candidate at index {i} missing 'warning' string",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:216:                reason=f"Candidate at index {i} missing 'target_doc_path' string",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:248:            reason=f"Candidates file not found: {json_path}",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py:257:            reason=f"Invalid JSON: {exc}",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:169:        status_history: Optional list of status transitions with timestamps and reasons
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <assistant>Those "reason" references are not related to RoadmapNode - they're for tripwire candidates and status history. Let me now check the specific exec scripts related to roadmap operations:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="803" cache_read_input_tokens="30235" cache_creation="{'ephemeral_5m_input_tokens': 803, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DvNmwNhC7YitQ5EtNumNcR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="803" cache_read_input_tokens="30235" cache_creation="{'ephemeral_5m_input_tokens': 803, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EBL54VqZwpzTbUzbnEEQJQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="803" cache_read_input_tokens="30235" cache_creation="{'ephemeral_5m_input_tokens': 803, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016t58sTcLGmqtSM1hWL6PAZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="803" cache_read_input_tokens="30235" cache_creation="{'ephemeral_5m_input_tokens': 803, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DvNmwNhC7YitQ5EtNumNcR">
+     1→"""Update node PR cells in an objective's roadmap table.
+     2→
+     3→Why this command exists (instead of using update-issue-body directly):
+     4→
+     5→    The alternative is "fetch body -&gt; parse markdown table -&gt; find node row -&gt;
+     6→    surgically edit the PR cell -&gt; write entire body back". That's ~15
+     7→    lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
+     8→    must duplicate. The roadmap table has a specific structure
+     9→    (| node_id | description | status | pr |) and the update has
+    10→    specific semantics:
+    11→
+    12→    1. Find the row by node ID across all phases
+    13→    2. Compute display status from the PR value
+    14→    3. Write status and PR cells atomically so the table is
+    15→       always human-readable without requiring a parse pass
+    16→
+    17→    Encoding this once in a tested CLI command means:
+    18→    - No duplicated table-parsing logic across callers
+    19→    - Testable edge cases (node not found, no roadmap, clearing PR)
+    20→    - Atomic mental model: "update node 1.3's PR to X"
+    21→    - Resilient to roadmap format changes (one command updates, not N sites)
+    22→
+    23→Usage:
+    24→    # Single node -- landed PR
+    25→    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
+    26→
+    27→    # Clear PR
+    28→    erk exec update-objective-node 6423 --node 1.3 --pr ""
+    29→
+    30→    # Status-only update (preserve existing PR)
+
+... [529 lines omitted] ...
+
+    41→        Each node result: {node_id, success, previous_pr, error}
+    80→def _node_error_message(node_id: str, issue_number: int, error: object) -&gt; str:
+    81→    if error == "node_not_found":
+    83→    return f"Failed to replace cells for node '{node_id}'"
+    94→    backlink_warning: str | None
+    99→        return cls(backlink_set=True, backlink_warning=None, backlink_skip=None)
+   102→    def warning(cls, *, message: str) -&gt; BacklinkResult:
+   103→        return cls(backlink_set=False, backlink_warning=message, backlink_skip=None)
+   107→        return cls(backlink_set=False, backlink_warning=None, backlink_skip=reason)
+   115→    error: str | None
+   119→        return cls(node_id=node_id, success=True, previous_pr=previous_pr, error=None)
+   122→    def fail(cls, *, node_id: str, error: str) -&gt; UpdateObjectiveNodeResult:
+   123→        return cls(node_id=node_id, success=False, previous_pr=None, error=error)
+   127→class UpdateObjectiveNodeError:
+   128→    error: str
+   132→        return {"success": False, "error": self.error, "message": self.message}
+   187→    UpdateObjectiveNodeMultiOutput | UpdateObjectiveNodeError | UpdateObjectiveNodeSuccess
+   219→        return UpdateObjectiveNodeError(
+   220→            error=single.error or "unknown",
+   221→            message=_node_error_message(node[0], issue_number, single.error),
+   305→    except ValueError:
+   322→    Never raises — backlink failure doesn't block the node update.
+   331→        return BacklinkResult.warning(message=f"PR {pr_ref} not found")
+   339→        return BacklinkResult.warning(
+   422→        err = UpdateObjectiveNodeError(
+   423→            error="no_update",
+   436→        err = UpdateObjectiveNodeError(
+   437→            error="issue_not_found",
+   446→        err = UpdateObjectiveNodeError(
+   447→            error="no_roadmap",
+   458→            UpdateObjectiveNodeResult.fail(node_id=n, error="node_not_found") for n in missing_nodes
+   476→    any_failure = False
+   481→            results.append(UpdateObjectiveNodeResult.fail(node_id=node_id, error="node_not_found"))
+   482→            any_failure = True
+   496→                UpdateObjectiveNodeResult.fail(node_id=node_id, error="replacement_failed")
+   498→            any_failure = True
+   504→    # Exit early if all nodes failed
+   505→    if any_failure and not any(r.success for r in results):
+   534→    # failure doesn't prevent the node update from succeeding.
+  </tool_result>
+  <tool_result tool="toolu_01EBL54VqZwpzTbUzbnEEQJQ">
+     1→"""Apply mechanical updates to an objective after landing a PR.
+     2→
+     3→Combines the fetch-context, update-nodes, and post-action-comment steps into
+     4→a single call, eliminating 5+ sequential agent commands.  Only prose
+     5→reconciliation (which requires LLM judgment) is left to the calling skill.
+     6→
+     7→The PR number doubles as the plan number (in erk, the PR IS the plan).
+     8→
+     9→Usage:
+    10→    erk exec objective-apply-landed-update --pr 6517 --objective 6423 --branch P6517-...
+    11→    erk exec objective-apply-landed-update  # auto-discovers all arguments
+    12→
+    13→Output:
+    14→    JSON with {success, objective, plan, pr, roadmap, node_updates,
+    15→    action_comment_id} or {success, error}
+    16→
+    17→Exit Codes:
+    18→    0: Success - all mechanical updates applied
+    19→    1: Error - missing data or API failure
+    20→"""
+    21→
+    22→import json
+    23→
+    24→import click
+    25→
+    26→from erk.cli.commands.exec.scripts.objective_fetch_context import (
+    27→    _build_roadmap_context,
+    28→    _fetch_objective_content,
+    29→)
+    30→from erk.cli.commands.exec.scripts.objective_post_action_comment import (
+
+... [318 lines omitted] ...
+
+    57→    ApplyLandedUpdateErrorDict,
+    69→def _error_json(error: str) -&gt; str:
+    70→    result: ApplyLandedUpdateErrorDict = {"success": False, "error": error}
+   194→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   206→            click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   213→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   220→        click.echo(_error_json(f"PR #{pr_number} not found"))
+   229→            click.echo(_error_json(msg))
+   236→        click.echo(_error_json(f"Objective #{objective_number} not found"))
+   242→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <tool_result tool="toolu_016t58sTcLGmqtSM1hWL6PAZ">
+     1→"""Add a new node to an objective's roadmap.
+     2→
+     3→Usage:
+     4→    erk exec add-objective-node 8470 \
+     5→      --phase 1 \
+     6→      --description "Clean up dead modify_existing code" \
+     7→      [--slug cleanup-modify-existing] \
+     8→      [--status pending] \
+     9→      [--depends-on 1.2] [--depends-on 1.3] \
+    10→      [--comment "Added during objective re-evaluation"]
+    11→
+    12→Output:
+    13→    JSON with {success, issue_number, node_id, url}
+    14→
+    15→Exit Codes:
+    16→    0: Always. Check JSON "success" field for pass/fail.
+    17→"""
+    18→
+    19→import json
+    20→from typing import cast
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import require_issues, require_repo_root
+    25→from erk_shared.gateway.github.issues.types import IssueNotFound
+    26→from erk_shared.gateway.github.metadata.core import (
+    27→    extract_metadata_value,
+    28→    extract_raw_metadata_blocks,
+    29→    replace_metadata_block_in_body,
+    30→)
+
+... [150 lines omitted] ...
+
+    89→                    "error": "issue_not_found",
+   109→                    "error": "no_roadmap",
+   135→                    "error": "add_failed",
+   136→                    "message": f"Failed to add node to phase {phase} in issue #{issue_number}",
+  </tool_result>
+  <assistant>Found it! On line 99 of `objective_apply_landed_update.py`, there's a reference to `reason=None` being passed to `_replace_node_refs_in_body()`. The function signature takes `comment` but the call is using the old parameter name `reason`. Let me check the function signature and search for other instances:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="14927" cache_read_input_tokens="31038" cache_creation="{'ephemeral_5m_input_tokens': 14927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PAxNezWiRUywhbEi3BghWw">
+    <param name="pattern">reason\s*=</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14927" cache_read_input_tokens="31038" cache_creation="{'ephemeral_5m_input_tokens': 14927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018gmHBrS9RoxnsjZ8dXHnfY">
+    <param name="pattern">_replace_node_refs_in_body</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="14927" cache_read_input_tokens="31038" cache_creation="{'ephemeral_5m_input_tokens': 14927, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018gmHBrS9RoxnsjZ8dXHnfY">
+Found 4 files
+tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+  </tool_result>
+  <tool_result tool="toolu_01PAxNezWiRUywhbEi3BghWw">
+99:            reason=None,
+  </tool_result>
+  <assistant>Good! Let me check the other places where `_replace_node_refs_in_body` is called:</assistant>
+  <usage input_tokens="118" cache_creation_input_tokens="499" cache_read_input_tokens="45965" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HWRFR9SNuRX4128jQgPy1y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="499" cache_read_input_tokens="45965" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MFwxvdEbZ83dn116ZwWLjw">
+    <param name="pattern">_replace_node_refs_in_body.*reason</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="499" cache_read_input_tokens="45965" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HS1E1Ao9moswjhfQFDu3AV">
+    <param name="pattern">_replace_node_refs_in_body.*reason</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="118" cache_creation_input_tokens="499" cache_read_input_tokens="45965" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HWRFR9SNuRX4128jQgPy1y">
+     1→"""Create a plan from an objective node."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.exec.scripts.update_objective_node import (
+     8→    _replace_node_refs_in_body,
+     9→)
+    10→from erk.cli.commands.implement_shared import normalize_model_name
+    11→from erk.cli.commands.objective.check.validation import (
+    12→    ObjectiveValidationError,
+    13→    ObjectiveValidationSuccess,
+    14→    validate_objective,
+    15→)
+    16→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    17→from erk.cli.commands.one_shot_remote_dispatch import (
+    18→    OneShotDispatchParams,
+    19→    OneShotDispatchResult,
+    20→    dispatch_one_shot_remote,
+    21→)
+    22→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    25→from erk.core.branch_slug_generator import generate_branch_slug
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.context.types import InteractiveAgentConfig
+    28→from erk_shared.core.prompt_executor import PromptExecutor
+    29→from erk_shared.gateway.github.issues.types import IssueNotFound
+    30→from erk_shared.gateway.github.metadata.core import extract_metadata_value
+
+... [75 lines omitted] ...
+
+    50→    Uses the prompt executor to generate a concise slug. On failure,
+  </tool_result>
+  <tool_result tool="toolu_01HS1E1Ao9moswjhfQFDu3AV">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01MFwxvdEbZ83dn116ZwWLjw">
+No matches found
+  </tool_result>
+  <assistant>Let me search more broadly for all calls to `_replace_node_refs_in_body` with more context:</assistant>
+  <usage input_tokens="33" cache_creation_input_tokens="2052" cache_read_input_tokens="46464" cache_creation="{'ephemeral_5m_input_tokens': 2052, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013M4tbJTswPpffVBZLhbrku">
+    <param name="command">grep -rn "_replace_node_refs_in_body" /home/runner/work/erk/erk/src --include="*.py" -A 8</param>
+    <param name="description">Search for all calls to _replace_node_refs_in_body function</param>
+  </tool_use>
+  <usage input_tokens="33" cache_creation_input_tokens="2052" cache_read_input_tokens="46464" cache_creation="{'ephemeral_5m_input_tokens': 2052, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013M4tbJTswPpffVBZLhbrku">
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py:8:    _replace_node_refs_in_body,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-9-)
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-10-from erk.cli.commands.implement_shared import normalize_model_name
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-11-from erk.cli.commands.objective.check.validation import (
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-12-    ObjectiveValidationError,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-13-    ObjectiveValidationSuccess,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-14-    validate_objective,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-15-)
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-16-from erk.cli.commands.objective_helpers import get_objective_for_branch
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py:386:    updated_body = _replace_node_refs_in_body(
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-387-        issue.body,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-388-        node_id,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-389-        new_pr=f"#{pr_number}",
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-390-        explicit_status="planning",
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-391-        description=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-392-        slug=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-393-        reason=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-394-    )
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py:440:        new_body = _replace_node_refs_in_body(
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-441-            updated_body,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-442-            node_id,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-443-            new_pr=f"#{pr_number}",
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-444-            explicit_status="planning",
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-445-            description=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-446-            slug=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-447-            reason=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py-448-        )
+--
+
+... [49 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! I've found all the occurrences. Now let me also check if there are any test files that call this function:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="3315" cache_read_input_tokens="48516" cache_creation="{'ephemeral_5m_input_tokens': 3315, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TuJE53JqKvWXT43rbK8cjY">
+    <param name="command">grep -rn "_replace_node_refs_in_body" /home/runner/work/erk/erk/tests --include="*.py" -A 8</param>
+    <param name="description">Search for test calls to _replace_node_refs_in_body</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="3315" cache_read_input_tokens="48516" cache_creation="{'ephemeral_5m_input_tokens': 3315, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TuJE53JqKvWXT43rbK8cjY">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py:349:    _replace_node_refs_in_body use the same underlying parsing), so we
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-350-    verify AND semantics through _build_output with mixed results.
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-351-    """
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-352-    from erk.cli.commands.exec.scripts.update_objective_node import (
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-353-        UpdateObjectiveNodeResult,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-354-        _build_output,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-355-    )
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-356-
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-357-    results = [
+--
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py:488:    from erk.cli.commands.exec.scripts.update_objective_node import _replace_node_refs_in_body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-489-
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-490-    # Step 1.1 has pr=#100
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py:491:    result = _replace_node_refs_in_body(
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-492-        ROADMAP_BODY_V2,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-493-        "1.1",
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-494-        new_pr=None,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-495-        explicit_status="planning",
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-496-        description=None,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-497-        slug=None,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-498-        comment=None,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-499-    )
+--
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py:508:    """_replace_node_refs_in_body with empty string clears to null."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py:509:    from erk.cli.commands.exec.scripts.update_objective_node import _replace_node_refs_in_body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-510-
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-511-    # Step 1.1 has pr=#100
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py:512:    result = _replace_node_refs_in_body(
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-513-        ROADMAP_BODY_V2,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py-514-        "1.1",
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Good, the test file is already using the correct `comment` parameter. Now let me check if there are any other files that reference `reason` in the context of roadmap or objectives:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1895" cache_read_input_tokens="51831" cache_creation="{'ephemeral_5m_input_tokens': 1895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SoJEXujacrRgtuywVGwdoJ">
+    <param name="command">grep -rn "\.reason\|\"reason\"\|'reason'" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared --include="*.py" | grep -i "roadmap\|objective\|node" | head -20</param>
+    <param name="description">Search for reason references in roadmap-related code</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1895" cache_read_input_tokens="51831" cache_creation="{'ephemeral_5m_input_tokens': 1895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SoJEXujacrRgtuywVGwdoJ">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py:352:            f"Invalid objective slug: {self.reason}\n"
+  </tool_result>
+  <assistant>That reference is not about RoadmapNode. Let me also check the roadmap.py file more thoroughly to make sure there are no remaining references:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4409" cache_read_input_tokens="53726" cache_creation="{'ephemeral_5m_input_tokens': 4409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EbQvQ8F5ZWaXCxorz4hmKZ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4409" cache_read_input_tokens="53726" cache_creation="{'ephemeral_5m_input_tokens': 4409, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EbQvQ8F5ZWaXCxorz4hmKZ">
+     1→"""Shared parser, serializer, and data types for objective roadmap operations.
+     2→
+     3→This module provides:
+     4→- Data types: RoadmapNodeStatus, RoadmapNode, RoadmapPhase
+     5→- Parsing: parse_roadmap() (v2 frontmatter only)
+     6→- Frontmatter: validate, parse, group, update
+     7→- Utilities: compute_summary(), find_next_node(), serialize_phases()
+     8→
+     9→Previously split across objective_roadmap_shared.py and
+    10→objective_roadmap_frontmatter.py in the erk package. Consolidated
+    11→here to eliminate the circular dependency between erk_shared and erk.
+    12→"""
+    13→
+    14→import re
+    15→from collections.abc import Mapping
+    16→from dataclasses import dataclass, replace
+    17→from typing import Literal, cast
+    18→
+    19→import yaml
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    extract_raw_metadata_blocks,
+    23→    parse_metadata_block_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [75 lines omitted] ...
+
+    67→        Tuple of (steps, errors). If validation succeeds,
+    68→        errors is empty. If validation fails, steps is None.
+    70→    errors: list[str] = []
+    75→        errors.append("Missing required field: schema_version")
+    76→        return None, errors
+    79→        errors.append(f"Unsupported schema_version: {schema_version}")
+    80→        return None, errors
+    88→        errors.append("Missing required field: nodes (or steps for v2)")
+    89→        return None, errors
+    91→        errors.append("Field 'steps' must be a list")
+    92→        return None, errors
+    98→            errors.append(f"Step {i} is not a mapping")
+    99→            return None, errors
+  </tool_result>
+  <assistant>Good! The RoadmapNode definition already has `comment` (line 40). Let me check if there are any other script files I should look at:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1620" cache_read_input_tokens="58135" cache_creation="{'ephemeral_5m_input_tokens': 1620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JNPAVYHwgcezUZxmyAThBu">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ | grep "objective.*\.py"</param>
+    <param name="description">List objective-related exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1620" cache_read_input_tokens="58135" cache_creation="{'ephemeral_5m_input_tokens': 1620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JNPAVYHwgcezUZxmyAThBu">
+-rw-r--r-- 1 runner runner  5236 Mar 10 17:47 add_objective_node.py
+-rw-r--r-- 1 runner runner  2327 Mar 10 17:43 get_plans_for_objective.py
+-rw-r--r-- 1 runner runner  5866 Mar 10 17:43 migrate_objective_schema.py
+-rw-r--r-- 1 runner runner 10850 Mar 10 17:43 objective_apply_landed_update.py
+-rw-r--r-- 1 runner runner  8874 Mar 10 17:43 objective_fetch_context.py
+-rw-r--r-- 1 runner runner  5597 Mar 10 17:43 objective_link_pr.py
+-rw-r--r-- 1 runner runner  5352 Mar 10 17:43 objective_plan_setup.py
+-rw-r--r-- 1 runner runner  3854 Mar 10 17:43 objective_post_action_comment.py
+-rw-r--r-- 1 runner runner  7655 Mar 10 17:47 objective_render_roadmap.py
+-rw-r--r-- 1 runner runner  9449 Mar 10 17:43 objective_save_to_issue.py
+-rw-r--r-- 1 runner runner  1542 Mar 10 17:43 objective_update_after_land.py
+-rw-r--r-- 1 runner runner  4072 Mar 10 17:43 resolve_objective_ref.py
+-rw-r--r-- 1 runner runner 17807 Mar 10 17:47 update_objective_node.py
+  </tool_result>
+  <assistant>Let me search for "reason" in all these objective scripts to make sure I haven't missed anything:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="632" cache_read_input_tokens="59755" cache_creation="{'ephemeral_5m_input_tokens': 632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XCZiRMqDTyZrmm169mC4Tw">
+    <param name="command">grep -l "reason" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective*.py...[truncated 41 chars]...add*.py /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update*.py 2&gt;/dev/null</param>
+    <param name="description">Find objective-related scripts with 'reason' keyword</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="632" cache_read_input_tokens="59755" cache_creation="{'ephemeral_5m_input_tokens': 632, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XCZiRMqDTyZrmm169mC4Tw">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_link_pr.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py
+  </tool_result>
+  <assistant>Let me check objective_link_pr.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="452" cache_read_input_tokens="60387" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016ZLYnETzDRHq8HGTV7t3Pp">
+    <param name="command">grep -n "reason" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_link_pr.py</param>
+    <param name="description">Find 'reason' references in objective_link_pr.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="452" cache_read_input_tokens="60387" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016ZLYnETzDRHq8HGTV7t3Pp">
+56:        click.echo(json.dumps({"success": False, "reason": "no_impl_dir"}))
+61:        click.echo(json.dumps({"success": False, "reason": "no_plan_ref"}))
+65:        click.echo(json.dumps({"success": False, "reason": "no_objective_id"}))
+69:        click.echo(json.dumps({"success": False, "reason": "no_node_ids"}))
+86:                    "reason": "issue_not_found",
+117:                reason=None,
+  </tool_result>
+  <assistant>Good! Line 117 in objective_link_pr.py also has `reason=None`. Let me view that file to understand the context:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="313" cache_read_input_tokens="60839" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0122o16mQAyceMatkzAyBEsn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_link_pr.py</param>
+    <param name="offset">100</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="313" cache_read_input_tokens="60839" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0122o16mQAyceMatkzAyBEsn">
+   100→        if block.key == BlockKeys.OBJECTIVE_ROADMAP:
+   101→            roadmap_block = block
+   102→            break
+   103→
+   104→    if roadmap_block is None:
+   105→        for node_id in node_ids:
+   106→            results.append({"node_id": node_id, "success": False, "error": "no_roadmap"})
+   107→    else:
+   108→        block_content = roadmap_block.body
+   109→        for node_id in node_ids:
+   110→            updated_block_content = update_node_in_frontmatter(
+   111→                block_content,
+   112→                node_id,
+   113→                pr=pr_ref,
+   114→                status=None,
+   115→                description=None,
+   116→                slug=None,
+   117→                reason=None,
+   118→            )
+   119→
+   120→            if updated_block_content is None:
+   121→                results.append({"node_id": node_id, "success": False, "error": "node_not_found"})
+   122→                continue
+   123→
+   124→            block_content = updated_block_content
+   125→            results.append({"node_id": node_id, "success": True})
+   126→
+   127→    # Apply all updates to body in a single replacement
+   128→    any_success = any(r["success"] for r in results)
+   129→    updated_body = issue.body
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I found another instance. Now let me check if `update_node_in_frontmatter` function takes a `comment` or `reason` parameter:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="758" cache_read_input_tokens="61152" cache_creation="{'ephemeral_5m_input_tokens': 758, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01X6bR9ZJrFy5JZJ3wxDkAh7">
+    <param name="command">grep -n "def update_node_in_frontmatter" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py -A 15</param>
+    <param name="description">Find update_node_in_frontmatter function signature</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="758" cache_read_input_tokens="61152" cache_creation="{'ephemeral_5m_input_tokens': 758, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X6bR9ZJrFy5JZJ3wxDkAh7">
+322:def update_node_in_frontmatter(
+323-    block_content: str,
+324-    node_id: str,
+325-    *,
+326-    pr: str | None,
+327-    status: RoadmapNodeStatus | None,
+328-    description: str | None,
+329-    slug: str | None,
+330-    comment: str | None,
+331-) -&gt; str | None:
+332-    """Update a node's fields in frontmatter YAML.
+333-
+334-    Args:
+335-        block_content: Raw content from metadata block
+336-        node_id: Node ID to update (e.g., "1.1")
+337-        pr: New PR value. None=preserve existing, ""=clear, "#123"=set.
+  </tool_result>
+  <assistant>Perfect! The function signature shows `comment` (line 330), not `reason`. Let me now create a comprehensive summary by checking the test file to see if there are any test-side references:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="407" cache_read_input_tokens="61910" cache_creation="{'ephemeral_5m_input_tokens': 407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QU42HVHyPqS3kZDQwEQUBb">
+    <param name="command">grep -n "reason" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_link_pr.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check test file for reason references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="407" cache_read_input_tokens="61910" cache_creation="{'ephemeral_5m_input_tokens': 407, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QU42HVHyPqS3kZDQwEQUBb">
+109:    assert output["reason"] == "no_impl_dir"
+129:    assert output["reason"] == "no_plan_ref"
+148:    assert output["reason"] == "no_objective_id"
+167:    assert output["reason"] == "no_node_ids"
+186:    assert output["reason"] == "no_node_ids"
+205:    assert output["reason"] == "issue_not_found"
+  </tool_result>
+  <assistant>Those are error output references, not function parameter references. Let me search for the complete list of files that still need to be updated by searching more systematically:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="417" cache_read_input_tokens="62317" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NsKpmnVUkwm3FEr2ktBmmP">
+    <param name="command">grep -rn "reason=None" /home/runner/work/erk/erk/src --include="*.py" | grep -E "(plan_cmd|objective_apply|objective_link|update_objective)"</param>
+    <param name="description">Find all reason=None parameter usages in relevant files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="417" cache_read_input_tokens="62317" cache_creation="{'ephemeral_5m_input_tokens': 417, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NsKpmnVUkwm3FEr2ktBmmP">
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py:393:        reason=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py:447:            reason=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py:499:        reason=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_link_pr.py:117:                reason=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:99:            reason=None,
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive report. Let me verify line numbers and create a summary document:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="406" cache_read_input_tokens="62734" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VKWL3NwLZALSjigGnCPrXz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">385</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="406" cache_read_input_tokens="62734" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SDcoy7gpnVmMMd67ALmoVa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">438</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="406" cache_read_input_tokens="62734" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JXaEYVk7N4UnTXhcPWvS9J">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">490</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="406" cache_read_input_tokens="62734" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VKWL3NwLZALSjigGnCPrXz">
+   385→
+   386→    updated_body = _replace_node_refs_in_body(
+   387→        issue.body,
+   388→        node_id,
+   389→        new_pr=f"#{pr_number}",
+   390→        explicit_status="planning",
+   391→        description=None,
+   392→        slug=None,
+   393→        reason=None,
+   394→    )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01SDcoy7gpnVmMMd67ALmoVa">
+   438→    body_changed = False
+   439→    for node_id, pr_number in node_updates:
+   440→        new_body = _replace_node_refs_in_body(
+   441→            updated_body,
+   442→            node_id,
+   443→            new_pr=f"#{pr_number}",
+   444→            explicit_status="planning",
+   445→            description=None,
+   446→            slug=None,
+   447→            reason=None,
+   448→        )
+   449→        if new_body is not None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01JXaEYVk7N4UnTXhcPWvS9J">
+   490→        return
+   491→
+   492→    updated_body = _replace_node_refs_in_body(
+   493→        issue.body,
+   494→        node_id,
+   495→        new_pr=None,
+   496→        explicit_status="planning",
+   497→        description=None,
+   498→        slug=None,
+   499→        reason=None,
+   500→    )
+   501→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me create a comprehensive final report:
+
+## Summary: Remaining References to "reason" in RoadmapNode Context
+
+I've completed a thorough search of the codebase for remaining references to the old "reason" field in RoadmapNode-related code. Here are my findings:
+
+### Key Finding: The Rename is Incomplete
+
+The `reason` field was renamed to `comment` in the RoadmapNode dataclass, but **4 files still use the old parameter name** when calling functions that expect the new `comment` parameter.
+
+### Files With Remaining Issues
+
+All issues are parameter name mismatches where `reason=None` is being passed but the function signature expects `comment`:
+
+1. **src/erk/cli/commands/objective/plan_cmd.py** (3 occurrences)
+   - Line 393: `reason=None,` in `_replace_node_refs_in_body()` call
+   - Line 447: `reason=None,` in `_replace_node_refs_in_body()` call
+   - Line 499: `reason=None,` in `_replace_node_refs_in_body()` call
+
+2. **src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py** (1 occurrence)
+   - Line 99: `reason=None,` in `_replace_node_refs_in_body()` call
+
+3. **src/erk/cli/commands/exec/scripts/objective_link_pr.py** (1 occurrence)
+   - Line 117: `reason=None,` in `update_node_in_frontmatter()` call
+
+### Function Signatures (Already Updated)
+
+The function signatures in both cases have been correctly updated to use `comment`:
+
+- **`_replace_node_refs_in_body()`** in `/src/erk/cli/commands/exec/scripts/update_objective_node.py`
+  - Line 248-256: Parameters include `comment: str | None` (not `reason`)
+
+- **`update_node_in_frontmatter()`** in `/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+  - Line 322-330: Parameters include `comment: str | None` (not `reason`)
+
+### RoadmapNode Dataclass (Already Updated)
+
+The dataclass itself is already correct:
+- `/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`, lines 30-40
+- Field 40: `comment: str | None` (no `reason` field)
+
+### Test Coverage
+
+The test file `/tests/unit/cli/commands/exec/scripts/test_update_objective_node.py` is already using the correct parameter name `comment=None` in all test calls, so tests are aligned with the new signature.
+
+### Files Already Updated (Not Included in This Search)
+
+According to the exclusion list you provided, these files have already been updated:
+- packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+- packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+- src/erk/cli/commands/exec/scripts/update_objective_node.py
+- src/erk/cli/commands/exec/scripts/add_objective_node.py
+- src/erk/cli/commands/exec/scripts/objective_render_roadmap.py
+- tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+- tests/unit/cli/commands/exec/scripts/test_add_objective_node.py
+
+### Absolute File Paths Needing Updates
+
+1. `/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py` (lines 393, 447, 499)
+2. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py` (line 99)
+3. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_link_pr.py` (line 117)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1138" cache_read_input_tokens="63140" cache_creation="{'ephemeral_5m_input_tokens': 1138, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
