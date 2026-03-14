@@ -1,0 +1,138 @@
+<session>
+  <meta source="agent-aea0abb" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md`:
+
+This file documents a CLI command. The project has renamed programmatic field names from "plan" to "pr" in the API/CLI. Update this file to match.
+
+**Rename these patterns:**
+1. `plan_number` → `pr_number` (variable names, JSON field names)
+2. `plan_url` → `pr_url` (variable names, JSON field names)
+3. `plan-number` → `pr-number` (kebab-case in argument-hint and placeholders)
+4. `plan #X` → `PR #X` (in output message templates, when referring to the PR entity)
+
+**DO NOT rename:**
+- "plan" as a concept noun (e.g., "implement plan", "plan mode", "fetch plan")
+- `plan.md` file references
+- Skill/command names containing "plan" (e.g., `/erk:plan-implement`, `/erk:plan-save`)
+- `plan_backend` field name
+- `plan_content` references
+- "erk-plan" label names
+- The `--plan` flag name itself in argument-hint (this is about plan-number-or-url-or-path)
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you update the file to rename the field names from "plan" to "pr" as specified. Let me start by reading the file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16244, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TFfLcv1CKwDyP9vJndjCHZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16244" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16244, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TFfLcv1CKwDyP9vJndjCHZ">
+     1→---
+     2→description: Implement a plan from GitHub, file path, current branch, or current .erk/impl-context/ folder
+     3→argument-hint: "[&lt;plan-number-or-url-or-path&gt;]"
+     4→---
+     5→
+     6→# /erk:plan-implement
+     7→
+     8→Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+     9→
+    10→This is the primary implementation workflow - it orchestrates:
+    11→
+    12→1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+    13→2. Executing the implementation
+    14→3. Running CI and submitting the PR
+    15→
+    16→## Prerequisites
+    17→
+    18→- Must be in a git repository managed by erk
+    19→- GitHub CLI (`gh`) must be authenticated
+    20→- One of:
+    21→  - A plan number, URL, or file path argument
+    22→  - An existing impl directory under `.erk/impl-context/`
+    23→  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+    24→  - A plan in `~/.claude/plans/` (from plan mode)
+    25→
+    26→## Usage
+    27→
+    28→```bash
+    29→/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+    30→/erk:plan-implement 2521               # Fetch and implement plan #2521
+
+... [213 lines omitted] ...
+
+    92→If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+   115→If this fails, display the error and stop.
+  </tool_result>
+  <assistant>Now I'll apply the renames according to the specifications:
+
+1. `plan_number` → `pr_number`
+2. `plan_url` → `pr_url`
+3. `plan-number` → `pr-number`
+4. `plan #X` → `PR #X`
+
+Let me make these edits:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3217" cache_read_input_tokens="16244" cache_creation="{'ephemeral_5m_input_tokens': 3217, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CV6TxHp2gfRTZ5tmVi2d57">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md</param>
+    <param name="old_string">argument-hint: "[&lt;plan-number-or-url-or-path&gt;]"</param>
+    <param name="new_string">argument-hint: "[&lt;pr-number-or-url-or-path&gt;]"</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="3217" cache_read_input_tokens="16244" cache_creation="{'ephemeral_5m_input_tokens': 3217, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CV6TxHp2gfRTZ5tmVi2d57">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014mDT38ysV9DRrnby3M7hET">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md</param>
+    <param name="old_string">```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, o...[truncated 134 chars]...# URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```</param>
+    <param name="new_string">```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, o...[truncated 132 chars]...# URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="274" cache_read_input_tokens="19461" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014mDT38ysV9DRrnby3M7hET">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ummabz4YHDetEZBWU9JQtW">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md</param>
+    <param name="old_string">Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```</param>
+    <param name="new_string">Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="349" cache_read_input_tokens="19735" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ummabz4YHDetEZBWU9JQtW">
+The file /home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I have successfully updated the file `/home/runner/work/erk/erk/.claude/commands/erk/plan-implement.md` with all the required renames:
+
+## Summary of Changes
+
+**Renames applied:**
+
+1. **Line 3**: `argument-hint: "[&lt;plan-number-or-url-or-path&gt;]"` → `argument-hint: "[&lt;pr-number-or-url-or-path&gt;]"` (kebab-case in placeholder)
+
+2. **Line 30**: Comment `# Fetch and implement plan #2521` → `# Fetch and implement PR #2521` (output message template)
+
+3. **Line 107**: Variable name `plan_number` → `pr_number` (JSON field names in parsing instructions)
+
+4. **Line 110**: Variable reference `&lt;plan_number&gt;` → `&lt;pr_number&gt;` (in command template)
+
+All renames follow the specification exactly:
+- Concept nouns like "plan" in "implement a plan" were preserved
+- Skill/command names like `/erk:plan-implement` and `/erk:plan-save` were not changed
+- File references like `plan.md` were not changed
+- Other protected patterns like `plan_backend`, `plan_content`, and the `--plan` flag were not affected</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="221" cache_read_input_tokens="20084" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

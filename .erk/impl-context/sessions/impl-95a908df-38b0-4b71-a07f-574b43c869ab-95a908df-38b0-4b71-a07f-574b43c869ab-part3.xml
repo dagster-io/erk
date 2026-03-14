@@ -1,0 +1,377 @@
+<session>
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_012gXpaJyVPeCCh2q8jEDUpg">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a7f2059&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-submit.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/objective-update-with-closed-plan.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/objective-update-with-closed-plan.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans.md","old_string":"**For single plan:**\n\n```\n/erk:replan &lt;plan_number&gt;\n```\n\n**For multiple plans:**\n\n```\n/erk:replan &lt;issue1&gt; &lt;issue2&gt; &lt;issue3&gt; ...\n```\n\nUse the Skill tool with `skill: \"erk:replan\"` and `args: \"&lt;space-separated plan numbers&gt;\"`.","new_string":"**For single plan:**\n\n```\n/erk:replan &lt;pr_number&gt;\n```\n\n**For multiple plans:**\n\n```\n/erk:replan &lt;issue1&gt; &lt;issue2&gt; &lt;issue3&gt; ...\n```\n\nUse the Skill tool with `skill: \"erk:replan\"` and `args: \"&lt;space-separated pr numbers&gt;\"`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/consolidate-learn-plans.md","old_string":"**For single plan:**\n\n```\n/erk:replan &lt;plan_number&gt;\n```\n\n**For multiple plans:**\n\n```\n/erk:replan &lt;issue1&gt; &lt;issue2&gt; &lt;issue3&gt; ...\n```\n\nUse the Skill tool with `skill: \"erk:replan\"` and `args: \"&lt;space-separated plan numbers&gt;\"`.","new_string":"**For single plan:**\n\n```\n/erk:replan &lt;pr_number&gt;\n```\n\n**For multiple plans:**\n\n```\n/erk:replan &lt;issue1&gt; &lt;issue2&gt; &lt;issue3&gt; ...\n```\n\nUse the Skill tool with `skill: \"erk:replan\"` and `args: \"&lt;space-separated pr numbers&gt;\"`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md","old_string":"Parse the JSON response. The skill returns:\n\n- `success`: Whether the operation succeeded\n- `pr_number`, `pr_title`, `pr_url`: PR metadata\n- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`\n  - `classification`: `\"actionable\"` (code changes needed) or `\"informational\"` (user decides to act or dismiss)\n- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`\n- `batches`: Execution order with `item_indices` referencing the arrays above\n  - Includes an **Informational** batch (last) for `classification: \"informational\"` threads\n- `error`: Error message if `success` is false","new_string":"Parse the JSON response. The skill returns:\n\n- `success`: Whether the operation succeeded\n- `pr_number`, `pr_title`, `pr_url`: PR metadata\n- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`\n  - `classification`: `\"actionable\"` (code changes needed) or `\"informational\"` (user decides to act or dismiss)\n- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`\n- `batches`: Execution order with `item_indices` referencing the arrays above\n  - Includes an **Informational** batch (last) for `classification: \"informational\"` threads\n- `error`: Error message if `success` is false"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md","old_string":"Parse the JSON response. The skill returns:\n\n- `success`: Whether the operation succeeded\n- `pr_number`, `pr_title`, `pr_url`: PR metadata\n- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`\n  - `classification`: `\"actionable\"` (code changes needed) or `\"informational\"` (user decides to act or dismiss)\n- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`\n- `batches`: Execution order with `item_indices` referencing the arrays above\n  - Includes an **Informational** batch (last) for `classification: \"informational\"` threads\n- `error`: Error message if `success` is false","new_string":"Parse the JSON response. The skill returns:\n\n- `success`: Whether the operation succeeded\n- `pr_number`, `pr_title`, `pr_url`: PR metadata\n- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`\n  - `classification`: `\"actionable\"` (code changes needed) or `\"informational\"` (user decides to act or dismiss)\n- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`\n- `batches`: Execution order with `item_indices` referencing the arrays above\n  - Includes an **Informational** batch (last) for `classification: \"informational\"` threads\n- `error`: Error message if `success` is false"}
+[Tool: Grep] {"pattern":"plan_id","path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_id","path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md","output_mode":"content"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md","old_string":"After addressing review comments, upload the session for cross-machine learning.\nResolve the plan_id from the current branch, then push the session:","new_string":"After addressing review comments, upload the session for cross-machine learning.\nResolve the pr_id from the current branch, then push the session:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-address.md","old_string":"After addressing review comments, upload the session for cross-machine learning.\nResolve the plan_id from the current branch, then push the session:","new_string":"After addressing review comments, upload the session for cross-machine learning.\nResolve the pr_id from the current branch, then push the session:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md","old_string":"Once you have the plan number, run:\n\n```bash\nerk pr dispatch &lt;plan_number&gt;\n```","new_string":"Once you have the pr number, run:\n\n```bash\nerk pr dispatch &lt;pr_number&gt;\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-dispatch.md","old_string":"Once you have the plan number, run:\n\n```bash\nerk pr dispatch &lt;plan_number&gt;\n```","new_string":"Once you have the pr number, run:\n\n```bash\nerk pr dispatch &lt;pr_number&gt;\n```"}
+[Tool: Grep] {"pattern":"plan_id","path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-submit.md","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_id","path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-submit.md","output_mode":"content"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-submit.md","old_string":"- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`","new_string":"- `plan_context` (nullable) with `pr_id`, `plan_content`, `objective_summary`"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/pr-submit.md","old_string":"- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`","new_string":"- `plan_context` (nullable) with `pr_id`, `plan_content`, `objective_summary`"}
+[Tool: Grep] {"pattern":"--plan|plan-number","path":"/home/runner/work/erk/erk/.claude/commands/erk/objective-update-with-closed-plan.md","output_mode":"content","multiline":false}
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014TpyLxivZ4TWG82E7a1KQS">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a670932&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/objective-plan-node.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md","old_string":"```bash\ncat &gt; .erk/impl-context/plan-result.json &lt;&lt;'EOF'\n{\"plan_number\": 0, \"has_plans\": false, \"title\": \"No learn plans to consolidate\"}\nEOF\n```","new_string":"```bash\ncat &gt; .erk/impl-context/plan-result.json &lt;&lt;'EOF'\n{\"pr_number\": 0, \"has_plans\": false, \"title\": \"No learn plans to consolidate\"}\nEOF\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md","old_string":"```bash\nerk exec plan-update --pr-number $PR_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary=\"${PLAN_SUMMARY}\"\n```\n\nParse the JSON output. If `success` is `true`, use `$PR_NUMBER` as the plan number.","new_string":"```bash\nerk exec plan-update --pr-number $PR_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary=\"${PLAN_SUMMARY}\"\n```\n\nParse the JSON output. If `success` is `true`, use `$PR_NUMBER` as the PR number."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md","old_string":"```json\n{\"plan_number\": &lt;num&gt;, \"title\": \"&lt;title&gt;\", \"has_plans\": true}\n```","new_string":"```json\n{\"pr_number\": &lt;num&gt;, \"title\": \"&lt;title&gt;\", \"has_plans\": true}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md","old_string":"# Add cross-reference comment\ngh issue comment &lt;number&gt; --body \"Consolidated into #&lt;new_plan_number&gt;. See consolidated plan for implementation details.\"","new_string":"# Add cross-reference comment\ngh issue comment &lt;number&gt; --body \"Consolidated into PR #&lt;new_pr_number&gt;. See consolidated plan for implementation details.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md","old_string":"# Add cross-reference comment\ngh issue comment &lt;number&gt; --body \"Consolidated into #&lt;new_plan_number&gt;. See consolidated plan for implementation details.\"","new_string":"# Add cross-reference comment\ngh issue comment &lt;number&gt; --body \"Consolidated into PR #&lt;new_pr_number&gt;. See consolidated plan for implementation details.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md","old_string":"```bash\nerk exec plan-update --pr-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary=\"${PLAN_SUMMARY}\"\n```\n\nParse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `plan_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.","new_string":"```bash\nerk exec plan-update --pr-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-context/plan.md --format json --summary=\"${PLAN_SUMMARY}\"\n```\n\nParse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `pr_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md","old_string":"Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `plan_number` and `title` from the output.","new_string":"Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, extract `pr_number` and `title` from the output."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md","old_string":"```json\n{\"plan_number\": &lt;num&gt;, \"title\": \"&lt;title&gt;\"}\n```\n\nUse the `plan_number` and `title` extracted from the Step 7 output.","new_string":"```json\n{\"pr_number\": &lt;num&gt;, \"title\": \"&lt;title&gt;\"}\n```\n\nUse the `pr_number` and `title` extracted from the Step 7 output."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md","old_string":"```json\n{\"plan_number\": &lt;num&gt;, \"title\": \"&lt;title&gt;\"}\n```\n\nUse the `plan_number` and `title` extracted from the Step 7 output.","new_string":"```json\n{\"pr_number\": &lt;num&gt;, \"title\": \"&lt;title&gt;\"}\n```\n\nUse the `pr_number` and `title` extracted from the Step 7 output."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md","old_string":"---\ndescription: Update an existing plan with the current session's plan\nargument-hint: &lt;plan-number&gt;\n---","new_string":"---\ndescription: Update an existing plan with the current session's plan\nargument-hint: &lt;pr-number&gt;\n---"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md","old_string":"## Usage\n\n```bash\n/local:plan-update 42\n/local:plan-update https://github.com/owner/repo/issues/42\n```","new_string":"## Usage\n\n```bash\n/local:plan-update 42\n/local:plan-update https://github.com/owner/repo/pull/42\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md","old_string":"### Step 1: Parse Plan Number\n\nExtract the plan number from the argument:\n\n- If numeric (e.g., `42`), use directly\n- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path\n\nIf no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked plan number.\n\nIf still no plan number, ask the user for the plan number.","new_string":"### Step 1: Parse PR Number\n\nExtract the PR number from the argument:\n\n- If numeric (e.g., `42`), use directly\n- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path\n\nIf no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked PR number.\n\nIf still no PR number, ask the user for the PR number."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md","old_string":"### Step 1: Parse Plan Number\n\nExtract the plan number from the argument:\n\n- If numeric (e.g., `42`), use directly\n- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path\n\nIf no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked plan number.\n\nIf still no plan number, ask the user for the plan number.","new_string":"### Step 1: Parse PR Number\n\nExtract the PR number from the argument:\n\n- If numeric (e.g., `42`), use directly\n- If URL (e.g., `https://github.com/owner/repo/pull/42`), extract the number from the path\n\nIf no argument provided, check `ref.json` in `.erk/impl-context/&lt;branch&gt;/` for a linked PR number.\n\nIf still no PR number, ask the user for the PR number."}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/consolidate-learn-plans-plan.md","offset":39,"limit":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/system/one-shot-plan.md","offset":52,"limit":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/plan-update.md","offset":1,"limit":30}
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Rzxz68vVGPQ2Mg1CGkpo4F">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aa10f65&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/erk-planning/references/workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/rename-swarm/SKILL.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/erk-planning/references/workflow.md","old_string":"```json\n{\n  \"plan_id\": 123,\n  \"plan_url\": \"https://github.com/owner/repo/pull/123\"\n}\n```","new_string":"```json\n{\n  \"pr_id\": 123,\n  \"pr_url\": \"https://github.com/owner/repo/pull/123\"\n}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/erk-planning/references/workflow.md","old_string":"```json\n{\n  \"plan_id\": 123,\n  \"plan_url\": \"https://github.com/owner/repo/pull/123\"\n}\n```","new_string":"```json\n{\n  \"pr_id\": 123,\n  \"pr_url\": \"https://github.com/owner/repo/pull/123\"\n}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md","old_string":"@dataclass(frozen=True)\nclass PlanRef:\n    plan_id: int          # Always valid — numeric guaranteed\n    url: str\n    provider: str\n\ndef read_plan_ref(folder: Path) -&gt; PlanRef | None:\n    \"\"\"Validate at the boundary. Return None if invalid.\"\"\"\n    data = json.loads(path.read_text())\n    raw_id = data.get(\"plan_id\")\n    if not isinstance(raw_id, int):\n        return None  # Don't construct with invalid state\n    return PlanRef(plan_id=raw_id, url=data[\"url\"], provider=data[\"provider\"])","new_string":"@dataclass(frozen=True)\nclass PlanRef:\n    pr_id: int          # Always valid — numeric guaranteed\n    url: str\n    provider: str\n\ndef read_plan_ref(folder: Path) -&gt; PlanRef | None:\n    \"\"\"Validate at the boundary. Return None if invalid.\"\"\"\n    data = json.loads(path.read_text())\n    raw_id = data.get(\"pr_id\")\n    if not isinstance(raw_id, int):\n        return None  # Don't construct with invalid state\n    return PlanRef(pr_id=raw_id, url=data[\"url\"], provider=data[\"provider\"])"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md","old_string":"@dataclass(frozen=True)\nclass PlanRef:\n    plan_id: str          # Could be \"42\" or \"PROJ-123\" — caller must check\n\n    @property\n    def numeric_plan_id(self) -&gt; int | None:\n        \"\"\"Every callsite must use this instead of plan_id.\"\"\"\n        if self.plan_id.isdigit():\n            return int(self.plan_id)\n        return None\n\n# Result: N callsites with defensive guards\nissue = plan_ref.numeric_plan_id\nif issue is None:\n    log.warning(\"Non-numeric plan_id\")\n    return","new_string":"@dataclass(frozen=True)\nclass PlanRef:\n    pr_id: str          # Could be \"42\" or \"PROJ-123\" — caller must check\n\n    @property\n    def numeric_pr_id(self) -&gt; int | None:\n        \"\"\"Every callsite must use this instead of pr_id.\"\"\"\n        if self.pr_id.isdigit():\n            return int(self.pr_id)\n        return None\n\n# Result: N callsites with defensive guards\nissue = plan_ref.numeric_pr_id\nif issue is None:\n    log.warning(\"Non-numeric pr_id\")\n    return"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md","old_string":"@dataclass(frozen=True)\nclass PlanRef:\n    plan_id: str          # Could be \"42\" or \"PROJ-123\" — caller must check\n\n    @property\n    def numeric_plan_id(self) -&gt; int | None:\n        \"\"\"Every callsite must use this instead of plan_id.\"\"\"\n        if self.plan_id.isdigit():\n            return int(self.plan_id)\n        return None\n\n# Result: N callsites with defensive guards\nissue = plan_ref.numeric_plan_id\nif issue is None:\n    log.warning(\"Non-numeric plan_id\")\n    return","new_string":"@dataclass(frozen=True)\nclass PlanRef:\n    pr_id: str          # Could be \"42\" or \"PROJ-123\" — caller must check\n\n    @property\n    def numeric_pr_id(self) -&gt; int | None:\n        \"\"\"Every callsite must use this instead of pr_id.\"\"\"\n        if self.pr_id.isdigit():\n            return int(self.pr_id)\n        return None\n\n# Result: N callsites with defensive guards\nissue = plan_ref.numeric_pr_id\nif issue is None:\n    log.warning(\"Non-numeric pr_id\")\n    return"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md","old_string":"    def create_plan(self, ...) -&gt; CreatePlanResult:\n        # Uses gateway to implement domain operation\n        result = self._github.create_pr(...)\n        return CreatePlanResult(plan_id=str(result.number), url=result.url)","new_string":"    def create_plan(self, ...) -&gt; CreatePlanResult:\n        # Uses gateway to implement domain operation\n        result = self._github.create_pr(...)\n        return CreatePlanResult(pr_id=str(result.number), url=result.url)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/gateway-architecture.md","old_string":"    def create_plan(self, ...) -&gt; CreatePlanResult:\n        # Uses gateway to implement domain operation\n        result = self._github.create_pr(...)\n        return CreatePlanResult(plan_id=str(result.number), url=result.url)","new_string":"    def create_plan(self, ...) -&gt; CreatePlanResult:\n        # Uses gateway to implement domain operation\n        result = self._github.create_pr(...)\n        return CreatePlanResult(pr_id=str(result.number), url=result.url)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md","old_string":"    result = backend.create_plan(...)\n\n    # Assert on gateway mutations\n    assert fake_issues.created_issues[0][0] == \"expected title\"\n    assert result.plan_id == \"1\"","new_string":"    result = backend.create_plan(...)\n\n    # Assert on gateway mutations\n    assert fake_issues.created_issues[0][0] == \"expected title\"\n    assert result.pr_id == \"1\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/fake-driven-testing/references/anti-patterns.md","old_string":"    result = backend.create_plan(...)\n\n    # Assert on gateway mutations\n    assert fake_issues.created_issues[0][0] == \"expected title\"\n    assert result.plan_id == \"1\"","new_string":"    result = backend.create_plan(...)\n\n    # Assert on gateway mutations\n    assert fake_issues.created_issues[0][0] == \"expected title\"\n    assert result.pr_id == \"1\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/rename-swarm/SKILL.md","old_string":"## Example: Renaming `issue_number` to `plan_number`\n\n1. Grep found 16 source files and 12 test files containing `issue_number`\n2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds\n3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds\n4. Verification: `Grep(pattern=\"issue_number\")` confirmed only intentional GitHub API references remained\n5. CI: All tests passed, type checker clean\n\nTotal wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits.","new_string":"## Example: Renaming `issue_number` to `pr_number`\n\n1. Grep found 16 source files and 12 test files containing `issue_number`\n2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds\n3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds\n4. Verification: `Grep(pattern=\"issue_number\")` confirmed only intentional GitHub API references remained\n5. CI: All tests passed, type checker clean\n\nTotal wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/rename-swarm/SKILL.md","old_string":"## Example: Renaming `issue_number` to `plan_number`\n\n1. Grep found 16 source files and 12 test files containing `issue_number`\n2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds\n3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds\n4. Verification: `Grep(pattern=\"issue_number\")` confirmed only intentional GitHub API references remained\n5. CI: All tests passed, type checker clean\n\nTotal wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits.","new_string":"## Example: Renaming `issue_number` to `pr_number`\n\n1. Grep found 16 source files and 12 test files containing `issue_number`\n2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds\n3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds\n4. Verification: `Grep(pattern=\"issue_number\")` confirmed only intentional GitHub API references remained\n5. CI: All tests passed, type checker clean\n\nTotal wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md","old_string":"**Bad:** `{\"plan_number\": 42}` — agent must now fetch plan details separately.\n**Good:** `{\"plan_number\": 42, \"title\": \"...\", \"phases\": [...], \"related_docs\": {...}}` — agent can proceed immediately.","new_string":"**Bad:** `{\"pr_number\": 42}` — agent must now fetch plan details separately.\n**Good:** `{\"pr_number\": 42, \"title\": \"...\", \"phases\": [...], \"related_docs\": {...}}` — agent can proceed immediately."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/refac-cli-push-down/SKILL.md","old_string":"**Bad:** `{\"plan_number\": 42}` — agent must now fetch plan details separately.\n**Good:** `{\"plan_number\": 42, \"title\": \"...\", \"phases\": [...], \"related_docs\": {...}}` — agent can proceed immediately.","new_string":"**Bad:** `{\"pr_number\": 42}` — agent must now fetch plan details separately.\n**Good:** `{\"pr_number\": 42, \"title\": \"...\", \"phases\": [...], \"related_docs\": {...}}` — agent can proceed immediately."}
+
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011aTaR7NwV8KfFggcAtj9JV">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a1e5217&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"description: Extract insights from plan-associated sessions\nargument-hint: \"[plan-number]\"","new_string":"description: Extract insights from plan-associated sessions\nargument-hint: \"[pr-number]\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"```\n/erk:learn                              # Infers plan from current branch\n/erk:learn 4655                          # Explicit plan number\n```","new_string":"```\n/erk:learn                              # Infers plan from current branch\n/erk:learn 4655                          # Explicit PR number\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"**When `.erk/impl-context/` exists (CI/async mode):**\n\n```\nLearn pipeline for plan #&lt;plan-number&gt; (using preprocessed materials):\n  1. Read preprocessed materials from .erk/impl-context/\n  2. Launch analysis agents (session, diff, docs check, PR comments)\n  3. Synthesize findings into a documentation plan\n  4. Save plan as a draft PR\n```\n\n**When no `.erk/impl-context/`:**\n\n```\nLearn pipeline for plan #&lt;plan-number&gt;:\n  1. Discover and preprocess session logs\n  2. Launch analysis agents (session, diff, docs check, PR comments)\n  3. Synthesize findings into a documentation plan\n  4. Save plan as a draft PR\n```","new_string":"**When `.erk/impl-context/` exists (CI/async mode):**\n\n```\nLearn pipeline for PR #&lt;pr-number&gt; (using preprocessed materials):\n  1. Read preprocessed materials from .erk/impl-context/\n  2. Launch analysis agents (session, diff, docs check, PR comments)\n  3. Synthesize findings into a documentation plan\n  4. Save plan as a draft PR\n```\n\n**When no `.erk/impl-context/`:**\n\n```\nLearn pipeline for PR #&lt;pr-number&gt;:\n  1. Discover and preprocess session logs\n  2. Launch analysis agents (session, diff, docs check, PR comments)\n  3. Synthesize findings into a documentation plan\n  4. Save plan as a draft PR\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"First, check if the plan is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.\n\n```bash\nerk exec get-issue-body &lt;plan-number&gt;\n```\n\nParse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:\n\n```\nError: Plan #&lt;plan-number&gt; is a learn plan (has erk-learn label).\nCannot learn from a learn plan - this would create documentation cycles.\n```","new_string":"First, check if the plan is a learn plan. **Learn plans cannot generate additional learn plans** - this would create documentation cycles.\n\n```bash\nerk exec get-issue-body &lt;pr-number&gt;\n```\n\nParse the JSON output and check the `labels` array. If `erk-learn` is present, stop with this error:\n\n```\nError: PR #&lt;pr-number&gt; is a learn plan (has erk-learn label).\nCannot learn from a learn plan - this would create documentation cycles.\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"Run the exec script to get session details:\n\n```bash\nerk exec get-learn-sessions &lt;plan-number&gt;\n```","new_string":"Run the exec script to get session details:\n\n```bash\nerk exec get-learn-sessions &lt;pr-number&gt;\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"Tell the user:\n\n```\nFound N session(s) for plan #&lt;plan-number&gt;:\n  - N local session(s) from ~/.claude/projects/\n  - N remote session(s) from GitHub Actions\n```","new_string":"Tell the user:\n\n```\nFound N session(s) for PR #&lt;pr-number&gt;:\n  - N local session(s) from ~/.claude/projects/\n  - N remote session(s) from GitHub Actions\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the planned-pr-context branch — skip raw session preprocessing:\n\n```bash\nerk exec fetch-sessions --pr-number &lt;plan-number&gt; \\\n    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn\n```","new_string":"2. **NEW: If `get-learn-sessions` returned `preprocessed_manifest` (non-null):** Download the preprocessed XMLs directly from the planned-pr-context branch — skip raw session preprocessing:\n\n```bash\nerk exec fetch-sessions --pr-number &lt;pr-number&gt; \\\n    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"    Input:\n    - pr_number: &lt;pr-number&gt;\n    - plan_number: &lt;plan-number&gt;\n    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md","new_string":"    Input:\n    - pr_number: &lt;pr-number&gt;\n    - pr_number: &lt;pr-number&gt;\n    - output_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"    Input:\n    - plan_title: &lt;title from the plan&gt;\n    - pr_title: &lt;PR title if available, or empty string&gt;","new_string":"    Input:\n    - pr_title: &lt;title from the plan&gt;\n    - pr_title: &lt;PR title if available, or empty string&gt;"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"    Input:\n    - gap_analysis_path: \".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md\"\n    - session_analysis_paths: [\".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-&lt;id&gt;.md\", ...]\n    - diff_analysis_path: \".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md\" (or null if no PR)\n    - plan_title: &lt;title from the plan&gt;\n    - pr_number: &lt;PR number if available, else null&gt;","new_string":"    Input:\n    - gap_analysis_path: \".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md\"\n    - session_analysis_paths: [\".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-&lt;id&gt;.md\", ...]\n    - diff_analysis_path: \".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md\" (or null if no PR)\n    - pr_title: &lt;title from the plan&gt;\n    - pr_number: &lt;PR number if available, else null&gt;"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"Parse the JSON output to get `plan_number`, `plan_backend`, `title`, and `plan_url` (the new learn plan number).\n\nDisplay the result:\n\n```\nLearn plan saved as draft PR #&lt;plan_number&gt;: &lt;title&gt;\nURL: &lt;plan_url&gt;\n```","new_string":"Parse the JSON output to get `pr_number`, `plan_backend`, `title`, and `pr_url` (the new learn plan number).\n\nDisplay the result:\n\n```\nLearn plan saved as draft PR #&lt;pr_number&gt;: &lt;title&gt;\nURL: &lt;pr_url&gt;\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"- **Review**: Display the `plan_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.","new_string":"- **Review**: Display the `pr_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"- **Review**: Display the `plan_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready.","new_string":"- **Review**: Display the `pr_url` from the JSON output for the user to click. Then inform the user they can run `/erk:pr-dispatch` when ready."}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","offset":1,"limit":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","offset":720,"limit":30}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","offset":800,"limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","offset":800,"limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","offset":50,"limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","offset":100,"limit":30}
+
+... [97 lines omitted] ...
+  </tool_result>
+  <assistant>Wave 1 is complete. All `.claude/commands/` and `.claude/skills/` files have been updated. Let me now collect the Wave 2 results (docs/learned/):</assistant>
+  <usage input_tokens="25985" cache_creation_input_tokens="9730" cache_read_input_tokens="82141" cache_creation="{'ephemeral_5m_input_tokens': 9730, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Dh1tGW3tXaTR633tjaaCre">
+    <param name="todos">[{'content': 'Step 1: Rename plan terminology in .claude/commands/ and .claude/skills/ (~1...[truncated 661 chars]... CI, submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="25985" cache_creation_input_tokens="9730" cache_read_input_tokens="82141" cache_creation="{'ephemeral_5m_input_tokens': 9730, 'ephemeral_1h_input_tokens': 0}" output_tokens="344" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dh1tGW3tXaTR633tjaaCre">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_013VtxFZBzac89UVowAFWQnA">
+    <param name="task_id">ab9e5a8</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01728E2qrssiVXw7kT2s17Zm">
+    <param name="task_id">ae97617</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_0177LkxGCK2PkDbxRKB4e3jH">
+    <param name="task_id">a185b62</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01EpagZgazMWozHzgCJxiuQs">
+    <param name="task_id">a07d3b3</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01AzLbEQdB6G6R9WLbVFzvcy">
+    <param name="task_id">ac2e259</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01EevNJosroh9oatJkj4aYoX">
+    <param name="task_id">a4224e3</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01TDj1a1qVfgC3ATF5KJ2v5k">
+    <param name="task_id">a7c3cce</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01FJasCD2fELUWcnrXBZZCVQ">
+    <param name="task_id">ab9d9a5</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01BYVAGymGyQRc3jZz87aYGP">
+    <param name="task_id">a8c1afe</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="26370" cache_read_input_tokens="91871" cache_creation="{'ephemeral_5m_input_tokens': 26370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AzLbEQdB6G6R9WLbVFzvcy">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ac2e259&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/state-threading-pattern.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/pipeline-transformation-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-context-integration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/type-safety-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/land-state-threading.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/json-parsing-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/linear-pipelines.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/optional-field-propagation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/selection-preservation-by-value.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md","old_string":"```json\n{\"success\": true, \"source\": \"issue\", \"plan_number\": 123, \"has_plan_tracking\": true}\n{\"cleaned\": true}\n{\"success\": true, \"source\": \"issue\", \"has_plan_tracking\": true, \"valid\": true}\n```","new_string":"```json\n{\"success\": true, \"source\": \"issue\", \"pr_number\": 123, \"has_plan_tracking\": true}\n{\"cleaned\": true}\n{\"success\": true, \"source\": \"issue\", \"has_plan_tracking\": true, \"valid\": true}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md","old_string":"```json\n{\"success\": true, \"source\": \"issue\", \"plan_number\": 123, \"has_plan_tracking\": true}\n{\"cleaned\": true}\n{\"success\": true, \"source\": \"issue\", \"has_plan_tracking\": true, \"valid\": true}\n```","new_string":"```json\n{\"success\": true, \"source\": \"issue\", \"pr_number\": 123, \"has_plan_tracking\": true}\n{\"cleaned\": true}\n{\"success\": true, \"source\": \"issue\", \"has_plan_tracking\": true, \"valid\": true}\n```"}
+
+--- RESULT ---
+Perfect! I've completed the analysis and updates. Here's a summary of what I found:
+
+## Summary of Documentation Updates
+
+
+... [20 lines omitted] ...
+
+- **error-handling-patterns.md** - Generic example pattern code showing `backend.update_metadata(repo_root, plan_id, ...)`
+  </tool_result>
+  <tool_result tool="toolu_01EevNJosroh9oatJkj4aYoX">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a4224e3&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","old_string":"**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.","new_string":"**accessing plan_ref.pr_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","old_string":"**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.","new_string":"**accessing plan_ref.pr_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","old_string":"**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.","new_string":"**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{pr_number} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","old_string":"**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.","new_string":"**proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{pr_number} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation."}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","offset":19,"limit":5}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","offset":19,"limit":5}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","offset":269,"limit":5}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","offset":269,"limit":5}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","offset":307,"limit":5}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md","offset":307,"limit":5}
+
+--- RESULT ---
+Excellent! All edits have been successfully applied. Let me provide a summary of the changes made:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md` with the following changes:
+
+### Changes Applied:
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TDj1a1qVfgC3ATF5KJ2v5k">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a7c3cce&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**calling gh issue view with a plan_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.","new_string":"**calling gh issue view with a pr_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, pr_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.","new_string":"**using gh issue view on a pr_id without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id values are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics.","new_string":"**validating pr_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","old_string":"**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics.","new_string":"**validating pr_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics."}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","offset":65,"limit":10}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","offset":245,"limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md","offset":245,"limit":20}
+
+--- RESULT ---
+Perfect! All three edits have been successfully applied. Let me verify the file is complete and correct:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md` with the following changes:
+
+### Changes Made:
+
+1. **Line 71** - Updated the tripwire about `calling gh issue view`:
+   - Changed `plan_id from PlannedPRBackend` → `pr_id from PlannedPRBackend`
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013VtxFZBzac89UVowAFWQnA">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ab9e5a8&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md","old_string":"A frozen dataclass with fields: `provider` (PlanProviderType), `plan_id` (str), `url` (str), `created_at` (str, ISO 8601), `synced_at` (str, ISO 8601), `labels` (tuple of str), and `objective_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`.","new_string":"A frozen dataclass with fields: `provider` (PlanProviderType), `pr_id` (str), `url` (str), `created_at` (str, ISO 8601), `synced_at` (str, ISO 8601), `labels` (tuple of str), and `objective_id` (int or None). See `PlanRef` in `packages/erk-shared/src/erk_shared/impl_folder.py`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md","old_string":"| issue.json field  | PlanRef field                   |\n| ----------------- | ------------------------------- |\n| `issue_number`    | `plan_id` (converted to string) |\n| `issue_url`       | `url`                           |\n| `created_at`      | `created_at`                    |\n| `synced_at`       | `synced_at`                     |\n| `labels`          | `labels`                        |\n| `objective_issue` | `objective_id`                  |","new_string":"| issue.json field  | PlanRef field                   |\n| ----------------- | ------------------------------- |\n| `issue_number`    | `pr_id` (converted to string)   |\n| `issue_url`       | `url`                           |\n| `created_at`      | `created_at`                    |\n| `synced_at`       | `synced_at`                     |\n| `labels`          | `labels`                        |\n| `objective_issue` | `objective_id`                  |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md","old_string":"```json\n{\n  \"provider\": \"github-draft-pr\",\n  \"plan_id\": \"7952\",\n  \"url\": \"https://github.com/owner/repo/pull/7952\",\n  \"created_at\": \"2026-02-23T12:43:12.965231\",\n  \"synced_at\": \"2026-02-23T12:43:12.965231\",\n  \"labels\": [],\n  \"objective_id\": null\n}\n```","new_string":"```json\n{\n  \"provider\": \"github-draft-pr\",\n  \"pr_id\": \"7952\",\n  \"url\": \"https://github.com/owner/repo/pull/7952\",\n  \"created_at\": \"2026-02-23T12:43:12.965231\",\n  \"synced_at\": \"2026-02-23T12:43:12.965231\",\n  \"labels\": [],\n  \"objective_id\": null\n}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/ref-json-migration.md","old_string":"```json\n{\n  \"provider\": \"github-draft-pr\",\n  \"plan_id\": \"7952\",\n  \"url\": \"https://github.com/owner/repo/pull/7952\",\n  \"created_at\": \"2026-02-23T12:43:12.965231\",\n  \"synced_at\": \"2026-02-23T12:43:12.965231\",\n  \"labels\": [],\n  \"objective_id\": null\n}\n```","new_string":"```json\n{\n  \"provider\": \"github-draft-pr\",\n  \"pr_id\": \"7952\",\n  \"url\": \"https://github.com/owner/repo/pull/7952\",\n  \"created_at\": \"2026-02-23T12:43:12.965231\",\n  \"synced_at\": \"2026-02-23T12:43:12.965231\",\n  \"labels\": [],\n  \"objective_id\": null\n}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"- Fields: `provider`, `plan_id` (str), `url`, `labels`, `objective_id`\n- File: `.erk/impl-context/plan-ref.json`\n- Designed for any plan provider (GitHub, Jira, Linear, etc.)","new_string":"- Fields: `provider`, `pr_id` (str), `url`, `labels`, `objective_id`\n- File: `.erk/impl-context/plan-ref.json`\n- Designed for any plan provider (GitHub, Jira, Linear, etc.)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"Key fields: `provider` (`PlanProviderType`), `plan_id` (str), `url`, `created_at`, `synced_at`, `labels` (tuple), `objective_id` (int | None).","new_string":"Key fields: `provider` (`PlanProviderType`), `pr_id` (str), `url`, `created_at`, `synced_at`, `labels` (tuple), `objective_id` (int | None)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"### String `plan_id` Rationale\n\n`plan_id` is deliberately a `str`, not `int`, to support future providers where plan identifiers are non-numeric (e.g., Jira's `PROJ-123`). GitHub issue numbers are stored as strings and converted at callsites when needed.","new_string":"### String `pr_id` Rationale\n\n`pr_id` is deliberately a `str`, not `int`, to support future providers where plan identifiers are non-numeric (e.g., Jira's `PROJ-123`). GitHub issue numbers are stored as strings and converted at callsites when needed."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"### `save_plan_ref(impl_dir, *, provider, plan_id, url, labels, objective_id)`","new_string":"### `save_plan_ref(impl_dir, *, provider, pr_id, url, labels, objective_id)`"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"The legacy fallback maps old fields to new PlanRef structure:\n\n- `issue_number` -&gt; `plan_id` (converted to string)\n- `issue_url` -&gt; `url`\n- Defaults: `provider=\"github\"`, `labels=()`, `objective_id=None`","new_string":"The legacy fallback maps old fields to new PlanRef structure:\n\n- `issue_number` -&gt; `pr_id` (converted to string)\n- `issue_url` -&gt; `url`\n- Defaults: `provider=\"github\"`, `labels=()`, `objective_id=None`"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"Returns plan_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-branch mapping. Branch names no longer encode issue numbers.\n\n- Reads plan reference from impl directory via `read_plan_ref()`\n- The `branch_name` parameter is unused (kept for interface compatibility)\n- Returns `plan_id` as string if plan-ref.json exists, `None` otherwise","new_string":"Returns pr_id from plan-ref.json. Plan-ref.json is the sole source of truth for plan-to-branch mapping. Branch names no longer encode issue numbers.\n\n- Reads plan reference from impl directory via `read_plan_ref()`\n- The `branch_name` parameter is unused (kept for interface compatibility)\n- Returns `pr_id` as string if plan-ref.json exists, `None` otherwise"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"## The `plan_id` String-to-Int Conversion Pattern\n\nSince `plan_id` is a string but GitHub APIs require integers, callsites must convert carefully:\n\n```python\n# Correct: LBYL before conversion\nif plan_ref.plan_id.isdigit():\n    issue_number = int(plan_ref.plan_id)\nelse:\n    # Handle non-numeric plan_id\n    ...\n```","new_string":"## The `pr_id` String-to-Int Conversion Pattern\n\nSince `pr_id` is a string but GitHub APIs require integers, callsites must convert carefully:\n\n```python\n# Correct: LBYL before conversion\nif plan_ref.pr_id.isdigit():\n    issue_number = int(plan_ref.pr_id)\nelse:\n    # Handle non-numeric pr_id\n    ...\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"## The `plan_id` String-to-Int Conversion Pattern\n\nSince `plan_id` is a string but GitHub APIs require integers, callsites must convert carefully:\n\n```python\n# Correct: LBYL before conversion\nif plan_ref.plan_id.isdigit():\n    issue_number = int(plan_ref.plan_id)\nelse:\n    # Handle non-numeric plan_id\n    ...\n```","new_string":"## The `pr_id` String-to-Int Conversion Pattern\n\nSince `pr_id` is a string but GitHub APIs require integers, callsites must convert carefully:\n\n```python\n# Correct: LBYL before conversion\nif plan_ref.pr_id.isdigit():\n    issue_number = int(plan_ref.pr_id)\nelse:\n    # Handle non-numeric pr_id\n    ...\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"tripwires:\n  - action: \"accessing plan_ref.plan_id as int without checking\"\n    warning: \"plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.\"\n  - action: \"calling save_plan_ref with positional arguments\"\n    warning: \"All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.\"","new_string":"tripwires:\n  - action: \"accessing plan_ref.pr_id as int without checking\"\n    warning: \"pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'.\"\n  - action: \"calling save_plan_ref with positional arguments\"\n    warning: \"All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/plan-ref-architecture.md","old_string":"tripwires:\n  - action: \"accessing plan_ref.plan_id as int without checking\"\n    warning: \"plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.\"\n  - action: \"calling save_plan_ref with positional arguments\"\n    warning: \"All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.\"","new_string":"tripwires:\n  - action: \"accessing plan_ref.pr_id as int without checking\"\n    warning: \"pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'.\"\n  - action: \"calling save_plan_ref with positional arguments\"\n    warning: \"All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md","old_string":"See `save_plan_ref()` in\n[`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../packages/erk-shared/src/erk_shared/impl_folder.py)\nfor the full signature. Key points: all parameters after `impl_dir` are keyword-only (`provider`, `plan_id`, `url`, `labels`, `objective_id`).","new_string":"See `save_plan_ref()` in\n[`packages/erk-shared/src/erk_shared/impl_folder.py`](../../../packages/erk-shared/src/erk_shared/impl_folder.py)\nfor the full signature. Key points: all parameters after `impl_dir` are keyword-only (`provider`, `pr_id`, `url`, `labels`, `objective_id`)."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md","old_string":"┌────────────────────────────┐\n│ .erk/impl-context/plan-ref.json │\n│ {                           │\n│   \"provider\": \"github\",     │\n│   \"plan_id\": \"123\",         │\n│   \"url\": \"...\"              │\n│ }                           │\n└─────────┬────────────────────┘","new_string":"┌────────────────────────────┐\n│ .erk/impl-context/plan-ref.json │\n│ {                           │\n│   \"provider\": \"github\",     │\n│   \"pr_id\": \"123\",           │\n│   \"url\": \"...\"              │\n│ }                           │\n└─────────┬────────────────────┘"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/issue-reference-flow.md","old_string":"┌────────────────────────────┐\n│ .erk/impl-context/plan-ref.json │\n│ {                           │\n│   \"provider\": \"github\",     │\n│   \"plan_id\": \"123\",         │\n│   \"url\": \"...\"              │\n│ }                           │\n└─────────┬────────────────────┘","new_string":"┌────────────────────────────┐\n│ .erk/impl-context/plan-ref.json │\n│ {                           │\n│   \"provider\": \"github\",     │\n│   \"pr_id\": \"123\",           │\n│   \"url\": \"...\"              │\n│ }                           │\n└─────────┬────────────────────┘"}
+
+... [27 lines omitted] ...
+
+- Updated tripwire warnings: `plan_ref.plan_id` → `plan_ref.pr_id`
+  </tool_result>
+  <tool_result tool="toolu_01728E2qrssiVXw7kT2s17Zm">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ae97617&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/remote-branch-learn.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-context-local-preprocessing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md","old_string":"| **Branch-uploaded** | `planned-pr-context/{plan_id}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |","new_string":"| **Branch-uploaded** | `planned-pr-context/{pr_number}` branch on origin | Durable until branch deleted                 | Cross-session persistence for learn workflows                               |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md","old_string":"See `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{plan_id}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields.","new_string":"See `push_session()` in `src/erk/cli/commands/exec/scripts/push_session.py` for how branch-based storage and plan-header updates are coordinated. The push preprocesses session JSONL to compressed XML, creates a `planned-pr-context/{pr_number}` branch, accumulates sessions across lifecycle stages, and updates plan metadata with `last_session_branch`, `last_session_id`, `last_session_at`, and `last_session_source` fields."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/lifecycle.md","old_string":"The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{plan_id}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup.","new_string":"The branch upload tier was added because learn workflows frequently run in a _different_ Claude Code session from the one that created or implemented the plan. By the time learn runs, the original session file is often gone. Pushing to a `planned-pr-context/{pr_number}` branch and recording the branch reference in the plan-header creates a durable reference that survives session cleanup."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md","old_string":"```json\n{\n  \"version\": 1,\n  \"plan_id\": 2521,\n  \"sessions\": [\n    {\n      \"session_id\": \"abc-123\",\n      \"stage\": \"impl\",\n      \"source\": \"local\",\n      \"uploaded_at\": \"2026-03-01T...\",\n      \"files\": [\"impl-abc123.xml\"]\n    }\n  ]\n}\n```","new_string":"```json\n{\n  \"version\": 1,\n  \"pr_number\": 2521,\n  \"sessions\": [\n    {\n      \"session_id\": \"abc-123\",\n      \"stage\": \"impl\",\n      \"source\": \"local\",\n      \"uploaded_at\": \"2026-03-01T...\",\n      \"files\": [\"impl-abc123.xml\"]\n    }\n  ]\n}\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"Erk discovers Claude Code sessions associated with plans through branch-based storage on `planned-pr-context/{plan_id}` branches, with local filesystem fallback for backwards compatibility.","new_string":"Erk discovers Claude Code sessions associated with plans through branch-based storage on `planned-pr-context/{pr_number}` branches, with local filesystem fallback for backwards compatibility."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"## Branch-Based Session Storage\n\nSessions are preprocessed (JSONL to compressed XML) and accumulated on `planned-pr-context/{plan_id}` branches with manifest-based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch.","new_string":"## Branch-Based Session Storage\n\nSessions are preprocessed (JSONL to compressed XML) and accumulated on `planned-pr-context/{pr_number}` branches with manifest-based tracking. Each lifecycle stage (planning, impl, address) appends to the same branch."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"1. Preprocess session JSONL to compressed XML\n2. Push to `planned-pr-context/{plan_id}` branch, accumulating with existing sessions\n3. Update plan-header metadata with session info","new_string":"1. Preprocess session JSONL to compressed XML\n2. Push to `planned-pr-context/{pr_number}` branch, accumulating with existing sessions\n3. Update plan-header metadata with session info"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"Remote sessions are downloaded via `erk exec fetch-sessions`:\n\n1. Fetch manifest and preprocessed XMLs from the `planned-pr-context/{plan_id}` branch\n2. Write XML files to the learn output directory\n3. Return JSON with file list and manifest metadata","new_string":"Remote sessions are downloaded via `erk exec fetch-sessions`:\n\n1. Fetch manifest and preprocessed XMLs from the `planned-pr-context/{pr_number}` branch\n2. Write XML files to the learn output directory\n3. Return JSON with file list and manifest metadata"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{plan_id}` branch reference\n2. **Plan header metadata** - `created_from_session` field stores the planning session ID\n3. **Implementation comments** - `impl-started` and `impl-ended` comments track implementation sessions\n4. **Learn comments** - `learn-invoked` comments track previous learn invocations","new_string":"1. **Plan header branch fields** - `last_session_branch` stores the `planned-pr-context/{pr_number}` branch reference\n2. **Plan header metadata** - `created_from_session` field stores the planning session ID\n3. **Implementation comments** - `impl-started` and `impl-ended` comments track implementation sessions\n4. **Learn comments** - `learn-invoked` comments track previous learn invocations"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-discovery.md","old_string":"| `LocalSessionSource`  | Sessions from `~/.claude/projects/` on machine                            |\n| `RemoteSessionSource` | Sessions from `planned-pr-context/{plan_id}` branches or legacy artifacts |","new_string":"| `LocalSessionSource`  | Sessions from `~/.claude/projects/` on machine                            |\n| `RemoteSessionSource` | Sessions from `planned-pr-context/{pr_number}` branches or legacy artifacts |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md","old_string":"## Current Implementation\n\n`push_session.py` preprocesses session JSONL to compressed XML and pushes to a `planned-pr-context/{plan_id}` branch, accumulating multiple sessions across lifecycle stages. Plan metadata is updated with:","new_string":"## Current Implementation\n\n`push_session.py` preprocesses session JSONL to compressed XML and pushes to a `planned-pr-context/{pr_number}` branch, accumulating multiple sessions across lifecycle stages. Plan metadata is updated with:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/session-storage-revert-rationale.md","old_string":"| Metadata Field        | Value                          |\n| --------------------- | ------------------------------ |\n| `last_session_branch` | `planned-pr-context/{plan_id}` |","new_string":"| Metadata Field        | Value                          |\n| --------------------- | ------------------------------ |\n| `last_session_branch` | `planned-pr-context/{pr_number}` |"}
+
+... [49 lines omitted] ...
+  </tool_result>
+</session>

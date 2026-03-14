@@ -1,0 +1,508 @@
+<session>
+  <meta source="agent-a54cd31" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/.claude/commands/erk/replan.md`:
+
+This file documents a CLI command. The project has renamed programmatic field names from "plan" to "pr" in the API/CLI. Update this file to match.
+
+**Rename these patterns:**
+1. `plan_number` → `pr_number` (variable names, JSON field names like `original_plan_number`, `new_plan_number`)
+2. `plan_url` → `pr_url`
+3. `plan-number` → `pr-number` (kebab-case in argument-hint and placeholders like `&lt;plan-number-or-url&gt;`)
+4. `plan #&lt;number&gt;` → `PR #&lt;number&gt;` (output messages like "Created new plan #&lt;new_number&gt;" → "Created new PR #&lt;new_number&gt;")
+5. In JSON examples like `"plan_number": 123` → `"pr_number": 123`
+
+**DO NOT rename:**
+- "plan" as a concept noun (e.g., "replan", "plan content", "original plan")
+- `plan.md` file references
+- Skill/command names containing "plan" (e.g., `/erk:replan`)
+- `plan_backend` field name
+- "erk-plan" or "erk-consolidated" label names
+- Function/command names like `get-plan-metadata`, `update-plan-header`, `add-plan-labels`, `close-prs`, `get-plan-info`, `add-plan-label`
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to understand its current content and structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16311" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16311, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XnLJkVwb8UsnAbDnn9fdLN">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16311" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16311, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XnLJkVwb8UsnAbDnn9fdLN">
+     1→---
+     2→description: Replan an existing plan against current codebase state
+     3→argument-hint: &lt;plan-number-or-url&gt;
+     4→---
+     5→
+     6→# /erk:replan
+     7→
+     8→Recomputes existing plan(s) against the current codebase state, creating a new plan and closing the original(s).
+     9→
+    10→Supports consolidating multiple plans into a single unified plan.
+    11→
+    12→## Usage
+    13→
+    14→```bash
+    15→/erk:replan 2521                          # Single plan replan
+    16→/erk:replan https://github.com/owner/repo/pull/2521
+    17→/erk:replan 123 456 789                   # Consolidate multiple plans
+    18→```
+    19→
+    20→---
+    21→
+    22→## Agent Instructions
+    23→
+    24→### Step 1: Parse Plan References
+    25→
+    26→Split `$ARGUMENTS` on whitespace. For each argument:
+    27→
+    28→- If numeric (e.g., `2521`), use directly as plan number
+    29→- If URL (e.g., `https://github.com/owner/repo/pull/2521`), extract the number from the path
+    30→
+
+... [476 lines omitted] ...
+
+    65→&gt; ERRORS:
+    66→&gt; &lt;only present if VALIDATION is FAIL, list each error&gt;
+    68→&gt; WARNINGS:
+    69→&gt; &lt;only present if any issues are closed, list each warning&gt;
+    82→&gt; - PASS otherwise (closed plans are warnings, not failures)
+    86→1. **If VALIDATION is FAIL**: Display each error and abort:
+    89→   Error: Plan #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).
+    93→   Error: Plan #&lt;number&gt; not found.
+    96→2. **If WARNINGS present**: Display each warning but continue:
+    99→   Warning: Plan #&lt;number&gt; is already closed. Proceeding with replan anyway.
+   146→Return an error to the main agent:
+   149→Error: Plan #&lt;number&gt; not found.
+   481→## Error Cases
+   483→| Error                    | Message                                                                                   |
+   485→| Plan not found           | `Error: Plan #&lt;number&gt; not found.`                                                        |
+   486→| Not a plan               | `Error: Plan #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).` |
+   487→| No plan content          | `Error: No plan content found in plan #&lt;number&gt;.`                                         |
+   488→| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh &amp;&amp; gh auth login`             |
+   489→| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                              |
+  </tool_result>
+  <assistant>Now I'll apply the renames according to the instructions. I need to rename:
+1. `plan_number` → `pr_number`
+2. `plan_url` → `pr_url`
+3. `plan-number` → `pr-number` (in kebab-case)
+4. `plan #&lt;number&gt;` → `PR #&lt;number&gt;` (in output messages)
+5. JSON field renames like `original_plan_number` → `original_pr_number`
+
+Let me apply these changes:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="6120" cache_read_input_tokens="16311" cache_creation="{'ephemeral_5m_input_tokens': 6120, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G8AEvLGzLknryguTYtGb1p">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">description: Replan an existing plan against current codebase state
+argument-hint: &lt;plan-number-or-url&gt;</param>
+    <param name="new_string">description: Replan an existing plan against current codebase state
+argument-hint: &lt;pr-number-or-url&gt;</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="6120" cache_read_input_tokens="16311" cache_creation="{'ephemeral_5m_input_tokens': 6120, 'ephemeral_1h_input_tokens': 0}" output_tokens="286" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G8AEvLGzLknryguTYtGb1p">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UKgCG43xx64htakpFJQQqG">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">```bash
+/erk:replan 2521                          # Single plan replan
+/erk:replan https://github.com/owner/repo/pull/2521
+/erk:replan 123 456 789                   # Consolidate multiple plans
+```</param>
+    <param name="new_string">```bash
+/erk:replan 2521                          # Single plan replan
+/erk:replan https://github.com/owner/repo/pull/2521
+/erk:replan 123 456 789                   # Consolidate multiple plans
+```</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="329" cache_read_input_tokens="22431" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UKgCG43xx64htakpFJQQqG">
+&lt;tool_use_error&gt;No changes to make: old_string and new_string are exactly the same.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Arz2QuHR6VaF5N4kuusqgu">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">Split `$ARGUMENTS` on whitespace. For each argument:
+
+- If numeric (e.g., `2521`), use dir...[truncated 156 chars]...e` if multiple plans provided.
+
+If no argument provided, ask the user for the plan number.</param>
+    <param name="new_string">Split `$ARGUMENTS` on whitespace. For each argument:
+
+- If numeric (e.g., `2521`), use dir...[truncated 150 chars]...rue` if multiple plans provided.
+
+If no argument provided, ask the user for the pr number.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="285" cache_read_input_tokens="22760" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="316" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Arz2QuHR6VaF5N4kuusqgu">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014Cgbwe5JA4MyBywVeqSfU9">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">**Agent prompt** (adapt plan numbers from Step 1):
+
+&gt; For each of the following plan numbers: [list plan numbers]</param>
+    <param name="new_string">**Agent prompt** (adapt pr numbers from Step 1):
+
+&gt; For each of the following PR numbers: [list pr numbers]</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="360" cache_read_input_tokens="23045" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Cgbwe5JA4MyBywVeqSfU9">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DhXA75c4smK16HPint8YD2">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">   ```
+   Error: Plan #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).
+   ```
+
+   ```
+   Error: Plan #&lt;number&gt; not found.
+   ```</param>
+    <param name="new_string">   ```
+   Error: PR #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).
+   ```
+
+   ```
+   Error: PR #&lt;number&gt; not found.
+   ```</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="315" cache_read_input_tokens="23405" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DhXA75c4smK16HPint8YD2">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LRS8Gzf6HaATLdaBw2EH2P">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">2. **If WARNINGS present**: Display each warning but continue:
+
+   ```
+   Warning: Plan #&lt;number&gt; is already closed. Proceeding with replan anyway.
+   ```</param>
+    <param name="new_string">2. **If WARNINGS present**: Display each warning but continue:
+
+   ```
+   Warning: PR #&lt;number&gt; is already closed. Proceeding with replan anyway.
+   ```</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="257" cache_read_input_tokens="23720" cache_creation="{'ephemeral_5m_input_tokens': 257, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LRS8Gzf6HaATLdaBw2EH2P">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Anzx8Feq1ENjz8pUgnhLF3">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">**If the command fails (exit code 1):**
+
+Return an error to the main agent:
+
+```
+Error: Plan #&lt;number&gt; not found.
+```</param>
+    <param name="new_string">**If the command fails (exit code 1):**
+
+Return an error to the main agent:
+
+```
+Error: PR #&lt;number&gt; not found.
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="23977" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Anzx8Feq1ENjz8pUgnhLF3">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0194mq9zXm4qz3SAeBJRqWUD">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">```markdown
+# Plan: [Updated Title]
+
+&gt; **Replans:** #&lt;original_plan_number&gt;</param>
+    <param name="new_string">```markdown
+# Plan: [Updated Title]
+
+&gt; **Replans:** #&lt;original_pr_number&gt;</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="331" cache_read_input_tokens="24214" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0194mq9zXm4qz3SAeBJRqWUD">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EdEtWCwnBC3mpCweNpfDvP">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">   - **If an objective was linked**, verify the link was saved correctly:
+   ```bash
+   er...[truncated 97 chars]...  ```bash
+   erk exec update-plan-header &lt;new_plan_number&gt; objective_issue=&lt;number&gt;
+   ```</param>
+    <param name="new_string">   - **If an objective was linked**, verify the link was saved correctly:
+   ```bash
+   er...[truncated 93 chars]...
+   ```bash
+   erk exec update-plan-header &lt;new_pr_number&gt; objective_issue=&lt;number&gt;
+   ```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="202" cache_read_input_tokens="24545" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="286" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EdEtWCwnBC3mpCweNpfDvP">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:    - **If an objective was linked**, verify the link was saved correctly:
+   ```bash
+   erk exec get-plan-metadata &lt;new_plan_number&gt; objective_issue
+   ```
+   If the objective link is missing, fix it with:
+   ```bash
+   erk exec update-plan-header &lt;new_plan_number&gt; objective_issue=&lt;number&gt;
+   ```&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me read the file again to see the exact formatting:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="24747" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y5N9Xn8Zo8Ft3zLBTf2RJM">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="offset">395</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="24747" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y5N9Xn8Zo8Ft3zLBTf2RJM">
+   395→3. **If an objective was linked**, verify the link was saved correctly:
+   396→   ```bash
+   397→   erk exec get-plan-metadata &lt;new_plan_number&gt; objective_issue
+   398→   ```
+   399→   If the objective link is missing, fix it with:
+   400→   ```bash
+   401→   erk exec update-plan-header &lt;new_plan_number&gt; objective_issue=&lt;number&gt;
+   402→   ```
+   403→4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
+   404→   ```bash
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NQzCEMvybiKkRHj891oshQ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">3. **If an objective was linked**, verify the link was saved correctly:
+   ```bash
+   erk ...[truncated 95 chars]...  ```bash
+   erk exec update-plan-header &lt;new_plan_number&gt; objective_issue=&lt;number&gt;
+   ```</param>
+    <param name="new_string">3. **If an objective was linked**, verify the link was saved correctly:
+   ```bash
+   erk ...[truncated 91 chars]...
+   ```bash
+   erk exec update-plan-header &lt;new_pr_number&gt; objective_issue=&lt;number&gt;
+   ```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="464" cache_read_input_tokens="25162" cache_creation="{'ephemeral_5m_input_tokens': 464, 'ephemeral_1h_input_tokens': 0}" output_tokens="286" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NQzCEMvybiKkRHj891oshQ">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016GXEW1Y6cBCyDwn8hargPV">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` lab...[truncated 20 chars]...": &lt;new_plan_number&gt;, \"label\": \"erk-consolidated\"}]" | erk exec add-plan-labels
+   ```</param>
+    <param name="new_string">4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` lab...[truncated 16 chars]...r\": &lt;new_pr_number&gt;, \"label\": \"erk-consolidated\"}]" | erk exec add-plan-labels
+   ```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="328" cache_read_input_tokens="25626" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016GXEW1Y6cBCyDwn8hargPV">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KJQ1yLkLkeFGhCgPjcRFUX">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">**Single plan:**
+
+```bash
+echo "[{\"plan_number\": &lt;original_number&gt;, \"comment\": \"Super...[truncated 316 chars]..., "comment": "Consolidated into #&lt;new_number&gt; with #123, #456"}]' | erk exec close-prs
+```</param>
+    <param name="new_string">**Single plan:**
+
+```bash
+echo "[{\"pr_number\": &lt;original_number&gt;, \"comment\": \"Superse...[truncated 308 chars]..., "comment": "Consolidated into #&lt;new_number&gt; with #123, #456"}]' | erk exec close-prs
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="298" cache_read_input_tokens="25954" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="456" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJQ1yLkLkeFGhCgPjcRFUX">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JhSGe9Eaes5WwzdMwZcJJx">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">**Single plan:**
+
+```
+✓ Created new plan #&lt;new_number&gt;
+✓ Closed original plan #&lt;original_n...[truncated 343 chars]...n: gh pr view &lt;new_number&gt;
+- Dispatch for implementation: erk pr dispatch &lt;new_number&gt;
+```</param>
+    <param name="new_string">**Single plan:**
+
+```
+✓ Created new PR #&lt;new_number&gt;
+✓ Closed original PR #&lt;original_numbe...[truncated 335 chars]...n: gh pr view &lt;new_number&gt;
+- Dispatch for implementation: erk pr dispatch &lt;new_number&gt;
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="602" cache_read_input_tokens="26252" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JhSGe9Eaes5WwzdMwZcJJx">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UKP2VRXNU1wnQfukWXFnBM">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">```bash
+erk exec get-plan-info &lt;new_plan_number&gt;
+```
+
+Check the returned labels:
+
+- Has `e...[truncated 244 chars]...lay validation result:
+
+```
+✓ Plan #&lt;number&gt; validated: OPEN, labels: [list of labels]
+```</param>
+    <param name="new_string">```bash
+erk exec get-plan-info &lt;new_pr_number&gt;
+```
+
+Check the returned labels:
+
+- Has `erk...[truncated 238 chars]...splay validation result:
+
+```
+✓ PR #&lt;number&gt; validated: OPEN, labels: [list of labels]
+```</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="503" cache_read_input_tokens="26854" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UKP2VRXNU1wnQfukWXFnBM">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0175gAaMnpWiosJnWDY7vr8S">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">| Error                    | Message                                                      ...[truncated 283 chars]...Error: Plan #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).` |</param>
+    <param name="new_string">| Error                    | Message                                                      ...[truncated 279 chars]... `Error: PR #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).` |</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="446" cache_read_input_tokens="27357" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0175gAaMnpWiosJnWDY7vr8S">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01W7rmYoRemdWLNvkeTTbJ7X">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="old_string">| Error                    | Message                                                      ...[truncated 400 chars]...Error: No plan content found in plan #&lt;number&gt;.`                                         |</param>
+    <param name="new_string">| Error                    | Message                                                      ...[truncated 398 chars]... `Error: No plan content found in PR #&lt;number&gt;.`                                         |</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="422" cache_read_input_tokens="27803" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W7rmYoRemdWLNvkeTTbJ7X">
+The file /home/runner/work/erk/erk/.claude/commands/erk/replan.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify all changes have been applied correctly by reading the file again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="368" cache_read_input_tokens="28225" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018U95hi3gmU2jNpRzkNmFEH">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="368" cache_read_input_tokens="28225" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018U95hi3gmU2jNpRzkNmFEH">
+     1→---
+     2→description: Replan an existing plan against current codebase state
+     3→argument-hint: &lt;pr-number-or-url&gt;
+     4→---
+     5→
+     6→# /erk:replan
+     7→
+     8→Recomputes existing plan(s) against the current codebase state, creating a new plan and closing the original(s).
+     9→
+    10→Supports consolidating multiple plans into a single unified plan.
+    11→
+    12→## Usage
+    13→
+    14→```bash
+    15→/erk:replan 2521                          # Single plan replan
+    16→/erk:replan https://github.com/owner/repo/pull/2521
+    17→/erk:replan 123 456 789                   # Consolidate multiple plans
+    18→```
+    19→
+    20→---
+    21→
+    22→## Agent Instructions
+    23→
+    24→### Step 1: Parse Plan References
+    25→
+    26→Split `$ARGUMENTS` on whitespace. For each argument:
+    27→
+    28→- If numeric (e.g., `2521`), use directly as pr number
+    29→- If URL (e.g., `https://github.com/owner/repo/pull/2521`), extract the number from the path
+    30→
+
+... [476 lines omitted] ...
+
+    65→&gt; ERRORS:
+    66→&gt; &lt;only present if VALIDATION is FAIL, list each error&gt;
+    68→&gt; WARNINGS:
+    69→&gt; &lt;only present if any issues are closed, list each warning&gt;
+    82→&gt; - PASS otherwise (closed plans are warnings, not failures)
+    86→1. **If VALIDATION is FAIL**: Display each error and abort:
+    89→   Error: PR #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).
+    93→   Error: PR #&lt;number&gt; not found.
+    96→2. **If WARNINGS present**: Display each warning but continue:
+    99→   Warning: PR #&lt;number&gt; is already closed. Proceeding with replan anyway.
+   146→Return an error to the main agent:
+   149→Error: PR #&lt;number&gt; not found.
+   481→## Error Cases
+   483→| Error                    | Message                                                                                   |
+   485→| Plan not found           | `Error: PR #&lt;number&gt; not found.`                                                        |
+   486→| Not a plan               | `Error: PR #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).` |
+   487→| No plan content          | `Error: No plan content found in PR #&lt;number&gt;.`                                         |
+   488→| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh &amp;&amp; gh auth login`             |
+   489→| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                              |
+  </tool_result>
+  <assistant>Perfect! All the renames have been successfully applied. Let me verify that all the required changes are complete by checking for any remaining instances that should have been changed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="6226" cache_read_input_tokens="28593" cache_creation="{'ephemeral_5m_input_tokens': 6226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JGwLDSowhgVfn8XqvacJrk">
+    <param name="command">grep -n "plan_number\|plan_url\|plan-number-or" /home/runner/work/erk/erk/.claude/commands/erk/replan.md</param>
+    <param name="description">Check for any remaining un-renamed instances</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="6226" cache_read_input_tokens="28593" cache_creation="{'ephemeral_5m_input_tokens': 6226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JGwLDSowhgVfn8XqvacJrk">
+
+  </tool_result>
+  <assistant>Excellent! All instances have been renamed. Let me create a summary of the changes made:
+
+## Summary
+
+I successfully updated the `/home/runner/work/erk/erk/.claude/commands/erk/replan.md` file to rename programmatic field names from "plan" to "pr" terminology. Here are the changes applied:
+
+### Renames Completed:
+
+1. **Variable names (`plan_number` → `pr_number`):**
+   - Line 3: `&lt;plan-number-or-url&gt;` → `&lt;pr-number-or-url&gt;` in argument-hint
+   - Line 28: "as plan number" → "as pr number"
+   - Line 31: "all plan numbers" → "all pr numbers"
+   - Line 33: "plan number" → "pr number"
+   - Line 44: "plan numbers" → "pr numbers"
+   - Line 46: "plan numbers" → "PR numbers"
+   - Line 297: `&lt;original_plan_number&gt;` → `&lt;original_pr_number&gt;` in template
+   - Line 397: `&lt;new_plan_number&gt;` → `&lt;new_pr_number&gt;`
+   - Line 401: `&lt;new_plan_number&gt;` → `&lt;new_pr_number&gt;`
+   - Line 405: `"plan_number"` → `"pr_number"` in JSON example
+   - Line 405: `&lt;new_plan_number&gt;` → `&lt;new_pr_number&gt;`
+   - Line 413: `"pr_number"` in JSON
+   - Line 419: `"pr_number"` fields in JSON examples
+   - Line 456: `&lt;new_plan_number&gt;` → `&lt;new_pr_number&gt;`
+   - Line 468: `&lt;new_plan_number&gt;` → `&lt;new_pr_number&gt;`
+
+2. **Output messages (`plan #&lt;number&gt;` → `PR #&lt;number&gt;`):**
+   - Line 89, 93: `Plan #&lt;number&gt;` → `PR #&lt;number&gt;`
+   - Line 99: `Plan #&lt;number&gt;` → `PR #&lt;number&gt;`
+   - Line 149: `Plan #&lt;number&gt;` → `PR #&lt;number&gt;`
+   - Line 427: "Created new plan" → "Created new PR"
+   - Line 428: "Closed original plan" → "Closed original PR"
+   - Line 438: "Created consolidated plan" → "Created consolidated PR"
+   - Line 439: "Closed original plans" → "Closed original PRs"
+   - Line 474: `Plan #&lt;number&gt;` → `PR #&lt;number&gt;`
+   - Line 485-487: Error messages updated to use `PR #&lt;number&gt;`
+
+### Not Renamed (Correctly Preserved):
+
+- "plan" as a concept noun (e.g., "Replan an existing plan", "plan content", "plan items")
+- `plan.md` file references
+- Skill/command names like `/erk:replan` and `/local:replan-learn-plans`
+- Label names: `erk-plan`, `erk-learn`, `erk-consolidated`
+- Function names: `get-plan-info`, `update-plan-header`, `add-plan-labels`, `close-prs`, `add-plan-label`
+- Field names: `plan_backend`, `objective_issue`
+
+The file has been successfully updated with all the required terminology changes while preserving the appropriate use of "plan" as a conceptual term and in function/label names.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="34819" cache_creation="{'ephemeral_5m_input_tokens': 178, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,180 @@
+<session>
+  <meta source="agent-ab9d9a5" />
+  <meta branch="plnd/O9109-rename-plan-pr-docs-03-10-1247" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <tool_result tool="toolu_01X7r62eCftmq1vZs6zo1ta1">
+     1→---
+     2→title: Workflow Run List
+     3→read_when:
+     4→  - "modifying workflow run list display"
+     5→  - "working with erk workflow run list"
+     6→  - "understanding run-name format parsing"
+     7→  - "modifying workflow run display"
+     8→---
+     9→
+    10→# Workflow Run List
+    11→
+    12→The `erk workflow run list` command displays GitHub Actions workflow runs in a PR-centric table view.
+    13→
+    14→## Command Hierarchy
+    15→
+    16→Moved from top-level `erk run` to `erk workflow run list` and `erk workflow run logs` in PR #8549.
+    17→
+    18→## Source Files
+    19→
+    20→- `src/erk/cli/commands/run/list_cmd.py` -- Main list command (192 lines)
+    21→- `src/erk/cli/commands/run/shared.py` -- Shared utilities (42 lines)
+    22→- `src/erk/cli/commands/doctor_workflow.py:253` -- Registration point
+    23→
+    24→## PR-Centric Display
+    25→
+    26→Runs are displayed with PR numbers extracted from run-name format. The table columns are: run-id, status, submitted, workflow, pr, title, chks.
+    27→
+    28→## Run-Name Format Parsing
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/run/shared.py:6-23 --&gt;
+
+... [50 lines omitted] ...
+
+    68→## learn.yml Exception
+  </tool_result>
+  <assistant>The workflow-run-list.md file doesn't need changes - `pr_number` is correct in that context (it's referring to the workflow input variable name `pr_number`). Now let me verify the changes I made and create a summary:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1351" cache_read_input_tokens="74363" cache_creation="{'ephemeral_5m_input_tokens': 1351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VgWxj9ZggBNmKQ1xeUTAH3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+    <param name="offset">140</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1351" cache_read_input_tokens="74363" cache_creation="{'ephemeral_5m_input_tokens': 1351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Pqp1bXPPJ2Sr969o2sTKtU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-prepare.md</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1351" cache_read_input_tokens="74363" cache_creation="{'ephemeral_5m_input_tokens': 1351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VgWxj9ZggBNmKQ1xeUTAH3">
+   140→4. Cleans up `.erk/impl-context/` staging directory (git rm + commit + push)
+   141→
+   142→**Flags:**
+   143→
+   144→- `--issue` - Plan number to fetch plan from
+   145→- `--file` - Local markdown file path
+   146→- `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
+   147→
+   148→**Output:** JSON with `success`, `source`, `pr_number`, `has_plan_tracking`, `valid`, `related_docs`
+   149→
+   150→#### setup-impl-from-pr
+   151→
+   152→Creates implementation environment from a plan:
+   153→
+   154→1. Fetches plan from GitHub
+   155→2. Creates/checks out implementation branch (e.g., `P123-feature-01-15-1430`)
+   156→3. Creates `.erk/impl-context/` folder with plan content
+   157→4. Saves plan reference for PR linking
+   158→
+   159→**Flags:**
+   160→
+   161→- `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
+   162→
+   163→**Branch behavior:**
+   164→
+   165→- If branch exists: Checks out existing branch
+   166→- If on trunk: Creates branch from trunk
+   167→- If on feature branch: Stacks new branch on current branch
+   168→
+   169→**Important:** After `create_branch()`, explicit `checkout_branch()` is called because GraphiteBranchManager restores the original branch after tracking.
+
+... [55 lines omitted] ...
+
+   202→Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
+   207→Both use frozen dataclass results with discriminated union error handling.
+  </tool_result>
+  <tool_result tool="toolu_01Pqp1bXPPJ2Sr969o2sTKtU">
+     1→---
+     2→title: erk pr prepare Command
+     3→read_when:
+     4→  - "setting up impl-context for an existing PR"
+     5→  - "preparing a worktree for plan implementation"
+     6→  - "working with erk pr prepare"
+     7→---
+     8→
+     9→# erk pr prepare Command
+    10→
+    11→Sets up `.erk/impl-context/` for the current worktree's PR, making it ready for plan implementation without full checkout.
+    12→
+    13→## Usage
+    14→
+    15→```bash
+    16→erk pr prepare              # Auto-detect PR from current branch
+    17→erk pr prepare &lt;number&gt;     # Prepare for specific plan number
+    18→```
+    19→
+    20→## Implementation
+    21→
+    22→**File:** `src/erk/cli/commands/pr/prepare_cmd.py`
+    23→
+    24→### Auto-Detection
+    25→
+    26→When `number` is omitted, uses `ctx.github.get_pr_for_branch()` to find the PR associated with the current branch.
+    27→
+    28→### Idempotency
+    29→
+    30→Before creating impl-context, reads any existing impl directory and compares the plan ID. If the plan ID matches, skips setup — safe to re-run.
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! The changes have been applied successfully. Now let me verify all the TUI docs don't need changes by double-checking one more time:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2034" cache_read_input_tokens="75714" cache_creation="{'ephemeral_5m_input_tokens': 2034, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01219Xf2U3NoedbD2Y4aii2b">
+    <param name="command">grep -r "plan_id\|plan_url" src/erk/tui/data/types.py | head -5</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2034" cache_read_input_tokens="75714" cache_creation="{'ephemeral_5m_input_tokens': 2034, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01219Xf2U3NoedbD2Y4aii2b">
+        plan_id: GitHub issue number (e.g., 123). Never None.
+        plan_url: Full URL to the GitHub issue. None when unavailable.
+    plan_id: int
+    plan_url: str | None
+  </tool_result>
+  <assistant>Excellent! The TUI source code confirms that `plan_id` and `plan_url` are still the field names (they were NOT renamed). So all the TUI docs are correct as-is. Let me create a final summary of my verification and changes:
+
+## Summary
+
+I've completed a thorough review and update of the documentation files as requested. Here's what I found and changed:
+
+### TUI Documentation Files (No Changes Needed)
+
+All TUI documentation files are **correct as-is** because the TUI source code still uses `plan_id` and `plan_url` in `PlanRowData`:
+
+1. ✅ `/home/runner/work/erk/erk/docs/learned/tui/data-contract.md` — Correctly documents `plan_id` and `plan_url`
+2. ✅ `/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md` — Correctly documents `plan_id` 
+3. ✅ `/home/runner/work/erk/erk/docs/learned/tui/architecture.md` — Correctly references `plan_id`
+4. ✅ `/home/runner/work/erk/erk/docs/learned/tui/action-inventory.md` — No field references
+5. ✅ `/home/runner/work/erk/erk/docs/learned/tui/view-switching.md` — No field references
+6. ✅ `/home/runner/work/erk/erk/docs/learned/tui/frozen-dataclass-field-management.md` — Correctly references `plan_id` in examples
+7. ✅ `/home/runner/work/erk/erk/docs/learned/tui/runs-tab-architecture.md` — No problematic references
+8. ✅ `/home/runner/work/erk/erk/docs/learned/tui/clipboard-text-generation.md` — No problematic references
+
+### CLI Documentation Files (Changes Made)
+
+The JSON output from exec scripts changed `"plan_number"` → `"pr_number"` for PR-related fields. Updated:
+
+1. **Updated** `/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md`
+   - Line 148: `"plan_number"` → `"pr_number"` in `impl-init` output description
+   - Line 204: `{"plan_number": int, ...}` → `{"pr_number": int, ...}` for `add-plan-labels`
+   - Line 205: `{"plan_number": int, ...}` → `{"pr_number": int, ...}` for `close-prs`
+
+2. **Updated** `/home/runner/work/erk/erk/docs/learned/cli/commands/pr-prepare.md`
+   - Line 26: `plan_number` → `number` (parameter name in docs now matches command signature)
+
+### Files Verified (No Changes Needed)
+
+- `/home/runner/work/erk/erk/docs/learned/cli/output-styling.md` — Uses `plan_id` which is correct, also notes `plan_context.plan_id` is still used
+- `/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md` — Uses `plan_id` which is correct
+- `/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md` — Uses `plan_id` which is correct
+- `/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md` — Uses `plan_id` which is correct
+- `/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md` — Uses `pr_number` which is correct (workflow input variable)
+- `/home/runner/work/erk/erk/docs/learned/cli/exec-command-patterns.md` — Uses `plan_number` in markdown example (documentation context, not JSON)
+- `/home/runner/work/erk/erk/docs/learned/cli/ambiguity-resolution.md` — Uses `plan_number` in variable names (not JSON output)
+
+All changes have been applied to ensure documentation accuracy matches the actual renamed JSON fields in the source code.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="178" cache_read_input_tokens="77748" cache_creation="{'ephemeral_5m_input_tokens': 178, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
