@@ -34,10 +34,10 @@ Conflict markers typically look like:
 
 ```python
 <<<<<<< HEAD
-from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
+from erk_shared.gateway.github.parsing import parse_pr_number_from_url, parse_plan_number_from_url
 =======
-from .github_helpers import parse_pr_number
-from .plan_helpers import parse_plan_number
+from .github_helpers import parse_pr_number_from_url
+from .plan_helpers import parse_plan_number_from_url
 >>>>>>> feature-branch
 ```
 
@@ -55,7 +55,7 @@ If the shared module exists and has the functions, use HEAD's version:
 
 ```python
 # Resolution: use the consolidated import
-from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
+from erk_shared.gateway.github.parsing import parse_pr_number_from_url, parse_plan_number_from_url
 ```
 
 ### Step 4: Remove Obsolete Local Helpers
@@ -90,13 +90,13 @@ Starting conflict:
 ```python
 <<<<<<< HEAD
 from erk_shared.gateway.github.parsing import (
-    parse_pr_number,
-    parse_plan_number,
+    parse_pr_number_from_url,
+    parse_plan_number_from_url,
     parse_repo_from_url,
 )
 =======
-from .github_url_parser import parse_pr_number
-from .plan_parser import parse_plan_number
+from .github_url_parser import parse_pr_number_from_url
+from .plan_parser import parse_plan_number_from_url
 >>>>>>> add-repo-parsing
 ```
 
@@ -104,8 +104,8 @@ Resolution:
 
 ```python
 from erk_shared.gateway.github.parsing import (
-    parse_pr_number,
-    parse_plan_number,
+    parse_pr_number_from_url,
+    parse_plan_number_from_url,
     parse_repo_from_url,
 )
 ```

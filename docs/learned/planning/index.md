@@ -16,7 +16,7 @@
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
 - **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
-- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo plan closing syntax
+- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [github] repo in config.toml, understanding cross-repo plan closing syntax
 - **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
 - **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages

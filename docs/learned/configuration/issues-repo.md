@@ -4,7 +4,7 @@ last_audited: "2026-02-17 09:00 PT"
 audit_result: clean
 read_when:
   - "configuring plans to be stored in a separate repository"
-  - "setting up plans.repo in config.toml"
+  - "setting up github.repo in config.toml"
 ---
 
 # External Plans Repository Configuration
@@ -16,7 +16,7 @@ Configure erk to store plans in a separate repository from your working reposito
 In `.erk/config.toml`:
 
 ```toml
-[plans]
+[github]
 repo = "owner/repo"
 ```
 
@@ -25,13 +25,13 @@ repo = "owner/repo"
 **Example:**
 
 ```toml
-[plans]
+[github]
 repo = "myorg/engineering-plans"
 ```
 
 ## Effect
 
-When `plans.repo` is set:
+When `github.repo` is set:
 
 - Plans are created in the target repository instead of the working repository
 - `erk implement` fetches plans from the target repository
@@ -49,7 +49,7 @@ Erk uses these labels to organize plans:
 
 ### Automatic Label Setup
 
-When you run `erk init` with `plans.repo` configured, erk will offer to create these labels in the target repository. You need write access to the target repository.
+When you run `erk init` with `github.repo` configured, erk will offer to create these labels in the target repository. You need write access to the target repository.
 
 ### Manual Label Setup
 
