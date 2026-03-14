@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Use `github.token` for comment-posting steps in one-shot workflow"
+}
