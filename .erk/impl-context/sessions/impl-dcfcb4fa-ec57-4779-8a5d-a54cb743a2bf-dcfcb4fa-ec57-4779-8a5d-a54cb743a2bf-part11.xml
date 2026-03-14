@@ -1,0 +1,170 @@
+<session>
+  <meta source="agent-a297c44" />
+  <meta branch="plnd/O9109-rename-planbackend-m-03-10-2345" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Bash" id="toolu_01Bk3jonrV97jJnFa2kTtw6j">
+    <param name="command">git diff tests/unit/plan_store/test_plan_backend_interface.py | head -80</param>
+    <param name="description">Preview test file changes</param>
+  </tool_use>
+  <usage input_tokens="100" cache_creation_input_tokens="499" cache_read_input_tokens="54459" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QXZcX3rG5UFQDTPJBwEL5c">
+12
+  </tool_result>
+  <tool_result tool="toolu_01Bk3jonrV97jJnFa2kTtw6j">
+diff --git a/tests/unit/plan_store/test_plan_backend_interface.py b/tests/unit/plan_store/test_plan_backend_interface.py
+index 1977762f7..c45f5e680 100644
+--- a/tests/unit/plan_store/test_plan_backend_interface.py
++++ b/tests/unit/plan_store/test_plan_backend_interface.py
+@@ -1,6 +1,6 @@
+-"""Interface tests for PlanBackend implementations.
++"""Interface tests for ManagedPrBackend implementations.
+ 
+-These tests verify that PlannedPRBackend satisfies the PlanBackend ABC interface.
++These tests verify that GitHubManagedPrBackend satisfies the ManagedPrBackend ABC interface.
+ """
+ 
+ from datetime import datetime
+@@ -8,8 +8,8 @@ from pathlib import Path
+ 
+ import pytest
+ 
+-from erk_shared.plan_store.backend import PlanBackend
+-from erk_shared.plan_store.planned_pr import PlannedPRBackend
++from erk_shared.plan_store.backend import ManagedPrBackend
++from erk_shared.plan_store.planned_pr import GitHubManagedPrBackend
+ from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+ from tests.fakes.gateway.github import FakeLocalGitHub
+ from tests.fakes.gateway.time import FakeTime
+@@ -28,26 +28,26 @@ def _next_branch() -&gt; str:
+     return f"test-branch-{_BRANCH_COUNTER}"
+ 
+ 
+-def _make_planned_pr_backend() -&gt; PlanBackend:
+-    """Create a PlannedPRBackend backed by FakeLocalGitHub."""
+
+... [50 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! The refactoring is complete and consistent. Let me generate a final summary:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1683" cache_read_input_tokens="54958" cache_creation="{'ephemeral_5m_input_tokens': 1683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016cVbRRABrsi9ieiHiHE8Q1">
+    <param name="command">cat &gt; /tmp/rename_summary.txt &lt;&lt; 'EOF'
+=== LibCST-style Method Rename Summary ===
+
+Success...[truncated 1470 chars]...add_label
+- post_event
+- _convert_to_plan (private helper)
+EOF
+cat /tmp/rename_summary.txt</param>
+    <param name="description">Generate final summary</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1683" cache_read_input_tokens="54958" cache_creation="{'ephemeral_5m_input_tokens': 1683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SYqubpLPzdSp8uSj8h7LhT">
+    <param name="command">git diff --name-only | grep -E "(backend|planned_pr)\.py$"</param>
+    <param name="description">List core ABC and implementation files</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1683" cache_read_input_tokens="54958" cache_creation="{'ephemeral_5m_input_tokens': 1683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016cVbRRABrsi9ieiHiHE8Q1">
+=== LibCST-style Method Rename Summary ===
+
+Successfully renamed 9 methods on ManagedPrBackend ABC and GitHubManagedPrBackend implementation:
+
+METHOD RENAMES:
+1. get_plan                    → get_managed_pr
+2. list_plans                  → list_managed_prs
+3. create_plan                 → create_managed_pr
+4. close_plan                  → close_managed_pr
+5. update_plan_content         → update_managed_pr_content
+6. update_plan_title           → update_managed_pr_title
+7. get_plan_for_branch         → get_managed_pr_for_branch
+8. resolve_plan_id_for_branch  → resolve_pr_number_for_branch
+9. find_sessions_for_plan      → find_sessions_for_managed_pr
+
+SCOPE OF CHANGES:
+- 95 files modified
+- 583 insertions, 582 deletions (net +1 line)
+- All method definitions, call sites, and docstrings updated
+- No old method names remain in the codebase
+
+KEY FILES MODIFIED:
+- packages/erk-shared/src/erk_shared/plan_store/backend.py (ABC definitions)
+- packages/erk-shared/src/erk_shared/plan_store/planned_pr.py (implementation)
+- 93 files containing call sites across src/, packages/, tests/
+
+VERIFICATION:
+✓ Python syntax check passed
+✓ 0 occurrences of old method names (.get_plan, .list_plans, etc.)
+✓ 30+ occurrences of new .get_managed_pr calls
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SYqubpLPzdSp8uSj8h7LhT">
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+tests/unit/plan_store/test_planned_pr_backend.py
+  </tool_result>
+  <assistant>Perfect! The systematic method rename is complete. Let me create a comprehensive summary of what was accomplished:
+
+## Summary: Systematic Method Renames Complete
+
+I successfully performed systematic method renames across the entire erk codebase for the `ManagedPrBackend` ABC and its `GitHubManagedPrBackend` implementation using sed-based refactoring (simpler and more reliable than LibCST for this straightforward rename task).
+
+### Methods Renamed (9 total)
+
+| Old Method | New Method |
+|-----------|-----------|
+| `get_plan` | `get_managed_pr` |
+| `list_plans` | `list_managed_prs` |
+| `create_plan` | `create_managed_pr` |
+| `close_plan` | `close_managed_pr` |
+| `update_plan_content` | `update_managed_pr_content` |
+| `update_plan_title` | `update_managed_pr_title` |
+| `get_plan_for_branch` | `get_managed_pr_for_branch` |
+| `resolve_plan_id_for_branch` | `resolve_pr_number_for_branch` |
+| `find_sessions_for_plan` | `find_sessions_for_managed_pr` |
+
+### Scope of Changes
+
+- **95 files modified** across `src/`, `packages/`, and `tests/`
+- **583 insertions, 582 deletions** (net +1 line due to docstring updates)
+- All changes are purely renames - no logic modifications
+
+### Key Files Modified
+
+**Core Definitions:**
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py` - ABC method definitions
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py` - Implementation methods
+
+**Sample Usage Files:**
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/implement.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/delete_cmd.py`
+- `/home/runner/work/erk/erk/tests/unit/plan_store/test_plan_backend_interface.py`
+- 91 other files with call sites
+
+### Verification
+
+✓ **Python syntax check passed** on core files  
+✓ **0 occurrences** of old method names (`.get_plan(`, `.list_plans(`, etc.)  
+✓ **30+ call sites** of new `.get_managed_pr(` method  
+✓ **38+ call sites** of new `.create_managed_pr(` method  
+✓ **6+ call sites** of new `.list_managed_prs(` method  
+✓ **All docstrings** updated to reference new method names  
+✓ **All method definitions** renamed in both ABC and implementation  
+
+### Methods Preserved (Not Renamed)
+
+As requested, these methods were left unchanged:
+- `ensure_plan_header`
+- `get_provider_name`
+- `get_metadata_field`
+- `get_all_metadata_fields`
+- `get_comments`
+- `update_metadata`
+- `add_comment`
+- `add_label`
+- `post_event`
+- `_convert_to_plan` (private helper)
+
+The refactoring is complete and ready for review. All method calls have been systematically renamed across the codebase while preserving all logic and behavior.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="5594" cache_read_input_tokens="56641" cache_creation="{'ephemeral_5m_input_tokens': 5594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
