@@ -1,0 +1,1190 @@
+<session>
+  <meta branch="plnd/add-pr-status-runs-tab-03-10-1038" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9164&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9164` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #9164.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28616" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28616, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KSJf5fEUuZxLZAvfDcBuST">
+    <param name="command">erk exec setup-impl --issue 9164</param>
+    <param name="description">Set up implementation for plan #9164</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28616" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28616, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KSJf5fEUuZxLZAvfDcBuST">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-pr-status-runs-tab-03-10-1038", "pr_number": 9164, "pr_url": "https://github.com/dagster-io/erk/pull/9164", "branch": "plnd/add-pr-status-runs-tab-03-10-1038", "pr_title": "[erk-pr] Add PR Status Column to Runs Tab", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9164, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/add-pr-status-runs-tab-03-10-1038', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="28616" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013huCkkstcXvxCBcLkrfvcV">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-pr-status-runs-tab-03-10-1038/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="28616" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013huCkkstcXvxCBcLkrfvcV">
+     1→# Add PR Status Column to Runs Tab
+     2→
+     3→## Context
+     4→
+     5→The TUI Runs tab (`erk dash` → tab 4) shows workflow runs but doesn't display the PR's status (open, draft, merged, closed). The data is already fetched — `RunRowData.pr_state` is populated from `PullRequestInfo.state` — it's just not shown in the table.
+     6→
+     7→## Plan
+     8→
+     9→### 1. Add `pr_status_display` field to `RunRowData` (`src/erk/tui/data/types.py`)
+    10→
+    11→Add a pre-formatted display string field (e.g., "👀", "🚧", "🎉", "⛔", or "-"):
+    12→
+    13→```python
+    14→pr_status_display: str
+    15→```
+    16→
+    17→### 2. Populate `pr_status_display` in `real_provider.py` (~line 348)
+    18→
+    19→When building `RunRowData`, use `get_pr_status_emoji(pr_info)` from `erk_shared.gateway.github.emoji` when `pr_info` is available. Default to `"-"` when no PR info. Strip rich markup (though emojis shouldn't have any).
+    20→
+    21→### 3. Add column in `run_table.py` `_setup_columns()`
+    22→
+    23→Add a `"pr-st"` column (width 6) after the `pr` column. Update `_pr_column_index` tracking if needed (column indices shift).
+    24→
+    25→### 4. Add value in `run_table.py` `_row_to_values()`
+    26→
+    27→Include `row.pr_status_display` in the returned tuple at the correct position (after `pr_cell`).
+    28→
+    29→### 5. Update `make_run_row()` test helper (`tests/fakes/tests/tui_plan_data_provider.py`)
+    30→
+
+... [19 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Let me set up todos and load the necessary context. Let me first read the files I'll be modifying.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="28965" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01UZdKU1pS1kE9sq83ad7sxc">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'pending', 'activeForm...[truncated 662 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="930" cache_read_input_tokens="28965" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UZdKU1pS1kE9sq83ad7sxc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Jq2DjDYwXBauBqA6ucFuqU">
+    <param name="command">erk exec impl-signal started --session-id "96fe3d42-6e97-4fa9-9479-a7bd8018e034" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="29895" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jq2DjDYwXBauBqA6ucFuqU">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9164
+}
+  </tool_result>
+  <assistant>Now let me read all the files I need to modify in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="30283" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XdvvEdzcsL3Va1p2eqWWcF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="30283" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Eve1ETZrFEABvEpAMSqrpE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="30283" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019GbWaQGGuPX7Czc1JSEuZU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="30283" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016jtbSp97jwNsFJFNvdVniZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="30283" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XdvvEdzcsL3Va1p2eqWWcF">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PlanRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        plan_id: GitHub issue number (e.g., 123). Never None.
+    29→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    30→        full_title: Complete untruncated plan title. Empty string possible.
+
+... [269 lines omitted] ...
+
+    58→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   167→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   219→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_result tool="toolu_019GbWaQGGuPX7Czc1JSEuZU">
+     1→"""Run table widget for TUI dashboard Runs tab."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING, cast
+     6→
+     7→from textual.events import Click
+     8→from textual.message import Message
+     9→from textual.widgets import DataTable
+    10→
+    11→from erk.tui.data.types import RunRowData
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class RunDataTable(DataTable):
+    18→    """DataTable subclass for displaying workflow runs.
+    19→
+    20→    Manages column configuration and row population from RunRowData.
+    21→    Uses row selection mode (not cell selection) for simpler navigation.
+    22→    """
+    23→
+    24→    class RunClicked(Message):
+    25→        """Posted when user clicks run-id column on a row."""
+    26→
+    27→        def __init__(self, row_index: int) -&gt; None:
+    28→            super().__init__()
+    29→            self.row_index = row_index
+    30→
+
+... [148 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016jtbSp97jwNsFJFNvdVniZ">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk.tui.data.provider_abc import PlanDataProvider
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→
+     9→
+    10→class FakePlanDataProvider(PlanDataProvider):
+    11→    """Fake implementation of PlanDataProvider for testing.
+    12→
+    13→    Returns canned data without making any API calls.
+    14→    Only handles TUI data assembly methods (fetch_plans, etc.).
+    15→    Domain operations (close_pr, dispatch, etc.) are on FakePrService.
+    16→    """
+    17→
+    18→    def __init__(
+    19→        self,
+    20→        *,
+    21→        plans: list[PlanRowData] | None = None,
+    22→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    23→        fetch_error: str | None = None,
+    24→    ) -&gt; None:
+    25→        """Initialize with optional canned plan data.
+    26→
+    27→        Args:
+    28→            plans: List of PlanRowData to return, or None for empty list
+    29→            plans_by_labels: Per-label-set responses for testing view switching.
+    30→                When set, fetch_plans() checks this first using the filter labels.
+
+... [384 lines omitted] ...
+
+    31→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    32→                Use to simulate API failures.
+    37→        self._fetch_error = fetch_error
+    51→            RuntimeError: If fetch_error is set
+    54→        if self._fetch_error is not None:
+    55→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <tool_result tool="toolu_01Eve1ETZrFEABvEpAMSqrpE">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_submission_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→    strip_rich_markup,
+    15→)
+    16→from erk.core.pr_utils import select_display_pr
+    17→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    18→from erk.tui.data.provider_abc import PlanDataProvider
+    19→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData, RunRowData
+    20→from erk.tui.sorting.types import BranchActivity
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_objective_slug,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [862 lines omitted] ...
+
+   171→            warnings=plan_data.warnings,
+   486→        except Exception:
+   487→            logger.debug("Failed to write timing log", exc_info=True)
+   702→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <assistant>I now need to check the `get_pr_status_emoji` function to understand what it returns:</assistant>
+  <usage input_tokens="8058" cache_creation_input_tokens="18041" cache_read_input_tokens="30436" cache_creation="{'ephemeral_5m_input_tokens': 18041, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KTm1r6iTJiJgMujbC9hzE4">
+    <param name="pattern">def get_pr_status_emoji</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="8058" cache_creation_input_tokens="18041" cache_read_input_tokens="30436" cache_creation="{'ephemeral_5m_input_tokens': 18041, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KTm1r6iTJiJgMujbC9hzE4">
+Found 2 files
+src/erk/core/display_utils.py
+packages/erk-shared/src/erk_shared/gateway/github/emoji.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QxZS3hMLPSDp4mr5327PJF">
+    <param name="pattern">def get_pr_status_emoji</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/emoji.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8214" cache_read_input_tokens="48477" cache_creation="{'ephemeral_5m_input_tokens': 8214, 'ephemeral_1h_input_tokens': 0}" output_tokens="146" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QxZS3hMLPSDp4mr5327PJF">
+24:def get_pr_status_emoji(pr: PullRequestInfo) -&gt; str:
+25-    """Get emoji representation of PR status (state + conflicts).
+26-
+27-    Returns a combination of state emoji (👀/🚧/🎉/⛔) and optionally
+28-    a conflicts indicator (💥) for open/draft PRs with merge conflicts.
+29-
+30-    Args:
+31-        pr: PR information
+32-
+33-    Returns:
+34-        Emoji string representing PR status (e.g., "👀" or "👀💥")
+35-    """
+36-    # Draft PRs have state="OPEN" but is_draft=True, so check is_draft first
+37-    if pr.is_draft:
+38-        emoji = PR_STATE_EMOJIS["DRAFT"]
+39-    else:
+  </tool_result>
+  <assistant>Good, now I have full context. Let me also check what other tests reference `RunRowData` or `make_run_row` to ensure I don't miss updating callers:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="56691" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01DrRi8ctVkXhJH7EyKgCmS3">
+    <param name="pattern">make_run_row</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="56691" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DrRi8ctVkXhJH7EyKgCmS3">
+Found 7 files
+tests/tui/test_run_table.py
+tests/tui/commands/test_provider.py
+tests/tui/commands/test_run_registry.py
+tests/tui/app/test_app_runs.py
+tests/tui/app/test_run_command_palette.py
+tests/fakes/tests/tui_plan_data_provider.py
+docs/learned/testing/testing.md
+  </tool_result>
+  <assistant>Now I have full understanding. Let me implement all the changes. I'll start with the data type, then the provider, then the widget, then the test helper.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="57285" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01XD8AfdXSZ8ApxZbJbVXtGV">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'in_progress', 'active...[truncated 666 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="57285" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XD8AfdXSZ8ApxZbJbVXtGV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 1: Add `pr_status_display` field to `RunRowData`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="57522" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01H8ZXXoKdfYtSkfqNz2ANAP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="old_string">        pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR linked.
+        tit...[truncated 12 chars]...table display.
+        submitted_display: Formatted submission time (e.g., "03-09 14:30").</param>
+    <param name="new_string">        pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR linked.
+        pr_...[truncated 105 chars]...table display.
+        submitted_display: Formatted submission time (e.g., "03-09 14:30").</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="57522" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="302" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H8ZXXoKdfYtSkfqNz2ANAP">
+The file /home/runner/work/erk/erk/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EQfcA4bvVoiEkGhXhkuGxf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="old_string">    pr_state: str | None
+    title_display: str</param>
+    <param name="new_string">    pr_state: str | None
+    pr_status_display: str
+    title_display: str</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="57916" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EQfcA4bvVoiEkGhXhkuGxf">
+The file /home/runner/work/erk/erk/src/erk/tui/data/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01VngKfXnepuwDJAMnNXtPB2">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 668 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="58262" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VngKfXnepuwDJAMnNXtPB2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 2: Populate `pr_status_display` in `real_provider.py`
+
+Looking at the `fetch_runs` method, I need to add `pr_status_display` when building `RunRowData`. The `get_pr_status_emoji` is already imported. I need to compute it when `pr_info` is available:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="58459" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019DRREMKPvr2vTw7EyrrAAW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">            pr_state: str | None = None
+
+            if pr_num is not None:
+                pr_info = pr_info_map.get(pr_num)
+                if pr_info is not None:</param>
+    <param name="new_string">            pr_state: str | None = None
+            pr_status_display = "-"
+
+            i...[truncated 1 chars]...
+                pr_info = pr_info_map.get(pr_num)
+                if pr_info is not None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="58459" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019DRREMKPvr2vTw7EyrrAAW">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to set `pr_status_display` when we have `pr_info`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="58818" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01D24qttvXgnFigZ1ga82KWr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">                    checks_display = strip_rich_markup(format_checks_cell(pr_info))
+                    pr_state = pr_info.state</param>
+    <param name="new_string">                    checks_display = strip_rich_markup(format_checks_cell(pr_info))
+      ...[truncated 16 chars]...te
+                    pr_status_display = strip_rich_markup(get_pr_status_emoji(pr_info))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="58818" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D24qttvXgnFigZ1ga82KWr">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `pr_status_display` to the `RunRowData` constructor call:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="59164" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018N1Mua5eoYoYtCYBgDJzug">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">                    pr_state=pr_state,
+                    title_display=title_display,</param>
+    <param name="new_string">                    pr_state=pr_state,
+                    pr_status_display=pr_status_display,
+                    title_display=title_display,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="59164" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018N1Mua5eoYoYtCYBgDJzug">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01958oB2DFHLUA9kTGoET3wd">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 670 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="59442" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01958oB2DFHLUA9kTGoET3wd">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 3: Add `pr-st` column in `run_table.py`
+
+The plan says to add it after the `pr` column. I need to insert the column after `pr` and shift indices:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="59911" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01URtECM3ZKQh5ZJ66NNPiJ8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py</param>
+    <param name="old_string">        self._pr_column_index = col_index
+        self.add_column("pr", key="pr", width=8)
+        col_index += 1
+        self.add_column("branch", key="branch", width=40)</param>
+    <param name="new_string">        self._pr_column_index = col_index
+        self.add_column("pr", key="pr", width=8)...[truncated 49 chars]... width=6)
+        col_index += 1
+        self.add_column("branch", key="branch", width=40)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="59911" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="305" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01URtECM3ZKQh5ZJ66NNPiJ8">
+The file /home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py has been updated successfully.
+  </tool_result>
+  <assistant>Also update the docstring for `_setup_columns`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="60270" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Qh99UnNmepHxcem6RHJuLK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py</param>
+    <param name="old_string">        Columns: run-id, status, submitted, workflow, pr, branch, chks</param>
+    <param name="new_string">        Columns: run-id, status, submitted, workflow, pr, pr-st, branch, chks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="60270" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qh99UnNmepHxcem6RHJuLK">
+The file /home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GeH1cEuXfedWbpAjDe9PGw">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 672 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="219" cache_read_input_tokens="60621" cache_creation="{'ephemeral_5m_input_tokens': 219, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GeH1cEuXfedWbpAjDe9PGw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 4: Add value in `run_table.py` `_row_to_values()`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="60840" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PsB5jGCAxDKdWyTXX2NZZn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py</param>
+    <param name="old_string">        return (
+            run_id_cell,
+            row.status_display,
+            row....[truncated 34 chars]...        pr_cell,
+            row.branch_display,
+            row.checks_display,
+        )</param>
+    <param name="new_string">        return (
+            run_id_cell,
+            row.status_display,
+            row....[truncated 69 chars]..._status_display,
+            row.branch_display,
+            row.checks_display,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="60840" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PsB5jGCAxDKdWyTXX2NZZn">
+The file /home/runner/work/erk/erk/src/erk/tui/widgets/run_table.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01SjPKHk7aVpUUfEMePGNn39">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 674 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="61199" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SjPKHk7aVpUUfEMePGNn39">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 5: Update `make_run_row()` test helper</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="61516" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DzBY7XSNMSsfAkX92xhDYw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py</param>
+    <param name="old_string">    pr_state: str | None = None,
+    title_display: str = "-",</param>
+    <param name="new_string">    pr_state: str | None = None,
+    pr_status_display: str = "-",
+    title_display: str = "-",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="61516" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DzBY7XSNMSsfAkX92xhDYw">
+The file /home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `pr_status_display` to the `RunRowData` constructor call in `make_run_row`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="61875" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01N8fZyFDTUr6mfyAn6CyEEt">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py</param>
+    <param name="old_string">        pr_state=pr_state,
+        title_display=title_display,</param>
+    <param name="new_string">        pr_state=pr_state,
+        pr_status_display=pr_status_display,
+        title_display=title_display,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="61875" cache_creation="{'ephemeral_5m_input_tokens': 237, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N8fZyFDTUr6mfyAn6CyEEt">
+The file /home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Also update the docstring for `make_run_row`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="62112" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014R5aacrRqrTiT2SggWLLe3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py</param>
+    <param name="old_string">        pr_state: PR state ("OPEN", "MERGED", "CLOSED", or None)
+        title_display: Truncated title for display</param>
+    <param name="new_string">        pr_state: PR state ("OPEN", "MERGED", "CLOSED", or None)
+        pr_status_display: Pre-formatted PR status emoji (e.g., "👀", "-")
+        title_display: Truncated title for display</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="62112" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014R5aacrRqrTiT2SggWLLe3">
+The file /home/runner/work/erk/erk/tests/fakes/tests/tui_plan_data_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016jVHH5z8dYQ7rW7RCFxEfJ">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 676 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="503" cache_read_input_tokens="62357" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016jVHH5z8dYQ7rW7RCFxEfJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 6: Run CI checks
+
+Let me check if there's a post-plan-implement CI hook first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="62860" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01EmLVtytpFLUQfdDxtVoxo6">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="62860" cache_creation="{'ephemeral_5m_input_tokens': 359, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EmLVtytpFLUQfdDxtVoxo6">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TtCp3uopQF62vVqEcqjfHA">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="63219" cache_creation="{'ephemeral_5m_input_tokens': 134, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TtCp3uopQF62vVqEcqjfHA">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01FsuWEaTVSuK9L7kqFa2TgD">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="63353" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FsuWEaTVSuK9L7kqFa2TgD">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run the CI checks using the devrun agent:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="63582" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01LEP8ztDLf9WXShGfuLgeNq">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report the full output. Do not fix anything, just report the results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="63582" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LEP8ztDLf9WXShGfuLgeNq">
+## Results Summary
+
+The `make fast-ci` command completed with **exit code 2** (error), but the failure is due to **Prettier formatting issues**, not test failures. Here are the key findings:
+
+### Failures:
+
+**Prettier formatting issues found in 2 files:**
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+### Passes:
+
+- **Linting (ruff)**: All checks passed
+- **Code style (ruff format)**: 1719 files already formatted
+- **CLAUDE.md/AGENTS.md validation**: PASSED
+- **Type checking (ty)**: All checks passed
+- **Exec Reference Check**: OK - up to date
+- **Unit Tests (erk)**: 6011 passed in 25.53s
+- **Tests (erk-dev)**: 136 passed in 5.75s
+- **Tests (erk-statusline)**: 115 passed in 0.82s
+- **Tests (erk-mcp)**: 28 passed
+
+### Root Cause:
+
+The Prettier check detected that the two markdown files listed above have code style issues. The Makefile exits with error code 1 from the Prettier step, which causes the overall make target to fail with exit code 2.
+
+All functional tests pass successfully. Only documentation formatting needs correction.
+agentId: ae0dd50 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass. The only failure is pre-existing Prettier formatting on docs files unrelated to my changes. Let me fix that quickly:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="735" cache_read_input_tokens="65267" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PGYEmFQ9c3yt46DREMxKvp">
+    <param name="description">Run make prettier to fix</param>
+    <param name="prompt">Run `make prettier` from the repository root /home/runner/work/erk/erk and report the results. This should auto-fix the formatting issues.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="735" cache_read_input_tokens="65267" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PGYEmFQ9c3yt46DREMxKvp">
+prettier passed: All markdown files are formatted correctly
+
+**Summary:** The prettier formatter found no formatting issues. All 780+ markdown files in the repository are already properly formatted and no changes were needed.
+agentId: a316fc8 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Interesting — the prettier issue was pre-existing and resolved itself. Let me run fast-ci again to confirm clean:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="66002" cache_creation="{'ephemeral_5m_input_tokens': 232, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Mpomv1siHUtGqs7oE5iLHQ">
+    <param name="description">Re-run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report the results. Focus on whether all checks pass.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="66002" cache_creation="{'ephemeral_5m_input_tokens': 232, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Mpomv1siHUtGqs7oE5iLHQ">
+Success! All checks passed in the fast-ci run. Here's a summary:
+
+**All Checks Passed:**
+
+- **Lint**: All checks passed
+- **Format Check**: 1,719 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: OK
+- **Exec Reference Check**: `.claude/skills/erk-exec/reference.md` is up to date
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 6,011 passed in 14.20s
+- **Unit Tests (erk-dev)**: 136 passed in 5.66s
+- **Unit Tests (erk-statusline)**: 115 passed in 0.78s
+- **Unit Tests (erk-mcp)**: 28 passed
+- **AGENTS.md Standard**: PASSED
+- **CLAUDE.md/AGENTS.md Pairing**: All 19 files properly paired with 0 violations
+
+The repository is in good health with no failures or issues across all CI checks.
+agentId: a30c497 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Let me proceed with signaling and submitting.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="669" cache_read_input_tokens="66234" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01XeKxVfQ8ekTe5p1mU2X3Ho">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 678 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="669" cache_read_input_tokens="66234" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XeKxVfQ8ekTe5p1mU2X3Ho">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012kRKJHmobjsCTwWSkfS4zu">
+    <param name="command">erk exec impl-signal ended --session-id "96fe3d42-6e97-4fa9-9479-a7bd8018e034" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="66903" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NZFJeNffpPB46zjBxXRCQj">
+    <param name="command">erk exec upload-impl-session --session-id "96fe3d42-6e97-4fa9-9479-a7bd8018e034" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="66903" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012kRKJHmobjsCTwWSkfS4zu">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9164
+}
+  </tool_result>
+  <tool_result tool="toolu_01NZFJeNffpPB46zjBxXRCQj">
+{"uploaded": true, "pr_number": 9164}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01J36QXskwT2kbUV2rpK9dZc">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="67280" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J36QXskwT2kbUV2rpK9dZc">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DS288GEoTg8u8Y72dnoNpD">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="67596" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DS288GEoTg8u8Y72dnoNpD">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9164 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9164
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (6,426 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018Bfk4Y97auGYzJWCuafz6L">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="67701" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01APSz2dPsc76rD3MPhyDxp3">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="67701" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Bfk4Y97auGYzJWCuafz6L">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9164
+}
+  </tool_result>
+  <tool_result tool="toolu_01APSz2dPsc76rD3MPhyDxp3">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01CnAM8sNFerxqZ6Z98cpzTq">
+    <param name="todos">[{'content': 'Add pr_status_display field to RunRowData', 'status': 'completed', 'activeFo...[truncated 676 chars]... checks'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="68103" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CnAM8sNFerxqZ6Z98cpzTq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary:
+
+## Summary
+
+Added a **PR status emoji column** (`pr-st`) to the TUI Runs tab. The data was already being fetched (`pr_state` from `PullRequestInfo`) — it just wasn't displayed.
+
+### Changes made:
+
+1. **`src/erk/tui/data/types.py`** — Added `pr_status_display: str` field to `RunRowData`
+2. **`src/erk/tui/data/real_provider.py`** — Populated `pr_status_display` using `get_pr_status_emoji()` when PR info is available, defaulting to `"-"` 
+3. **`src/erk/tui/widgets/run_table.py`** — Added `pr-st` column (width 6) after the `pr` column, and included `row.pr_status_display` in the row values tuple
+4. **`tests/fakes/tests/tui_plan_data_provider.py`** — Added `pr_status_display` parameter (default `"-"`) to `make_run_row()` helper
+
+All 6,290 tests pass. PR #9164 submitted: https://github.com/dagster-io/erk/pull/9164</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="68572" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
