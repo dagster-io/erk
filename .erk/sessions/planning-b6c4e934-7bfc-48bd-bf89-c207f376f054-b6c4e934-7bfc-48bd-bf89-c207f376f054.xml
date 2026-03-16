@@ -1,0 +1,1023 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>https://github.com/dagster-io/erk/issues/9250
+
+plan fix for this</user>
+  <user>[Request interrupted by user]</user>
+  <user>investigate and plan fix</user>
+  <usage input_tokens="3" cache_creation_input_tokens="25411" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25411}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Y7rYBusKgtRkvU23EZ8wdh">
+    <param name="query">select:WebFetch</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25411" cache_read_input_tokens="0" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25411, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y7rYBusKgtRkvU23EZ8wdh">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018H95roKaSBKQvjEsGVRv4n">
+    <param name="command">gh issue view 9250 --json title,body,labels,comments</param>
+    <param name="description">Fetch GitHub issue #9250 details</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="635" cache_read_input_tokens="25411" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 635, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018H95roKaSBKQvjEsGVRv4n">
+{"body":"## Summary\n\n`erk-mcp` one-shot requests can fail with a raw CLI usage error when the request includes `ref_current=true` and the local repo is in detached HEAD state.\n\nObserved error:\n\n```text\nerk-mcp subprocess failed for 'erk json one-shot' with exit code 2. stderr:\nUsage: erk json one-shot [OPTIONS]\nTry 'erk json one-shot -h' for help.\n\nError: --ref-current requires being on a branch (not detached HEAD)\n```\n\n## Why this is a regression\n\nThis became user-visible recently for two reasons:\n\n1. `636ea3d02` (`Implement best-of-both-worlds machine command architecture`, March 10, 2026) moved MCP one-shot onto `erk json one-shot` and exposed `ref_current` in the machine request schema.\n2. `133e7b398` (`[erk-mcp] fix suppressed errors with erk-mcp`, March 13, 2026) stopped swallowing subprocess failures, so the raw Click error started surfacing to callers.\n\nAn earlier commit, `cff33ce55` (`Add --ref-current and --ref support to all dispatch commands`, March 2, 2026), introduced the detached-HEAD validation in `resolve_dispatch_ref()`, but that only became externally visible once MCP started routing through the machine-command path and stopped suppressing stderr.\n\n## Root cause\n\n`src/erk/cli/commands/one_shot/operation.py` called `resolve_dispatch_ref()` directly in the machine-command path.\n\n`resolve_dispatch_ref()` raises `click.UsageError` for expected precondition failures like:\n- detached HEAD with `ref_current=true`\n- `dispatch_ref` + `ref_current` used together\n\nIn the machine-command path, those exceptions were not converted into `MachineCommandError`, so `erk json one-shot` emitted raw Click usage text and exited nonzero instead of returning structured JSON.\n\n## Expected behavior\n\n`erk json one-shot` should return structured machine-readable JSON for these precondition failures, e.g.:\n\n```json\n{\n  \"success\": false,\n  \"error_type\": \"cli_error\",\n  \"message\": \"--ref-current requires being on a branch (not detached HEAD)\"\n}\n```\n\n## Fix\n\nCatch `click.UsageError` around `resolve_dispatch_ref()` in the machine-command one-shot operation and convert it to `MachineCommandError(error_type=\"cli_error\", ...)`.\n\nAlso preserve the human CLI behavior for `erk one-shot`, which can continue using Click usage errors.\n\n## Regression coverage\n\nAdd tests for:\n- detached HEAD + `ref_current=true` in `erk json one-shot`\n- conflicting `dispatch_ref` + `ref_current` in `erk json one-shot`\n","comments":[],"labels":[],"title":"erk-mcp one_shot fails on detached HEAD after machine-command migration"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="26046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the relevant code areas.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="26046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XpYxZ2RVLEgiwNn95E8vRc">
+    <param name="description">Explore one-shot operation code</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 594 chars]...operation.py file, the resolve_dispatch_ref function, and the MachineCommandError pattern.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="26046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 896}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_018sa9emxae1wXYUbLEzvc9u">
+    <param name="description">Explore tests for one-shot</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 480 chars]...onflicting refs)
+
+Be thorough - report full file paths and the key patterns used in tests.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="896" cache_read_input_tokens="26046" output_tokens="562" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 896, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XpYxZ2RVLEgiwNn95E8vRc">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <tool_result tool="toolu_018sa9emxae1wXYUbLEzvc9u">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>make sure to do this TDD style</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1003" cache_read_input_tokens="26942" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1003}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — TDD style. Let me explore the relevant code directly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1003" cache_read_input_tokens="26942" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1003}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DgSLEMEd7B7qrBUrPusZE1">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot/operation.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1003" cache_read_input_tokens="26942" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1003}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DgSLEMEd7B7qrBUrPusZE1">
+     1→"""Core operation for one-shot dispatch (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (one_shot/cli.py) and machine command (one_shot/json_cli.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→
+     9→from erk.cli.commands.implement_shared import normalize_model_name
+    10→from erk.cli.commands.one_shot_remote_dispatch import (
+    11→    OneShotDispatchParams,
+    12→    OneShotDispatchResult,
+    13→    OneShotDryRunResult,
+    14→    dispatch_one_shot_remote,
+    15→)
+    16→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    17→from erk.cli.ensure import UserFacingCliError
+    18→from erk.core.context import ErkContext, NoRepoSentinel
+    19→from erk_shared.agentclick.machine_command import MachineCommandError
+    20→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    21→from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class OneShotRequest:
+    26→    """Request type for one-shot dispatch."""
+    27→
+    28→    prompt: str
+    29→    model: str | None = None
+    30→    dry_run: bool = False
+
+... [99 lines omitted] ...
+
+    44→        raise UserFacingCliError(
+    46→            error_type="auth_required",
+    55→) -&gt; OneShotDispatchResult | OneShotDryRunResult | MachineCommandError:
+    65→        Dispatch result, dry-run result, or error
+    71→        return MachineCommandError(error_type="invalid_input", message="Prompt must not be empty")
+    88→            return MachineCommandError(
+    89→                error_type="invalid_repo",
+    98→            return MachineCommandError(
+    99→                error_type="cli_error",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LDSW3MvaLZMEkJWSqTyK6a">
+    <param name="pattern">resolve_dispatch_ref</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1003" cache_read_input_tokens="26942" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1003}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LDSW3MvaLZMEkJWSqTyK6a">
+Found 10 files
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/one_shot/operation.py
+src/erk/cli/commands/launch_cmd.py
+tests/unit/cli/commands/test_ref_resolution.py
+docs/learned/erk/tripwires.md
+docs/learned/erk/dispatch-ref-config.md
+src/erk/cli/commands/ref_resolution.py
+src/erk/cli/commands/doctor_workflow.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UbbUQCa5LZ9TBGYrvoXxdy">
+    <param name="pattern">class MachineCommandError</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1003" cache_read_input_tokens="26942" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1003}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UbbUQCa5LZ9TBGYrvoXxdy">
+Found 1 file
+packages/erk-shared/src/erk_shared/agentclick/machine_command.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01HkthRQiFDUZcZzHs3xNSXF">
+    <param name="pattern">tests/**/test_*one_shot*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1003" cache_read_input_tokens="26942" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1003, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HkthRQiFDUZcZzHs3xNSXF">
+/Users/schrockn/code/erk/tests/tui/screens/test_one_shot_prompt_screen.py
+/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot.py
+/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot_json.py
+/Users/schrockn/code/erk/tests/commands/objective/test_plan_one_shot.py
+/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot_dispatch.py
+/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot_remote_dispatch.py
+/Users/schrockn/code/erk/tests/tui/app/test_one_shot_prompt.py
+/Users/schrockn/code/erk/tests/commands/objective/__pycache__/test_plan_one_shot.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/commands/one_shot/__pycache__/test_one_shot.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/commands/one_shot/__pycache__/test_one_shot_dispatch.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/commands/one_shot/__pycache__/test_one_shot_json.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/commands/one_shot/__pycache__/test_one_shot_remote_dispatch.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/tui/app/__pycache__/test_one_shot_prompt.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/tui/screens/__pycache__/test_one_shot_prompt_screen.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/__pycache__/test_register_one_shot_plan.cpython-313-pytest-9.0.2.pyc
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015QnTcNGdTxaEC4aJ1iZ1rP">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3047" cache_read_input_tokens="27945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3047}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015QnTcNGdTxaEC4aJ1iZ1rP">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [12 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YRCmVunZqTLaUv8WKSJruC">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/agentclick/machine_command.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3047" cache_read_input_tokens="27945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3047}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YRCmVunZqTLaUv8WKSJruC">
+     1→"""Machine command decorator for pure-JSON CLI commands.
+     2→
+     3→Provides @machine_command for commands that:
+     4→- Accept JSON input from stdin (not Click params)
+     5→- Return structured JSON output
+     6→- Use frozen dataclass request types for strict validation
+     7→- Support --schema flag for introspection
+     8→
+     9→Unlike @json_command (which adds --json/--schema to human commands),
+    10→@machine_command creates dedicated machine-only commands with no
+    11→Click-based input parsing. The request type IS the input schema.
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import dataclass
+    16→from typing import Any
+    17→
+    18→import click
+    19→
+    20→from erk_shared.agentclick.dataclass_json import (
+    21→    emit_json_error,
+    22→    emit_json_success,
+    23→    parse_dataclass_from_json,
+    24→    read_json_stdin,
+    25→    serialize_to_json_dict,
+    26→)
+    27→
+    28→
+    29→@dataclass(frozen=True)
+    30→class MachineCommandMeta:
+
+... [183 lines omitted] ...
+
+    38→class MachineCommandError:
+    39→    """Structured error result from a machine command."""
+    41→    error_type: str
+    59→    to_json_dict()) or a MachineCommandError. The decorator handles
+    79→        json.JSONDecodeError: If stdin contains invalid JSON
+    80→        ValueError: If stdin JSON is not an object
+    99→        ValueError: On validation errors (unknown fields, missing required, type mismatch)
+   104→def emit_machine_error(error: MachineCommandError) -&gt; None:
+   105→    """Emit a structured error to stdout."""
+   106→    emit_json_error(error_type=error.error_type, message=error.message)
+   152→        except json.JSONDecodeError as exc:
+   153→            emit_machine_error(
+   154→                MachineCommandError(
+   155→                    error_type="invalid_json_input",
+   160→        except ValueError as exc:
+   161→            emit_machine_error(
+   162→                MachineCommandError(
+   163→                    error_type="invalid_json_input",
+   175→        except ValueError as exc:
+   176→            emit_machine_error(
+   177→                MachineCommandError(
+   178→                    error_type="invalid_request",
+   188→            if isinstance(result, MachineCommandError):
+   189→                emit_machine_error(result)
+   194→        except click.ClickException as exc:
+   195→            error_type_attr = getattr(exc, "error_type", None)
+   196→            if error_type_attr is not None:
+   197→                emit_machine_error(
+   198→                    MachineCommandError(
+   199→                        error_type=str(error_type_attr),
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YWGRZKZCStkgrRD5XQPJhV">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot_json.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3047" cache_read_input_tokens="27945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3047}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YWGRZKZCStkgrRD5XQPJhV">
+     1→"""Tests for erk json one-shot output and input."""
+     2→
+     3→import json
+     4→from unittest.mock import patch
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.cli import cli
+     9→from tests.fakes.gateway.git import FakeGit
+    10→from tests.fakes.gateway.github import FakeLocalGitHub
+    11→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def _make_remote() -&gt; FakeRemoteGitHub:
+    17→    """Create a default FakeRemoteGitHub for tests."""
+    18→    return FakeRemoteGitHub(
+    19→        authenticated_user="testuser",
+    20→        default_branch_name="main",
+    21→        default_branch_sha="abc123",
+    22→        next_pr_number=1,
+    23→        dispatch_run_id="run-1",
+    24→        issues=None,
+    25→        issue_comments=None,
+    26→        pr_references=None,
+    27→    )
+    28→
+    29→
+    30→def test_json_success() -&gt; None:
+
+... [216 lines omitted] ...
+
+    55→                catch_exceptions=False,
+    58→        assert result.exit_code == 0, f"Command failed: {result.output}"
+    95→                catch_exceptions=False,
+    98→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   117→def test_json_error_empty_prompt() -&gt; None:
+   118→    """Empty prompt produces JSON error with error_type."""
+   145→        assert data["error_type"] == "invalid_input"
+   149→def test_json_error_invalid_repo() -&gt; None:
+   150→    """Invalid target_repo format produces JSON error with error_type."""
+   177→        assert data["error_type"] == "invalid_repo"
+   206→                catch_exceptions=False,
+   240→                catch_exceptions=False,
+   243→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VjGrhjBYYW8M963j4v3B7j">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3047" cache_read_input_tokens="27945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3047}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VjGrhjBYYW8M963j4v3B7j">
+     1→"""Tests for erk one-shot command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from tests.fakes.gateway.git import FakeGit
+     7→from tests.fakes.gateway.github import FakeLocalGitHub
+     8→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def _make_remote() -&gt; FakeRemoteGitHub:
+    14→    """Create a default FakeRemoteGitHub for tests."""
+    15→    return FakeRemoteGitHub(
+    16→        authenticated_user="testuser",
+    17→        default_branch_name="main",
+    18→        default_branch_sha="abc123",
+    19→        next_pr_number=1,
+    20→        dispatch_run_id="run-1",
+    21→        issues=None,
+    22→        issue_comments=None,
+    23→        pr_references=None,
+    24→    )
+    25→
+    26→
+    27→def test_one_shot_happy_path() -&gt; None:
+    28→    """Test one-shot command creates branch, PR, and triggers workflow."""
+    29→    runner = CliRunner()
+    30→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+
+... [317 lines omitted] ...
+
+    48→            catch_exceptions=False,
+    51→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   123→            catch_exceptions=False,
+   126→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   157→            catch_exceptions=False,
+   160→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   188→            catch_exceptions=False,
+   191→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   218→            catch_exceptions=False,
+   221→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   254→            catch_exceptions=False,
+   257→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   314→            catch_exceptions=False,
+   317→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="15833" cache_read_input_tokens="30992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check how FakeGit handles detached HEAD (when `current_branches` maps to `None`).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15833" cache_read_input_tokens="30992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KPBvWhg3LBALYLNLXoFGow">
+    <param name="pattern">get_current_branch</param>
+    <param name="path">/Users/schrockn/code/erk/tests/fakes/gateway/git.py</param>
+    <param name="output_mode">content</param>
+    <param name="context">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15833" cache_read_input_tokens="30992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KPBvWhg3LBALYLNLXoFGow">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JFNSiMqknAm4GjPufYYCrM">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/test_ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15833" cache_read_input_tokens="30992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15833}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JFNSiMqknAm4GjPufYYCrM">
+     1→"""Tests for dispatch ref resolution logic."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→import pytest
+     7→
+     8→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+     9→from erk_shared.context.types import LoadedConfig
+    10→from tests.fakes.gateway.git import FakeGit
+    11→from tests.fakes.tests.context import create_test_context
+    12→
+    13→
+    14→def test_mutual_exclusion_error() -&gt; None:
+    15→    """Both --ref and --ref-current raises UsageError."""
+    16→    ctx = create_test_context()
+    17→
+    18→    with pytest.raises(click.UsageError, match="mutually exclusive"):
+    19→        resolve_dispatch_ref(ctx, dispatch_ref="some-branch", ref_current=True)
+    20→
+    21→
+    22→def test_ref_current_returns_branch() -&gt; None:
+    23→    """--ref-current calls get_current_branch and returns it."""
+    24→    cwd = Path("/fake/repo")
+    25→    git = FakeGit(current_branches={cwd: "feature/my-branch"})
+    26→    ctx = create_test_context(git=git, cwd=cwd)
+    27→
+    28→    result = resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=True)
+    29→
+    30→    assert result == "feature/my-branch"
+
+... [39 lines omitted] ...
+
+    33→def test_ref_current_detached_head_error() -&gt; None:
+    34→    """--ref-current with detached HEAD raises UsageError."""
+    39→    with pytest.raises(click.UsageError, match="not detached HEAD"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_018GGwqXqVYJafkQyLQuyJar">
+    <param name="file_path">/Users/schrockn/code/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15833" cache_read_input_tokens="30992" output_tokens="681" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15833, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018GGwqXqVYJafkQyLQuyJar">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.plan_list_service import PlanListData
+    10→from erk_shared.gateway.git.dry_run import DryRunGit
+    11→from erk_shared.gateway.github.real import RealLocalGitHub
+    12→from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo, WorkflowRun
+    13→from erk_shared.gateway.time.abc import Time
+    14→from erk_shared.plan_store.types import Plan
+    15→from tests.fakes.gateway.core import FakePlanListService
+    16→from tests.fakes.gateway.git import FakeGit
+    17→from tests.fakes.gateway.github import FakeLocalGitHub
+    18→from tests.fakes.gateway.shell import FakeShell
+    19→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    20→
+    21→
+    22→def build_workspace_test_context(
+    23→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    24→    *,
+    25→    dry_run: bool = False,
+    26→    use_graphite: bool = False,
+    27→    current_branch: str | None = None,
+    28→    **kwargs,
+    29→) -&gt; ErkContext:
+    30→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+
+... [146 lines omitted] ...
+
+   139→    warnings: tuple[str, ...] = (),
+   147→            warnings=warnings,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5609" cache_read_input_tokens="46825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5609}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XwD2MtEGHsqHV9dMS1Hnhk">
+    <param name="pattern">class UserFacingCliError</param>
+    <param name="output_mode">content</param>
+    <param name="context">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5609" cache_read_input_tokens="46825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5609}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XwD2MtEGHsqHV9dMS1Hnhk">
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-23-
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-24-from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-25-from erk_shared.output.output import user_output
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-26-
+src/erk/cli/ensure.py-27-if TYPE_CHECKING:
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-28-    from erk.core.context import ErkContext
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-29-
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-30-T = TypeVar("T")
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-31-
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-32-
+src/erk/cli/ensure.py:33:class UserFacingCliError(click.ClickException):
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-34-    """Exception for user-facing CLI errors with styled output.
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-35-
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-36-    Extends click.ClickException so Click catches it automatically at every
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-37-    level (groups, subgroups, commands) and converts it to a styled error
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-38-    message + exit code 1. Works correctly with both production CLI and
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-39-    CliRunner in tests.
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-40-
+src/erk/cli/ensure.py-41-    Usage:
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-42-        raise UserFacingCliError("Not a GitHub repository", error_type="cli_error")
+/Users/schrockn/code/erk/src/erk/cli/ensure.py-43-        raise UserFacingCliError(push_result.message, error_type="cli_error")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="52434" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a complete understanding of the issue. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="52434" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Lz7HcWnAu4LegF5TxuNBeK">
+    <param name="file_path">/Users/schrockn/.claude/plans/buzzing-splashing-lantern.md</param>
+    <param name="content"># Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+
+## Context
+
+`erk json one-shot` em...[truncated 3052 chars]...t/test_one_shot.py -v
+uv run pytest tests/unit/cli/commands/test_ref_resolution.py -v
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="52434" output_tokens="1456" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 899, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lz7HcWnAu4LegF5TxuNBeK">
+File created successfully at: /Users/schrockn/.claude/plans/buzzing-splashing-lantern.md
+  </tool_result>
+  <assistant>Let me verify the human CLI path to finalize the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1601" cache_read_input_tokens="53333" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1601}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XX4brUkRHevKUQQhiefMpB">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot/cli.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1601" cache_read_input_tokens="53333" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1601, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XX4brUkRHevKUQQhiefMpB">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→Human-facing command with Click options and rich output.
+     4→Machine-readable JSON equivalent lives in one_shot/json_cli.py.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→    erk one-shot "fix config bug" --repo owner/repo
+    13→"""
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.one_shot.operation import OneShotRequest, run_one_shot
+    20→from erk.cli.ensure import Ensure
+    21→from erk.core.context import ErkContext
+    22→from erk_shared.agentclick.machine_command import MachineCommandError
+    23→from erk_shared.output.output import user_output
+    24→
+    25→
+    26→@click.command("one-shot")
+    27→@click.argument("prompt", required=False, default=None)
+    28→@click.option(
+    29→    "-f",
+    30→    "--file",
+
+... [119 lines omitted] ...
+
+   127→            click.style("Error: ", fg="red") + "--repo and --ref-current are mutually exclusive"
+   144→    if isinstance(result, MachineCommandError):
+   145→        user_output(click.style(f"Error: {result.message}", fg="red"))
+  </tool_result>
+  <assistant>Good — the human CLI path at line 144 already handles `MachineCommandError` returns. So the fix is clean: catch `click.UsageError` in `run_one_shot()` and return `MachineCommandError` — both paths (human and machine) handle it correctly.
+
+Let me also check `json_cli.py` briefly to confirm the machine path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2229" cache_read_input_tokens="54934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2229}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NzVPek5TJF5oeBvodV16oZ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot/json_cli.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2229" cache_read_input_tokens="54934" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2229, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NzVPek5TJF5oeBvodV16oZ">
+     1→"""Machine adapter for one-shot dispatch.
+     2→
+     3→Accepts JSON from stdin, delegates to run_one_shot operation,
+     4→returns structured JSON output.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.commands.one_shot.operation import (
+    10→    OneShotRequest,
+    11→    run_one_shot,
+    12→)
+    13→from erk.cli.commands.one_shot_remote_dispatch import (
+    14→    OneShotDispatchResult,
+    15→    OneShotDryRunResult,
+    16→)
+    17→from erk.core.context import ErkContext
+    18→from erk_shared.agentclick.machine_command import MachineCommandError, machine_command
+    19→from erk_shared.agentclick.mcp_exposed import mcp_exposed
+    20→
+    21→
+    22→@mcp_exposed(
+    23→    name="one_shot",
+    24→    description=(
+    25→        "Submit a task for fully autonomous remote execution.\n\n"
+    26→        "Returns JSON with 'success' field. On success: pr_number, pr_url, "
+    27→        "run_url, branch_name. With dry_run: preview without executing. "
+    28→        "On error: error_type and message."
+    29→    ),
+    30→)
+
+... [14 lines omitted] ...
+
+    41→) -&gt; OneShotDispatchResult | OneShotDryRunResult | MachineCommandError:
+  </tool_result>
+  <assistant>Everything confirms the plan. Let me finalize it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="57163" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 718}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_013YPQ8DLELePNVX7GJdGbXy">
+    <param name="file_path">/Users/schrockn/.claude/plans/buzzing-splashing-lantern.md</param>
+    <param name="content"># Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+
+## Context
+
+`erk json one-shot` em...[truncated 2338 chars]...rc/erk/cli/commands/one_shot/operation.py` — catch `click.UsageError`, add `import click`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="718" cache_read_input_tokens="57163" output_tokens="909" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 718, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013YPQ8DLELePNVX7GJdGbXy">
+The file /Users/schrockn/.claude/plans/buzzing-splashing-lantern.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01GVKsVxgHb3LcH9ZzuaMbiv">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="949" cache_read_input_tokens="57881" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 949, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GVKsVxgHb3LcH9ZzuaMbiv">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01ChAv7WML2z2ni5Yvk74WXa">
+    <param name="plan"># Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+
+## Context
+
+`erk json one-shot` em...[truncated 2338 chars]...rc/erk/cli/commands/one_shot/operation.py` — catch `click.UsageError`, add `import click`
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/buzzing-splashing-lantern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2885" cache_read_input_tokens="57881" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2885, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ChAv7WML2z2ni5Yvk74WXa">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/buzzing-splashing-lantern.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id b6c4e934-7bfc-48bd-bf89-c207f376f054 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+
+## Context
+
+`erk json one-shot` emits raw Click usage errors instead of structured JSON when `resolve_dispatch_ref()` raises `click.UsageError` (detached HEAD + `ref_current=true`, or conflicting `dispatch_ref` + `ref_current`).
+
+**Root cause**: `resolve_dispatch_ref()` raises `click.UsageError` (no `error_type` attr). The `machine_command` wrapper catches `click.ClickException` but only converts to `MachineCommandError` if it has an `error_type` attribute (line 194-203 of `machine_command.py`). Plain `click.UsageError` lacks this, so it gets re-raised as raw Click error text.
+
+## TDD Plan
+
+### Step 1: Write failing tests
+
+Add two tests to `tests/commands/one_shot/test_one_shot_json.py`, following the existing pattern in that file:
+
+**`test_json_error_detached_head_ref_current`**
+- `FakeGit` with NO `current_branches` entry (detached HEAD)
+- Machine input: `{"prompt": "fix bug", "ref_current": true}`
+- Assert: exit 1, JSON `success: false`, `error_type: "cli_error"`, message matches "detached HEAD"
+
+**`test_json_error_conflicting_ref_flags`**
+- Machine input: `{"prompt": "fix bug", "dispatch_ref": "some-branch", "ref_current": true}`
+- Assert: exit 1, JSON `success: false`, `error_type: "cli_error"`, message matches "mutually exclusive"
+
+### Step 2: Implement fix
+
+In `src/erk/cli/commands/one_shot/operation.py` (lines 110-113), wrap the `resolve_dispatch_ref()` call:
+
+```python
+try:
+    ref = resolve_dispatch_ref(
+        ctx, dispatch_ref=request.dispatch_ref, ref_current=request.ref_current
+    )
+except click.UsageError as exc:
+    return MachineCommandError(error_type="cli_error", message=str(exc))
+```
+
+Add `import click` to the imports.
+
+Both consumers handle `MachineCommandError` returns correctly:
+- **Machine path** (`json_cli.py`): `machine_command` wrapper emits JSON error at line 188-190
+- **Human path** (`cli.py`): Already handles at line 144-146 with styled error output
+
+### Step 3: Run tests
+
+```bash
+uv run pytest tests/commands/one_shot/test_one_shot_json.py -v
+uv run pytest tests/commands/one_shot/test_one_shot.py -v
+```
+
+## Files to modify
+
+1. `tests/commands/one_shot/test_one_shot_json.py` — add 2 tests (write FIRST)
+2. `src/erk/cli/commands/one_shot/operation.py` — catch `click.UsageError`, add `import click`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="60766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 690}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01WnQTcRXtyuqvHtP4H9ASBF">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="690" cache_read_input_tokens="60766" output_tokens="832" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 690, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WnQTcRXtyuqvHtP4H9ASBF">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01YFhVNAL3YWNLdZwitjqqiC">
+    <param name="questions">[{'question': '📋 Fix: erk-mcp one_shot fails on detached HEAD (#9250)\nCurrent context: (w...[truncated 393 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2197" cache_read_input_tokens="61456" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YFhVNAL3YWNLdZwitjqqiC">
+User has answered your questions: "📋 Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01P8wuythsdBybE9AZ6YnqDu">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="63653" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P8wuythsdBybE9AZ6YnqDu">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="b6c4e934-7bfc-48bd-bf89-c207f376f054" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="b6c4e934-7bfc-48bd-bf89-c207f376f054" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "b6c4e934-7bfc-48bd-bf89-c207f376f054" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "b6c4e934-7bfc-48bd-bf89-c207f376f054" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "b6c4e934-7bfc-48bd-bf89-c207f376f054" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "b6c4e934-7bfc-48bd-bf89-c207f376f054" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2375" cache_read_input_tokens="63967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2375}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the plan file to get the title, then save it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2375" cache_read_input_tokens="63967" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2375}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011kY7KnacnKXiHcGtFG2qWj">
+    <param name="file_path">/Users/schrockn/.claude/plans/buzzing-splashing-lantern.md</param>
+    <param name="limit">3</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2375" cache_read_input_tokens="63967" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011kY7KnacnKXiHcGtFG2qWj">
+     1→# Fix: erk-mcp one_shot fails on detached HEAD (#9250)
+     2→
+     3→## Context
+  </tool_result>
+  <assistant>**Branch slug:** `fix-mcp-detached-head`
+
+**Plan summary:** Catches click.UsageError from resolve_dispatch_ref in run_one_shot and converts it to MachineCommandError so erk json one-shot returns structured JSON instead of raw Click error text. Adds two TDD tests for detached HEAD and conflicting ref flags.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="66342" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 270}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GqxPBJppdXoNtUxYtKDPsr">
+    <param name="command">erk exec plan-save --format json --session-id="b6c4e934-7bfc-48bd-bf89-c207f376f054" --bra...[truncated 182 chars]... of raw Click error text. Adds two TDD tests for detached HEAD and conflicting ref flags."</param>
+    <param name="description">Save plan as draft PR on GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="66342" output_tokens="291" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 270, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GqxPBJppdXoNtUxYtKDPsr">
+{"success": true, "pr_number": 9251, "pr_url": "https://github.com/dagster-io/erk/pull/9251", "title": "[erk-pr] Fix: erk-mcp one_shot fails on detached HEAD (#9250)", "branch_name": "plnd/fix-mcp-detached-head-03-16-1443", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/b6c4e934-7bfc-48bd-bf89-c207f376f054/plan_snapshots/000001-285ba3d1"}
+  </tool_result>
+  <assistant>Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="476" cache_read_input_tokens="66612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 476}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0127EPbjQ3wsWhBYXuaM8oeo">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="476" cache_read_input_tokens="66612" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 476, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0127EPbjQ3wsWhBYXuaM8oeo">
+SESSION_ID=b6c4e934-7bfc-48bd-bf89-c207f376f054
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/b6c4e934-7bfc-48bd-bf89-c207f376f054.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016Vy7ida6Q7rGzR4LTstxQb">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...bd-bf89-c207f376f054" --stage planning --source local --pr-number 9251 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="67088" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
