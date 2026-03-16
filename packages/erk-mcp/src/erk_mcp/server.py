@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import subprocess
 from typing import TYPE_CHECKING, Any
@@ -24,26 +25,43 @@ if TYPE_CHECKING:
 DEFAULT_MCP_NAME = "erk"
 DEFAULT_MCP_HTTP_PATH = "/mcp"
 ROOT_PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
+CLI_SUBPROCESS_ERROR_TYPE = "cli_subprocess_error"
+GENERIC_SUBPROCESS_ERROR_MESSAGE = "The requested erk command failed."
+
+LOGGER = logging.getLogger(__name__)
 
 
-def _build_subprocess_error_output(
+def _log_subprocess_failure(
     command_path: tuple[str, ...],
     *,
     returncode: int,
     stderr: str,
-) -> str:
-    stderr_lines = [line.strip() for line in stderr.splitlines() if line.strip()]
-    if stderr_lines:
-        message = stderr_lines[-1]
-    else:
-        joined_path = " ".join(command_path)
-        message = f"erk {joined_path} exited with code {returncode}"
+) -> None:
+    joined_path = " ".join(command_path)
+    stderr_output = stderr.strip()
 
+    if stderr_output:
+        LOGGER.error(
+            "erk-mcp subprocess failed for 'erk %s' with exit code %s. stderr:\n%s",
+            joined_path,
+            returncode,
+            stderr_output,
+        )
+        return
+
+    LOGGER.error(
+        "erk-mcp subprocess failed for 'erk %s' with exit code %s and no stderr output.",
+        joined_path,
+        returncode,
+    )
+
+
+def _build_subprocess_error_output() -> str:
     return json.dumps(
         {
             "success": False,
-            "error_type": "cli_subprocess_error",
-            "message": message,
+            "error_type": CLI_SUBPROCESS_ERROR_TYPE,
+            "message": GENERIC_SUBPROCESS_ERROR_MESSAGE,
         }
     )
 
@@ -73,11 +91,12 @@ def _run_erk_json(
         return result.stdout
 
     if result.returncode != 0:
-        return _build_subprocess_error_output(
+        _log_subprocess_failure(
             command_path,
             returncode=result.returncode,
             stderr=result.stderr,
         )
+        return _build_subprocess_error_output()
 
     return result.stdout
 

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from erk_mcp.server import (
+    CLI_SUBPROCESS_ERROR_TYPE,
+    GENERIC_SUBPROCESS_ERROR_MESSAGE,
     ROOT_PROTECTED_RESOURCE_METADATA_PATH,
     MachineCommandTool,
     _build_machine_command_tools,
@@ -58,7 +61,11 @@ class TestRunErkJson:
         assert result == '{"success": false, "error_type": "auth_required"}'
 
     @patch("erk_mcp.server.subprocess.run")
-    def test_synthesizes_json_error_from_stderr_only_failure(self, mock_run: patch) -> None:
+    def test_synthesizes_generic_json_error_from_stderr_only_failure(
+        self,
+        mock_run: patch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["erk", "json", "one-shot"],
             returncode=1,
@@ -69,14 +76,33 @@ class TestRunErkJson:
             ),
         )
 
+        with caplog.at_level(logging.ERROR):
+            result = _run_erk_json(("json", "one-shot"), {"prompt": "Do something"})
+
+        assert json.loads(result) == {
+            "success": False,
+            "error_type": CLI_SUBPROCESS_ERROR_TYPE,
+            "message": GENERIC_SUBPROCESS_ERROR_MESSAGE,
+        }
+        assert "repos/dagster-io/internal/issues/123/labels" in caplog.text
+        assert "HTTP 422" in caplog.text
+        assert "The requested erk command failed." not in caplog.text
+
+    @patch("erk_mcp.server.subprocess.run")
+    def test_synthesizes_generic_json_error_without_stderr(self, mock_run: patch) -> None:
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["erk", "json", "one-shot"],
+            returncode=1,
+            stdout="",
+            stderr="",
+        )
+
         result = _run_erk_json(("json", "one-shot"), {"prompt": "Do something"})
 
         assert json.loads(result) == {
             "success": False,
-            "error_type": "cli_subprocess_error",
-            "message": (
-                "HTTP 422 for repos/dagster-io/internal/issues/123/labels: Validation Failed"
-            ),
+            "error_type": CLI_SUBPROCESS_ERROR_TYPE,
+            "message": GENERIC_SUBPROCESS_ERROR_MESSAGE,
         }
 
     @patch("erk_mcp.server.subprocess.run")
