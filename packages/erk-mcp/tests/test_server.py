@@ -15,8 +15,8 @@ from erk_mcp.server import (
     _build_machine_command_tools,
     _build_root_protected_resource_metadata,
     _run_erk_json,
-    create_http_mcp,
     create_mcp,
+    create_startup_mcp,
 )
 
 
@@ -331,13 +331,13 @@ class TestCreateMcp:
         assert isinstance(server, FastMCP)
 
 
-class TestCreateHttpMcp:
+class TestCreateStartupMcp:
     def test_raises_without_auth_provider(self) -> None:
         with patch("erk_mcp.server.build_auth_provider_from_env", return_value=None):
-            with pytest.raises(ValueError, match="serving erk-mcp over HTTP"):
-                create_http_mcp()
+            with pytest.raises(ValueError, match="Missing required environment variables"):
+                create_startup_mcp()
 
-    def test_allows_http_when_auth_provider_is_configured(self) -> None:
+    def test_allows_startup_when_auth_provider_is_configured(self) -> None:
         mock_auth_provider = MagicMock()
         mock_auth_provider.base_url = "https://erk.example.com"
         mock_auth_provider.issuer_url = "https://erk.example.com"
@@ -347,7 +347,7 @@ class TestCreateHttpMcp:
             "erk_mcp.server.build_auth_provider_from_env",
             return_value=mock_auth_provider,
         ):
-            server = create_http_mcp()
+            server = create_startup_mcp()
 
         assert server.auth is mock_auth_provider
 

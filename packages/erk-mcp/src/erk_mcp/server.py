@@ -164,14 +164,14 @@ def _add_oauth_compat_routes(server: FastMCP) -> None:
         return await handler.handle(request)
 
 
-def _validate_http_auth_configuration(*, auth: Any) -> None:
+def _validate_startup_auth_configuration(*, auth: Any) -> None:
     if auth is not None:
         return
 
     raise ValueError(
-        "GitHub OAuth must be configured when serving erk-mcp over HTTP. "
-        "Set ERK_MCP_GITHUB_OAUTH_CLIENT_ID, ERK_MCP_GITHUB_OAUTH_CLIENT_SECRET, "
-        "and ERK_MCP_PUBLIC_URL, or use --transport stdio."
+        "Missing required environment variables for erk-mcp startup: "
+        "ERK_MCP_GITHUB_OAUTH_CLIENT_ID, ERK_MCP_GITHUB_OAUTH_CLIENT_SECRET, "
+        "and ERK_MCP_PUBLIC_URL."
     )
 
 
@@ -186,9 +186,9 @@ def create_mcp() -> FastMCP:
     return server
 
 
-def create_http_mcp() -> FastMCP:
+def create_startup_mcp() -> FastMCP:
     server = create_mcp()
-    _validate_http_auth_configuration(auth=server.auth)
+    _validate_startup_auth_configuration(auth=server.auth)
     return server
 
 

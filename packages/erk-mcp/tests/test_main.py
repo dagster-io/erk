@@ -21,7 +21,6 @@ class TestParseArgs:
     def test_defaults(self) -> None:
         with patch.dict("os.environ", {}, clear=False):
             args = _parse_args([])
-        assert args.transport == "streamable-http"
         assert args.host == "0.0.0.0"
         assert args.port == 9000
 
@@ -43,17 +42,9 @@ class TestParseArgs:
         args = _parse_args(["--port", "7777"])
         assert args.port == 7777
 
-    def test_cli_transport_stdio(self) -> None:
-        args = _parse_args(["--transport", "stdio"])
-        assert args.transport == "stdio"
-
-    def test_cli_transport_http(self) -> None:
-        args = _parse_args(["--transport", "streamable-http"])
-        assert args.transport == "streamable-http"
-
-    def test_invalid_transport_raises(self) -> None:
+    def test_transport_flag_is_rejected(self) -> None:
         with pytest.raises(SystemExit):
-            _parse_args(["--transport", "invalid"])
+            _parse_args(["--transport", "stdio"])
 
 
 class TestMain:
@@ -64,10 +55,9 @@ class TestMain:
         mock_auth.base_url = "https://erk.example.com"
         mock_mcp = MagicMock()
         mock_mcp.auth = mock_auth
-        with patch("erk_mcp.__main__.create_http_mcp", return_value=mock_mcp):
+        with patch("erk_mcp.__main__.create_startup_mcp", return_value=mock_mcp):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
-                    transport="streamable-http",
                     host="0.0.0.0",
                     port=9000,
                 )
@@ -87,10 +77,9 @@ class TestMain:
         mock_auth.base_url = "https://erk.example.com"
         mock_mcp = MagicMock()
         mock_mcp.auth = mock_auth
-        with patch("erk_mcp.__main__.create_http_mcp", return_value=mock_mcp):
+        with patch("erk_mcp.__main__.create_startup_mcp", return_value=mock_mcp):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
-                    transport="streamable-http",
                     host="127.0.0.1",
                     port=8080,
                 )
@@ -100,22 +89,6 @@ class TestMain:
         assert "http://127.0.0.1:8080/mcp" in captured.out
         assert "https://erk.example.com/.well-known/oauth-authorization-server" in captured.out
 
-    def test_stdio_transport_runs_without_args(self, capsys: pytest.CaptureFixture[str]) -> None:
-        mock_mcp = MagicMock()
-        mock_mcp.auth = None
-        with patch("erk_mcp.__main__.create_mcp", return_value=mock_mcp):
-            with patch("erk_mcp.__main__._parse_args") as mock_parse:
-                mock_parse.return_value = MagicMock(
-                    transport="stdio",
-                    host="0.0.0.0",
-                    port=9000,
-                )
-                main()
-
-        mock_mcp.run.assert_called_once_with()
-        captured = capsys.readouterr()
-        assert captured.out == ""
-
     def test_http_transport_prints_oauth_discovery_url(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -123,10 +96,9 @@ class TestMain:
         mock_auth.base_url = "https://erk.example.com"
         mock_mcp = MagicMock()
         mock_mcp.auth = mock_auth
-        with patch("erk_mcp.__main__.create_http_mcp", return_value=mock_mcp):
+        with patch("erk_mcp.__main__.create_startup_mcp", return_value=mock_mcp):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
-                    transport="streamable-http",
                     host="0.0.0.0",
                     port=9000,
                 )
@@ -137,10 +109,9 @@ class TestMain:
         assert "https://erk.example.com/.well-known/oauth-protected-resource" in captured.out
 
     def test_http_transport_value_error_becomes_click_exception(self) -> None:
-        with patch("erk_mcp.__main__.create_http_mcp", side_effect=ValueError("broken config")):
+        with patch("erk_mcp.__main__.create_startup_mcp", side_effect=ValueError("broken config")):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
-                    transport="streamable-http",
                     host="0.0.0.0",
                     port=9000,
                 )
@@ -149,27 +120,15 @@ class TestMain:
 
     def test_http_transport_missing_oauth_becomes_click_exception(self) -> None:
         with patch(
-            "erk_mcp.__main__.create_http_mcp",
-            side_effect=ValueError("GitHub OAuth must be configured"),
+            "erk_mcp.__main__.create_startup_mcp",
+            side_effect=ValueError("Missing required environment variables"),
         ):
             with patch("erk_mcp.__main__._parse_args") as mock_parse:
                 mock_parse.return_value = MagicMock(
-                    transport="streamable-http",
                     host="0.0.0.0",
                     port=9000,
                 )
-                with pytest.raises(ClickException, match="GitHub OAuth must be configured"):
-                    main()
-
-    def test_stdio_transport_value_error_becomes_click_exception(self) -> None:
-        with patch("erk_mcp.__main__.create_mcp", side_effect=ValueError("broken config")):
-            with patch("erk_mcp.__main__._parse_args") as mock_parse:
-                mock_parse.return_value = MagicMock(
-                    transport="stdio",
-                    host="127.0.0.1",
-                    port=9000,
-                )
-                with pytest.raises(ClickException, match="broken config"):
+                with pytest.raises(ClickException, match="Missing required environment variables"):
                     main()
 
 
