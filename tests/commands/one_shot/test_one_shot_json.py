@@ -212,6 +212,70 @@ def test_json_no_human_on_stdout() -> None:
         assert data["success"] is True
 
 
+def test_json_error_detached_head_ref_current() -> None:
+    """Detached HEAD with ref_current=true produces JSON error with error_type."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            # No current_branches entry -> detached HEAD (get_current_branch returns None)
+        )
+        github = FakeLocalGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        with patch(
+            "erk_shared.agentclick.machine_command.read_machine_command_input",
+            return_value={"prompt": "fix bug", "ref_current": True},
+        ):
+            result = runner.invoke(
+                cli,
+                ["json", "one-shot"],
+                obj=ctx,
+            )
+
+        assert result.exit_code == 1
+        data = json.loads(result.stdout)
+        assert data["success"] is False
+        assert data["error_type"] == "cli_error"
+        assert "detached" in data["message"].lower()
+
+
+def test_json_error_conflicting_ref_flags() -> None:
+    """Conflicting dispatch_ref and ref_current flags produce JSON error with error_type."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        github = FakeLocalGitHub(authenticated=True)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        with patch(
+            "erk_shared.agentclick.machine_command.read_machine_command_input",
+            return_value={"prompt": "fix bug", "dispatch_ref": "some-branch", "ref_current": True},
+        ):
+            result = runner.invoke(
+                cli,
+                ["json", "one-shot"],
+                obj=ctx,
+            )
+
+        assert result.exit_code == 1
+        data = json.loads(result.stdout)
+        assert data["success"] is False
+        assert data["error_type"] == "cli_error"
+        assert "mutually exclusive" in data["message"].lower()
+
+
 def test_json_stdin_input() -> None:
     """JSON stdin input populates prompt via machine command."""
     runner = CliRunner()

@@ -6,6 +6,8 @@ human command (one_shot/cli.py) and machine command (one_shot/json_cli.py) share
 
 from dataclasses import dataclass
 
+import click
+
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
@@ -108,9 +110,12 @@ def run_one_shot(
     if request.target_repo is not None:
         ref = request.dispatch_ref
     else:
-        ref = resolve_dispatch_ref(
-            ctx, dispatch_ref=request.dispatch_ref, ref_current=request.ref_current
-        )
+        try:
+            ref = resolve_dispatch_ref(
+                ctx, dispatch_ref=request.dispatch_ref, ref_current=request.ref_current
+            )
+        except click.UsageError as exc:
+            return MachineCommandError(error_type="cli_error", message=str(exc))
 
     remote = _get_remote_github(ctx)
 
