@@ -7,12 +7,15 @@ import json
 import subprocess
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from erk_mcp.server import (
     ROOT_PROTECTED_RESOURCE_METADATA_PATH,
     MachineCommandTool,
     _build_machine_command_tools,
     _build_root_protected_resource_metadata,
     _run_erk_json,
+    create_http_mcp,
     create_mcp,
 )
 
@@ -326,6 +329,27 @@ class TestCreateMcp:
         server = create_mcp()
 
         assert isinstance(server, FastMCP)
+
+
+class TestCreateHttpMcp:
+    def test_raises_without_auth_provider(self) -> None:
+        with patch("erk_mcp.server.build_auth_provider_from_env", return_value=None):
+            with pytest.raises(ValueError, match="serving erk-mcp over HTTP"):
+                create_http_mcp()
+
+    def test_allows_http_when_auth_provider_is_configured(self) -> None:
+        mock_auth_provider = MagicMock()
+        mock_auth_provider.base_url = "https://erk.example.com"
+        mock_auth_provider.issuer_url = "https://erk.example.com"
+        mock_auth_provider.required_scopes = ["repo"]
+
+        with patch(
+            "erk_mcp.server.build_auth_provider_from_env",
+            return_value=mock_auth_provider,
+        ):
+            server = create_http_mcp()
+
+        assert server.auth is mock_auth_provider
 
 
 class TestRootProtectedResourceMetadata:

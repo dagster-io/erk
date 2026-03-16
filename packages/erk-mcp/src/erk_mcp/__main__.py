@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from erk_mcp.server import create_mcp
+from erk_mcp.server import create_http_mcp, create_mcp
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
@@ -41,7 +41,10 @@ def _get_oauth_protected_resource_url(mcp: FastMCP) -> str | None:
 def main() -> None:
     args = _parse_args(None)
     try:
-        mcp = create_mcp()
+        if args.transport == "stdio":
+            mcp = create_mcp()
+        else:
+            mcp = create_http_mcp()
     except ValueError as exc:
         raise click.ClickException(str(exc)) from exc
     if args.transport == "stdio":
@@ -56,8 +59,6 @@ def main() -> None:
                 click.echo(
                     f"OAuth protected-resource metadata available at {oauth_protected_resource_url}"
                 )
-        else:
-            click.echo("GitHub OAuth disabled")
         mcp.run(transport=args.transport, host=args.host, port=args.port)
 
 

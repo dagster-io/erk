@@ -53,8 +53,10 @@ serves:
 https://your-public-erk-host.example.com/.well-known/oauth-protected-resource
 ```
 
-At startup, `erk-mcp` prints both OAuth URLs when auth is enabled. If you only see
-`GitHub OAuth disabled`, the running process does not have OAuth configured.
+At startup, `erk-mcp` prints both OAuth URLs when auth is enabled. If the required
+OAuth environment variables are missing, HTTP startup now fails closed instead of
+serving without authentication. Use `uv run erk-mcp --transport stdio` if you do
+not want to configure HTTP auth.
 
 and uses GitHub OAuth with callback:
 
