@@ -15,6 +15,21 @@
       "raw_size_kb": 276,
       "xml_size_kb": 59,
       "git_branch": "master"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-16T21:48:52.009012+00:00",
+      "files": [
+        "impl--ccb87731-9cc5-4661-bc9d-0861afd5e8c0-part1.xml",
+        "impl--ccb87731-9cc5-4661-bc9d-0861afd5e8c0-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 155,
+      "xml_size_kb": 49,
+      "git_branch": "plnd/fix-mcp-detached-head-03-16-1443"
     }
   ]
 }
