@@ -11,10 +11,10 @@ uv run erk-mcp
 
 ### Options
 
-| Flag          | Env var        | Default           | Description                             |
-| ------------- | -------------- | ----------------- | --------------------------------------- |
-| `--host`      | `ERK_MCP_HOST` | `0.0.0.0`         | Bind address                            |
-| `--port`      | —              | `9000`            | Port                                    |
+| Flag     | Env var        | Default   | Description  |
+| -------- | -------------- | --------- | ------------ |
+| `--host` | `ERK_MCP_HOST` | `0.0.0.0` | Bind address |
+| `--port` | —              | `9000`    | Port         |
 
 ```bash
 uv run erk-mcp --port 8080
