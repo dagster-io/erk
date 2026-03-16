@@ -11,16 +11,14 @@ uv run erk-mcp
 
 ### Options
 
-| Flag          | Env var        | Default           | Description                             |
-| ------------- | -------------- | ----------------- | --------------------------------------- |
-| `--transport` | —              | `streamable-http` | Transport: `streamable-http` or `stdio` |
-| `--host`      | `ERK_MCP_HOST` | `0.0.0.0`         | Bind address                            |
-| `--port`      | —              | `9000`            | Port                                    |
+| Flag     | Env var        | Default   | Description  |
+| -------- | -------------- | --------- | ------------ |
+| `--host` | `ERK_MCP_HOST` | `0.0.0.0` | Bind address |
+| `--port` | —              | `9000`    | Port         |
 
 ```bash
 uv run erk-mcp --port 8080
 uv run erk-mcp --host 127.0.0.1 --port 8080
-uv run erk-mcp --transport stdio
 ```
 
 ## GitHub OAuth
@@ -53,8 +51,9 @@ serves:
 https://your-public-erk-host.example.com/.well-known/oauth-protected-resource
 ```
 
-At startup, `erk-mcp` prints both OAuth URLs when auth is enabled. If you only see
-`GitHub OAuth disabled`, the running process does not have OAuth configured.
+At startup, `erk-mcp` prints both OAuth URLs when auth is enabled. If the required
+OAuth environment variables are missing, startup fails closed with an error
+instead of serving without authentication.
 
 and uses GitHub OAuth with callback:
 

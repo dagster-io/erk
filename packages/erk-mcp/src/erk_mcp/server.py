@@ -164,6 +164,17 @@ def _add_oauth_compat_routes(server: FastMCP) -> None:
         return await handler.handle(request)
 
 
+def _validate_startup_auth_configuration(*, auth: Any) -> None:
+    if auth is not None:
+        return
+
+    raise ValueError(
+        "Missing required environment variables for erk-mcp startup: "
+        "ERK_MCP_GITHUB_OAUTH_CLIENT_ID, ERK_MCP_GITHUB_OAUTH_CLIENT_SECRET, "
+        "and ERK_MCP_PUBLIC_URL."
+    )
+
+
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
@@ -172,6 +183,12 @@ def create_mcp() -> FastMCP:
     _add_oauth_compat_routes(server)
     for tool in _build_machine_command_tools():
         server.add_tool(tool)
+    return server
+
+
+def create_startup_mcp() -> FastMCP:
+    server = create_mcp()
+    _validate_startup_auth_configuration(auth=server.auth)
     return server
 
 
