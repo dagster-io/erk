@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: erk-mcp one_shot fails on detached HEAD (#9250)"
+}
