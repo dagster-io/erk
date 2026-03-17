@@ -16,6 +16,7 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
@@ -278,6 +279,14 @@ class DryRunLocalGitHub(LocalGitHub):
         return self._wrapped.get_pr_review_threads(
             repo_root, pr_number, include_resolved=include_resolved
         )
+
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_reviews(repo_root, pr_number)
 
     def get_pr_check_runs(
         self,

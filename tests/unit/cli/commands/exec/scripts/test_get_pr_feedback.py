@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueComment
-from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
+from erk_shared.gateway.github.types import PRDetails, PRReview, PRReviewComment, PRReviewThread
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
@@ -426,6 +426,7 @@ def test_get_pr_feedback_json_structure(tmp_path: Path) -> None:
     assert "pr_number" in output
     assert "pr_url" in output
     assert "pr_title" in output
+    assert "reviews" in output
     assert "review_threads" in output
     assert "discussion_comments" in output
 
@@ -449,3 +450,136 @@ def test_get_pr_feedback_json_structure(tmp_path: Path) -> None:
     assert "author" in disc_data
     assert "body" in disc_data
     assert "url" in disc_data
+
+
+# ============================================================================
+# PR-Level Reviews Tests
+# ============================================================================
+
+
+def make_pr_review(
+    review_id: str,
+    author: str,
+    body: str,
+    state: str,
+    submitted_at: str = "2024-01-01T10:00:00Z",
+) -> PRReview:
+    """Create test PRReview."""
+    return PRReview(
+        id=review_id,
+        author=author,
+        body=body,
+        state=state,  # type: ignore[arg-type]
+        submitted_at=submitted_at,
+    )
+
+
+def test_get_pr_feedback_includes_reviews(tmp_path: Path) -> None:
+    """Test that PR-level reviews appear in the reviews field."""
+    pr_details = make_pr_details(123, branch="feature-branch")
+    review = make_pr_review(
+        "PRR_abc123",
+        "reviewer1",
+        "Please fix the auth flow.",
+        "CHANGES_REQUESTED",
+    )
+
+    fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
+    fake_github = FakeLocalGitHub(
+        issues_gateway=fake_github_issues,
+        pr_details={123: pr_details},
+        pr_reviews={123: [review]},
+    )
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            get_pr_feedback,
+            ["--pr", "123"],
+            obj=ErkContext.for_test(
+                github=fake_github,
+                git=FakeGit(),
+                repo_root=cwd,
+                cwd=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert len(output["reviews"]) == 1
+    review_data = output["reviews"][0]
+    assert review_data["id"] == "PRR_abc123"
+    assert review_data["author"] == "reviewer1"
+    assert review_data["body"] == "Please fix the auth flow."
+    assert review_data["state"] == "CHANGES_REQUESTED"
+    assert review_data["submitted_at"] == "2024-01-01T10:00:00Z"
+
+
+def test_get_pr_feedback_reviews_empty_by_default(tmp_path: Path) -> None:
+    """Test that reviews field is empty when no reviews configured."""
+    pr_details = make_pr_details(123, branch="feature-branch")
+
+    fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
+    fake_github = FakeLocalGitHub(
+        issues_gateway=fake_github_issues,
+        pr_details={123: pr_details},
+    )
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            get_pr_feedback,
+            ["--pr", "123"],
+            obj=ErkContext.for_test(
+                github=fake_github,
+                git=FakeGit(),
+                repo_root=cwd,
+                cwd=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["reviews"] == []
+
+
+def test_get_pr_feedback_review_structure(tmp_path: Path) -> None:
+    """Test review dict structure contains all expected fields."""
+    pr_details = make_pr_details(123, branch="feature-branch")
+    review = make_pr_review("PRR_1", "bob", "LGTM", "APPROVED", "2024-02-01T09:00:00Z")
+
+    fake_github_issues = FakeGitHubIssues(comments_with_urls={123: []})
+    fake_github = FakeLocalGitHub(
+        issues_gateway=fake_github_issues,
+        pr_details={123: pr_details},
+        pr_reviews={123: [review]},
+    )
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            get_pr_feedback,
+            ["--pr", "123"],
+            obj=ErkContext.for_test(
+                github=fake_github,
+                git=FakeGit(),
+                repo_root=cwd,
+                cwd=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    review_data = output["reviews"][0]
+    assert "id" in review_data
+    assert "author" in review_data
+    assert "body" in review_data
+    assert "state" in review_data
+    assert "submitted_at" in review_data

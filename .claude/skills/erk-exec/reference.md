@@ -45,7 +45,6 @@ Quick reference for all `erk exec` subcommands.
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                             |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                                 |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).                |
-| `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                             |
 | `get-learn-sessions`              | Get session information for a plan.                                               |
 | `get-plan-info`                   | Retrieve plan info from the appropriate backend.                                  |
 | `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                         |
@@ -459,18 +458,6 @@ Get embedded prompt content from bundled prompts.
 Fetch an issue's body using REST API (avoids GraphQL rate limits).
 
 **Usage:** `erk exec get-issue-body` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
-
-### get-issue-timeline-prs
-
-Fetch PRs referencing an issue via REST API timeline.
-
-**Usage:** `erk exec get-issue-timeline-prs` <issue_number>
 
 **Arguments:**
 

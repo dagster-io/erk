@@ -35,7 +35,7 @@ Check `$ARGUMENTS` for flags.
 
    Pass `--pr <number>` if specified in `$ARGUMENTS`. Pass `--include-resolved` if specified in `$ARGUMENTS`.
 
-   This returns JSON with `pr_number`, `pr_title`, `pr_url`, `review_threads`, and `discussion_comments`.
+   This returns JSON with `pr_number`, `pr_title`, `pr_url`, `reviews`, `review_threads`, and `discussion_comments`.
 
    **Also fetch file-level restructuring context:**
 
@@ -55,6 +55,18 @@ Check `$ARGUMENTS` for flags.
 ## Comment Classification Model
 
 For each comment, determine:
+
+### PR-Level Reviews (`reviews` field)
+
+The `reviews` array contains PR-level review submissions (not inline threads). Each has a `state` field:
+
+- **CHANGES_REQUESTED** with non-empty `body`: Always actionable — add to `actionable_threads` with `type: "review_submission"` and `classification: "actionable"`. The reviewer explicitly requested changes.
+- **CHANGES_REQUESTED** with empty `body`: Actionable (reviewer blocked the PR without comment) — add with `classification: "actionable"`.
+- **APPROVED**: Informational only — increment `informational_count`, do NOT add to `actionable_threads`.
+- **COMMENTED** with non-empty `body` containing a request/question: Actionable — add to `actionable_threads` with `type: "review_submission"`.
+- **COMMENTED** with purely informational body (acknowledgment, FYI): Informational — increment `informational_count` only.
+
+For `review_submission` items in `actionable_threads`, use `path: null` and `line: null` (PR-level, not inline). Use the review `id` as `thread_id`.
 
 ### Classification
 
@@ -108,6 +120,18 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
   "pr_title": "Feature: Add new API endpoint",
   "pr_url": "https://github.com/owner/repo/pull/5944",
   "actionable_threads": [
+    {
+      "thread_id": "PRR_kwDOPxC3hc5q73Nd",
+      "type": "review_submission",
+      "path": null,
+      "line": null,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Reviewer requested changes: fix the authentication flow",
+      "complexity": "cross_cutting",
+      "original_comment": "The authentication flow is broken for edge cases..."
+    },
     {
       "thread_id": "PRRT_kwDOPxC3hc5q73Ne",
       "type": "review",
@@ -176,11 +200,12 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
 
 - `thread_id`: The ID needed for `erk exec resolve-review-thread`
 - `comment_id`: The ID needed for `erk exec reply-to-discussion-comment`
+- `type`: `"review"` for inline thread comments, `"review_submission"` for PR-level review submissions, `"discussion"` for discussion actions
 - `classification`: `"actionable"` or `"informational"` — determines how the user handles the thread
 - `pre_existing`: `true` if the issue existed before this PR (bot comment on moved/restructured code). Pre-existing threads use `complexity: "pre_existing"` and are placed in the first batch for auto-resolution
-- `item_indices`: References into `actionable_threads` (type=review) or `discussion_actions` (type=discussion)
+- `item_indices`: References into `actionable_threads` (type=review or review_submission) or `discussion_actions` (type=discussion)
 - `original_comment`: First 200 characters of the comment text
-- `informational_count`: Count of informational **discussion** comments only (CI status, Graphite stack). Review threads always appear individually in `actionable_threads` with a `classification` field
+- `informational_count`: Count of informational items — discussion comments (CI status, Graphite stack) plus APPROVED reviews and informational COMMENTED reviews. Review threads and CHANGES_REQUESTED reviews always appear individually in `actionable_threads`
 
 ## Error Case
 

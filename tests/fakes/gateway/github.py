@@ -25,6 +25,7 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewThread,
     PullRequestInfo,
     RepoInfo,
@@ -67,6 +68,7 @@ class FakeLocalGitHub(LocalGitHub):
         pr_update_should_succeed: bool = True,
         pr_base_update_should_apply: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
+        pr_reviews: dict[int, list[PRReview]] | None = None,
         pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
         review_threads_rate_limited: bool = False,
         resolve_thread_failures: set[str] | None = None,
@@ -112,6 +114,7 @@ class FakeLocalGitHub(LocalGitHub):
                 mutate stored PR state. Set False to simulate a silent no-op
                 update for read-after-write verification tests.
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
+            pr_reviews: Mapping of pr_number -> list[PRReview] for get_pr_reviews()
             review_threads_rate_limited: Whether get_pr_review_threads() should raise
                 RuntimeError simulating GraphQL rate limit
             resolve_thread_failures: Set of thread IDs that should fail when resolved
@@ -179,6 +182,7 @@ class FakeLocalGitHub(LocalGitHub):
         self._pr_labels: dict[int, set[str]] = {}
         self._added_labels: list[tuple[int, str]] = []
         self._pr_review_threads = pr_review_threads or {}
+        self._pr_reviews: dict[int, list[PRReview]] = pr_reviews or {}
         self._pr_check_runs: dict[int, list[PRCheckRun]] = pr_check_runs or {}
         self._resolved_thread_ids: set[str] = set()
         self._thread_replies: list[tuple[str, str]] = []
@@ -971,6 +975,14 @@ class FakeLocalGitHub(LocalGitHub):
         # Sort by path, then by line
         result_threads.sort(key=lambda t: (t.path, t.line or 0))
         return result_threads
+
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Get PR-level reviews for a PR from pre-configured data."""
+        return self._pr_reviews.get(pr_number, [])
 
     def get_pr_check_runs(
         self,
