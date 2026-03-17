@@ -1,0 +1,184 @@
+<session>
+  <meta branch="plnd/remove-pr-issue-linkage-03-13-1722" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Agent" id="toolu_01KzTwJyfYqpZhsUSJCbbh6h">
+    <param name="description">Update test files for linkage removal</param>
+    <param name="prompt">You need to update several test files to remove references to dead PR-to-issue linkage cod...[truncated 2119 chars]...es (except where pr_references is used by kept methods)
+
+Do NOT modify any non-test files.</param>
+    <param name="subagent_type">general-purpose</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="177574" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01B3TkWkoPqsSAtsKTA627Cu">
+    <param name="description">Delete linkage documentation</param>
+    <param name="prompt">Delete and update documentation files related to dead PR-to-issue linkage code.
+
+Working d...[truncated 967 chars]...ge which is still active.
+
+Do NOT create any new files. Only delete or edit existing ones.</param>
+    <param name="subagent_type">general-purpose</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="177574" output_tokens="1201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 115, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B3TkWkoPqsSAtsKTA627Cu">
+All four files confirmed deleted. Here is a summary of all changes made:
+
+## Deleted files (4)
+
+- `docs/learned/erk/issue-pr-linkage-storage.md`
+- `docs/learned/architecture/github-pr-linkage-api.md`
+- `docs/learned/architecture/issue-reference-flow.md`
+- `docs/learned/integrations/issue-pr-closing-integration.md`
+
+## Updated files (14)
+
+**Requested updates:**
+
+1. **`docs/learned/planning/pr-discovery.md`** -- Removed Strategy 2 (issue timeline lookup via `get_prs_referencing_issue`), simplified to single branch-based strategy, updated frontmatter tripwire, removed two-strategy framing.
+
+2. **`docs/learned/architecture/remote-github-gateway.md`** -- Removed `get_prs_referencing_issue` row from the Issues methods table.
+
+3. **`docs/learned/cli/ambiguity-resolution.md`** -- Removed `ctx.issues.get_prs_referencing_issue()` reference from the implementation example.
+
+4. **`docs/learned/cli/pr-submission.md`** -- Removed "Issue closing reference" validation rule (Closes #N), removed `has_issue_closing_reference()` reference, removed "Cross-Repo Plans" section with Closes #N format details.
+
+**Additional updates to remove broken cross-references:**
+
+5. **`docs/learned/architecture/index.md`** -- Removed entries for `github-pr-linkage-api.md` and `issue-reference-flow.md`.
+
+6. **`docs/learned/erk/index.md`** -- Removed entry for `issue-pr-linkage-storage.md`.
+
+7. **`docs/learned/integrations/index.md`** -- Removed entry for `issue-pr-closing-integration.md`.
+
+8. **`docs/learned/integrations/tripwires.md`** -- Removed 3 tripwires referencing `issue-pr-closing-integration.md` (Closes keyword placement, plan number mismatch checking, plan number vs PR number for checkout footer).
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KzTwJyfYqpZhsUSJCbbh6h">
+The formatting looks correct -- the `pr_references=None,` line was cleanly removed.
+
+Here is a summary of all changes made:
+
+## Summary
+
+**Files modified (9 listed + 26 additional with `pr_references` cleanup):**
+
+### 1. `/tests/commands/pr/test_close.py`
+- Removed `PRReference` import
+- Removed unused imports: `ManagedGitHubPrBackend`, `FakeLocalGitHub`, `FakeGitHubIssues`, `FakeTime`, `issue_info_to_pr_details`
+- Removed `_make_issue_info` helper function (only used by deleted tests)
+- Removed 4 tests that relied on PR-to-issue linkage: `test_close_pr_closes_linked_open_prs`, `test_close_pr_skips_closed_and_merged_prs`, `test_close_pr_no_linked_prs`, `test_close_pr_reports_closed_prs`
+- Removed `pr_references=None` from remaining `FakeRemoteGitHub` constructors
+
+### 2. `/tests/commands/pr/test_checkout_plan.py`
+- Completely rewritten. Removed all old plan checkout tests that used `PRReference`, `FakeGitHubIssues(pr_references=...)`, and `FakeLocalGitHub`
+- Kept `parse_issue_identifier` P-prefix tests (4 tests)
+- Added 3 new tests reflecting current behavior: P-prefix shows error, issue URL shows error, invalid identifier shows error
+
+### 3. `/tests/commands/pr/test_remote_paths.py`
+- Removed `PRReference` import
+- Removed `pr_references` parameter from `_make_fake_remote` helper
+- Removed `test_close_remote_closes_linked_prs` test
+
+### 4. `/tests/unit/fakes/test_fake_github_issues.py`
+- Removed entire `get_prs_referencing_issue()` test section (3 tests)
+
+### 5. `/tests/unit/gateways/remote_github/test_real_remote_github.py`
+- Removed entire `get_prs_referencing_issue` test section (2 tests)
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01RgmKyfdoDd2rgjSEJHCpsM">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="913" cache_creation_input_tokens="2073" cache_read_input_tokens="177689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2073}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RgmKyfdoDd2rgjSEJHCpsM">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JDb2uaF72XtfwR4pw6UV9u">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="913" cache_creation_input_tokens="2073" cache_read_input_tokens="177689" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2073, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JDb2uaF72XtfwR4pw6UV9u">
+Updated task #6 status
+  </tool_result>
+  <assistant>All 6 steps complete. Let me verify by grepping for residual references and running CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1108" cache_read_input_tokens="179762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014s6oNqeV3Z27WKDoBEZ1vZ">
+    <param name="pattern">get_prs_referencing_issue</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1108" cache_read_input_tokens="179762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014s6oNqeV3Z27WKDoBEZ1vZ">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NFUwbi7Yrd5opnVF3JEnfv">
+    <param name="pattern">PRReference</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1108" cache_read_input_tokens="179762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NFUwbi7Yrd5opnVF3JEnfv">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014qnhfFAZFh1GeqZRQUmVNi">
+    <param name="pattern">will_close_target</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1108" cache_read_input_tokens="179762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014qnhfFAZFh1GeqZRQUmVNi">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Die4ejgzPNRhYEDsWrxW25">
+    <param name="pattern">get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1108" cache_read_input_tokens="179762" output_tokens="533" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1108, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Die4ejgzPNRhYEDsWrxW25">
+No files found
+  </tool_result>
+  <assistant>All residual references are clean. Let me also check `select_display_pr` and `_find_plan_issue_for_pr`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="180870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 654}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017gjJGCD1MgaYvDU5fKSKzG">
+    <param name="pattern">_find_plan_issue_for_pr</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="180870" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 654, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017gjJGCD1MgaYvDU5fKSKzG">
+No files found
+  </tool_result>
+  <assistant>All clean. Now let me run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="181524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011SMeGFoJ24dDCvdgRiBm1C">
+    <param name="command">erk exec impl-signal ended --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="181524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WfGFKveEtp9fjg7DaZjb5Y">
+    <param name="command">erk exec upload-impl-session --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="181524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0185Va5n5aUwUAJEo4Ygt7HQ">
+    <param name="command">erk exec cleanup-impl-context 2&gt;/dev/null || true</param>
+    <param name="description">Clean up impl context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="181524" output_tokens="302" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 191, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011SMeGFoJ24dDCvdgRiBm1C">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9242
+}
+  </tool_result>
+</session>

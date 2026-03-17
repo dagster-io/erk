@@ -1,0 +1,1280 @@
+<session>
+  <meta branch="plnd/remove-pr-issue-linkage-03-13-1722" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="17323" cache_read_input_tokens="9110" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17323}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="17323" cache_read_input_tokens="9110" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17323}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Pb2VysFJKjwCF3TNCc2euR">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up impl context from current branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="17323" cache_read_input_tokens="9110" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pb2VysFJKjwCF3TNCc2euR">
+Found existing impl dir for PR #9242, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/.erk/impl-context/plnd--remove-pr-issue-linkage-03-13-1722", "pr_number": 9242, "pr_url": "https://github.com/dagster-io/erk/pull/9242", "branch": "plnd/remove-pr-issue-linkage-03-13-1722", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9242, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="26433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 420}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013KwgeXedkxtBiPYMTzdtnM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/.erk/impl-context/plnd--remove-pr-issue-linkage-03-13-1722/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="26433" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 420, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013KwgeXedkxtBiPYMTzdtnM">
+     1→# Remove Dead PR-to-Issue Linkage Code
+     2→
+     3→## Context
+     4→
+     5→Plans migrated from GitHub issues to draft PRs (`github-draft-pr` provider). The old PR-to-issue linkage infrastructure — which queried GitHub's timeline API for `CrossReferencedEvent` to find which PRs referenced a plan issue — is now dead code. These queries always return empty results because draft plan PRs don't create cross-reference relationships in GitHub's data model. The `will_close_target` field on `PullRequestInfo` is similarly vestigial since "Closes #N" keywords were removed from PR bodies in Feb 2026.
+     6→
+     7→**Scope:** Remove linkage query infrastructure and simplify callers. Leave objective-to-plan linkage untouched. Keep `erk pr close` but remove linked-PR discovery.
+     8→
+     9→---
+    10→
+    11→## Step 1: Delete Gateway Methods
+    12→
+    13→### `get_prs_referencing_issue()` — delete from 3 gateways + fakes
+    14→- `packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py` — remove abstract method (lines 268-288)
+    15→- `packages/erk-shared/src/erk_shared/gateway/github/issues/real.py` — remove implementation
+    16→- `packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py` — remove implementation
+    17→- `packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py` — remove abstract method
+    18→- `packages/erk-shared/src/erk_shared/gateway/remote_github/real.py` — remove implementation (line 301+)
+    19→- `tests/fakes/gateway/github_issues.py` — remove fake implementation
+    20→- `tests/fakes/gateway/remote_github.py` — remove fake implementation
+    21→
+    22→### `get_prs_linked_to_issues()` — delete from GitHub gateway + fakes
+    23→- `packages/erk-shared/src/erk_shared/gateway/github/abc.py` — remove abstract method
+    24→- `packages/erk-shared/src/erk_shared/gateway/github/real.py` — remove implementation (lines 755-942) including helpers `_build_issue_pr_linkage_query()`, `_parse_issue_pr_linkages()`
+    25→- `packages/erk-shared/src/erk_shared/gateway/github/dry_run.py` — remove implementation
+    26→- `tests/fakes/gateway/github.py` — remove fake implementation
+    27→
+    28→### `_close_linked_prs_http()` — delete from pr_service
+    29→- `packages/erk-shared/src/erk_shared/gateway/pr_service/real.py` — remove method (lines 95-127)
+    30→
+
+... [110 lines omitted] ...
+
+    73→- Simplify the main command: when a P-prefixed identifier is provided, error with a helpful message like "Plan checkout is not supported. Use `erk pr checkout &lt;pr-number&gt;` with the implementation PR number."
+   105→- `tests/commands/pr/test_checkout_plan.py` — update for new plan checkout behavior (error message)
+   139→5. Verify `erk pr checkout P123` gives a helpful error message
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3093" cache_read_input_tokens="26853" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3093}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Large deletion plan with 6 steps. Let me create todos and start executing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3093" cache_read_input_tokens="26853" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3093}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01W5SUAUdpo8QbWgtLEkdSup">
+    <param name="query">select:TaskCreate,TaskUpdate,TaskList</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3093" cache_read_input_tokens="26853" output_tokens="304" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3093, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W5SUAUdpo8QbWgtLEkdSup">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01GEWQtxPLqzCvo6YL2MmmDo">
+    <param name="subject">Step 1: Delete gateway methods</param>
+    <param name="description">Delete get_prs_referencing_issue from issues gateway (abc, real, dry_run), remote_github g...[truncated 59 chars]...way (abc, real, dry_run) and fakes. Delete _close_linked_prs_http from pr_service/real.py.</param>
+    <param name="activeForm">Deleting gateway methods</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2434" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2434}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GEWQtxPLqzCvo6YL2MmmDo">
+Task #1 created successfully: Step 1: Delete gateway methods
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01RRej5yTXdMtTv8bSWts7AZ">
+    <param name="subject">Step 2: Delete types (PRReference, will_close_target, GraphQL queries)</param>
+    <param name="description">Delete PRReference dataclass from issues/types.py and all imports. Remove will_close_targe...[truncated 15 chars]...e ISSUE_PR_LINKAGE_FRAGMENT and GET_ISSUES_WITH_PR_LINKAGES_QUERY from graphql_queries.py.</param>
+    <param name="activeForm">Deleting dead types and queries</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2434" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2434}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RRej5yTXdMtTv8bSWts7AZ">
+Task #2 created successfully: Step 2: Delete types (PRReference, will_close_target, GraphQL queries)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01UPoHSm4UWJzE9zXJExYJ1i">
+    <param name="subject">Step 3: Delete orphaned files</param>
+    <param name="description">Delete get_issue_timeline_prs.py exec script and its test. Delete pr_utils.py and its test. Unregister from exec command group.</param>
+    <param name="activeForm">Deleting orphaned files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2434" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2434}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UPoHSm4UWJzE9zXJExYJ1i">
+Task #3 created successfully: Step 3: Delete orphaned files
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XmaKZ2NpF8MjGteS8ysWpu">
+    <param name="subject">Step 4: Simplify callers</param>
+    <param name="description">Simplify pr close, pr checkout, run/list_cmd, tui/data/real_provider, ci_generate_summaries, pr/list/cli to remove all linkage references.</param>
+    <param name="activeForm">Simplifying callers</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2434" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2434}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XmaKZ2NpF8MjGteS8ysWpu">
+Task #4 created successfully: Step 4: Simplify callers
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Po1XvfFCP9aBqs7yRBJNZ4">
+    <param name="subject">Step 5: Update tests</param>
+    <param name="description">Delete test files for removed code. Update remaining tests to remove linkage assertions and PRReference usage.</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2434" cache_read_input_tokens="29946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2434}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Po1XvfFCP9aBqs7yRBJNZ4">
+Task #5 created successfully: Step 5: Update tests
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01EKDsC9LGDjkfF4ETc3Wvwj">
+    <param name="subject">Step 6: Delete documentation</param>
+    <param name="description">Delete learned docs about issue-PR linkage. Update remaining docs to remove stale references.</param>
+    <param name="activeForm">Deleting documentation</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2434" cache_read_input_tokens="29946" output_tokens="762" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2434, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EKDsC9LGDjkfF4ETc3Wvwj">
+Task #6 created successfully: Step 6: Delete documentation
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Pz7kJUyfJooj5P6wUnajqW">
+    <param name="command">erk exec impl-signal started --session-id="6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1018" cache_read_input_tokens="32380" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1018, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pz7kJUyfJooj5P6wUnajqW">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9242
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Hdi3P55PfVvAd3vdWPHV2n">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="33398" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hdi3P55PfVvAd3vdWPHV2n">
+Updated task #1 status
+  </tool_result>
+  <assistant>Let me read all the gateway files I need to modify in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VqNky9WDAX1DMkkppvViV2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VqNky9WDAX1DMkkppvViV2">
+     1→"""Abstract interface for GitHub issue operations."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.github.issues.types import (
+     7→    CreateIssueResult,
+     8→    IssueComment,
+     9→    IssueInfo,
+    10→    IssueNotFound,
+    11→    PRReference,
+    12→)
+    13→from erk_shared.gateway.github.types import BodyContent
+    14→
+    15→
+    16→class GitHubIssues(ABC):
+    17→    """Abstract interface for GitHub issue operations.
+    18→
+    19→    All implementations (real and fake) must implement this interface.
+    20→    """
+    21→
+    22→    @abstractmethod
+    23→    def create_issue(
+    24→        self, *, repo_root: Path, title: str, body: str, labels: list[str]
+    25→    ) -&gt; CreateIssueResult:
+    26→        """Create a new GitHub issue.
+    27→
+    28→        Args:
+    29→            repo_root: Repository root directory
+    30→            title: Issue title
+
+... [316 lines omitted] ...
+
+    38→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+    54→            RuntimeError: If gh CLI fails (not installed, not authenticated)
+    70→            RuntimeError: If gh CLI fails (not installed, not authenticated)
+    87→            RuntimeError: If gh CLI fails or issue not found
+   104→            RuntimeError: If gh CLI fails or issue not found
+   129→            RuntimeError: If gh CLI fails
+   145→            RuntimeError: If gh CLI fails or issue not found
+   161→            RuntimeError: If gh CLI fails or comment not found
+   177→            RuntimeError: If gh CLI fails or issue not found
+   194→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+   210→            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+   224→            RuntimeError: If gh CLI fails or issue not found
+   238→            RuntimeError: If gh CLI fails or issue not found
+   251→            RuntimeError: If gh CLI fails or issue not found
+   308→            RuntimeError: If gh CLI fails (not installed, not authenticated,
+   323→            RuntimeError: If gh CLI fails or issue not found
+   342→            RuntimeError: If gh CLI fails (not installed, not authenticated,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SrcWPztNAiPd21VFXk3Ld7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SrcWPztNAiPd21VFXk3Ld7">
+     1→"""Production implementation of GitHub issues using gh CLI."""
+     2→
+     3→import json
+     4→from datetime import datetime
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.label_cache import RealLabelCache
+     9→from erk_shared.gateway.github.issues.types import (
+    10→    CreateIssueResult,
+    11→    IssueComment,
+    12→    IssueInfo,
+    13→    IssueNotFound,
+    14→    PRReference,
+    15→)
+    16→from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+    17→from erk_shared.gateway.time.abc import Time
+    18→from erk_shared.subprocess_utils import (
+    19→    _GH_COMMAND_TIMEOUT,
+    20→    execute_gh_command_with_retry,
+    21→    run_subprocess_with_context,
+    22→)
+    23→
+    24→
+    25→class RealGitHubIssues(GitHubIssues):
+    26→    """Production implementation using gh CLI.
+    27→
+    28→    All GitHub issue operations execute actual gh commands via subprocess.
+    29→    Maintains an internal label cache to avoid redundant API calls.
+    30→    """
+
+... [611 lines omitted] ...
+
+    83→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+    84→        on failures (not installed, not authenticated, etc.).
+   119→        Uses LBYL pattern - checks exit code directly instead of catching exceptions.
+   145→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   146→        on failures (not installed, not authenticated). Returns IssueNotFound
+   158→        except RuntimeError as e:
+   185→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   186→        on failures (not installed, not authenticated, issue not found).
+   213→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   214→        on failures (not installed, not authenticated, issue not found).
+   240→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   241→        on failures (not installed, not authenticated, issue not found).
+   269→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   270→        on failures (not installed, not authenticated).
+   319→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   320→        on failures (not installed, not authenticated, issue not found).
+   343→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   344→        on failures (not installed, not authenticated, comment not found).
+   364→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   365→        on failures (not installed, not authenticated, issue not found).
+   395→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   396→        on failures (not installed, not authenticated).
+   476→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   477→        on failures (not installed, not authenticated, issue not found).
+   499→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   500→        on failures (not installed, not authenticated, issue not found).
+   520→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   521→        on failures (not installed, not authenticated, issue not found).
+   600→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   601→        on failures (not installed, not authenticated, comment not found).
+   626→        Note: Uses gh's native error handling - gh CLI raises RuntimeError
+   627→        on failures (not installed, not authenticated, comment not found).
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N4ZL1a8zQYUBE54uC2d7jF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N4ZL1a8zQYUBE54uC2d7jF">
+     1→"""Dry-run wrapper for GitHub issues operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     6→from erk_shared.gateway.github.issues.types import (
+     7→    CreateIssueResult,
+     8→    IssueComment,
+     9→    IssueInfo,
+    10→    IssueNotFound,
+    11→    PRReference,
+    12→)
+    13→from erk_shared.gateway.github.types import BodyContent
+    14→
+    15→
+    16→class DryRunGitHubIssues(GitHubIssues):
+    17→    """No-op wrapper for GitHub issue operations.
+    18→
+    19→    Read operations are delegated to the wrapped implementation.
+    20→    Write operations return without executing (no-op behavior).
+    21→
+    22→    This wrapper prevents issue mutations from executing in dry-run mode,
+    23→    while still allowing read operations for validation.
+    24→    """
+    25→
+    26→    def __init__(self, wrapped: GitHubIssues) -&gt; None:
+    27→        """Initialize dry-run wrapper with a real implementation.
+    28→
+    29→        Args:
+    30→            wrapped: The real GitHubIssues implementation to wrap
+
+... [104 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KgfdAHG7PGoiXoucDxtjR8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KgfdAHG7PGoiXoucDxtjR8">
+     1→"""Abstract interface for remote GitHub operations without a local git clone.
+     2→
+     3→This gateway enables GitHub operations (branch creation, file commits, PR management,
+     4→workflow dispatch) using the GitHub REST API directly, without requiring a local
+     5→git repository. All methods take explicit owner/repo parameters.
+     6→"""
+     7→
+     8→from abc import ABC, abstractmethod
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+    11→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    12→
+    13→
+    14→class RemoteGitHub(ABC):
+    15→    """GitHub operations that don't require a local git clone.
+    16→
+    17→    Every method takes explicit owner/repo parameters instead of repo_root: Path.
+    18→    Uses the GitHub REST API via HttpClient.
+    19→    """
+    20→
+    21→    @abstractmethod
+    22→    def get_authenticated_user(self) -&gt; str:
+    23→        """Get the username of the authenticated GitHub user.
+    24→
+    25→        Returns:
+    26→            GitHub username string
+    27→        """
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [387 lines omitted] ...
+
+   414→            Tuple of (is_authenticated, username, error_message)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pnwa1Wmgb5VH3p9iToMhQU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pnwa1Wmgb5VH3p9iToMhQU">
+     1→"""Real implementation of RemoteGitHub using HttpClient.
+     2→
+     3→All GitHub operations are performed via the REST API through HttpClient,
+     4→with no local git repository or gh CLI required.
+     5→"""
+     6→
+     7→import base64
+     8→import secrets
+     9→import string
+    10→from datetime import datetime
+    11→
+    12→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+    13→from erk_shared.gateway.http.abc import HttpClient, HttpError
+    14→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    15→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    16→from erk_shared.gateway.time.abc import Time
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→class RealRemoteGitHub(RemoteGitHub):
+    21→    """Production implementation using HttpClient for all GitHub API calls."""
+    22→
+    23→    def __init__(self, *, http_client: HttpClient, time: Time) -&gt; None:
+    24→        """Create RealRemoteGitHub.
+    25→
+    26→        Args:
+    27→            http_client: Authenticated HTTP client for GitHub API
+    28→            time: Time gateway for polling delays
+    29→        """
+    30→        self._http = http_client
+
+... [489 lines omitted] ...
+
+    38→            raise RuntimeError("GitHub API returned user without login field")
+    46→            raise RuntimeError(
+    57→            raise RuntimeError(
+    91→            raise RuntimeError(
+   120→            raise RuntimeError("GitHub API returned PR without number field")
+   191→                    raise RuntimeError(
+   202→        raise RuntimeError(
+   233→        except HttpError as e:
+   250→        except HttpError as e:
+   413→        except HttpError as e:
+   414→            return (False, None, f"Authentication failed: {e}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_019ncQRXJgSg2Psrx9VGc1ZX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ncQRXJgSg2Psrx9VGc1ZX">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [920 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+   211→            RuntimeError: If gh CLI command fails
+   318→        2. Failed completed runs (failures are more actionable than successes)
+   503→            Empty dict if no PRs match or on API failure.
+   555→            RuntimeError: If gh command fails
+   568→            RuntimeError: If gh command fails
+   584→            RuntimeError: If gh command fails
+   603→            RuntimeError: If gh command fails
+   617→            RuntimeError: If gh command fails
+   752→            List of comment dicts, or empty list on failure
+   793→            RuntimeError: If update fails
+   833→            False if deletion failed (e.g., protected branch)
+   852→            Empty list if no PRs match or on API failure.
+   915→    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -&gt; None:
+   921→            failed_only: If True, only re-run failed jobs
+   942→            state: Status state - one of "success", "failure", "pending", "error"
+   947→            True on success, False on failure
+  </tool_result>
+  <tool_use name="Read" id="toolu_012yy1sthMBZANxqG48ivshb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012yy1sthMBZANxqG48ivshb">
+File content (26954 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Mbc22eH7fiEKmqtbNxoxDF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mbc22eH7fiEKmqtbNxoxDF">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→from typing import Any
+     5→
+     6→from erk_shared.gateway.github.abc import LocalGitHub
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeResult,
+    15→    PRCheckRun,
+    16→    PRDetails,
+    17→    PRListState,
+    18→    PRNotFound,
+    19→    PRReviewThread,
+    20→    PullRequestInfo,
+    21→    WorkflowRun,
+    22→)
+    23→
+    24→
+    25→class DryRunLocalGitHub(LocalGitHub):
+    26→    """No-op wrapper for GitHub operations.
+    27→
+    28→    Read operations are delegated to the wrapped implementation.
+    29→    Write operations return without executing (no-op behavior).
+    30→
+
+... [394 lines omitted] ...
+
+   406→    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_011W42PaddjrZy3rptmhrnjU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/pr_service/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="33554" output_tokens="795" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011W42PaddjrZy3rptmhrnjU">
+     1→"""Real implementation of PrService for production use."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk_shared.gateway.browser.abc import BrowserLauncher
+     8→from erk_shared.gateway.clipboard.abc import Clipboard
+     9→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    10→from erk_shared.gateway.github.metadata.core import (
+    11→    extract_objective_from_comment,
+    12→    extract_objective_header_comment_id,
+    13→)
+    14→from erk_shared.gateway.github.types import (
+    15→    GitHubRepoId,
+    16→    GitHubRepoLocation,
+    17→    PRCheckRun,
+    18→    PRNotFound,
+    19→    PRReviewThread,
+    20→)
+    21→from erk_shared.gateway.http.abc import HttpClient
+    22→from erk_shared.gateway.pr_service.abc import PrService
+    23→
+    24→
+    25→class RealPrService(PrService):
+    26→    """Production implementation of domain PR operations.
+    27→
+    28→    Contains operations independent of TUI display: closing PRs,
+    29→    dispatching, fetching content, and GitHub PR data.
+    30→    """
+
+... [240 lines omitted] ...
+
+   214→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="44565" cache_read_input_tokens="33644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 44565}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the relevant sections of github/real.py and the fake files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="44565" cache_read_input_tokens="33644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 44565}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014bB4eFmLKYCSDKo3x5H9dV">
+    <param name="pattern">get_prs_linked_to_issues</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44565" cache_read_input_tokens="33644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 44565}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014bB4eFmLKYCSDKo3x5H9dV">
+198:        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
+755:    def get_prs_linked_to_issues(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C6FzeYGDDX8wvPBsMD5DBn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/fakes/gateway/github_issues.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44565" cache_read_input_tokens="33644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 44565}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C6FzeYGDDX8wvPBsMD5DBn">
+     1→"""In-memory fake implementation of GitHub issues for testing."""
+     2→
+     3→from dataclasses import replace
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.types import (
+     9→    CreateIssueResult,
+    10→    IssueComment,
+    11→    IssueInfo,
+    12→    IssueNotFound,
+    13→    PRReference,
+    14→)
+    15→from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+    16→
+    17→
+    18→class FakeGitHubIssues(GitHubIssues):
+    19→    """In-memory fake implementation for testing.
+    20→
+    21→    All state is provided via constructor using keyword arguments.
+    22→    """
+    23→
+    24→    def __init__(
+    25→        self,
+    26→        *,
+    27→        issues: dict[int, IssueInfo] | None = None,
+    28→        next_issue_number: int = 1,
+    29→        labels: set[str] | None = None,
+    30→        comments: dict[int, list[str]] | None = None,
+
+... [457 lines omitted] ...
+
+    34→        add_reaction_error: str | None = None,
+    35→        get_comments_error: str | None = None,
+    50→            add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
+    52→            get_comments_error: If set, get_issue_comments_with_urls raises
+    53→                RuntimeError with this message
+    65→        self._add_reaction_error = add_reaction_error
+    66→        self._get_comments_error = get_comments_error
+   202→            RuntimeError: If issue number not found (simulates gh CLI error)
+   206→            raise RuntimeError(msg)
+   216→            RuntimeError: If issue number not found (simulates gh CLI error)
+   220→            raise RuntimeError(msg)
+   254→            RuntimeError: If issue number not found (simulates gh CLI error)
+   258→            raise RuntimeError(msg)
+   315→            RuntimeError: If comment ID not found (simulates gh CLI error)
+   329→        raise RuntimeError(msg)
+   339→            RuntimeError: If get_comments_error was set in constructor
+   341→        if self._get_comments_error is not None:
+   342→            raise RuntimeError(self._get_comments_error)
+   361→            RuntimeError: If issue number not found (simulates gh CLI error)
+   365→            raise RuntimeError(msg)
+   388→            RuntimeError: If issue number not found (simulates gh CLI error)
+   392→            raise RuntimeError(msg)
+   415→            RuntimeError: If issue number not found (simulates gh CLI error)
+   419→            raise RuntimeError(msg)
+   469→            RuntimeError: If add_reaction_error was set in constructor
+   471→        if self._add_reaction_error is not None:
+   472→            raise RuntimeError(self._add_reaction_error)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FmnPRgtzz7dphcqxU8vQts">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/fakes/gateway/remote_github.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44565" cache_read_input_tokens="33644" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 44565}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FmnPRgtzz7dphcqxU8vQts">
+     1→"""Fake implementation of RemoteGitHub for testing.
+     2→
+     3→Constructor-injected responses for reads, mutation tracking lists for write assertions.
+     4→"""
+     5→
+     6→from dataclasses import dataclass, replace
+     7→
+     8→from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+     9→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    10→from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class CreatedRef:
+    15→    """Recorded create_ref call."""
+    16→
+    17→    owner: str
+    18→    repo: str
+    19→    ref: str
+    20→    sha: str
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class CreatedFileCommit:
+    25→    """Recorded create_file_commit call."""
+    26→
+    27→    owner: str
+    28→    repo: str
+    29→    path: str
+    30→    content: str
+
+... [455 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012h5qTe9Mf4AHNo7rBGbNtb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/fakes/gateway/github.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44565" cache_read_input_tokens="33644" output_tokens="742" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 44565, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012h5qTe9Mf4AHNo7rBGbNtb">
+&lt;persisted-output&gt;
+Output too large (59KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-10/6ff46f0f-d708-426c-8fb3-6f8a9ebfe4c4/tool-results/toolu_012h5qTe9Mf4AHNo7rBGbNtb.txt
+
+Preview (first 2KB):
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+
+... [29 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="16107" cache_read_input_tokens="78209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16107}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>This is a large deletion task. Let me use parallel agents to handle independent parts simultaneously. Let me first read the remaining critical files, then launch parallel work.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16107" cache_read_input_tokens="78209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16107}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WD7aE8XUssJXcGT2eMjS9T">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">745</param>
+    <param name="limit">210</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16107" cache_read_input_tokens="78209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16107}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WD7aE8XUssJXcGT2eMjS9T">
+   745→            cwd=repo_root,
+   746→            check=False,
+   747→        )
+   748→        if result.returncode != 0:
+   749→            return None
+   750→        body = result.stdout.strip()
+   751→        if not body:
+   752→            return None
+   753→        return body
+   754→
+   755→    def get_prs_linked_to_issues(
+   756→        self,
+   757→        location: GitHubRepoLocation,
+   758→        plan_numbers: list[int],
+   759→    ) -&gt; dict[int, list[PullRequestInfo]]:
+   760→        """Get PRs linked to issues via CrossReferencedEvent timeline.
+   761→
+   762→        Uses GraphQL CrossReferencedEvent to find all PRs that reference each plan,
+   763→        regardless of whether they will close the issue when merged. Includes open,
+   764→        closed, and draft PRs. Used by erk dash for batch queries with full PR data
+   765→        (CI status, mergeability).
+   766→
+   767→        For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
+   768→
+   769→        Note: Uses try/except as an acceptable error boundary for handling gh CLI
+   770→        availability and authentication. We cannot reliably check gh installation
+   771→        and authentication status a priori without duplicating gh's logic.
+   772→        """
+   773→        if not plan_numbers:
+   774→            return {}
+
+... [180 lines omitted] ...
+
+   783→        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
+   784→            # gh not installed, not authenticated, or parsing failed
+   893→                    elif rollup_state in ("FAILURE", "ERROR"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_015Wb3umg5VCNRedoKdG9kHu">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16107" cache_read_input_tokens="78209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16107}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Wb3umg5VCNRedoKdG9kHu">
+     1→"""Data types for GitHub issues integration."""
+     2→
+     3→from collections.abc import Iterator
+     4→from dataclasses import dataclass
+     5→from datetime import datetime
+     6→
+     7→from erk_shared.non_ideal_state import EnsurableResult
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class IssueInfo:
+    12→    """Information about a GitHub issue."""
+    13→
+    14→    number: int
+    15→    title: str
+    16→    body: str
+    17→    state: str  # "OPEN" or "CLOSED"
+    18→    url: str
+    19→    labels: list[str]
+    20→    assignees: list[str]
+    21→    created_at: datetime
+    22→    updated_at: datetime
+    23→    author: str  # GitHub login of the issue creator
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class IssueNotFound:
+    28→    """Sentinel indicating an issue was not found.
+    29→
+    30→    Used as part of union return types for LBYL-style error handling.
+
+... [66 lines omitted] ...
+
+    71→    in T | GitHubAPIFailed union return types.
+  </tool_result>
+  <tool_use name="Read" id="toolu_019RnZsBoRj3nNBWVyAgmmJj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">210</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16107" cache_read_input_tokens="78209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16107}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019RnZsBoRj3nNBWVyAgmmJj">
+   210→class PullRequestInfo:
+   211→    """Information about a GitHub pull request."""
+   212→
+   213→    number: int
+   214→    state: str  # "OPEN", "MERGED", "CLOSED"
+   215→    url: str
+   216→    is_draft: bool
+   217→    title: str | None
+   218→    checks_passing: bool | None  # None if no checks, True if all pass, False if any fail
+   219→    owner: str  # GitHub repo owner (e.g., "schrockn")
+   220→    repo: str  # GitHub repo name (e.g., "erk")
+   221→    # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
+   222→    has_conflicts: bool | None = None
+   223→    checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
+   224→    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
+   225→    will_close_target: bool = False
+   226→    # Head branch name (the source branch) - optional, populated by some API calls
+   227→    head_branch: str | None = None
+   228→    # Review thread counts: (resolved_count, total_count) or None if not fetched
+   229→    review_thread_counts: tuple[int, int] | None = None
+   230→    # Review decision: "APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED", or None
+   231→    review_decision: str | None = None
+   232→    # Base branch name (the target branch) - optional, populated by some API calls
+   233→    base_ref_name: str | None = None
+   234→
+   235→
+   236→class _NotAvailable:
+   237→    """Sentinel for fields not available from certain API queries.
+   238→
+   239→    Raises AttributeError when accessed as a string, preventing silent bugs
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EHA5SSNuZGgEH9R9uBEC4C">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16107" cache_read_input_tokens="78209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16107}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EHA5SSNuZGgEH9R9uBEC4C">
+     1→"""GraphQL queries and mutations for GitHub API.
+     2→
+     3→These are stored in a separate file to keep the implementation code clean
+     4→and make the queries easier to read and maintain.
+     5→"""
+     6→
+     7→# Query to fetch PR review threads with comments
+     8→GET_PR_REVIEW_THREADS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
+     9→  repository(owner: $owner, name: $repo) {
+    10→    pullRequest(number: $number) {
+    11→      reviewThreads(first: 100) {
+    12→        nodes {
+    13→          id
+    14→          isResolved
+    15→          isOutdated
+    16→          path
+    17→          line
+    18→          comments(first: 20) {
+    19→            nodes {
+    20→              databaseId
+    21→              body
+    22→              author { login }
+    23→              path
+    24→              line: originalLine
+    25→              createdAt
+    26→            }
+    27→          }
+    28→        }
+    29→      }
+    30→    }
+
+... [211 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7567" cache_read_input_tokens="94316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me execute this systematically. Starting with Steps 1+2 — deleting gateway methods and types in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7567" cache_read_input_tokens="94316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014ys2rdj3fQoWUtfBxvEXfg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    IssueNotFound,
+    PRReference,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    IssueNotFound,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7567" cache_read_input_tokens="94316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014ys2rdj3fQoWUtfBxvEXfg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QUcGWY1DcvL1KaK6AzCw87">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py</param>
+    <param name="old_string">    @abstractmethod
+    def get_prs_referencing_issue(
+        self,
+        repo_root: Pa...[truncated 491 chars]...rence objects for PRs that reference the plan
+        """
+        ...
+
+    @abstractmethod</param>
+    <param name="new_string">    @abstractmethod</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7567" cache_read_input_tokens="94316" output_tokens="1046" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QUcGWY1DcvL1KaK6AzCw87">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016K5DP27mitt8gnTi1N7EjW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    IssueNotFound,
+    PRReference,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    IssueNotFound,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1245" cache_read_input_tokens="101883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1245}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016K5DP27mitt8gnTi1N7EjW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VeEBcmvfH4pJ9Dozvojn7Q">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py</param>
+    <param name="old_string">    def get_prs_referencing_issue(
+        self,
+        repo_root: Path,
+        plan_num...[truncated 997 chars]...ing
+            )
+            for item in data
+        ]
+
+    def add_reaction_to_comment(</param>
+    <param name="new_string">    def add_reaction_to_comment(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1245" cache_read_input_tokens="101883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1245}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VeEBcmvfH4pJ9Dozvojn7Q">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FCV1SjTCvqHxvZSVv3gyfo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    IssueNotFound,
+    PRReference,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.types import (
+    CreateIssueResult,
+    IssueComment,
+    IssueInfo,
+    IssueNotFound,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1245" cache_read_input_tokens="101883" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1245}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FCV1SjTCvqHxvZSVv3gyfo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015XnHKUkroCsdGxqKvPWPjy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py</param>
+    <param name="old_string">    def get_prs_referencing_issue(
+        self,
+        repo_root: Path,
+        plan_num...[truncated 112 chars]...rapped.get_prs_referencing_issue(repo_root, plan_number)
+
+    def add_reaction_to_comment(</param>
+    <param name="new_string">    def add_reaction_to_comment(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1245" cache_read_input_tokens="101883" output_tokens="1228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1245, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015XnHKUkroCsdGxqKvPWPjy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove from remote_github gateway and pr_service:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1561" cache_read_input_tokens="103128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1561}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MGgCqNKA3CHxYhBsVH4Uku">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1561" cache_read_input_tokens="103128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1561}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MGgCqNKA3CHxYhBsVH4Uku">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01P6pctQvYJSYr2MUi76gPgh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py</param>
+    <param name="old_string">    @abstractmethod
+    def get_prs_referencing_issue(
+        self,
+        *,
+        ow...[truncated 276 chars]...RReference objects
+        """
+        ...
+
+    @abstractmethod
+    def get_comment_by_id(</param>
+    <param name="new_string">    @abstractmethod
+    def get_comment_by_id(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1561" cache_read_input_tokens="103128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1561}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P6pctQvYJSYr2MUi76gPgh">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015h3nS74cxqQp9t2vHhsjSg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1561" cache_read_input_tokens="103128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1561}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015h3nS74cxqQp9t2vHhsjSg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014p4o3uRgaLs8kYfqM97fsn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py</param>
+    <param name="old_string">    def get_prs_referencing_issue(
+        self,
+        *,
+        owner: str,
+        re...[truncated 1209 chars]...False),
+                )
+            )
+        return pr_refs
+
+    def get_comment_by_id(</param>
+    <param name="new_string">    def get_comment_by_id(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1561" cache_read_input_tokens="103128" output_tokens="1218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1561, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014p4o3uRgaLs8kYfqM97fsn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/gateway/remote_github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now remove `get_prs_linked_to_issues` from github/abc.py, github/real.py, and github/dry_run.py. Also remove `_close_linked_prs_http` from pr_service/real.py and simplify `close_pr`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1765" cache_read_input_tokens="104689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1765}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
