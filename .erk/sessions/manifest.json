@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9238,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-17T18:19:37.771617+00:00",
+      "files": [
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part1.xml",
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part2.xml",
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part3.xml",
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part4.xml",
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part5.xml",
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part6.xml",
+        "impl--7dd266f4-3009-4b45-bb25-539184b51752-part7.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 24,
+      "raw_size_kb": 2413,
+      "xml_size_kb": 303,
+      "git_branch": "plnd/O9109-rename-gateway-plan-03-13-1705"
+    }
+  ]
+}
