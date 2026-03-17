@@ -68,7 +68,6 @@
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan closure strategy
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
-- **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[health-check-runner-gateway.md](health-check-runner-gateway.md)** — working with health check infrastructure, modifying doctor command, adding new health checks, working with artifact allowlist
@@ -79,7 +78,6 @@
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_branch_slug, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts, working with plan summary generation or --summary flags
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
-- **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with plan-ref.json, closing reference lost after erk pr submit
 - **[json-parsing-patterns.md](json-parsing-patterns.md)** — parsing JSON from files or API responses, validating JSON field presence, implementing LBYL JSON parsing
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
 - **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding why gateways have separate existence methods

@@ -57,7 +57,6 @@ def test_check_valid_plan_passes() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: [plan_body_block]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -100,7 +99,6 @@ def test_check_missing_plan_header_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: []},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -147,7 +145,6 @@ def test_check_missing_required_field_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: []},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -196,7 +193,6 @@ def test_check_missing_first_comment_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: []},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -244,7 +240,6 @@ def test_check_missing_plan_body_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: ["Just a regular comment"]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -298,7 +293,6 @@ def test_check_github_url_parsing() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: [plan_body_block]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -359,7 +353,6 @@ def test_check_valid_draft_pr_plan_passes() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: ["submission-queued comment"]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -387,7 +380,6 @@ def test_check_invalid_identifier_fails() -> None:
             dispatch_run_id="run-123",
             issues={},
             issue_comments={},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -447,7 +439,6 @@ def test_validate_plan_format_passes_valid_plan() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: [plan_body_block]},
-        pr_references=None,
     )
 
     result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
@@ -485,7 +476,6 @@ def test_validate_plan_format_fails_missing_plan_header() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: []},
-        pr_references=None,
     )
 
     result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
@@ -531,7 +521,6 @@ def test_validate_plan_format_fails_missing_first_comment() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: []},  # No comments
-        pr_references=None,
     )
 
     result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
@@ -576,7 +565,6 @@ def test_validate_plan_format_fails_missing_plan_body() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: ["Just a regular comment"]},  # No plan-body block
-        pr_references=None,
     )
 
     result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
@@ -601,7 +589,6 @@ def test_validate_plan_format_returns_error_on_github_failure() -> None:
         dispatch_run_id="run-123",
         issues={},
         issue_comments={},
-        pr_references=None,
     )
 
     result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=999)
@@ -651,7 +638,6 @@ def test_validate_plan_format_passes_draft_pr_plan() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: []},
-        pr_references=None,
     )
 
     result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)

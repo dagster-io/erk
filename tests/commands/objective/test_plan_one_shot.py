@@ -127,7 +127,6 @@ def _make_remote(*, issues: dict[int, IssueInfo] | None = None) -> FakeRemoteGit
         dispatch_run_id="run-1",
         issues=issues,
         issue_comments=None,
-        pr_references=None,
     )
 
 

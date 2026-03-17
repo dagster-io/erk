@@ -7,7 +7,7 @@ git repository. All methods take explicit owner/repo parameters.
 
 from abc import ABC, abstractmethod
 
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 
 
@@ -291,26 +291,6 @@ class RemoteGitHub(ABC):
 
         Returns:
             List of IssueInfo objects
-        """
-        ...
-
-    @abstractmethod
-    def get_prs_referencing_issue(
-        self,
-        *,
-        owner: str,
-        repo: str,
-        number: int,
-    ) -> list[PRReference]:
-        """Get PRs that reference an issue via timeline API.
-
-        Args:
-            owner: Repository owner
-            repo: Repository name
-            number: Issue number
-
-        Returns:
-            List of PRReference objects
         """
         ...
 

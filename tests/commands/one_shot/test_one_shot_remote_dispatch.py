@@ -22,7 +22,6 @@ def test_remote_dispatch_happy_path() -> None:
         dispatch_run_id="run-99",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -99,7 +98,6 @@ def test_remote_dispatch_dry_run() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -145,7 +143,6 @@ def test_remote_dispatch_with_model() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -182,7 +179,6 @@ def test_remote_dispatch_with_explicit_ref() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -219,7 +215,6 @@ def test_remote_dispatch_with_plan_only() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 

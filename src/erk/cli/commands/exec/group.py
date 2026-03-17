@@ -50,9 +50,6 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
 )
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
-from erk.cli.commands.exec.scripts.get_issue_timeline_prs import (
-    get_issue_timeline_prs,
-)
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
@@ -222,7 +219,6 @@ exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
 exec_group.add_command(get_pr_view, name="get-pr-view")
 exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
 exec_group.add_command(get_issue_body, name="get-issue-body")
-exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
 exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
 exec_group.add_command(get_pr_context, name="get-pr-context")

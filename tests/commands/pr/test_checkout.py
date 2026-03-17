@@ -319,7 +319,7 @@ def test_pr_checkout_invalid_reference() -> None:
         result = runner.invoke(pr_group, ["checkout", "not-a-number"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "Invalid PR number, plan ID, or URL" in result.output
+        assert "Invalid PR number or URL" in result.output
 
 
 def test_pr_checkout_script_mode_outputs_script_path() -> None:

@@ -35,16 +35,6 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     if isinstance(issue, IssueNotFound):
         raise click.ClickException(f"PR #{number} not found")
 
-    # Close all OPEN PRs linked to this plan (unified via RemoteGitHub)
-    linked_prs = remote.get_prs_referencing_issue(
-        owner=repo_id.owner, repo=repo_id.repo, number=number
-    )
-    closed_prs: list[int] = []
-    for pr in linked_prs:
-        if pr.state == "OPEN":
-            remote.close_pr(owner=repo_id.owner, repo=repo_id.repo, number=pr.number)
-            closed_prs.append(pr.number)
-
     # Close the plan + optional local enrichments
     objective_id: int | None = None
     if not isinstance(ctx.repo, NoRepoSentinel):
@@ -66,6 +56,3 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
 
     # Output
     user_output(f"Closed PR #{number}")
-    if closed_prs:
-        pr_list_str = ", ".join(f"#{pr}" for pr in closed_prs)
-        user_output(f"Closed {len(closed_prs)} linked PR(s): {pr_list_str}")

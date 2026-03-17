@@ -133,14 +133,6 @@ class DryRunLocalGitHub(LocalGitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_comment(repo_root, comment_id)
 
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        plan_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_prs_linked_to_issues(location, plan_numbers)
-
     def get_prs_by_numbers(
         self, location: GitHubRepoLocation, pr_numbers: list[int]
     ) -> dict[int, PullRequestInfo]:

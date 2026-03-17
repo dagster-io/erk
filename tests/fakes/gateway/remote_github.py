@@ -5,7 +5,7 @@ Constructor-injected responses for reads, mutation tracking lists for write asse
 
 from dataclasses import dataclass, replace
 
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
 
@@ -140,7 +140,6 @@ class FakeRemoteGitHub(RemoteGitHub):
         dispatch_run_id: str,
         issues: dict[int, IssueInfo] | None,
         issue_comments: dict[int, list[str]] | None,
-        pr_references: dict[int, list[PRReference]] | None,
         comments_by_id: dict[int, str] | None = None,
         prs: dict[int, RemotePRInfo] | None = None,
     ) -> None:
@@ -155,7 +154,6 @@ class FakeRemoteGitHub(RemoteGitHub):
             issues: Pre-configured issues keyed by number
             issue_comments: Pre-configured comment bodies keyed by issue number
             comments_by_id: Pre-configured comment bodies keyed by comment ID
-            pr_references: Pre-configured PR references keyed by issue number
             prs: Pre-configured PRs keyed by number (for get_pr)
         """
         self._authenticated_user = authenticated_user
@@ -170,9 +168,6 @@ class FakeRemoteGitHub(RemoteGitHub):
             issue_comments if issue_comments is not None else {}
         )
         self._comments_by_id: dict[int, str] = comments_by_id if comments_by_id is not None else {}
-        self._pr_references: dict[int, list[PRReference]] = (
-            pr_references if pr_references is not None else {}
-        )
         self._prs: dict[int, RemotePRInfo] = prs if prs is not None else {}
 
         # Mutation tracking
@@ -359,15 +354,6 @@ class FakeRemoteGitHub(RemoteGitHub):
             if limit is not None and len(results) >= limit:
                 break
         return results
-
-    def get_prs_referencing_issue(
-        self,
-        *,
-        owner: str,
-        repo: str,
-        number: int,
-    ) -> list[PRReference]:
-        return list(self._pr_references.get(number, []))
 
     def get_comment_by_id(
         self,
