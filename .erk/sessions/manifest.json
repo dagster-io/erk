@@ -20,6 +20,25 @@
       "raw_size_kb": 1349,
       "xml_size_kb": 131,
       "git_branch": "plnd/surface-pr-level-reviews-03-17-1002"
+    },
+    {
+      "session_id": "2d18388f-5a0a-4ee6-8fc4-19c7469b81fb",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-17T18:06:51.267518+00:00",
+      "files": [
+        "impl-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-part1.xml",
+        "impl-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-part2.xml",
+        "impl-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-part3.xml",
+        "impl-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-part4.xml",
+        "impl-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-part5.xml",
+        "impl-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-2d18388f-5a0a-4ee6-8fc4-19c7469b81fb-part6.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 12,
+      "raw_size_kb": 1382,
+      "xml_size_kb": 143,
+      "git_branch": "plnd/surface-pr-level-reviews-03-17-1002"
     }
   ]
 }

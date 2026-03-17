@@ -1,0 +1,1387 @@
+<session>
+  <meta branch="plnd/surface-pr-level-reviews-03-17-1002" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9253&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9253` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9253. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28594" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011TMRyfk2n6vzgTa3ghZqDT">
+    <param name="command">erk exec setup-impl --issue 9253 2&gt;&amp;1</param>
+    <param name="description">Set up implementation for plan #9253</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28594" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28594, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011TMRyfk2n6vzgTa3ghZqDT">
+Already on PR branch 'plnd/surface-pr-level-reviews-03-17-1002', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--surface-pr-level-reviews-03-17-1002", "pr_number": 9253, "pr_url": "https://github.com/dagster-io/erk/pull/9253", "branch": "plnd/surface-pr-level-reviews-03-17-1002", "pr_title": "[erk-pr] Plan: Surface PR-Level Reviews in get-pr-feedback Pipeline", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9253, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wd6pH3BVjDYDysHvWGvME9">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--surface-pr-level-reviews-03-17-1002/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="28594" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wd6pH3BVjDYDysHvWGvME9">
+     1→# Plan: Surface PR-Level Reviews in get-pr-feedback Pipeline
+     2→
+     3→## Context
+     4→
+     5→`erk:pr-address` completely misses "requested changes" reviews when a reviewer submits a PR-level review without inline comments. The `get-pr-feedback` pipeline only fetches `reviewThreads` (inline code comments via GraphQL) but never fetches PR-level `reviews`. This means a CHANGES_REQUESTED review with just a body comment is invisible to the classifier, which reports 0 actionable items.
+     6→
+     7→GitHub has two distinct review concepts:
+     8→- **Review threads** (`reviewThreads`): inline code comments on specific lines/files — currently fetched
+     9→- **Reviews** (`reviews`): PR-level review submissions with state (APPROVED, CHANGES_REQUESTED, etc.) and a body — **not fetched**
+    10→
+    11→## Approach
+    12→
+    13→Add a new `get_pr_reviews()` gateway method (4-place: ABC, real, fake, dry_run) that fetches PR-level reviews via a new GraphQL query, wire it into `get_pr_feedback.py` as a third parallel fetch, and update the classifier skill to handle the new data.
+    14→
+    15→## Steps
+    16→
+    17→### 1. Add `PRReview` type to `types.py`
+    18→
+    19→**File:** `packages/erk-shared/src/erk_shared/gateway/github/types.py`
+    20→
+    21→- Add `PRReviewState = Literal["PENDING", "COMMENTED", "APPROVED", "CHANGES_REQUESTED", "DISMISSED"]`
+    22→- Add frozen dataclass `PRReview` with fields: `id: str`, `author: str`, `body: str`, `state: PRReviewState`, `submitted_at: str`
+    23→
+    24→### 2. Add GraphQL query to `graphql_queries.py`
+    25→
+    26→**File:** `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py`
+    27→
+    28→Add `GET_PR_REVIEWS_QUERY` — fetches `reviews(first: 100, states: [CHANGES_REQUESTED, APPROVED, COMMENTED])` with fields: `id`, `author { login }`, `body`, `state`, `submittedAt`. Excludes PENDING (drafts) and DISMISSED (superseded).
+    29→
+    30→### 3. Add abstract method to ABC (4-place pattern)
+
+... [54 lines omitted] ...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan and load relevant context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1708" cache_read_input_tokens="28932" cache_creation="{'ephemeral_5m_input_tokens': 1708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QYN4jeysmmwMmW5ym9DiLt">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1708" cache_read_input_tokens="28932" cache_creation="{'ephemeral_5m_input_tokens': 1708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QYN4jeysmmwMmW5ym9DiLt">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RuCvzMazj6ZyDh9pHjYXJs">
+    <param name="todos">[{'content': 'Add PRReview type and PRReviewState to types.py', 'activeForm': 'Adding PRRe...[truncated 952 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="30640" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RuCvzMazj6ZyDh9pHjYXJs">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me first read the relevant files to understand the existing patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="30826" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015EpCAZHnVh7b4egHBjbRxN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="30826" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0147NqPANF71TUN7uJMNM1mS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="30826" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015EpCAZHnVh7b4egHBjbRxN">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    13→
+    14→
+    15→class StatusCheckRollupData(TypedDict, total=False):
+    16→    state: str
+    17→    contexts: dict[str, Any]
+    18→
+    19→
+    20→def _epoch_sentinel() -&gt; datetime:
+    21→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    22→    return datetime(2000, 1, 1, tzinfo=UTC)
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class BodyText:
+    27→    """Body content as inline text.
+    28→
+    29→    Used when the body content is a string that should be passed directly
+    30→    to the GitHub API using -f body={content} syntax.
+
+... [377 lines omitted] ...
+
+    92→        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+   111→class MergeError:
+   112→    """Error result from merging a PR. Implements NonIdealState."""
+   118→    def error_type(self) -&gt; str:
+   119→        return "merge-failed"
+   126→    Used as part of union return types for LBYL-style error handling.
+   200→WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+   237→    Raises AttributeError when accessed as a string, preventing silent bugs
+   247→        raise AttributeError(msg)
+   258→        raise AttributeError(msg)
+   278→    Accessing unavailable fields raises AttributeError.
+   328→        raise AttributeError(msg)
+   332→        raise AttributeError(msg)
+   355→            str(value)  # Trigger the error
+   367→            str(value)  # Trigger the error
+  </tool_result>
+  <tool_result tool="toolu_0147NqPANF71TUN7uJMNM1mS">
+     1→"""GraphQL queries and mutations for GitHub API.
+     2→
+     3→These are stored in a separate file to keep the implementation code clean
+     4→and make the queries easier to read and maintain.
+     5→"""
+     6→
+     7→# Query to fetch PR review threads with comments
+     8→GET_PR_REVIEW_THREADS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
+     9→  repository(owner: $owner, name: $repo) {
+    10→    pullRequest(number: $number) {
+    11→      reviewThreads(first: 100) {
+    12→        nodes {
+    13→          id
+    14→          isResolved
+    15→          isOutdated
+    16→          path
+    17→          line
+    18→          comments(first: 20) {
+    19→            nodes {
+    20→              databaseId
+    21→              body
+    22→              author { login }
+    23→              path
+    24→              line: originalLine
+    25→              createdAt
+    26→            }
+    27→          }
+    28→        }
+    29→      }
+    30→    }
+
+... [216 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Hi7enikDCrskBErUx8cfeW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7459" cache_read_input_tokens="31262" cache_creation="{'ephemeral_5m_input_tokens': 7459, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LzHT761A4E7HLYVqTUkW2x">
+    <param name="pattern">get_pr_review_threads</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7459" cache_read_input_tokens="31262" cache_creation="{'ephemeral_5m_input_tokens': 7459, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hi7enikDCrskBErUx8cfeW">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class LocalGitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [55 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+  </tool_result>
+  <tool_result tool="toolu_01LzHT761A4E7HLYVqTUkW2x">
+614:    def get_pr_review_threads(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01G5xSa4yZVGZUnjw7TaJrSg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">610</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1220" cache_read_input_tokens="38721" cache_creation="{'ephemeral_5m_input_tokens': 1220, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015pKmsVyGeHe4mzGyt5ZhJJ">
+    <param name="pattern">get_pr_review_threads</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1220" cache_read_input_tokens="38721" cache_creation="{'ephemeral_5m_input_tokens': 1220, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G5xSa4yZVGZUnjw7TaJrSg">
+   610→        """
+   611→        ...
+   612→
+   613→    @abstractmethod
+   614→    def get_pr_review_threads(
+   615→        self,
+   616→        repo_root: Path,
+   617→        pr_number: int,
+   618→        *,
+   619→        include_resolved: bool = False,
+   620→    ) -&gt; list[PRReviewThread]:
+   621→        """Get review threads for a pull request.
+   622→
+   623→        Uses GraphQL API (reviewThreads connection) since REST API
+   624→        doesn't expose resolution status.
+   625→
+   626→        Args:
+   627→            repo_root: Repository root directory
+   628→            pr_number: PR number to query
+   629→            include_resolved: If True, include resolved threads (default: False)
+   630→
+   631→        Returns:
+   632→            List of PRReviewThread sorted by (path, line)
+   633→        """
+   634→        ...
+   635→
+   636→    @abstractmethod
+   637→    def get_pr_check_runs(
+   638→        self,
+   639→        repo_root: Path,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015pKmsVyGeHe4mzGyt5ZhJJ">
+1863:    def get_pr_review_threads(
+1875:        assert self._repo_info is not None, "repo_info required for get_pr_review_threads"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CCZzUuMDaF26k8b5skAqzb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1850</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1182" cache_read_input_tokens="39941" cache_creation="{'ephemeral_5m_input_tokens': 1182, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EAArWrdwWvjGhRKfwhDTxX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1182" cache_read_input_tokens="39941" cache_creation="{'ephemeral_5m_input_tokens': 1182, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CCZzUuMDaF26k8b5skAqzb">
+  1850→        """
+  1851→        # GH-API-AUDIT: REST - GET pulls/{number} (.labels)
+  1852→        cmd = [
+  1853→            "gh",
+  1854→            "api",
+  1855→            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+  1856→            "--jq",
+  1857→            ".labels[].name",
+  1858→        ]
+  1859→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+  1860→        labels = stdout.strip().split("\n") if stdout.strip() else []
+  1861→        return label in labels
+  1862→
+  1863→    def get_pr_review_threads(
+  1864→        self,
+  1865→        repo_root: Path,
+  1866→        pr_number: int,
+  1867→        *,
+  1868→        include_resolved: bool = False,
+  1869→    ) -&gt; list[PRReviewThread]:
+  1870→        """Get review threads for a pull request via GraphQL.
+  1871→
+  1872→        Uses the reviewThreads connection which provides resolution status
+  1873→        that the REST API doesn't expose.
+  1874→        """
+  1875→        assert self._repo_info is not None, "repo_info required for get_pr_review_threads"
+  1876→
+  1877→        # GH-API-AUDIT: GraphQL - reviewThreads query
+  1878→        # WHY GRAPHQL: REST API does not expose isResolved field
+  1879→        cmd = [
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EAArWrdwWvjGhRKfwhDTxX">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→from typing import Any
+     5→
+     6→from erk_shared.gateway.github.abc import LocalGitHub
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeResult,
+    15→    PRCheckRun,
+    16→    PRDetails,
+    17→    PRListState,
+    18→    PRNotFound,
+    19→    PRReviewThread,
+    20→    PullRequestInfo,
+    21→    WorkflowRun,
+    22→)
+    23→
+    24→
+    25→class DryRunLocalGitHub(LocalGitHub):
+    26→    """No-op wrapper for GitHub operations.
+    27→
+    28→    Read operations are delegated to the wrapped implementation.
+    29→    Write operations return without executing (no-op behavior).
+    30→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016eMnHEhqMeJR8dv47jGMWJ">
+    <param name="pattern">get_pr_review_threads</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="41123" cache_creation="{'ephemeral_5m_input_tokens': 2365, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017neuMoiCfjiBJUS7tqYkQv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2365" cache_read_input_tokens="41123" cache_creation="{'ephemeral_5m_input_tokens': 2365, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017neuMoiCfjiBJUS7tqYkQv">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [55 lines omitted] ...
+
+    72→        resolve_thread_failures: set[str] | None = None,
+    73→        pr_diff_error: str | None = None,
+    74→        workflow_runs_error: str | None = None,
+  </tool_result>
+  <tool_result tool="toolu_016eMnHEhqMeJR8dv47jGMWJ">
+270:    def get_pr_review_threads(
+278:        return self._wrapped.get_pr_review_threads(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MyxNgohwMz3jEPQRMSakYp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="offset">80</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1297" cache_creation_input_tokens="562" cache_read_input_tokens="43488" cache_creation="{'ephemeral_5m_input_tokens': 562, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D4BZVTfC9UyqKj2k3wQAbc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="offset">260</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1297" cache_creation_input_tokens="562" cache_read_input_tokens="43488" cache_creation="{'ephemeral_5m_input_tokens': 562, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MyxNgohwMz3jEPQRMSakYp">
+    80→        comments_by_id: dict[int, str] | None = None,
+    81→        time: Time | None = None,
+    82→        add_label_errors: dict[str, str] | None = None,
+    83→        pr_head_branches: dict[int, str] | None = None,
+    84→    ) -&gt; None:
+    85→        """Create FakeLocalGitHub with pre-configured state.
+    86→
+    87→        Args:
+    88→            repo_info: Repository owner/name info (defaults to test-owner/test-repo)
+    89→            prs: Mapping of branch name -&gt; PullRequestInfo
+    90→            pr_bases: Mapping of pr_number -&gt; base_branch
+    91→            pr_details: Mapping of pr_number -&gt; PRDetails for get_pr() and get_pr_for_branch()
+    92→            prs_by_branch: Mapping of branch name -&gt; PRDetails (simpler than prs + pr_details)
+    93→            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+    94→            workflow_runs_by_node_id: Mapping of GraphQL node_id -&gt; WorkflowRun for
+    95→                                     get_workflow_runs_by_node_ids()
+    96→            run_logs: Mapping of run_id -&gt; log string
+    97→            pr_plan_linkages: Mapping of pr_number -&gt; list[PullRequestInfo]
+    98→            polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
+    99→            authenticated: Whether gh CLI is authenticated (default True for test convenience)
+   100→            auth_username: Username returned by check_auth_status() (default "test-user")
+   101→            auth_hostname: Hostname returned by check_auth_status() (default "github.com")
+   102→            issues_gateway: Optional GitHubIssues implementation. If None, creates
+   103→                           FakeGitHubIssues with default empty state.
+   104→            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
+   105→            pr_titles: Mapping of pr_number -&gt; title for explicit title storage
+   106→            pr_bodies_by_number: Mapping of pr_number -&gt; body for explicit body storage
+   107→            pr_diffs: Mapping of pr_number -&gt; diff content
+   108→            pr_changed_files: Mapping of pr_number -&gt; list of changed file paths
+   109→            merge_should_succeed: Whether merge_pr() should succeed (default True)
+
+... [75 lines omitted] ...
+
+   116→                RuntimeError simulating GraphQL rate limit
+   117→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   118→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   119→                Use to simulate HTTP 406 "diff too large" errors.
+   120→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   121→                RuntimeError with this message. Use to simulate API failures.
+   125→                False or raise to simulate failure.
+   162→        self._resolve_thread_failures = resolve_thread_failures or set()
+   163→        self._pr_diff_error = pr_diff_error
+   164→        self._workflow_runs_error = workflow_runs_error
+  </tool_result>
+  <tool_result tool="toolu_01D4BZVTfC9UyqKj2k3wQAbc">
+   260→        return self._wrapped.get_pr_changed_files(repo_root, pr_number)
+   261→
+   262→    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None:
+   263→        """No-op for adding label to PR in dry-run mode."""
+   264→        pass
+   265→
+   266→    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -&gt; bool:
+   267→        """Delegate read operation to wrapped implementation."""
+   268→        return self._wrapped.has_pr_label(repo_root, pr_number, label)
+   269→
+   270→    def get_pr_review_threads(
+   271→        self,
+   272→        repo_root: Path,
+   273→        pr_number: int,
+   274→        *,
+   275→        include_resolved: bool = False,
+   276→    ) -&gt; list[PRReviewThread]:
+   277→        """Delegate read operation to wrapped implementation."""
+   278→        return self._wrapped.get_pr_review_threads(
+   279→            repo_root, pr_number, include_resolved=include_resolved
+   280→        )
+   281→
+   282→    def get_pr_check_runs(
+   283→        self,
+   284→        repo_root: Path,
+   285→        pr_number: int,
+   286→    ) -&gt; list[PRCheckRun]:
+   287→        """Delegate read operation to wrapped implementation."""
+   288→        return self._wrapped.get_pr_check_runs(repo_root, pr_number)
+   289→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the get_pr_feedback.py script and the fake's get_pr_review_threads implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4271" cache_read_input_tokens="44050" cache_creation="{'ephemeral_5m_input_tokens': 4271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PSjJEkoKqhEDCzWpLusbWk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4271" cache_read_input_tokens="44050" cache_creation="{'ephemeral_5m_input_tokens': 4271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Vc8xdfMpzbGC1AwUbbD5PJ">
+    <param name="pattern">def get_pr_review_threads</param>
+    <param name="path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4271" cache_read_input_tokens="44050" cache_creation="{'ephemeral_5m_input_tokens': 4271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PSjJEkoKqhEDCzWpLusbWk">
+     1→"""Fetch all PR feedback (review threads + discussion comments) in a single command.
+     2→
+     3→Combines the functionality of get-pr-review-comments and get-pr-discussion-comments
+     4→into one command, eliminating redundant PR lookups and enabling parallel fetches.
+     5→
+     6→Usage:
+     7→    erk exec get-pr-feedback
+     8→    erk exec get-pr-feedback --pr 123
+     9→    erk exec get-pr-feedback --include-resolved
+    10→
+    11→Output:
+    12→    JSON with pr_info, review_threads, and discussion_comments sections
+    13→
+    14→Exit Codes:
+    15→    0: Success (or graceful error with JSON output)
+    16→    1: Context not initialized
+    17→"""
+    18→
+    19→from __future__ import annotations
+    20→
+    21→import json
+    22→from concurrent.futures import ThreadPoolExecutor
+    23→from typing import TypedDict
+    24→
+    25→import click
+    26→
+    27→from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+    28→from erk_shared.context.helpers import (
+    29→    get_current_branch,
+    30→    require_github,
+
+... [136 lines omitted] ...
+
+    37→from erk_shared.non_ideal_state import BranchDetectionFailed
+   119→        if isinstance(branch, BranchDetectionFailed):
+   121→        assert not isinstance(branch, BranchDetectionFailed)  # Type narrowing after NoReturn
+   143→        except RuntimeError as e:
+   144→            exit_with_error("github-api-failed", str(e))
+  </tool_result>
+  <tool_result tool="toolu_01Vc8xdfMpzbGC1AwUbbD5PJ">
+934:    def get_pr_review_threads(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Sp1YpBM7efMHj8nrt1vie1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="offset">930</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2521" cache_read_input_tokens="48321" cache_creation="{'ephemeral_5m_input_tokens': 2521, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NKvYz1TMtB6URBzPHwsKot">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2521" cache_read_input_tokens="48321" cache_creation="{'ephemeral_5m_input_tokens': 2521, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sp1YpBM7efMHj8nrt1vie1">
+   930→    def set_pr_labels(self, pr_number: int, labels: set[str]) -&gt; None:
+   931→        """Set labels for a PR (for test setup)."""
+   932→        self._pr_labels[pr_number] = labels
+   933→
+   934→    def get_pr_review_threads(
+   935→        self,
+   936→        repo_root: Path,
+   937→        pr_number: int,
+   938→        *,
+   939→        include_resolved: bool = False,
+   940→    ) -&gt; list[PRReviewThread]:
+   941→        """Get review threads for a PR from pre-configured data.
+   942→
+   943→        Applies any resolutions that happened during the test, then filters
+   944→        and sorts the results.
+   945→
+   946→        Raises RuntimeError if review_threads_rate_limited is True, simulating
+   947→        a GraphQL API rate limit error.
+   948→        """
+   949→        if self._review_threads_rate_limited:
+   950→            raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
+   951→        threads = self._pr_review_threads.get(pr_number, [])
+   952→
+   953→        # Apply any resolutions that happened during test
+   954→        result_threads: list[PRReviewThread] = []
+   955→        for t in threads:
+   956→            is_resolved = t.is_resolved or t.id in self._resolved_thread_ids
+   957→            if is_resolved and not include_resolved:
+   958→                continue
+   959→            # Create new thread with updated resolution status
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NKvYz1TMtB6URBzPHwsKot">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [195 lines omitted] ...
+
+   131→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   133→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   171→  "error": null
+   185→## Error Case
+   199→  "error": "No PR found for branch feature-xyz"
+   217→  "error": null
+  </tool_result>
+  <assistant>Now let me look at the relevant parts of real.py and find the end of the file to understand imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3589" cache_read_input_tokens="50842" cache_creation="{'ephemeral_5m_input_tokens': 3589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JymR8Li4KTci5q7tqk3GH6">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1940</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3589" cache_read_input_tokens="50842" cache_creation="{'ephemeral_5m_input_tokens': 3589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011KCXfdkumUQxtspuEQhDpY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3589" cache_read_input_tokens="50842" cache_creation="{'ephemeral_5m_input_tokens': 3589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JymR8Li4KTci5q7tqk3GH6">
+  1940→                    line=comment_node.get("line"),
+  1941→                    created_at=comment_node.get("createdAt", ""),
+  1942→                )
+  1943→                comments.append(comment)
+  1944→
+  1945→            thread = PRReviewThread(
+  1946→                id=node.get("id", ""),
+  1947→                path=node.get("path", ""),
+  1948→                line=node.get("line"),
+  1949→                is_resolved=is_resolved,
+  1950→                is_outdated=node.get("isOutdated", False),
+  1951→                comments=tuple(comments),
+  1952→            )
+  1953→            threads.append(thread)
+  1954→
+  1955→        # Sort by path, then by line (None sorts first)
+  1956→        threads.sort(key=lambda t: (t.path, t.line or 0))
+  1957→        return threads
+  1958→
+  1959→    def get_pr_check_runs(
+  1960→        self,
+  1961→        repo_root: Path,
+  1962→        pr_number: int,
+  1963→    ) -&gt; list[PRCheckRun]:
+  1964→        """Get failing check runs for a PR via GraphQL."""
+  1965→        assert self._repo_info is not None, "repo_info required for get_pr_check_runs"
+  1966→
+  1967→        # GH-API-AUDIT: GraphQL - statusCheckRollup query
+  1968→        # WHY GRAPHQL: Need individual check details (name, conclusion, URL)
+  1969→        cmd = [
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011KCXfdkumUQxtspuEQhDpY">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import LocalGitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MJBzgCtTtj6aA5ihvcUUd4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">50</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="54431" cache_creation="{'ephemeral_5m_input_tokens': 2253, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NTJM7HcWuQN2g6duHoBXam">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">2000</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="54431" cache_creation="{'ephemeral_5m_input_tokens': 2253, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MJBzgCtTtj6aA5ihvcUUd4">
+    50→    GitHubRepoId,
+    51→    GitHubRepoLocation,
+    52→    IssueFilterState,
+    53→    MergeError,
+    54→    MergeResult,
+    55→    PRCheckRun,
+    56→    PRDetails,
+    57→    PRListState,
+    58→    PRNotFound,
+    59→    PRReviewComment,
+    60→    PRReviewThread,
+    61→    PullRequestInfo,
+    62→    RepoInfo,
+    63→    WorkflowRun,
+    64→)
+    65→from erk_shared.gateway.time.abc import Time
+    66→from erk_shared.output.output import user_output
+    67→from erk_shared.subprocess_utils import _GH_COMMAND_TIMEOUT, run_subprocess_with_context
+    68→
+    69→_logger = logging.getLogger(__name__)
+    70→
+    71→
+    72→def _elapsed_ms(start: float, end: float) -&gt; float:
+    73→    """Convert monotonic clock interval to milliseconds."""
+    74→    return (end - start) * 1000
+    75→
+    76→
+    77→# Feature flag to control whether PR mutations use REST API or gh CLI commands.
+    78→# When True: Use REST API (gh api) - uses REST quota, preserves GraphQL quota
+    79→# When False: Use gh CLI commands (gh pr) - uses GraphQL quota internally
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NTJM7HcWuQN2g6duHoBXam">
+  2000→        if rollup is None:
+  2001→            return checks
+  2002→
+  2003→        nodes = rollup.get("contexts", {}).get("nodes", [])
+  2004→
+  2005→        for node in nodes:
+  2006→            if node is None:
+  2007→                continue
+  2008→
+  2009→            typename = node.get("__typename")
+  2010→
+  2011→            if typename == "CheckRun":
+  2012→                conclusion = node.get("conclusion")
+  2013→                # Filter to failing: non-null conclusion that is not SUCCESS
+  2014→                if conclusion is None:
+  2015→                    # Still in progress - include as failing/pending
+  2016→                    status = node.get("status", "IN_PROGRESS")
+  2017→                    checks.append(
+  2018→                        PRCheckRun(
+  2019→                            name=node.get("name", ""),
+  2020→                            status=status.lower(),
+  2021→                            conclusion=None,
+  2022→                            detail_url=node.get("detailsUrl"),
+  2023→                        )
+  2024→                    )
+  2025→                elif conclusion.upper() != "SUCCESS":
+  2026→                    checks.append(
+  2027→                        PRCheckRun(
+  2028→                            name=node.get("name", ""),
+  2029→                            status=node.get("status", "completed").lower(),
+
+... [25 lines omitted] ...
+
+  2039→                    is_terminal = state.upper() in ("FAILURE", "ERROR")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Fh9pu2vWPFBCgEdwbbq8JR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">2048</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1455" cache_read_input_tokens="56684" cache_creation="{'ephemeral_5m_input_tokens': 1455, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Fh9pu2vWPFBCgEdwbbq8JR">
+  2048→
+  2049→        checks.sort(key=lambda c: c.name)
+  2050→        return checks
+  2051→
+  2052→    def resolve_review_thread(
+  2053→        self,
+  2054→        repo_root: Path,
+  2055→        thread_id: str,
+  2056→    ) -&gt; bool:
+  2057→        """Resolve a PR review thread via GraphQL mutation.
+  2058→
+  2059→        Args:
+  2060→            repo_root: Repository root (for gh CLI context)
+  2061→            thread_id: GraphQL node ID of the thread
+  2062→
+  2063→        Returns:
+  2064→            True if resolved successfully
+  2065→        """
+  2066→        # GH-API-AUDIT: GraphQL - resolveReviewThread mutation
+  2067→        # WHY GRAPHQL: No REST endpoint exists for resolving review threads
+  2068→        cmd = [
+  2069→            "gh",
+  2070→            "api",
+  2071→            "graphql",
+  2072→            "-f",
+  2073→            f"query={RESOLVE_REVIEW_THREAD_MUTATION}",
+  2074→            "-f",
+  2075→            f"threadId={thread_id}",
+  2076→        ]
+  2077→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the tests for get_pr_feedback to understand the test structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="58139" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01GQnH6ksVCXfWs3T3J3dWQC">
+    <param name="pattern">**/test_get_pr_feedback*</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="58139" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQnH6ksVCXfWs3T3J3dWQC">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_feedback.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_0141fYSUtNbSDMVVPqTpNKtq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_feedback.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="58952" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0141fYSUtNbSDMVVPqTpNKtq">
+     1→"""Unit tests for get-pr-feedback combined command.
+     2→
+     3→Tests the combined PR feedback command that fetches both review threads
+     4→and discussion comments in a single call.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.gateway.github.issues.types import IssueComment
+    15→from erk_shared.gateway.github.types import PRDetails, PRReviewComment, PRReviewThread
+    16→from tests.fakes.gateway.git import FakeGit
+    17→from tests.fakes.gateway.github import FakeLocalGitHub
+    18→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    19→
+    20→
+    21→def make_pr_details(pr_number: int, *, branch: str) -&gt; PRDetails:
+    22→    """Create test PRDetails."""
+    23→    return PRDetails(
+    24→        number=pr_number,
+    25→        url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
+    26→        title=f"Test PR #{pr_number}",
+    27→        body="Test PR body",
+    28→        state="OPEN",
+    29→        is_draft=False,
+    30→        base_ref_name="main",
+
+... [427 lines omitted] ...
+
+   330→# Error Cases
+   335→    """Test error when PR doesn't exist."""
+   357→    assert output["error_type"] == "pr-not-found"
+   361→    """Test error when no branch can be detected and no --pr specified."""
+  </tool_result>
+  <assistant>I have enough context. Let me now implement the changes. I'll start with Step 1: Add `PRReview` type to `types.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6232" cache_read_input_tokens="59105" cache_creation="{'ephemeral_5m_input_tokens': 6232, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_0185nJU5eFqvmLM5bYrZphzj">
+    <param name="todos">[{'content': 'Add PRReview type and PRReviewState to types.py', 'activeForm': 'Adding PRRe...[truncated 956 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6232" cache_read_input_tokens="59105" cache_creation="{'ephemeral_5m_input_tokens': 6232, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0185nJU5eFqvmLM5bYrZphzj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Q6FLMBDyfVBLHqQQjmcDJP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="old_string">PRState = Literal["OPEN", "MERGED", "CLOSED"]</param>
+    <param name="new_string">PRState = Literal["OPEN", "MERGED", "CLOSED"]
+
+PRReviewState = Literal["PENDING", "COMMENTED", "APPROVED", "CHANGES_REQUESTED", "DISMISSED"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="65337" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q6FLMBDyfVBLHqQQjmcDJP">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QqZviEMNBzhe7UWdWJdWbH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class PRReviewComment:</param>
+    <param name="new_string">@dataclass(frozen=True)
+class PRReview:
+    """A PR-level review submission (not an inline...[truncated 531 chars]...tate: PRReviewState
+    submitted_at: str
+
+
+@dataclass(frozen=True)
+class PRReviewComment:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="65809" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QqZviEMNBzhe7UWdWJdWbH">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Jireb5AU8LwBo5KAJfstye">
+    <param name="todos">[{'content': 'Add PRReview type and PRReviewState to types.py', 'activeForm': 'Adding PRRe...[truncated 958 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="66048" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="396" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jireb5AU8LwBo5KAJfstye">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Step 2: Add `GET_PR_REVIEWS_QUERY` to `graphql_queries.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="66429" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01912G2LfQCbcC2xvPyPM8Qc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="old_string"># Mutation to resolve a PR review thread</param>
+    <param name="new_string"># Query to fetch PR-level reviews (not inline threads)
+# Excludes PENDING (draft reviews) ...[truncated 346 chars]...    submittedAt
+        }
+      }
+    }
+  }
+}"""
+
+# Mutation to resolve a PR review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="66429" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01912G2LfQCbcC2xvPyPM8Qc">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_017PGWt8ZXfEWW65LvnjLWiN">
+    <param name="todos">[{'content': 'Add PRReview type and PRReviewState to types.py', 'activeForm': 'Adding PRRe...[truncated 960 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="378" cache_read_input_tokens="66867" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017PGWt8ZXfEWW65LvnjLWiN">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Step 3: Add abstract method to ABC. First update imports in abc.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="67245" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012snFcovYAHbBEnyJLP3RhB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import (
+    BodyContent,
+    GitHubRepoLocation,
+   ...[truncated 65 chars]...  PRListState,
+    PRNotFound,
+    PRReviewThread,
+    PullRequestInfo,
+    WorkflowRun,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.types import (
+    BodyContent,
+    GitHubRepoLocation,
+   ...[truncated 79 chars]...
+    PRNotFound,
+    PRReview,
+    PRReviewThread,
+    PullRequestInfo,
+    WorkflowRun,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="67245" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012snFcovYAHbBEnyJLP3RhB">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the abstract method after `get_pr_review_threads`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="67683" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ln6YZXefH5DWt6wqUdeU7c">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="old_string">    @abstractmethod
+    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+    ...[truncated 342 chars]...
+            List of PRCheckRun for failing checks, sorted by name
+        """
+        ...</param>
+    <param name="new_string">    @abstractmethod
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+       ...[truncated 943 chars]...
+            List of PRCheckRun for failing checks, sorted by name
+        """
+        ...</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="67683" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ln6YZXefH5DWt6wqUdeU7c">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_0118wjHn6u6QQ9RrFvvDUmnp">
+    <param name="todos">[{'content': 'Add PRReview type and PRReviewState to types.py', 'activeForm': 'Adding PRRe...[truncated 962 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="68077" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0118wjHn6u6QQ9RrFvvDUmnp">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Step 4: Implement in real.py - first update imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="68697" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01F4J3KMJ8FfXxDKXX4fFWtu">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">from erk_shared.gateway.github.graphql_queries import (
+    ADD_REVIEW_THREAD_REPLY_MUTATI...[truncated 104 chars]...NS_BY_NODE_IDS_QUERY,
+    ISSUE_PR_LINKAGE_FRAGMENT,
+    RESOLVE_REVIEW_THREAD_MUTATION,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.graphql_queries import (
+    ADD_REVIEW_THREAD_REPLY_MUTATI...[truncated 130 chars]...NS_BY_NODE_IDS_QUERY,
+    ISSUE_PR_LINKAGE_FRAGMENT,
+    RESOLVE_REVIEW_THREAD_MUTATION,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="68697" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F4J3KMJ8FfXxDKXX4fFWtu">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VsTUvySjoU7p2NkDx3BRqG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">    GitHubRepoId,
+    GitHubRepoLocation,
+    IssueFilterState,
+    MergeError,
+    MergeR...[truncated 55 chars]...PRReviewComment,
+    PRReviewThread,
+    PullRequestInfo,
+    RepoInfo,
+    WorkflowRun,
+)</param>
+    <param name="new_string">    GitHubRepoId,
+    GitHubRepoLocation,
+    IssueFilterState,
+    MergeError,
+    MergeR...[truncated 88 chars]...  PRReviewState,
+    PRReviewThread,
+    PullRequestInfo,
+    RepoInfo,
+    WorkflowRun,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="69135" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VsTUvySjoU7p2NkDx3BRqG">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `get_pr_reviews` implementation in real.py, right after `get_pr_review_threads` (before `get_pr_check_runs`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="69594" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D2QcWtwhBzJxZiuLBHP3bB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+        pr_number: int,
+...[truncated 62 chars]..."""
+        assert self._repo_info is not None, "repo_info required for get_pr_check_runs"</param>
+    <param name="new_string">    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+   ...[truncated 2278 chars]..."""
+        assert self._repo_info is not None, "repo_info required for get_pr_check_runs"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="69594" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D2QcWtwhBzJxZiuLBHP3bB">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now implement in dry_run.py. First update imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="983" cache_read_input_tokens="69979" cache_creation="{'ephemeral_5m_input_tokens': 983, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MkrC6HKJCgwneLx4ti9EM6">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import (
+    BodyContent,
+    GitHubRepoLocation,
+   ...[truncated 49 chars]...  PRListState,
+    PRNotFound,
+    PRReviewThread,
+    PullRequestInfo,
+    WorkflowRun,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.types import (
+    BodyContent,
+    GitHubRepoLocation,
+   ...[truncated 63 chars]...
+    PRNotFound,
+    PRReview,
+    PRReviewThread,
+    PullRequestInfo,
+    WorkflowRun,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="983" cache_read_input_tokens="69979" cache_creation="{'ephemeral_5m_input_tokens': 983, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MkrC6HKJCgwneLx4ti9EM6">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `get_pr_reviews` delegation in dry_run.py after `get_pr_review_threads`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="70962" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GpvsogGtsCRLETt3i63K9e">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="old_string">    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+        pr_number: int,
+...[truncated 50 chars]...ed implementation."""
+        return self._wrapped.get_pr_check_runs(repo_root, pr_number)</param>
+    <param name="new_string">    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+   ...[truncated 294 chars]...ed implementation."""
+        return self._wrapped.get_pr_check_runs(repo_root, pr_number)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="70962" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GpvsogGtsCRLETt3i63K9e">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the fake. First check if there's a `comments_by_id` parameter placement in constructor:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="71606" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CetwCBjm6briRXB3Zs7HKa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="offset">179</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="71606" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
