@@ -1147,6 +1147,26 @@ def build_gh_label(
     return TokenSeq(tuple(parts))
 
 
+def get_model_code(*, display_name: str, model_id: str) -> str:
+    """Return a short model indicator code from display name and model ID.
+
+    Determines the base letter from the display name (O for Opus, S for Sonnet,
+    H for Haiku), then appends ¹ᴹ if the model ID contains [1m].
+    """
+    name_lower = display_name.lower()
+    if "opus" in name_lower:
+        model_code = "O"
+    elif "sonnet" in name_lower:
+        model_code = "S"
+    elif "haiku" in name_lower:
+        model_code = "H"
+    else:
+        model_code = display_name[:1].upper() if display_name else "?"
+    if "[1m]" in model_id.lower():
+        model_code += "¹ᴹ"
+    return model_code
+
+
 def main():
     """Main entry point."""
     # Prevent git from taking optional locks (e.g., index refresh during status).
@@ -1198,16 +1218,10 @@ def main():
                     github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
 
         # Get model code
-        model = data.get("model", {}).get("display_name", "")
-        model_id = data.get("model", {}).get("id", "")
-        if "[1m]" in model_id.lower():
-            model_code = "S¹ᴹ"
-        elif "sonnet" in model.lower():
-            model_code = "S"
-        elif "opus" in model.lower():
-            model_code = "O"
-        else:
-            model_code = model[:1].upper() if model else "?"
+        model_code = get_model_code(
+            display_name=data.get("model", {}).get("display_name", ""),
+            model_id=data.get("model", {}).get("id", ""),
+        )
 
         # Get repo info from GitHub data
         repo_info = get_repo_info(github_data)
