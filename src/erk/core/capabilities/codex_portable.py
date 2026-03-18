@@ -13,9 +13,10 @@ from functools import cache
 @cache
 def codex_portable_skills() -> frozenset[str]:
     """Skills that work with any AI coding agent (not Claude-specific)."""
+    # Skills migrated to npx distribution don't need codex-portable tracking;
+    # npx handles distribution directly. Remove skills from here as they migrate.
     return frozenset(
         {
-            "dignified-python",
             "fake-driven-testing",
             "erk-diff-analysis",
             "erk-exec",

@@ -82,26 +82,13 @@ def get_db_client() -> DatabaseClient:
 
 ## When Module-Level Constants ARE Acceptable
 
-Simple, static scalar values that don't involve computation or I/O:
+Simple, static values that don't involve computation or I/O:
 
 ```python
-# ACCEPTABLE: Scalar primitives and tuples
+# ACCEPTABLE: Static constants
 DEFAULT_TIMEOUT = 30
 MAX_RETRIES = 3
-VALID_STATES = ("pending", "active", "completed")
-API_VERSION = "v1"
-```
-
-For frozensets, dicts, lists, or other collections, wrap behind `@cache`:
-
-```python
-# REQUIRED: Wrap frozenset behind @cache function
-from functools import cache
-
-@cache
-def supported_formats() -> frozenset[str]:
-    """Supported configuration file formats."""
-    return frozenset({"json", "yaml", "toml"})
+SUPPORTED_FORMATS = frozenset({"json", "yaml", "toml"})
 ```
 
 ---
@@ -171,7 +158,8 @@ def process_user(user: "User") -> None:
 
 #### 4. Startup Time Optimization (Rare)
 
-Some packages have genuinely heavy import costs (pyspark, jupyter ecosystem, large ML frameworks). Deferring these imports can improve CLI startup time.
+Some packages have genuinely heavy import costs (pyspark, jupyter ecosystem, large ML frameworks).
+Deferring these imports can improve CLI startup time.
 
 **However, apply "innocent until proven guilty":**
 

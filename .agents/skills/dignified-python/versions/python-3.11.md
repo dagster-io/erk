@@ -1,28 +1,38 @@
 ---
 ---
 
-# Type Annotations - Python 3.10
+# Type Annotations - Python 3.11
 
-This document provides complete, canonical type annotation guidance for Python 3.10. This is the baseline for modern Python type syntax.
+This document provides complete, canonical type annotation guidance for Python 3.11.
 
 ## Overview
 
-Python 3.10 introduced major improvements to type annotation syntax through PEP 604 (union types via `|`) and PEP 585 (generic types in standard collections). These features eliminated the need for most `typing` module imports and made type annotations more concise and readable.
+Python 3.11 builds on 3.10's type syntax with the addition of the `Self` type (PEP 673), making
+method chaining and builder patterns significantly cleaner. All modern syntax from 3.10 continues to
+work.
 
-**What's new in 3.10:**
+**What's new in 3.11:**
 
-- Union types with `|` operator (PEP 604)
+- `Self` type for self-returning methods (PEP 673)
+- Variadic generics with TypeVarTuple (PEP 646)
+- Significantly improved error messages
+
+**Available from 3.10:**
+
 - Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
-- No more need for `List`, `Dict`, `Union`, `Optional` from typing
+- Union types with `|` operator (PEP 604)
+- Optional with `X | None`
 
 **What you need from typing module:**
 
+- `Self` for self-returning methods (NEW)
 - `TypeVar` for generic functions/classes
+- `Generic` for generic classes
 - `Protocol` for structural typing (rare - prefer ABC)
 - `TYPE_CHECKING` for conditional imports
 - `Any` (use sparingly)
 
-## Complete Type Annotation Syntax for Python 3.10
+## Complete Type Annotation Syntax for Python 3.11
 
 ### Basic Collection Types
 
@@ -40,10 +50,7 @@ coordinates: tuple[int, int] = (0, 0)
 ```python
 from typing import List, Dict, Set, Tuple  # Don't do this
 names: List[str] = []
-mapping: Dict[str, int] = {}
 ```
-
-**Why**: Built-in types are more concise, don't require imports, and are the modern Python standard.
 
 ### Union Types
 
@@ -79,9 +86,6 @@ def find_user(id: str) -> User | None:
     if id in users:
         return users[id]
     return None
-
-def get_config(key: str) -> str | None:
-    return config.get(key)
 ```
 
 ❌ **WRONG** - Don't use `typing.Optional`:
@@ -90,6 +94,63 @@ def get_config(key: str) -> str | None:
 from typing import Optional
 def find_user(id: str) -> Optional[User]:  # Don't do this
     ...
+```
+
+### Self Type for Self-Returning Methods (NEW in 3.11)
+
+✅ **PREFERRED** - Use Self for methods that return the instance:
+
+```python
+from typing import Self
+
+class Builder:
+    def set_name(self, name: str) -> Self:
+        self.name = name
+        return self
+
+    def set_value(self, value: int) -> Self:
+        self.value = value
+        return self
+
+# Usage with type safety
+builder = Builder().set_name("app").set_value(42)
+```
+
+❌ **WRONG** - Don't use bound TypeVar anymore:
+
+```python
+from typing import TypeVar
+
+T = TypeVar("T", bound="Builder")
+
+class Builder:
+    def set_name(self: T, name: str) -> T:  # Don't do this
+        ...
+```
+
+**When to use Self:**
+
+- Methods that return `self`
+- Builder pattern methods
+- Fluent interfaces with method chaining
+- Factory classmethods
+
+**Self in classmethod:**
+
+```python
+from typing import Self
+
+class Config:
+    def __init__(self, data: dict[str, str]) -> None:
+        self.data = data
+
+    @classmethod
+    def from_file(cls, path: str) -> Self:
+        """Load config from file."""
+        import json
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return cls(data)
 ```
 
 ### Generic Functions with TypeVar
@@ -108,11 +169,10 @@ def first(items: list[T]) -> T | None:
     return items[0]
 
 def identity(value: T) -> T:
-    """Return the value unchanged."""
     return value
 ```
 
-**Note**: This is the standard way in Python 3.10. Python 3.12 introduces better syntax (PEP 695).
+**Note**: Python 3.12 introduces better syntax (PEP 695) for this pattern.
 
 ### Generic Classes
 
@@ -129,8 +189,9 @@ class Stack(Generic[T]):
     def __init__(self) -> None:
         self._items: list[T] = []
 
-    def push(self, item: T) -> None:
+    def push(self, item: T) -> Self:  # Can combine with Self!
         self._items.append(item)
+        return self
 
     def pop(self) -> T | None:
         if not self._items:
@@ -139,10 +200,10 @@ class Stack(Generic[T]):
 
 # Usage
 int_stack = Stack[int]()
-int_stack.push(42)
+int_stack.push(42).push(43)  # Method chaining works!
 ```
 
-**Note**: Python 3.12 introduces cleaner syntax for this pattern.
+**Note**: Python 3.12 introduces cleaner syntax for generic classes.
 
 ### Constrained and Bounded TypeVars
 
@@ -199,7 +260,7 @@ def load_config() -> Config:
 
 **Note**: Python 3.12 introduces `type` statement for better alias support.
 
-### when from **future** import annotations is Needed
+### When from **future** import annotations is Needed
 
 Use `from __future__ import annotations` when you encounter:
 
@@ -271,147 +332,116 @@ def render(obj: Drawable) -> None:
 
 ## Complete Examples
 
-### Repository Pattern
+### Builder Pattern with Self
 
 ```python
-from abc import ABC, abstractmethod
+from typing import Self
 
-class Repository(ABC):
-    """Abstract base class for data repositories."""
+class QueryBuilder:
+    """SQL query builder with fluent interface."""
 
-    @abstractmethod
-    def get(self, id: str) -> dict[str, str] | None:
-        """Get entity by ID."""
-
-    @abstractmethod
-    def save(self, entity: dict[str, str]) -> None:
-        """Save entity."""
-
-    @abstractmethod
-    def delete(self, id: str) -> bool:
-        """Delete entity, return success."""
-
-class UserRepository(Repository):
     def __init__(self) -> None:
-        self._users: dict[str, dict[str, str]] = {}
+        self._select: list[str] = ["*"]
+        self._from: str | None = None
+        self._where: list[str] = []
+        self._limit: int | None = None
 
-    def get(self, id: str) -> dict[str, str] | None:
-        return self._users.get(id)
+    def select(self, *columns: str) -> Self:
+        """Specify columns to select."""
+        self._select = list(columns)
+        return self
 
-    def save(self, entity: dict[str, str]) -> None:
-        if "id" not in entity:
-            raise ValueError("Entity must have id")
-        self._users[entity["id"]] = entity
+    def from_table(self, table: str) -> Self:
+        """Specify table to query."""
+        self._from = table
+        return self
 
-    def delete(self, id: str) -> bool:
-        if id in self._users:
-            del self._users[id]
-            return True
-        return False
+    def where(self, condition: str) -> Self:
+        """Add WHERE condition."""
+        self._where.append(condition)
+        return self
+
+    def limit(self, n: int) -> Self:
+        """Set LIMIT."""
+        self._limit = n
+        return self
+
+    def build(self) -> str:
+        """Build final SQL query."""
+        if not self._from:
+            raise ValueError("FROM table not specified")
+
+        parts = [f"SELECT {', '.join(self._select)}"]
+        parts.append(f"FROM {self._from}")
+
+        if self._where:
+            parts.append(f"WHERE {' AND '.join(self._where)}")
+
+        if self._limit:
+            parts.append(f"LIMIT {self._limit}")
+
+        return " ".join(parts)
+
+# Usage with type-safe method chaining
+query = (
+    QueryBuilder()
+    .select("id", "name", "email")
+    .from_table("users")
+    .where("active = true")
+    .where("age > 18")
+    .limit(10)
+    .build()
+)
 ```
 
-### Generic Data Structures
+### Factory Methods with Self
 
 ```python
-from typing import Generic, TypeVar
+from typing import Self
+from pathlib import Path
+import json
 
-T = TypeVar("T")
+class Config:
+    """Application configuration with multiple factory methods."""
 
-class Node(Generic[T]):
-    """A node in a tree structure."""
-
-    def __init__(self, value: T, children: list[Node[T]] | None = None) -> None:
-        self.value = value
-        self.children = children or []
-
-    def add_child(self, child: Node[T]) -> None:
-        self.children.append(child)
-
-    def find(self, predicate: Callable[[T], bool]) -> Node[T] | None:
-        """Find first node matching predicate."""
-        if predicate(self.value):
-            return self
-        for child in self.children:
-            result = child.find(predicate)
-            if result:
-                return result
-        return None
-
-# Usage
-from collections.abc import Callable
-
-root = Node[int](1)
-root.add_child(Node[int](2))
-root.add_child(Node[int](3))
-```
-
-### Configuration Management
-
-```python
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class DatabaseConfig:
-    host: str
-    port: int
-    username: str
-    password: str | None = None
-    ssl_enabled: bool = False
-
-@dataclass(frozen=True)
-class AppConfig:
-    app_name: str
-    debug_mode: bool
-    database: DatabaseConfig
-    feature_flags: dict[str, bool]
-
-def load_config(path: str) -> AppConfig:
-    """Load application configuration from file."""
-    import json
-    from pathlib import Path
-
-    config_path = Path(path)
-    if not config_path.exists():
-        raise FileNotFoundError(f"Config not found: {path}")
-
-    data: dict[str, str | int | bool | dict[str, str | int | bool]] = json.loads(
-        config_path.read_text(encoding="utf-8")
-    )
-
-    # Parse and validate...
-    return AppConfig(...)
-```
-
-### API Client with Error Handling
-
-```python
-from collections.abc import Callable
-from typing import TypeVar
-
-T = TypeVar("T")
-
-class ApiResponse(Generic[T]):
-    """Container for API response with data or error."""
-
-    def __init__(self, data: T | None = None, error: str | None = None) -> None:
+    def __init__(self, data: dict[str, str | int]) -> None:
         self.data = data
-        self.error = error
 
-    def is_success(self) -> bool:
-        return self.error is None
+    @classmethod
+    def from_json(cls, path: Path) -> Self:
+        """Load configuration from JSON file."""
+        if not path.exists():
+            raise FileNotFoundError(f"Config not found: {path}")
 
-    def map(self, func: Callable[[T], U]) -> ApiResponse[U]:
-        """Transform successful response data."""
-        if self.is_success() and self.data is not None:
-            return ApiResponse(data=func(self.data))
-        return ApiResponse(error=self.error)
+        with path.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return cls(data)
 
-U = TypeVar("U")
+    @classmethod
+    def from_env(cls) -> Self:
+        """Load configuration from environment variables."""
+        import os
+        data = {
+            k.lower(): v
+            for k, v in os.environ.items()
+            if k.startswith("APP_")
+        }
+        return cls(data)
 
-def fetch_user(id: str) -> ApiResponse[dict[str, str]]:
-    """Fetch user from API."""
-    # Implementation...
-    return ApiResponse(data={"id": id, "name": "Alice"})
+    @classmethod
+    def default(cls) -> Self:
+        """Create default configuration."""
+        return cls({"host": "localhost", "port": 8080})
+
+    def with_override(self, key: str, value: str | int) -> Self:
+        """Return new config with overridden value."""
+        new_data = self.data.copy()
+        new_data[key] = value
+        return type(self)(new_data)
+
+# All factory methods return correct type
+config = Config.from_json(Path("config.json"))
+dev_config = config.with_override("debug", True)
 ```
 
 ## Type Checking Rules
@@ -450,7 +480,7 @@ Configure ty in `pyproject.toml`:
 
 ```toml
 [tool.ty.environment]
-python-version = "3.10"
+python-version = "3.11"
 ```
 
 ## Common Patterns
@@ -489,29 +519,20 @@ def first_or_default(items: list[str], default: str) -> str:
     return items[0]
 ```
 
-## Migration from Python 3.9
+## Migration from Python 3.10
 
-If upgrading from Python 3.9, apply these changes:
+If upgrading from Python 3.10:
 
-1. **Replace typing module types**:
-   - `List[X]` → `list[X]`
-   - `Dict[K, V]` → `dict[K, V]`
-   - `Set[X]` → `set[X]`
-   - `Tuple[X, Y]` → `tuple[X, Y]`
-   - `Union[X, Y]` → `X | Y`
-   - `Optional[X]` → `X | None`
+1. **Replace bound TypeVar with Self** for self-returning methods:
+   - Old: `T = TypeVar("T", bound="ClassName")`
+   - New: `from typing import Self` and use `-> Self`
 
-2. **Add future annotations if needed**:
-   - Add `from __future__ import annotations` for forward references
-   - Add for circular imports with `TYPE_CHECKING`
+2. **Enjoy improved error messages** (no code changes needed)
 
-3. **Remove unnecessary imports**:
-   - Remove `from typing import List, Dict, Optional, Union`
-   - Keep only `TypeVar`, `Generic`, `Protocol`, `TYPE_CHECKING`, `Any`
+3. **All existing 3.10 syntax continues to work**
 
 ## References
 
-- [PEP 604: Union Types](https://peps.python.org/pep-0604/)
-- [PEP 585: Type Hinting Generics In Standard Collections](https://peps.python.org/pep-0585/)
-- [PEP 563: Postponed Evaluation of Annotations](https://peps.python.org/pep-0563/)
-- [Python 3.10 What's New - Type Hints](https://docs.python.org/3.10/whatsnew/3.10.html)
+- [PEP 673: Self Type](https://peps.python.org/pep-0673/)
+- [PEP 646: Variadic Generics](https://peps.python.org/pep-0646/)
+- [Python 3.11 What's New](https://docs.python.org/3.11/whatsnew/3.11.html)

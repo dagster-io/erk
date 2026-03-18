@@ -14,7 +14,9 @@ description: Advanced typing patterns including cast() with assertions, Literal 
 
 **ALWAYS verify `cast()` with a runtime assertion, unless there's a documented reason not to.**
 
-`typing.cast()` is a compile-time only construct—it tells the type checker to trust you but performs no runtime verification. If your assumption is wrong, you'll get silent misbehavior instead of a clear error.
+`typing.cast()` is a compile-time only construct—it tells the type checker to trust you but performs
+no runtime verification. If your assumption is wrong, you'll get silent misbehavior instead of a
+clear error.
 
 ### Required Pattern
 
@@ -67,27 +69,10 @@ Skip the assertion only in these narrow cases:
 
 ### Why This Matters
 
-- **Silent bugs are worse than loud bugs**: An assertion failure gives you a stack trace and clear error message
+- **Silent bugs are worse than loud bugs**: An assertion failure gives you a stack trace and clear
+  error message
 - **Documentation**: The assertion documents your assumption for future readers
 - **Defense in depth**: Third-party libraries can change behavior between versions
-
----
-
-## Assert for Type Narrowing
-
-Beyond `cast()`, bare `assert` statements are acceptable for type narrowing when:
-
-1. A prior guard check already establishes the invariant
-2. The assert is redundant at runtime but informs the type checker
-
-```python
-# CORRECT: Guard establishes invariant, assert narrows type
-if not result.is_valid:
-    return None
-assert result.metadata is not None  # Type narrowing only
-```
-
-This is NOT a LBYL violation — removing the assert wouldn't cause a runtime error, it would only lose type information.
 
 ---
 
@@ -95,7 +80,8 @@ This is NOT a LBYL violation — removing the assert wouldn't cause a runtime er
 
 **Use `Literal` types for strings that have programmatic meaning.**
 
-When strings represent a fixed set of valid values (error codes, status values, command types), model them in the type system using `Literal`.
+When strings represent a fixed set of valid values (error codes, status values, command types),
+model them in the type system using `Literal`.
 
 ### Why This Matters
 

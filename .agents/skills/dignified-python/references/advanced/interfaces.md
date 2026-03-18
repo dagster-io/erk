@@ -10,7 +10,8 @@ description: ABC vs Protocol decision guide, dependency injection patterns, and 
 
 ## ABC vs Protocol: Choosing the Right Interface
 
-**ABCs (nominal typing)** and **Protocols (structural typing)** serve different purposes. Choose based on ownership and coupling needs.
+**ABCs (nominal typing)** and **Protocols (structural typing)** serve different purposes. Choose
+based on ownership and coupling needs.
 
 | Use Case                                  | Recommended | Why                                                  |
 | ----------------------------------------- | ----------- | ---------------------------------------------------- |

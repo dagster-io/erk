@@ -20,6 +20,10 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "cli-skill-creator",
         "cmux",
         "command-creator",
+        # npx-managed: as skills migrate to npx distribution, they move from
+        # bundled_skills() to _UNBUNDLED_SKILLS and can be removed from
+        # codex_portable_skills() and pyproject.toml force-include.
+        "dignified-python",  # npx-managed
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
         "refac-cli-push-down",
         "refac-mock-to-fake",
@@ -46,7 +50,6 @@ _REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
 def bundled_skills() -> dict[str, str]:
     """Return the bundled skills dict. Cached to avoid re-creation."""
     return {
-        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
         "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
         "erk-exec": "Erk exec subcommand reference",
