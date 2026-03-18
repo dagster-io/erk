@@ -175,6 +175,35 @@ def test_mutation_tracking() -> None:
 
 **Rule**: For every write operation, track the mutation in a read-only property.
 
+### When to Track on Error
+
+The most subtle decision: should mutation tracking occur when the operation returns an error (a non-ideal state)?
+
+Ask: **"If the real operation fails, did a side effect still occur?"**
+
+```python
+# No side effect on failure -> check error FIRST, skip tracking
+def charge(self, card: str, amount: float) -> ChargeSuccess | PaymentDeclined:
+    if card in self._decline_cards:
+        return PaymentDeclined(...)  # Return before tracking
+    self._charges.append((card, amount))  # Track only on success
+    return ChargeSuccess(...)
+
+# Side effect on failure -> track FIRST, then check error
+def sync_data(self, source: str) -> SyncComplete | SyncPartialFailure:
+    self._sync_attempts.append(source)  # Always track the attempt
+    if source in self._partial_failure_sources:
+        return SyncPartialFailure(...)
+    return SyncComplete(...)
+```
+
+| Scenario                         | Track on error? | Rationale                     |
+| -------------------------------- | --------------- | ----------------------------- |
+| Payment declined                 | No              | No money moved                |
+| Data sync attempted              | Yes             | The attempt itself matters    |
+| File upload failed               | No              | Nothing was uploaded          |
+| Database transaction rolled back | Yes             | The transaction was attempted |
+
 ---
 
 ## Using CliRunner for CLI Tests

@@ -85,7 +85,7 @@ This is NOT speculative because you're implementing NOW, not "maybe later."
 ### Location Rules
 
 - **Unit tests** → `tests/unit/`, `tests/commands/`, `tests/core/`
-  - Use fakes (FakeGit, FakeShell, etc.)
+  - Use fakes (FakeDatabase, FakeApiClient, etc.)
   - Use `CliRunner` (NOT subprocess)
   - No `time.sleep()` calls
   - Fast, in-memory execution
@@ -200,7 +200,7 @@ def test_with_config(tmp_path: Path):
 
 ## ❌ Not Updating All Layers When Interface Changes
 
-**When changing an integration class interface, you MUST update ALL four implementations.**
+**When changing a gateway interface, you MUST update ALL implementations.**
 
 ### Wrong Approach
 
@@ -722,12 +722,12 @@ def test_file_upload():
 
 There's a critical distinction between **gateways** and **backends**:
 
-- **Gateways** = thin wrappers around external systems (GitHubIssues, Git, Graphite)
-  - Need 4 implementations: ABC, Real, Fake, DryRun
+- **Gateways** = thin wrappers around external systems (Database, ApiClient, FileSystem)
+  - Need 3 core implementations: ABC, Real, Fake
   - Fakes provide in-memory simulation
 
-- **Backends** = higher-level abstractions that COMPOSE gateways (ManagedGitHubPrBackend)
-  - Only need ABC + real implementations
+- **Code above gateways** = services, backends, managers that COMPOSE gateways
+  - Only need real implementations
   - **NO fake implementation needed** - inject fake gateways instead
 
 ### Wrong Approach
@@ -801,28 +801,29 @@ def test_create_managed_pr():
 ### The DI Boundary Rule
 
 ```
-CLI → ErkContext (DI container)
-  → ManagedGitHubPrBackend (backend - REAL in tests)
-    → FakeGitHubIssues (gateway - FAKE in tests)  ← DI stops here
+Application entry point → DI container / context
+  → OrderService (business logic - REAL in tests)
+    → FakePaymentGateway (gateway - FAKE in tests)  ← DI stops here
+    → FakeDatabaseAdapter (gateway - FAKE in tests)  ← DI stops here
 ```
 
-**Rule**: DI and fakes apply to **gateways only**. Backends are tested with real implementations that receive fake gateways.
+**Rule**: DI and fakes apply to **gateways only**. Business logic is tested with real implementations that receive fake gateways.
 
 ---
 
 ## Summary of Anti-Patterns
 
-| Anti-Pattern                 | Why It's Wrong                    | Correct Approach            |
-| ---------------------------- | --------------------------------- | --------------------------- |
-| Testing speculative features | Maintenance burden, no value      | Only test active work       |
-| Hardcoded paths              | Catastrophic: pollutes filesystem | Use `tmp_path` fixture      |
-| Not updating all layers      | Type errors, broken tests         | Update ABC/Real/Fake/DryRun |
-| subprocess in unit tests     | 100x slower, harder to debug      | Use test clients            |
-| Complex logic in gateways    | Hard to test, hard to fake        | Keep gateways thin          |
-| Fakes with I/O               | Slow, defeats purpose             | In-memory only              |
-| Testing implementation       | Breaks on refactoring             | Test behavior               |
-| Incomplete gateway tests     | Untested code, potential bugs     | Test all implementations    |
-| Mocking third-party libs     | Fragile, coupled to internals     | Create your own gateways    |
+| Anti-Pattern                 | Why It's Wrong                    | Correct Approach         |
+| ---------------------------- | --------------------------------- | ------------------------ |
+| Testing speculative features | Maintenance burden, no value      | Only test active work    |
+| Hardcoded paths              | Catastrophic: pollutes filesystem | Use `tmp_path` fixture   |
+| Not updating all layers      | Type errors, broken tests         | Update ABC/Real/Fake     |
+| subprocess in unit tests     | 100x slower, harder to debug      | Use test clients         |
+| Complex logic in gateways    | Hard to test, hard to fake        | Keep gateways thin       |
+| Fakes with I/O               | Slow, defeats purpose             | In-memory only           |
+| Testing implementation       | Breaks on refactoring             | Test behavior            |
+| Incomplete gateway tests     | Untested code, potential bugs     | Test all implementations |
+| Mocking third-party libs     | Fragile, coupled to internals     | Create your own gateways |
 
 ## Related Documentation
 

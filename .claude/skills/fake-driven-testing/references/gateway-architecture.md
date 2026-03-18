@@ -20,9 +20,9 @@ description: Gateway layer architecture and interface patterns
 - Could fail periodically (network issues, rate limits, service outages)
 - Are difficult to test directly
 
-## The Four Implementations
+## The Core Implementations
 
-Every gateway interface has **four implementations**:
+Every gateway interface has **three core implementations** (ABC, Real, Fake). A fourth — DryRun — is an optional extension covered in `advanced-extensions.md`.
 
 ### 1. Abstract Interface (ABC)
 
@@ -235,43 +235,6 @@ fake_db.execute("INSERT INTO users VALUES (...)")
 assert "INSERT INTO users" in fake_db.executed_commands[0]
 ```
 
-### 4. Dry-Run Wrapper
-
-Intercepts write operations, delegates reads.
-
-**Example**: `DryRunDatabaseGateway` (`src/myapp/gateways/database.py`)
-
-```python
-class DryRunDatabaseGateway(DatabaseGateway):
-    """Wrapper that prints instead of executing writes."""
-
-    def __init__(self, gateway: DatabaseGateway) -> None:
-        self._gateway = gateway  # Wrap any DatabaseGateway implementation
-
-    def query(self, sql: str, *, timeout: float | None = None) -> list[dict[str, Any]]:
-        """Delegate read operation."""
-        return self._gateway.query(sql, timeout=timeout)
-
-    def execute(self, sql: str) -> None:
-        """Print instead of executing."""
-        print(f"[DRY RUN] Would execute: {sql}")
-        # Does NOT call self._gateway.execute()
-
-    @contextmanager
-    def transaction(self):
-        """Print transaction operations."""
-        print("[DRY RUN] Would start transaction")
-        yield self  # Yield self so operations within use dry-run
-        print("[DRY RUN] Would commit transaction")
-```
-
-**Key characteristics**:
-
-- **Wrapper pattern**: Accepts any gateway implementation
-- **Read operations**: Delegate to wrapped implementation
-- **Write operations**: Print `[DRY RUN]` message, don't execute
-- **Testing**: Verify operations are intercepted correctly
-
 ## Common Gateway Types
 
 ### API Client Gateway
@@ -407,6 +370,56 @@ class FakeMessageQueue(MessageQueueGateway):
         return self._published_messages.copy()
 ```
 
+### Time Gateway
+
+The simplest possible gateway — demonstrates why even stdlib calls should go through gateways for testability.
+
+```python
+import time
+from abc import ABC, abstractmethod
+from datetime import datetime
+
+class Time(ABC):
+    """Gateway for time operations."""
+
+    @abstractmethod
+    def now(self) -> datetime:
+        """Current time (replaces datetime.now())."""
+
+    @abstractmethod
+    def sleep(self, seconds: float) -> None:
+        """Sleep (replaces time.sleep())."""
+
+class RealTime(Time):
+    """Real time operations."""
+
+    def now(self) -> datetime:
+        return datetime.now()
+
+    def sleep(self, seconds: float) -> None:
+        time.sleep(seconds)
+
+class FakeTime(Time):
+    """Deterministic time for testing."""
+
+    def __init__(self, *, current_time: datetime | None = None) -> None:
+        self._current_time = current_time or datetime(2024, 1, 15, 14, 30, 0)
+        self._sleep_calls: list[float] = []
+
+    def now(self) -> datetime:
+        return self._current_time
+
+    def sleep(self, seconds: float) -> None:
+        self._sleep_calls.append(seconds)  # Track, don't actually sleep
+
+    @property
+    def sleep_calls(self) -> list[float]:
+        """Read-only access for test assertions."""
+        return list(self._sleep_calls)
+```
+
+**Why gateway-ify time?** Tests using `datetime.now()` directly are flaky (timing-dependent) and slow (real `time.sleep()`). With `FakeTime`, tests are deterministic and instant.
+
 ## When to Add/Change Gateway Methods
 
 ### Adding a Method
@@ -416,15 +429,14 @@ class FakeMessageQueue(MessageQueueGateway):
 1. Add `@abstractmethod` to ABC interface
 2. Implement in real class with actual I/O
 3. Implement in fake class with in-memory state
-4. Add handler in dry-run wrapper
-5. Write unit test of fake implementation
-6. Write integration test of real implementation
+4. Write unit test of fake implementation
+5. Write integration test of real implementation
 
 ### Changing an Interface
 
 **If you need to change an interface:**
 
-- Update all four implementations above
+- Update all implementations (ABC, Real, Fake)
 - Update all tests that use the changed method
 - Update any business logic that calls the method
 
@@ -496,72 +508,55 @@ class FakeFileSystem(FileSystemGateway):
 
 **Exception**: Fakes may create real directories when necessary for integration, but should not read/write actual files.
 
-## Gateways vs Backends
+## The DI Boundary: Only Fake Gateways
 
 **CRITICAL: DI is ONLY at the gateway level.** We do NOT want "DI all the way down" like Java.
 
+Gateways are the thin wrappers around external systems. Everything above them — services, backends, managers, handlers, whatever your project calls them — composes gateways and contains business logic. Only gateways get fakes.
+
 ### The Distinction
 
-| Aspect              | Gateway                                           | Backend                                                                              |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **Purpose**         | Thin wrapper around external system               | Higher-level abstraction that composes gateways                                      |
-| **Examples**        | `LocalGitHub`, `Git`, `Graphite`, `Shell`, `Time` | `ManagedGitHubPrBackend`, `ManagedPrBackend` implementations                         |
-| **Implementations** | 4: ABC, Real, Fake, DryRun                        | Just ABC + real implementations                                                      |
-| **Needs Fake?**     | ✅ Yes - provides in-memory simulation            | ❌ No - inject fake gateways instead                                                 |
-| **Testing**         | Use `FakeLocalGitHub` directly                    | Use `ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())` |
+| Aspect              | Gateway                                      | Code above gateways                                              |
+| ------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
+| **Purpose**         | Thin wrapper around external system          | Business logic that composes gateways                            |
+| **Examples**        | `DatabaseGateway`, `ApiClient`, `FileSystem` | `OrderService`, `UserManager`, `PaymentProcessor`                |
+| **Implementations** | 3: ABC, Real, Fake                           | Real implementations only                                        |
+| **Needs Fake?**     | Yes - provides in-memory simulation          | No - inject fake gateways instead                                |
+| **Testing**         | Use `FakeDatabase` directly                  | Use `OrderService(database=FakeDatabase(), api=FakeApiClient())` |
 
-### Backend Architecture
+### Testing Code Above Gateways
 
-Backends are higher-level abstractions that:
-
-1. **Compose one or more gateways** via constructor injection
-2. **Transform data** from gateway-specific to domain models
-3. **Implement domain operations** (not raw external operations)
+To test business logic, use the real class with fake gateways injected:
 
 ```python
-# Backend takes gateways as constructor arguments
-class ManagedGitHubPrBackend(ManagedPrBackend):
-    def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time):
-        self._github = github  # Injects gateway
-        self._github_issues = github_issues
-        self._time = time
+# ✅ CORRECT: Real service, fake gateways
+def test_process_order():
+    fake_db = FakeDatabaseAdapter(users=[{"id": 1, "balance": 100}])
+    fake_payment = FakePaymentGateway(approved_cards=["4111111111111111"])
+    service = OrderService(database=fake_db, payment=fake_payment)
 
-    def create_managed_pr(self, ...) -> CreateManagedPrResult:
-        # Uses gateway to implement domain operation
-        result = self._github.create_pr(...)
-        return CreateManagedPrResult(pr_id=str(result.number), url=result.url)
-```
+    result = service.process_order(user_id=1, card="4111111111111111", amount=50)
 
-### Testing Backends
+    assert result.status == "success"
+    assert len(fake_payment.processed_transactions) == 1
 
-To test code that uses a backend, inject fake gateways into the real backend:
-
-```python
-# ✅ CORRECT: Inject fake gateways into real backend
-def test_create_managed_pr():
-    fake_github = FakeLocalGitHub()
-    fake_issues = FakeGitHubIssues()
-    managed_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
-
-    result = managed_pr_backend.create_managed_pr(...)
-
-    assert fake_github.created_prs[0].title == "expected title"
-
-# ❌ WRONG: Creating a fake backend
-class FakeManagedPrBackend(ManagedPrBackend):  # DON'T DO THIS
+# ❌ WRONG: Creating a fake service
+class FakeOrderService(OrderService):  # DON'T DO THIS
     ...
 ```
 
-### Why No Fake Backends?
+### Why Only Fake Gateways?
 
-1. **Gateways are the seam** - They're the boundary where we swap real ↔ fake
-2. **Backends contain business logic** - They should be tested with real logic, fake dependencies
-3. **Avoids duplication** - A fake backend duplicates the real backend's logic
-4. **DI boundary** - Only inject dependencies at the gateway level
+1. **Gateways are the seam** — they're the boundary where we swap real for fake
+2. **Business logic should be tested, not faked** — test with real logic, fake dependencies
+3. **Avoids duplication** — a fake service just duplicates the real service's logic
+4. **DI stops here** — only inject at the gateway level, not deeper
 
 ## Related Documentation
 
+- `non-ideal-states.md` - Error handling: non-ideal states vs exceptions
 - `testing-strategy.md` - How to test gateway classes at different layers
 - `workflows.md` - Step-by-step guide for adding gateway methods
 - `patterns.md` - Constructor injection and mutation tracking patterns
 - `anti-patterns.md` - What to avoid in gateway design
+- `advanced-extensions.md` - DryRun wrappers and sub-gateway composition
