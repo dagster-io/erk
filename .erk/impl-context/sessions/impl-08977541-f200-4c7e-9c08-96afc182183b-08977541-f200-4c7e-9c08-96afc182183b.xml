@@ -1,0 +1,904 @@
+<session>
+  <meta branch="plnd/fix-statusline-model-indic-03-18-1253" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="08977541-f200-4c7e-9c08-96afc182183b" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="08977541-f200-4c7e-9c08-96afc182183b" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="08977541-f200-4c7e-9c08-96afc182183b" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="08977541-f200-4c7e-9c08-96afc182183b" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="17683" cache_read_input_tokens="9026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17683}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="17683" cache_read_input_tokens="9026" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17683}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019Jo5Ne1wF3iz9FJ73VLAew">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect plan from current branch and set up impl context</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="17683" cache_read_input_tokens="9026" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17683, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Jo5Ne1wF3iz9FJ73VLAew">
+Found existing impl dir for PR #9254, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.erk/impl-context/plnd--fix-statusline-model-indic-03-18-1253", "pr_number": 9254, "pr_url": "https://github.com/dagster-io/erk/pull/9254", "branch": "plnd/fix-statusline-model-indic-03-18-1253", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9254, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GDCH2xwPBWdGEdLR1jWGHv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.erk/impl-context/plnd--fix-statusline-model-indic-03-18-1253/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="26709" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 423, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GDCH2xwPBWdGEdLR1jWGHv">
+     1→# Fix: Statusline model indicator shows S¹ᴹ for Opus 1M
+     2→
+     3→## Context
+     4→
+     5→The statusline incorrectly shows `S¹ᴹ` (Sonnet 1M) when Opus 4.6 with 1M context is selected. The model ID is `claude-opus-4-6[1m]`, and the code checks for `[1m]` first, hardcoding `S¹ᴹ` for any 1M model regardless of type.
+     6→
+     7→## File to modify
+     8→
+     9→`packages/erk-statusline/src/erk_statusline/statusline.py` (lines 1200-1210)
+    10→
+    11→## Current (buggy) code
+    12→
+    13→```python
+    14→model = data.get("model", {}).get("display_name", "")
+    15→model_id = data.get("model", {}).get("id", "")
+    16→if "[1m]" in model_id.lower():
+    17→    model_code = "S¹ᴹ"        # BUG: always Sonnet regardless of actual model
+    18→elif "sonnet" in model.lower():
+    19→    model_code = "S"
+    20→elif "opus" in model.lower():
+    21→    model_code = "O"
+    22→else:
+    23→    model_code = model[:1].upper() if model else "?"
+    24→```
+    25→
+    26→## Fix
+    27→
+    28→Determine the model letter first, then append 1M suffix if present:
+    29→
+    30→```python
+
+... [25 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="27132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the source file and check for existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="27132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K7Xo2RQZZJFdcbptEgAnHg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">1190</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="27132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K7Xo2RQZZJFdcbptEgAnHg">
+  1190→                    is_linked_worktree, worktree_name = get_worktree_info_via_gateway(
+  1191→                        ctx, repo_root
+  1192→                    )
+  1193→                    relative_cwd = get_relative_cwd(cwd, git_root)
+  1194→                    new_plan_file = find_new_plan_file(git_root)
+  1195→                    plan_number = get_plan_number(git_root)
+  1196→                    objective_issue = get_objective_issue(git_root)
+  1197→                    # Fetch GitHub data using gateway for Graphite PR cache
+  1198→                    github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
+  1199→
+  1200→        # Get model code
+  1201→        model = data.get("model", {}).get("display_name", "")
+  1202→        model_id = data.get("model", {}).get("id", "")
+  1203→        if "[1m]" in model_id.lower():
+  1204→            model_code = "S¹ᴹ"
+  1205→        elif "sonnet" in model.lower():
+  1206→            model_code = "S"
+  1207→        elif "opus" in model.lower():
+  1208→            model_code = "O"
+  1209→        else:
+  1210→            model_code = model[:1].upper() if model else "?"
+  1211→
+  1212→        # Get repo info from GitHub data
+  1213→        repo_info = get_repo_info(github_data)
+  1214→        if repo_info:
+  1215→            repo_name = repo_info.repo
+  1216→
+  1217→        # Log final checks status for debugging
+  1218→        checks_status = get_checks_status(github_data)
+  1219→        _logger.debug(
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Jjipz5HFMGw7LRELJQyRSK">
+    <param name="pattern">model_code|model_indicator|S¹ᴹ|1m</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="27132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jjipz5HFMGw7LRELJQyRSK">
+Found 2 files
+packages/erk-statusline/src/erk_statusline/statusline.py
+packages/erk-statusline/src/erk_statusline/colored_tokens.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HAMCDGnFKnKkvwZ9xCZ6ah">
+    <param name="pattern">model_code|model_indicator|statusline</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="27132" output_tokens="455" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HAMCDGnFKnKkvwZ9xCZ6ah">
+Found 10 files
+tests/unit/core/test_health_checks_statusline.py
+tests/unit/core/capabilities/test_registry.py
+tests/unit/core/capabilities/test_statusline.py
+tests/unit/core/capabilities/test_base.py
+tests/unit/cli/test_activation.py
+tests/unit/cli/commands/init/capability/test_list_cmd.py
+tests/unit/cli/commands/init/capability/test_check_cmd.py
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+tests/commands/setup/init/test_statusline.py
+tests/unit/core/test_claude_settings.py
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01VUHRoueJWvpigRZf7ztpHt">
+    <param name="query">select:TaskCreate,TaskUpdate,TodoWrite</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1383" cache_read_input_tokens="28047" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VUHRoueJWvpigRZf7ztpHt">
+
+  </tool_result>
+  <assistant>
+
+Implementation environment ready, reading plan...
+
+The fix is straightforward: determine the model letter first (Opus/Sonnet/Haiku), then append the 1M suffix if present. Let me create tasks and start implementing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1891" cache_read_input_tokens="29430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01VH826HJCdeUaR6YnKTzLtg">
+    <param name="subject">Fix model indicator logic in statusline.py</param>
+    <param name="description">Reorder the model detection logic to determine the model letter first, then append 1M suffix. Change from hardcoded S¹ᴹ to dynamic model_code + ¹ᴹ.</param>
+    <param name="activeForm">Fixing model indicator logic</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1891" cache_read_input_tokens="29430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VH826HJCdeUaR6YnKTzLtg">
+Task #1 created successfully: Fix model indicator logic in statusline.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01EVaSmhP7pANqWadr9GfAEd">
+    <param name="subject">Verify/add tests for model indicator</param>
+    <param name="description">Check existing tests and ensure coverage for all model types with and without 1M context.</param>
+    <param name="activeForm">Verifying tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1891" cache_read_input_tokens="29430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EVaSmhP7pANqWadr9GfAEd">
+Task #2 created successfully: Verify/add tests for model indicator
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01QBwYm3GRmSZuJC6fv4Z49U">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks, clean up impl context, and submit via erk pr submit.</param>
+    <param name="activeForm">Running CI and submitting</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1891" cache_read_input_tokens="29430" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QBwYm3GRmSZuJC6fv4Z49U">
+Task #3 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MAHw8pRhs9kkTe3BwhdfrV">
+    <param name="command">erk exec impl-signal started --session-id="08977541-f200-4c7e-9c08-96afc182183b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="31321" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MAHw8pRhs9kkTe3BwhdfrV">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9254
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01LwHDXdQkLHy34GsKtuYDUR">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="31838" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LwHDXdQkLHy34GsKtuYDUR">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now applying the fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="31989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TqN2YbUZby6WJaP3N15RXw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">        # Get model code
+        model = data.get("model", {}).get("display_name", "")
+   ...[truncated 222 chars]...odel_code = "O"
+        else:
+            model_code = model[:1].upper() if model else "?"</param>
+    <param name="new_string">        # Get model code
+        model = data.get("model", {}).get("display_name", "")
+   ...[truncated 288 chars]...() if model else "?"
+        if "[1m]" in model_id.lower():
+            model_code += "¹ᴹ"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="31989" output_tokens="437" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TqN2YbUZby6WJaP3N15RXw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XvNAmVhioBHNxfFf5imHxX">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="32079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 521}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XvNAmVhioBHNxfFf5imHxX">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013ZDgGFkMVYZCPzbAMQs4ME">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="32079" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ZDgGFkMVYZCPzbAMQs4ME">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now let me check existing tests for the model indicator logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="32600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015HR57ihvjBTzmUazMk66k3">
+    <param name="pattern">model_code|model.*indicator|S¹ᴹ|O¹ᴹ|1m</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests</param>
+    <param name="glob">*statusline*"</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="32600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015HR57ihvjBTzmUazMk66k3">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PtFa7EyTsz6UvAUcNJRNvw">
+    <param name="pattern">model_code|S¹ᴹ|O¹ᴹ|1m.*model|model.*1m</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline</param>
+    <param name="glob">*test*"</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="32600" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PtFa7EyTsz6UvAUcNJRNvw">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01M1ih2JXFPDNjCdrGJuvTe8">
+    <param name="pattern">**/test*statusline*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="32798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 401}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M1ih2JXFPDNjCdrGJuvTe8">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/commands/setup/init/test_statusline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/unit/core/capabilities/test_statusline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/unit/core/test_health_checks_statusline.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Ao4CJb2CLi2A4chcG2DFfT">
+    <param name="pattern">packages/erk-statusline/tests/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="32798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 401}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ao4CJb2CLi2A4chcG2DFfT">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_colored_tokens.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_context.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HrMgHEJTqeSVHUxbN55kPo">
+    <param name="pattern">model_code|model.*indicator|display_name|S¹|1m</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="466" cache_read_input_tokens="33199" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 466, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HrMgHEJTqeSVHUxbN55kPo">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ai2LJTfLBbwLUQx2AZRfau">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="33665" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ai2LJTfLBbwLUQx2AZRfau">
+&lt;persisted-output&gt;
+Output too large (68.3KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-06/08977541-f200-4c7e-9c08-96afc182183b/tool-results/toolu_01Ai2LJTfLBbwLUQx2AZRfau.txt
+
+Preview (first 2KB):
+     1→"""Tests for statusline.py GitHub integration."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import os
+     7→import tempfile
+     8→import time
+     9→from pathlib import Path
+    10→from unittest.mock import MagicMock, patch
+    11→
+    12→from tests.fakes.gateway.branch_manager import FakeBranchManager
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→
+    17→from erk_shared.gateway.branch_manager.types import PrInfo
+    18→from erk_shared.gateway.git.abc import WorktreeInfo
+    19→from erk_statusline.context import StatuslineContext
+    20→from erk_statusline.statusline import (
+    21→    CACHE_TTL_SECONDS,
+    22→    GitHubData,
+    23→    PRDetailsResult,
+    24→    RepoInfo,
+    25→    _categorize_check_buckets,
+    26→    _fetch_check_runs,
+
+... [32 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="33827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 919}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012FkMYsbXck5xaVZ16sBiwV">
+    <param name="pattern">model|main\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="33827" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 919, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012FkMYsbXck5xaVZ16sBiwV">
+1641:    """Test that main() sets GIT_OPTIONAL_LOCKS=0 to prevent lock contention."""
+1644:        """main() should set GIT_OPTIONAL_LOCKS=0 before any git operations.
+1646:        We provide minimal valid stdin so main() can run to completion.
+1647:        The key assertion is that the env var is set after main() returns.
+1653:            "model": {},
+1657:                main()
+  </tool_result>
+  <assistant>The model code logic is in the `main()` function but there aren't specific unit tests for the model indicator extraction. Let me check how `main()` works to understand the best way to test this. The model code extraction is inline in `main()` — not a separate function. Let me extract it into a testable function and add tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="34746" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 291}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D6AN5s8y46FeyVijYR7918">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="34746" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 291, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D6AN5s8y46FeyVijYR7918">
+     1→#!/usr/bin/env python3
+     2→"""
+     3→Claude Code status line - robbyrussell theme style.
+     4→
+     5→Matches the robbyrussell Oh My Zsh theme format:
+     6→➜  directory (git:branch) ✗
+     7→
+     8→With added Claude-specific info on the right.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import hashlib
+    14→import json
+    15→import logging
+    16→import os
+    17→import subprocess
+    18→import sys
+    19→import time
+    20→from concurrent.futures import ThreadPoolExecutor
+    21→from pathlib import Path
+    22→from typing import NamedTuple
+    23→
+    24→from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
+    25→from erk_statusline.context import StatuslineContext
+    26→
+    27→# Cache configuration
+    28→CACHE_DIR = Path("/tmp/erk-statusline-cache")
+    29→CACHE_TTL_SECONDS = 30
+    30→
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Let me extract the model code logic into a standalone function and add tests for it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="974" cache_read_input_tokens="35037" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 974}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0186WCKV8A9n9HSw9RjT8ZV7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">1196</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="974" cache_read_input_tokens="35037" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 974, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0186WCKV8A9n9HSw9RjT8ZV7">
+  1196→                    objective_issue = get_objective_issue(git_root)
+  1197→                    # Fetch GitHub data using gateway for Graphite PR cache
+  1198→                    github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
+  1199→
+  1200→        # Get model code
+  1201→        model = data.get("model", {}).get("display_name", "")
+  1202→        model_id = data.get("model", {}).get("id", "")
+  1203→        if "opus" in model.lower():
+  1204→            model_code = "O"
+  1205→        elif "sonnet" in model.lower():
+  1206→            model_code = "S"
+  1207→        elif "haiku" in model.lower():
+  1208→            model_code = "H"
+  1209→        else:
+  1210→            model_code = model[:1].upper() if model else "?"
+  1211→        if "[1m]" in model_id.lower():
+  1212→            model_code += "¹ᴹ"
+  1213→
+  1214→        # Get repo info from GitHub data
+  1215→        repo_info = get_repo_info(github_data)
+  1216→        if repo_info:
+  1217→            repo_name = repo_info.repo
+  1218→
+  1219→        # Log final checks status for debugging
+  1220→        checks_status = get_checks_status(github_data)
+  </tool_result>
+  <assistant>I'll extract the model code logic into a function and add tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="550" cache_read_input_tokens="36011" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 550}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011PGwGVTxK51od3QNfHNZzE">
+    <param name="pattern">^def [a-z]|^class [A-Z]</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="550" cache_read_input_tokens="36011" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 550, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011PGwGVTxK51od3QNfHNZzE">
+123:class RepoInfo(NamedTuple):
+134:class GitHubData(NamedTuple):
+148:def get_git_root_via_gateway(ctx: StatuslineContext) -&gt; Path | None:
+163:def get_git_status_via_gateway(ctx: StatuslineContext) -&gt; tuple[str, bool]:
+180:def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -&gt; tuple[bool, str]:
+227:def get_plan_number(git_root: str) -&gt; int | None:
+249:def get_objective_issue(git_root: str) -&gt; int | None:
+271:def find_new_plan_file(git_root: str) -&gt; str | None:
+321:def get_relative_cwd(cwd: str, git_root: str) -&gt; str:
+343:def get_dir_name(cwd: str) -&gt; str:
+385:def get_github_repo_via_gateway(ctx: StatuslineContext, repo_root: Path) -&gt; tuple[str, str] | None:
+402:def get_pr_info_via_branch_manager(
+428:class PRDetailsResult(NamedTuple):
+740:def fetch_github_data_via_gateway(
+894:def get_checks_status(github_data: GitHubData | None) -&gt; str:
+923:def build_comment_count_label(github_data: GitHubData | None) -&gt; str:
+948:def get_repo_info(github_data: GitHubData | None) -&gt; RepoInfo:
+1004:def build_context_labels(
+1048:def build_new_plan_label(filename: str) -&gt; Token:
+1063:def build_gh_label(
+1150:def main():
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_0144v8gvMQDAi31NzrGtTcRn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">1145</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="640" cache_read_input_tokens="36561" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 640, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0144v8gvMQDAi31NzrGtTcRn">
+  1145→
+  1146→    parts.append(Token(")"))
+  1147→    return TokenSeq(tuple(parts))
+  1148→
+  1149→
+  1150→def main():
+  1151→    """Main entry point."""
+  1152→    # Prevent git from taking optional locks (e.g., index refresh during status).
+  1153→    # The statusline is read-only and runs concurrently — lock contention causes
+  1154→    # orphaned .git/index.lock files that block all git operations.
+  </tool_result>
+  <assistant>I'll add a `get_model_code` function right before `main()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="37201" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 277}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AGA5pAf7FhpQ4g5ttuqM8W">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">def main():
+    """Main entry point."""
+    # Prevent git from taking optional locks (e.g....[truncated 70 chars]...lock contention causes
+    # orphaned .git/index.lock files that block all git operations.</param>
+    <param name="new_string">def get_model_code(*, display_name: str, model_id: str) -&gt; str:
+    """Return a short mode...[truncated 737 chars]...lock contention causes
+    # orphaned .git/index.lock files that block all git operations.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="37201" output_tokens="517" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AGA5pAf7FhpQ4g5ttuqM8W">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `main()` to use the new function:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="601" cache_read_input_tokens="37478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 601}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0128H16uD8svt4rFc3YJTX2m">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">        # Get model code
+        model = data.get("model", {}).get("display_name", "")
+   ...[truncated 288 chars]...() if model else "?"
+        if "[1m]" in model_id.lower():
+            model_code += "¹ᴹ"</param>
+    <param name="new_string">        # Get model code
+        model_code = get_model_code(
+            display_name=dat...[truncated 1 chars]...t("display_name", ""),
+            model_id=data.get("model", {}).get("id", ""),
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="601" cache_read_input_tokens="37478" output_tokens="387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 601, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0128H16uD8svt4rFc3YJTX2m">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add tests. Let me check the imports in the test file to see how to add the new function:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="38079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 452}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tj3po1CHBw9ZayCxaQ11QL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="38079" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 452, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tj3po1CHBw9ZayCxaQ11QL">
+     1→"""Tests for statusline.py GitHub integration."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import os
+     7→import tempfile
+     8→import time
+     9→from pathlib import Path
+    10→from unittest.mock import MagicMock, patch
+    11→
+    12→from tests.fakes.gateway.branch_manager import FakeBranchManager
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→
+    17→from erk_shared.gateway.branch_manager.types import PrInfo
+    18→from erk_shared.gateway.git.abc import WorktreeInfo
+    19→from erk_statusline.context import StatuslineContext
+    20→from erk_statusline.statusline import (
+    21→    CACHE_TTL_SECONDS,
+    22→    GitHubData,
+    23→    PRDetailsResult,
+    24→    RepoInfo,
+    25→    _categorize_check_buckets,
+    26→    _fetch_check_runs,
+    27→    _fetch_pr_details,
+    28→    _fetch_review_thread_counts,
+    29→    _get_cache_path,
+    30→    _get_cached_pr_info,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me find the end of the file to add the test class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="923" cache_read_input_tokens="38531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 923}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01J6fEihWWqZSyk2wN1KwoHs">
+    <param name="command">wc -l /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="description">Count lines in test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="923" cache_read_input_tokens="38531" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 923, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J6fEihWWqZSyk2wN1KwoHs">
+    1658 /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RD24b4r68VY3pnVthiWvgv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="offset">1645</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="39454" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RD24b4r68VY3pnVthiWvgv">
+  1645→
+  1646→        We provide minimal valid stdin so main() can run to completion.
+  1647→        The key assertion is that the env var is set after main() returns.
+  1648→        """
+  1649→        os.environ.pop("GIT_OPTIONAL_LOCKS", None)
+  1650→        stdin_payload = {
+  1651→            "workspace": {"current_dir": ""},
+  1652→            "session_id": "test",
+  1653→            "model": {},
+  1654→        }
+  1655→        with patch("json.load", return_value=stdin_payload):
+  1656→            with patch("builtins.print"):
+  1657→                main()
+  1658→        assert os.environ["GIT_OPTIONAL_LOCKS"] == "0"
+  1659→
+  </tool_result>
+  <assistant>Now add the import and test class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="39648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 347}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018A579sqo6CbtSZ7MFRhJmr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="old_string">from erk_statusline.statusline import (
+    CACHE_TTL_SECONDS,
+    GitHubData,
+    PRDetai...[truncated 529 chars]...info_via_branch_manager,
+    get_repo_info,
+    get_worktree_info_via_gateway,
+    main,
+)</param>
+    <param name="new_string">from erk_statusline.statusline import (
+    CACHE_TTL_SECONDS,
+    GitHubData,
+    PRDetai...[truncated 549 chars]...info_via_branch_manager,
+    get_repo_info,
+    get_worktree_info_via_gateway,
+    main,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="39648" output_tokens="719" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 347, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018A579sqo6CbtSZ7MFRhJmr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the test class at the end:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="780" cache_read_input_tokens="39995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 780}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017LPNMf7aU6izwynkJ3Rizf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="old_string">        assert os.environ["GIT_OPTIONAL_LOCKS"] == "0"</param>
+    <param name="new_string">        assert os.environ["GIT_OPTIONAL_LOCKS"] == "0"
+
+
+class TestGetModelCode:
+    """Te...[truncated 1230 chars]... result = get_model_code(display_name="", model_id="unknown")
+        assert result == "?"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="780" cache_read_input_tokens="39995" output_tokens="692" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 780, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017LPNMf7aU6izwynkJ3Rizf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="753" cache_read_input_tokens="40775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 753}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Kz6tpQh2wnmpzeX2yzDxi4">
+    <param name="description">Run model code tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the specific test class TestGetModelCode in packages/erk-statusline/tests/te...[truncated 13 chars]...ts.
+
+Command: pytest packages/erk-statusline/tests/test_statusline.py::TestGetModelCode -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="753" cache_read_input_tokens="40775" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 753, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kz6tpQh2wnmpzeX2yzDxi4">
+pytest passed: All 8 tests in TestGetModelCode passed in 0.08s
+
+The test class TestGetModelCode located at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-statusline/tests/test_statusline.py` executed successfully with all 8 tests passing.
+agentId: a1048511dbaa9d0d8 (use SendMessage with to: 'a1048511dbaa9d0d8' to continue this agent)
+&lt;usage&gt;total_tokens: 13518
+tool_uses: 1
+duration_ms: 4205&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 8 tests pass. Let me complete the test task and move to CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="41528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01TLcac3ChDzYzbDw2UGL3aX">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="41528" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TLcac3ChDzYzbDw2UGL3aX">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014uB5nRizUjgvSot3Pb8ZM9">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="41528" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014uB5nRizUjgvSot3Pb8ZM9">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MsveJiXwEFC2uTN1mYBpWV">
+    <param name="command">erk exec impl-signal ended --session-id="08977541-f200-4c7e-9c08-96afc182183b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="217" cache_read_input_tokens="41853" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 217}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011RRMyf59G2wkaHdaKFrayD">
+    <param name="command">erk exec upload-impl-session --session-id="08977541-f200-4c7e-9c08-96afc182183b" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="217" cache_read_input_tokens="41853" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 217, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MsveJiXwEFC2uTN1mYBpWV">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9254
+}
+  </tool_result>
+</session>
