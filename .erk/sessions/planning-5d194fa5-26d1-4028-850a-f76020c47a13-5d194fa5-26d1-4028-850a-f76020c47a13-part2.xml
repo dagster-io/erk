@@ -1,0 +1,1019 @@
+<session>
+  <meta branch="master" />
+  <user>Last login: Wed Mar 18 12:49:27 on ttys002
+ ▐▛███▜▌   Claude Code v2.1.77
+▝▜█████▛▘  Opus 4.6 (1M context) with high effort · Claude Max
+  ▘▘ ▝▝    ~/code/erk
+
+❯ daniel  [11:21 AM]
+erk:pr-submit is still having some issues with identifying the set of changes that are relevant for creating PR descriptions (I think it may be diffing against 'master' instead of
+ 'origin/master' / the actual base of the branch, and i haven't gt synced in a bit) https://app.graphite.com/github/pr/dagster-io/internal/21775 (edited) 
+2 repliesdaniel  [11:21 AM]
+likely relevant bits of logs from the command: (edited) 
+[11:22 AM]https://gist.github.com/gibsondan/ef6971e7f47438a255f75e60cb58d40f
+
+analyze this (download the gist too)
+
+⏺ Fetch(url: "https://gist.github.com/gibsondan/ef6971e7f47438a255f75e60cb58d40f", prompt: "Extract the complete raw content of this gist. Return ALL the log text verbatim,
+       preserving formatting. This is a log file from an erk:pr-submit command.")
+  ⎿  Received 199.4KB (200 OK)
+# Gist Content Extraction
+
+The gist content appears to be incomplete or truncated in the provided page. The visible raw content shows:
+
+```
+⏺ Bash(erk exec get-pr-context 2&gt;&amp;1)
+
+⎿ {
+  "branch": {
+    "current": "fix-connection-count-alert",
+    "parent": "master"
+  },
+  "pr": {
+    "number": 21775,
+    "url": "https://github.com/dagster-io/internal/pull/21775"
+  },
+  ...
+}
+```
+
+The gist is labeled as "Secret" and contains PR context metadata from an `erk` (development tool) command execution. The file includes branch information pointing to PR #21775
+ in the dagster-internal repository, along with diff file references and commit message data related to Kubernetes service configuration changes.
+
+**Note:** The page footer indicates "⏺ Step 3: Generate Title and Body" suggesting the log file was interrupted mid-process. The complete raw gist content is not fully visible
+ in the provided webpage markup—only JSON metadata and configuration snippets are accessible.
+
+⏺ Explore(Find pr-submit diff logic)
+  ⎿  Done (31 tool uses · 71.6k tokens · 1m 1s)
+  (ctrl+o to expand)
+
+⏺ The gist wasn't fully fetched. Let me get the raw content directly.
+
+⏺ Bash(gh gist view ef6971e7f47438a255f75e60cb58d40f --raw 2&gt;&amp;1)
+  ⎿  ⏺ Bash(erk exec get-pr-context 2&gt;&amp;1)
+       ⎿  {
+            "branch": {
+              "current": "fix-connection-count-alert",
+              "parent": "master"
+            },
+            "pr": {
+              "number": 21775,
+              "url": "https://github.com/dagster-io/internal/pull/21775"
+            },
+            "diff_file":
+          "/Users/dgibson/.superset/worktrees/dagster-internal/fix-connection-count-alert/.e
+          rk/scratch/sessions/58a7f83f-f44f-4b20-8e5d-7753a3fe1a06/pr-diff-15d793f0.diff",
+            "commit_messages": [
+              "Fix three bugs in BackfillAssetCheckPartitions (#21703)\n\n##
+          Summary\n\nFixes three bugs in the `BackfillAssetCheckPartitions`
+          migration\ndiscovered by running a shadow comparison script against
+          cloud-prod\n(10,000 checks across 69 deployments):\n\n- **Independent completed
+          execution tracking (cat3, 72 mismatches):**\nThe backfill derived both
+          `latest_asset_check_execution_id` and\n`latest_completed_asset_check_execution_id`
+           from a single winner row.\nWhen the winner was PLANNED (from
+          execution-failed/skipped runs that\nnever generate an evaluation event), the
+          completed ID was incorrectly\nset to `None`, even if an earlier SUCCEEDED/FAILED
+          row existed. Now does\nan independent second pass per group.\n\n- **Batch boundary
+           fix for NULL event_storage_id (cat2, 84+297\nmismatches):** Changed ON CONFLICT
+          WHERE from strict `&lt;` to `&lt;=` for\n`latest_check_event_storage_id`. Pre-backfill
+          rows with NULL\n`evaluation_event_storage_id` get stored as 0 via fallback. When
+          a\ncheck's rows span batches, `0 &lt; 0` is false, permanently locking in
+          the\nearliest batch's stale winner. With `&lt;=`, later batches can
+          correctly\noverwrite.\n\n- **Cleanup:** Removed temporary debug import, use proper
+           top-level\nlogger import.\n\nAfter deploying, the backfill cursor should be reset
+           so it re-processes\nall rows with the corrected logic.\n\n## Test plan\n\n- [x]
+          All 10 existing migration tests pass\n- [x] Added
+          `test_backfill_planned_winner_preserves_completed_execution`\n\u2014 verifies
+          PLANNED winner still populates completed ID from earlier\nSUCCEEDED row\n- [x]
+          Added `test_backfill_cross_batch_null_event_storage_id` \u2014 verifies\nlater
+          batch with NULL event_id overwrites earlier batch (batch_size=1)\n- [x] Added
+          `test_backfill_cross_batch_completed_tracking` \u2014 verifies\ncompleted ID
+          persists across batches when later batch has PLANNED winner\n- [ ] After deploying
+           + re-running backfill from reset cursor: re-run\nshadow comparison script to
+          verify mismatches drop to zero\n\n\ud83e\udd16 Generated with [Claude
+          Code](https://claude.com/claude-code)\n\nCo-authored-by: Claude Opus 4.6
+          &lt;noreply@anthropic.com&gt;",
+              "Automated image update - flux-system/image-updater\n\nFiles:\n-
+          dagster-agents/overlays/elementl/dogfood.elementl/chart.yaml\n-
+          dagster-agents/overlays/elementl/dogfood.synthetic-tests.dev/chart.yaml\n-
+          dagster-agents/overlays/elementl/dogfood.synthetic-tests.dev/ci.yaml\nObjects:\n-
+          Job deploy-code-locations\n  Changes:\n    - 764506304434.dkr.ecr.us-west-2.amazon
+          aws.com/dagster-cloud-agent-pre-license:prod-1773764426-4ae97cf0 -&gt;
+          764506304434.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-agent-pre-license:prod-
+          1773767992-d8923b68\n- HelmRelease dagster-plus-agent\n  Changes:\n    -
+          prod-1773764426-4ae97cf0 -&gt; prod-1773767992-d8923b68",
+              "Allow setting service_spec_config for arbitrary k8s config on code server
+          services (#21756)\n\nAdd complete support for service_spec_config across Dagster
+          Cloud\ninfrastructure, enabling customization of Kubernetes Service spec for\ncode
+           location servers (e.g., `clusterIP: None` for headless services).\nThis follows
+          the pattern established by service_metadata and\ndeployment_metadata, integrating
+          the field throughout workspace config\nschemas, the Kubernetes launcher, Helm
+          charts, and tests.\n\n## Key Changes\n\n- Workspace and launcher config schemas
+          \u2014 Added service_spec_config\nfield to allow raw K8s Service spec
+          configuration across all relevant\nconfig shapes\n- Kubernetes service
+          construction \u2014 Updated\nconstruct_code_location_service() to merge
+          user-defined spec config into\nservice spec while preserving selector and ports\n-
+           Helm integration \u2014 Added serviceSpecConfig to Pydantic schemas,\nConfigMap
+          template, and values.yaml with examples\n- Allowlist support \u2014 Added
+          service_spec_config to\nonly_allow_user_defined_k8s_config_fields for restricted
+          deployments\n- Test coverage \u2014 Comprehensive tests for service spec config
+          including\nheadless service creation and allowlist validation in both unit and
+          helm\nschema tests\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified
+          (10 files)\n-\n`dagster-cloud/python_modules/dagster-cloud/dagster_cloud/workspace
+          /config_schema/__init__.py`\n- Added service_spec_config to workspace config
+          schema\n-\n`dagster-cloud/python_modules/dagster-cloud/dagster_cloud/workspace/kub
+          ernetes/launcher.py`\n- Added service_spec_config to config shapes and allowlist
+          filtering\n-\n`dagster-cloud/python_modules/dagster-cloud/dagster_cloud/workspace/
+          kubernetes/utils.py`\n- Integrated service_spec_config extraction and merging in
+          service\nconstruction\n-\n`dagster-cloud/python_modules/dagster-cloud/dagster_clou
+          d_tests/workspace_tests/test_kubernetes_launcher.py`\n- Added test cases for
+          service spec config\n-\n`dagster-oss/python_modules/libraries/dagster-k8s/dagster_
+          k8s/container_context.py`\n- Added service_spec_config handling in snake_case
+          conversion\n-\n`infra/k8s/agent/agent-schema/agent_schema/charts/user/subschema/us
+          er_workspace.py`\n- Added serviceSpecConfig fields to Pydantic models\n-\n`infra/k
+          8s/agent/agent-schema/agent_schema_tests/test_instance_configmap.py`\n- Added
+          tests for helm template rendering with service_spec_config\n-
+          `infra/k8s/agent/templates/configmap-instance.yaml` - Added\nservice_spec_config
+          blocks to ConfigMap template\n- `infra/k8s/agent/values.schema.json` - Updated
+          JSON schema with\nserviceSpecConfig definitions\n- `infra/k8s/agent/values.yaml` -
+           Added example comments for\nservice_spec_config
+          configuration\n\n&lt;/details&gt;\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n#
+          Plan: Port `service_spec_config` support to internal repo\n\n##
+          Context\n\nPR\n[dagster-io/dagster-cloud#40](https://github.com/dagster-io/dagster
+          -cloud/pull/40)\nadds `service_spec_config` to allow customizing the Kubernetes
+          Service\nspec for code location servers (e.g., setting `clusterIP: None`
+          for\nheadless services). The OSS-side field was already added
+          to\n`UserDefinedDagsterK8sConfig` in commit `270cc7c2f83`. Now we need to\nwire it
+           through everywhere `service_metadata` is referenced in the\ncloud/internal
+          codebase, including config schemas, the helm chart, and\ntests.\n\n##
+          Changes\n\n### 1. `dagster-cloud/.../workspace/kubernetes/utils.py` \u2014
+          Apply\n`service_spec_config` in service construction\n**File:**\n`dagster-cloud/py
+          thon_modules/dagster-cloud/dagster_cloud/workspace/kubernetes/utils.py`\n\nIn
+          `construct_code_location_service()` (line ~87), add extraction
+          of\n`service_spec_config` from `user_defined_k8s_config` and spread it into\nthe
+          `\"spec\"` dict:\n\n```python\nuser_defined_k8s_config =
+          container_context.server_k8s_config\nuser_defined_service_metadata = copy.deepcopy
+          (dict(user_defined_k8s_config.service_metadata))\nuser_defined_service_labels =
+          user_defined_service_metadata.pop(\"labels\",
+          {})\nuser_defined_service_spec_config =
+          copy.deepcopy(dict(user_defined_k8s_config.service_spec_config))\n\n# In the
+          return dict, change \"spec\" to:\n\"spec\": {\n
+          **user_defined_service_spec_config,\n    \"selector\": {\"user-deployment\":
+          service_name},\n    \"ports\": [{\"name\": \"grpc\", \"protocol\": \"TCP\",
+          \"port\": get_code_server_port()}],\n},\n```\n\n### 2.
+          `dagster-cloud/.../workspace/kubernetes/launcher.py` \u2014 Config\nschema &amp;
+          allowlist filter\n**File:**\n`dagster-cloud/python_modules/dagster-cloud/dagster_c
+          loud/workspace/kubernetes/launcher.py`\n\nThree changes:\n\n**a)** Line ~221: Add
+          `\"service_spec_config\"` to the set of keys\nexcluded from run config
+          allowlist:\n```python\nif key not in {\"service_metadata\",
+          \"deployment_metadata\", \"service_spec_config\"}\n```\n\n**b)** Line ~322: Add
+          `\"service_spec_config\": Permissive()` to\n`server_k8s_config` Shape (alongside
+          `service_metadata`):\n```python\n\"service_spec_config\":
+          Permissive(),\n```\n\n**c)** Line ~349: Add `\"service_spec_config\"`
+          to\n`only_allow_user_defined_k8s_config_fields`
+          Shape:\n```python\n\"service_spec_config\": Field(Map(key_type=str,
+          inner_type=bool), is_required=False),\n```\n\n### 3.
+          `dagster-cloud/.../workspace/config_schema/__init__.py` \u2014 Code\nlocation
+          config schema\n**File:**\n`dagster-cloud/python_modules/dagster-cloud/dagster_clou
+          d/workspace/config_schema/__init__.py`\n\nLine ~163: Add `\"service_spec_config\":
+           Permissive()` after\n`\"service_metadata\": Permissive()`.\n\n### 4. Helm:
+          Pydantic schema \u2014 `user_workspace.py`\n**File:**\n`infra/k8s/agent/agent-sche
+          ma/agent_schema/charts/user/subschema/user_workspace.py`\n\n**a)**
+          `ServerK8sConfig` (line ~33): Add field:\n```python\nserviceSpecConfig: dict[str,
+          Any] | None = None\n```\n\n**b)** `OnlyAllowUserDefinedK8sConfigFields` (line
+          ~46): Add field:\n```python\nserviceSpecConfig: dict[str, bool] | None =
+          None\n```\n\n### 5. Helm: Template \u2014 `configmap-instance.yaml`\n**File:**
+          `infra/k8s/agent/templates/configmap-instance.yaml`\n\n**a)** After the
+          `serviceMetadata` block (~line 223), add:\n```yaml\n{{- if
+          .Values.workspace.serverK8sConfig.serviceSpecConfig }}\nservice_spec_config: {{-
+          .Values.workspace.serverK8sConfig.serviceSpecConfig | toYaml | nindent 12 }}\n{{-
+          end }}\n```\n\n**b)** After the
+          `onlyAllowUserDefinedK8sConfigFields.serviceMetadata`\nblock (~line 248),
+          add:\n```yaml\n{{- if
+          .Values.workspace.onlyAllowUserDefinedK8sConfigFields.serviceSpecConfig
+          }}\nservice_spec_config: {{-
+          .Values.workspace.onlyAllowUserDefinedK8sConfigFields.serviceSpecConfig | toYaml |
+           nindent 12 }}\n{{- end }}\n```\n\n### 6. Helm: Values \u2014
+          `values.yaml`\n**File:** `infra/k8s/agent/values.yaml`\n\n**a)** After the
+          `serviceMetadata` comment block (~line 433), add:\n```yaml\n#   serviceSpecConfig:
+           # raw config for the spec of the launched k8s service\n#     clusterIP:
+          None\n```\n\n**b)** After the `serviceMetadata` comment
+          in\n`onlyAllowUserDefinedK8sConfigFields` (~line 461), add:\n```yaml\n#
+          serviceSpecConfig: # For code servers, allow spec fields on the k8s service to be
+          configured.\n#    clusterIP: true\n```\n\n## Tests\n\n### 7.
+          `test_kubernetes_launcher.py` \u2014 Unit tests for service
+          spec\nconfig\n**File:**\n`dagster-cloud/python_modules/dagster-cloud/dagster_cloud
+          _tests/workspace_tests/test_kubernetes_launcher.py`\n\n**a)** Existing
+          `test_construct_code_location_service` (~line 202): Add\n`service_spec_config` to
+          the `UserDefinedDagsterK8sConfig.from_dict()`\ncall and assert on
+          `obj[\"spec\"][\"cluster_ip\"]`:\n```python\n\"service_spec_config\":
+          {\"cluster_ip\": \"None\"},\n```\nThen assert:\n```python\nassert
+          obj[\"spec\"][\"cluster_ip\"] == \"None\"\n```\n\n**b)** Add a new
+          test\n`test_construct_code_location_service_with_service_spec_config`
+          that\nspecifically tests headless service creation (clusterIP: None) and\nverifies
+           the spec fields are merged correctly while preserving selector\nand
+          ports.\n\n**c)** In
+          `test_construct_code_location_deployment_with_raw_k8s_config`\n(~line 477): Add
+          `service_spec_config` to the k8s config dict (for\ncompleteness, even though it's
+          not used in deployment construction \u2014 it\nvalidates the config
+          round-trips).\n\n**d)** In `test_launch_k8s_server` (~line 554):
+          Add\n`\"service_spec_config\"` to both the `server_k8s_config`
+          and\n`only_allow_user_defined_k8s_config_fields` dicts. Verify service\ncreation
+          call includes the spec config.\n\n### 8. `test_instance_configmap.py` \u2014 Helm
+          template tests\n**File:**\n`infra/k8s/agent/agent-schema/agent_schema_tests/test_i
+          nstance_configmap.py`\n\n**a)**
+          `test_user_code_launcher_config_with_raw_k8s_config` (~line\n1234): Add
+          `serviceSpecConfig` to `ServerK8sConfig(...)` and assert it\nappears in the
+          rendered config.\n\n**b)**\n`test_user_code_launcher_config_with_only_allow_user_d
+          efined_k8s_config_fields_without_env`\n(~line 1359): Add `serviceSpecConfig`
+          to\n`OnlyAllowUserDefinedK8sConfigFields(...)` and assert it appears in
+          the\nallowlist.\n\n## Verification\n\n1. Run kubernetes launcher tests:\n
+          ```\ncd dagster-cloud/python_modules/dagster-cloud &amp;&amp; tox -vv -e\npy312-default --
+           -k \"test_construct_code_location_service or\ntest_launch_k8s_server\"\n
+          ```\n\n2. Run helm schema tests:\n   ```\ncd infra/k8s/agent/agent-schema &amp;&amp; tox
+          -vv -- -k\n\"test_user_code_launcher_config_with_raw_k8s_config
+          or\ntest_user_code_launcher_config_with_only_allow\"\n   ```\n\n3. Run `just ruff`
+           to ensure formatting.\n\n## Changelog\nAdded
+          `service_spec_config\n\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual
+          edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header
+          --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version:
+          '2'\ncreated_at: '2026-03-16T14:27:59.938124+00:00'\ncreated_by:
+          gibsondan\nplan_comment_id: null\nlast_dispatched_run_id:
+          null\nlast_dispatched_node_id: null\nlast_dispatched_at: null\nlast_local_impl_at:
+           '2026-03-16T19:37:10.438467+00:00'\nlast_local_impl_event:
+          ended\nlast_local_impl_session:
+          65844682-0ca3-431f-80d5-6901d1f19d9d\nlast_local_impl_user:
+          dgibson\nlast_remote_impl_at: null\nlast_remote_impl_run_id:
+          null\nlast_remote_impl_session_id: null\nbranch_name:
+          service-metadata\ncreated_from_session:
+          4a823c35-80b4-4774-8d32-e7962faaae01\nlifecycle_stage: impl\nworktree_name:
+          service-metadata\nlast_session_branch: planned-pr-context/21756\nlast_session_id:
+          65844682-0ca3-431f-80d5-6901d1f19d9d\nlast_session_at:
+          '2026-03-16T14:37:14.830903+00:00'\nlast_session_source:
+          local\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo
+          replicate this PR locally, run:\n\n```\nerk pr teleport
+          21756\n```\n\n---------\n\nCo-authored-by: Claude Opus 4.6 (1M context)
+          &lt;noreply@anthropic.com&gt;",
+              "Return Databricks job run URL as UrlMetadataValue (#21231)\n\n## Summary\n-
+          Wraps the Databricks job run URL in `UrlMetadataValue` instead of\nreturning it as
+           a raw string in\n`BasePipesDatabricksClient._extract_dagster_metadata`\n- This
+          makes the URL render as a clickable link in the Dagster UI\n\nAddresses
+          https://github.com/dagster-io/dagster/issues/31976\n\n## Test plan\n- [ ] Verify
+          that `UrlMetadataValue` renders as a clickable link in the\nDagster UI metadata
+          panel\n- [ ] Confirm existing Databricks pipes tests still pass\n\n\ud83e\udd16
+          Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-authored-by:
+          Thomas Ganka &lt;thomasganka@mac.lan&gt;\nCo-authored-by: Claude Opus 4.6
+          &lt;noreply@anthropic.com&gt;",
+              "WIP: Prepare for PR submission"
+            ],
+            "plan_context": {
+              "plan_id": "21775",
+              "plan_content": "# Plan: Port `service_spec_config` support to internal
+          repo\n\n## Context\n\nPR\n[dagster-io/dagster-cloud#40](https://github.com/dagster
+          -io/dagster-cloud/pull/40)\nadds `service_spec_config` to allow customizing the
+          Kubernetes Service\nspec for code location servers (e.g., setting `clusterIP:
+          None` for\nheadless services). The OSS-side field was already added
+          to\n`UserDefinedDagsterK8sConfig` in commit `270cc7c2f83`. Now we need to\nwire it
+           through everywhere `service_metadata` is referenced in the\ncloud/internal
+          codebase, including config schemas, the helm chart, and\ntests.\n\n##
+          Changes\n\n### 1. `dagster-cloud/.../workspace/kubernetes/utils.py` \u2014
+          Apply\n`service_spec_config` in service construction\n**File:**\n`dagster-cloud/py
+          thon_modules/dagster-cloud/dagster_cloud/workspace/kubernetes/utils.py`\n\nIn
+          `construct_code_location_service()` (line ~87), add extraction
+          of\n`service_spec_config` from `user_defined_k8s_config` and spread it into\nthe
+          `\"spec\"` dict:\n\n```python\nuser_defined_k8s_config =
+          container_context.server_k8s_config\nuser_defined_service_metadata = copy.deepcopy
+          (dict(user_defined_k8s_config.service_metadata))\nuser_defined_service_labels =
+          user_defined_service_metadata.pop(\"labels\",
+          {})\nuser_defined_service_spec_config =
+          copy.deepcopy(dict(user_defined_k8s_config.service_spec_config))\n\n# In the
+          return dict, change \"spec\" to:\n\"spec\": {\n
+          **user_defined_service_spec_config,\n    \"selector\": {\"user-deployment\":
+          service_name},\n    \"ports\": [{\"name\": \"grpc\", \"protocol\": \"TCP\",
+          \"port\": get_code_server_port()}],\n},\n```\n\n### 2.
+          `dagster-cloud/.../workspace/kubernetes/launcher.py` \u2014 Config\nschema &amp;
+          allowlist filter\n**File:**\n`dagster-cloud/python_modules/dagster-cloud/dagster_c
+          loud/workspace/kubernetes/launcher.py`\n\nThree changes:\n\n**a)** Line ~221: Add
+          `\"service_spec_config\"` to the set of keys\nexcluded from run config
+          allowlist:\n```python\nif key not in {\"service_metadata\",
+          \"deployment_metadata\", \"service_spec_config\"}\n```\n\n**b)** Line ~322: Add
+          `\"service_spec_config\": Permissive()` to\n`server_k8s_config` Shape (alongside
+          `service_metadata`):\n```python\n\"service_spec_config\":
+          Permissive(),\n```\n\n**c)** Line ~349: Add `\"service_spec_config\"`
+          to\n`only_allow_user_defined_k8s_config_fields`
+          Shape:\n```python\n\"service_spec_config\": Field(Map(key_type=str,
+          inner_type=bool), is_required=False),\n```\n\n### 3.
+          `dagster-cloud/.../workspace/config_schema/__init__.py` \u2014 Code\nlocation
+          config schema\n**File:**\n`dagster-cloud/python_modules/dagster-cloud/dagster_clou
+          d/workspace/config_schema/__init__.py`\n\nLine ~163: Add `\"service_spec_config\":
+           Permissive()` after\n`\"service_metadata\": Permissive()`.\n\n### 4. Helm:
+          Pydantic schema \u2014 `user_workspace.py`\n**File:**\n`infra/k8s/agent/agent-sche
+          ma/agent_schema/charts/user/subschema/user_workspace.py`\n\n**a)**
+          `ServerK8sConfig` (line ~33): Add field:\n```python\nserviceSpecConfig: dict[str,
+          Any] | None = None\n```\n\n**b)** `OnlyAllowUserDefinedK8sConfigFields` (line
+          ~46): Add field:\n```python\nserviceSpecConfig: dict[str, bool] | None =
+          None\n```\n\n### 5. Helm: Template \u2014 `configmap-instance.yaml`\n**File:**
+          `infra/k8s/agent/templates/configmap-instance.yaml`\n\n**a)** After the
+          `serviceMetadata` block (~line 223), add:\n```yaml\n{{- if
+          .Values.workspace.serverK8sConfig.serviceSpecConfig }}\nservice_spec_config: {{-
+          .Values.workspace.serverK8sConfig.serviceSpecConfig | toYaml | nindent 12 }}\n{{-
+          end }}\n```\n\n**b)** After the
+          `onlyAllowUserDefinedK8sConfigFields.serviceMetadata`\nblock (~line 248),
+          add:\n```yaml\n{{- if
+          .Values.workspace.onlyAllowUserDefinedK8sConfigFields.serviceSpecConfig
+          }}\nservice_spec_config: {{-
+          .Values.workspace.onlyAllowUserDefinedK8sConfigFields.serviceSpecConfig | toYaml |
+           nindent 12 }}\n{{- end }}\n```\n\n### 6. Helm: Values \u2014
+          `values.yaml`\n**File:** `infra/k8s/agent/values.yaml`\n\n**a)** After the
+          `serviceMetadata` comment block (~line 433), add:\n```yaml\n#   serviceSpecConfig:
+           # raw config for the spec of the launched k8s service\n#     clusterIP:
+          None\n```\n\n**b)** After the `serviceMetadata` comment
+          in\n`onlyAllowUserDefinedK8sConfigFields` (~line 461), add:\n```yaml\n#
+          serviceSpecConfig: # For code servers, allow spec fields on the k8s service to be
+          configured.\n#    clusterIP: true\n```\n\n## Tests\n\n### 7.
+          `test_kubernetes_launcher.py` \u2014 Unit tests for service
+          spec\nconfig\n**File:**\n`dagster-cloud/python_modules/dagster-cloud/dagster_cloud
+          _tests/workspace_tests/test_kubernetes_launcher.py`\n\n**a)** Existing
+          `test_construct_code_location_service` (~line 202): Add\n`service_spec_config` to
+          the `UserDefinedDagsterK8sConfig.from_dict()`\ncall and assert on
+          `obj[\"spec\"][\"cluster_ip\"]`:\n```python\n\"service_spec_config\":
+          {\"cluster_ip\": \"None\"},\n```\nThen assert:\n```python\nassert
+          obj[\"spec\"][\"cluster_ip\"] == \"None\"\n```\n\n**b)** Add a new
+          test\n`test_construct_code_location_service_with_service_spec_config`
+          that\nspecifically tests headless service creation (clusterIP: None) and\nverifies
+           the spec fields are merged correctly while preserving selector\nand
+          ports.\n\n**c)** In
+          `test_construct_code_location_deployment_with_raw_k8s_config`\n(~line 477): Add
+          `service_spec_config` to the k8s config dict (for\ncompleteness, even though it's
+          not used in deployment construction \u2014 it\nvalidates the config
+          round-trips).\n\n**d)** In `test_launch_k8s_server` (~line 554):
+          Add\n`\"service_spec_config\"` to both the `server_k8s_config`
+          and\n`only_allow_user_defined_k8s_config_fields` dicts. Verify service\ncreation
+          call includes the spec config.\n\n### 8. `test_instance_configmap.py` \u2014 Helm
+          template tests\n**File:**\n`infra/k8s/agent/agent-schema/agent_schema_tests/test_i
+          nstance_configmap.py`\n\n**a)**
+          `test_user_code_launcher_config_with_raw_k8s_config` (~line\n1234): Add
+          `serviceSpecConfig` to `ServerK8sConfig(...)` and assert it\nappears in the
+          rendered config.\n\n**b)**\n`test_user_code_launcher_config_with_only_allow_user_d
+          efined_k8s_config_fields_without_env`\n(~line 1359): Add `serviceSpecConfig`
+          to\n`OnlyAllowUserDefinedK8sConfigFields(...)` and assert it appears in
+          the\nallowlist.\n\n## Verification\n\n1. Run kubernetes launcher tests:\n
+          ```\ncd dagster-cloud/python_modules/dagster-cloud &amp;&amp; tox -vv -e\npy312-default --
+           -k \"test_construct_code_location_service or\ntest_launch_k8s_server\"\n
+          ```\n\n2. Run helm schema tests:\n   ```\ncd infra/k8s/agent/agent-schema &amp;&amp; tox
+          -vv -- -k\n\"test_user_code_launcher_config_with_raw_k8s_config
+          or\ntest_user_code_launcher_config_with_only_allow\"\n   ```\n\n3. Run `just ruff`
+           to ensure formatting.\n\n## Changelog\nAdded `service_spec_config\n",
+              "objective_summary": null
+            }
+          }
+
+     ⏺ Rea(/Users/dgibson/.superset/worktrees/dagster-internal/fix-connection-count-alert/.erk/sc
+          ratch/sessions/58a7f83f-f44f-4b20-8e5d-7753a3fe1a06/pr-diff-15d793f0.diff)
+       ⎿  Read 809 lines
+
+     ⏺ Step 3: Generate Title and Body
+
+⏺ Now let me look at the key code files to understand exactly where the issue is.
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py · lines 130-219)
+  ⎿  Read 90 lines
+
+⏺ Read(/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py · lines 55-84)
+  ⎿  Read 22 lines
+
+⏺ Search(pattern: "get-pr-context", path: "/Users/schrockn/code/erk")
+  ⎿  Found 5 files
+     src/erk/cli/commands/exec/group.py
+     tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+     .claude/skills/erk-exec/reference.md
+     src/erk/cli/commands/exec/scripts/get_pr_context.py
+     .claude/commands/erk/pr-submit.md
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/get_pr_context.py)
+  ⎿  Read 111 lines
+
+⏺ Read(/Users/schrockn/code/erk/.claude/commands/erk/pr-submit.md)
+  ⎿  Read 124 lines
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/shared.py)
+  ⎿  Read 443 lines
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+⏺ Now let me check how detect_trunk_branch works and get_commit_messages_since:
+
+⏺ Search(pattern: "def detect_trunk_branch", path: "/Users/schrockn/code/erk")
+  ⎿  Found 84 lines
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:157:    def detect_trunk_branch(self, repo_root: Path) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-158-        """Auto-detect the trunk branch name.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-159-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-160-        Checks git's remote HEAD reference, then falls back to checking for
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-161-        existence of 'main' then 'master'. Returns 'main' as final fallback
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-162-        if neither branch exists.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-163-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-164-        Args:
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-165-            repo_root: Path to the repository root
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-166-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-167-        Returns:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-168-            Trunk branch name (e.g., 'main', 'master')
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-169-        """
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-170-        ...
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-171-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-172-    @abstractmethod
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:182:    def detect_trunk_branch(self, repo_root: Path) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-183-        """Auto-detect the trunk branch name.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-184-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-185-        Checks git's remote HEAD reference, then falls back to checking for
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-186-        existence of 'main' then 'master'. Returns 'main' as final fallback
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-187-        if neither branch exists.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-188-        """
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-189-        # 1. Try git symbolic-ref to detect default branch
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-190-        result = subprocess.run(
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-191-            ["git", "symbolic-ref", "refs/remotes/origin/HEAD"],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-192-            cwd=repo_root,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-193-            capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-194-            text=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-195-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-196-        )
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-197-        if result.returncode == 0:
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:93:    def detect_trunk_branch(self, repo_root: Path) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-94-        """Auto-detect the trunk branch name."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-95-        return self._wrapped.detect_trunk_branch(repo_root)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-96-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-97-    def validate_trunk_branch(self, repo_root: Path, name: str) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-98-        """Validate that a configured trunk branch exists."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-99-        return self._wrapped.validate_trunk_branch(repo_root, name)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-100-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-101-    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-102-        """Check if a branch exists on a remote."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-103-        return self._wrapped.branch_exists_on_remote(repo_root, remote,
+     branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-104-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-105-    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-106-        """Get number of commits ahead and behind tracking branch."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-107-        return self._wrapped.get_ahead_behind(cwd, branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-108-
+     --
+     src/erk/cli/commands/exec/scripts/detect_trunk_branch.py:105:def detect_trunk_branch(ctx: click.Context) -&gt; None:
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-106-    """Detect whether repo uses main or master as trunk branch.
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-107-
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-108-    Queries the origin remote to check for trunk branch existence.
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-109-    Checks for 'main' first, then 'master'. Exits with error if neither exists.
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-110-    """
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-111-    git = require_git(ctx)
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-112-    repo_root = require_repo_root(ctx)
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-113-
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-114-    result = _detect_trunk_branch_impl(git, repo_root)
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-115-
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-116-    # Output JSON result
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-117-    click.echo(json.dumps(asdict(result), indent=2))
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-118-
+     /Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-119-    # Exit with error code if detection failed
+     src/erk/cli/commands/exec/scripts/detect_trunk_branch.py-120-    if isinstance(result, DetectionError):
+     --
+     tests/fakes/gateway/git_branch_ops.py:336:    def detect_trunk_branch(self, repo_root: Path) -&gt; str:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-337-        """Auto-detect the trunk branch name."""
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-338-        return self._trunk_branches.get(repo_root, "main")
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-339-
+     tests/fakes/gateway/git_branch_ops.py-340-    def validate_trunk_branch(self, repo_root: Path, name: str) -&gt; str:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-341-        """Validate that a configured trunk branch exists.
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-342-
+     tests/fakes/gateway/git_branch_ops.py-343-        Raises:
+     tests/fakes/gateway/git_branch_ops.py-344-            RuntimeError: If the specified branch doesn't exist
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-345-        """
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-346-        branches = self._local_branches.get(repo_root, [])
+     tests/fakes/gateway/git_branch_ops.py-347-        if name not in branches:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-348-            error_msg = (
+     tests/fakes/gateway/git_branch_ops.py-349-                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-350-                f"Update your configuration in pyproject.toml or create the branch."
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_branch_ops.py-351-            )
+
+⏺ Search(pattern: "def get_commit_messages_since", path: "/Users/schrockn/code/erk")
+  ⎿  Found 64 lines
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py:123:    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-124-        """Get full commit messages for commits in HEAD but not in base_branch.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-125-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-126-        Returns commits in chronological order (oldest first).
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-127-
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-128-        Args:
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-129-            cwd: Working directory
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-130-            base_branch: Branch to compare against (e.g., parent branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-131-
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-132-        Returns:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-133-            List of full commit messages (subject + body) for each unique commit
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-134-        """
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-135-        ...
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-136-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-137-    @abstractmethod
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py-138-    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:173:    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-174-        """Get full commit messages for commits in HEAD but not in
+     base_branch."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-175-        separator = "---COMMIT_SEP---"
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-176-        result = subprocess.run(
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-177-            ["git", "log", "--reverse", f"--format=%B{separator}",
+     f"{base_branch}..HEAD"],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-178-            cwd=cwd,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-179-            capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-180-            text=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-181-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-182-        )
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-183-        if result.returncode != 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-184-            return []
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-185-        return [msg.strip() for msg in result.stdout.split(separator) if
+     msg.strip()]
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-186-
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-187-    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py-188-        """Get the full commit message of HEAD."""
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py:85:    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-86-        """Get commit messages since base branch (read-only, delegates to
+     wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-87-        return self._wrapped.get_commit_messages_since(cwd, base_branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-88-
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-89-    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-90-        """Get full commit message (read-only, delegates to wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-91-        return self._wrapped.get_head_commit_message_full(cwd)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-92-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-93-    def get_recent_commits(
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-94-        self, cwd: Path, *, limit: int = 5, branch: str | None = None
+     packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-95-    ) -&gt; list[dict[str, str]]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-96-        """Get recent commits (read-only, delegates to wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py-97-        return self._wrapped.get_recent_commits(cwd, limit=limit,
+     branch=branch)
+     --
+     tests/fakes/gateway/git_commit_ops.py:178:    def get_commit_messages_since(self, cwd: Path, base_branch: str) -&gt; list[str]:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-179-        """Get full commit messages for commits in HEAD but not in base_branch."""
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-180-        return self._commit_messages_since.get((cwd, base_branch), [])
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-181-
+     tests/fakes/gateway/git_commit_ops.py-182-    def get_head_commit_message_full(self, cwd: Path) -&gt; str:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-183-        """Get the full commit message (subject + body) of HEAD.
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-184-
+     tests/fakes/gateway/git_commit_ops.py-185-        Returns:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-186-            Full commit message from head_commit_messages_full if configured,
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-187-            or the message from the most recent commit if commits were created,
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-188-            or empty string as fallback.
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-189-        """
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-190-        # Check configured messages first
+     tests/fakes/gateway/git_commit_ops.py-191-        if cwd in self._head_commit_messages_full:
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-192-            return self._head_commit_messages_full[cwd]
+     /Users/schrockn/code/erk/tests/fakes/gateway/git_commit_ops.py-193-
+
+⏺ Now I have the complete picture. Here's the analysis:
+
+  Root Cause
+
+  The bug is in two places that both use a local branch name (master) instead of the remote-tracking ref (origin/master):
+
+  1. get_diff_to_branch — the diff
+
+  File: packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py:71
+  cmd=["git", "diff", f"{branch}...HEAD"]
+  When branch = "master", this runs git diff master...HEAD. The three-dot syntax computes the merge-base between local master and HEAD. If local master is stale (hasn't been
+  fetched/synced), the merge-base is old, and the diff includes all the commits between stale-local-master and HEAD — including commits from other PRs that landed on origin/master
+  after the last sync.
+
+  2. get_commit_messages_since — the commit messages
+
+  File: packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py:177
+  ["git", "log", "--reverse", f"--format=%B{separator}", f"{base_branch}..HEAD"]
+  Same issue — uses two-dot syntax against local master. This lists all commits reachable from HEAD but not from local master — pulling in every commit from other PRs that landed
+  after the last sync.
+
+  Evidence from the gist
+
+  The gist confirms exactly this. The commit_messages array in the get-pr-context output contains:
+  - "Fix three bugs in BackfillAssetCheckPartitions (#21703)" — unrelated PR
+  - "Automated image update - flux-system/image-updater" — unrelated automated commit
+  - "Allow setting service_spec_config for arbitrary k8s config (#21756)" — unrelated PR
+  - "Return Databricks job run URL (#21231)" — unrelated PR
+  - "WIP: Prepare for PR submission" — the actual branch's commit
+
+  Only the last one is relevant. The others are commits on origin/master that the local master hasn't been updated to include.
+
+  Where the branch name flows in
+
+  The chain is:
+  1. discover_branch_context() in shared.py:67 → parent_branch = ctx.branch_manager.get_parent_branch(...) or trunk_branch
+  2. For Graphite branches, get_parent_branch() returns "master" (the local name)
+  3. detect_trunk_branch() also returns local names like "master" or "main"
+  4. This local name flows into both get_diff_to_branch(cwd, "master") and get_commit_messages_since(cwd, "master")
+
+  Fix options
+
+  The simplest fix is to prefix with origin/ when passing the branch to git diff/log commands. Specifically:
+
+  1. In get_diff_to_branch: use origin/{branch}...HEAD instead of {branch}...HEAD
+  2. In get_commit_messages_since: use origin/{branch}..HEAD instead of {branch}..HEAD
+
+  Using origin/master means git uses the remote-tracking ref, which is updated on every git fetch (which git push implicitly does). Since push-and-create-pr runs before
+  get-pr-context, the remote-tracking ref should be current.
+
+  An alternative would be to have the caller pass origin/master instead of master, but that pushes the fix higher up the chain. The cleaner approach depends on whether these
+  methods are ever called with refs that aren't meant to be remote branches (e.g., local-only branches in a stack). For stacked PRs via Graphite, the parent could be another
+  feature branch that exists locally — in which case blindly prepending origin/ would be wrong if the parent branch hasn't been pushed.
+
+  The safest fix would be at the call sites in discover_branch_context or get_pr_context — when the parent is the trunk branch, use origin/{trunk}. Want me to implement a fix?
+
+✻ Worked for 2m 27s
+
+❯ yes plan a fix
+
+⏺ Let me explore a few targeted areas to validate the fix approach.
+
+⏺ Explore(Explore diff extraction pipeline)
+  ⎿  Done (34 tool uses · 84.7k tokens · 1m 11s)
+  (ctrl+o to expand)
+
+⏺ Explore(Explore branch manager stacking)
+  ⎿  Done (34 tool uses · 80.9k tokens · 1m 3s)
+  (ctrl+o to expand)
+
+⏺ Good exploration results. Now I have a clear picture. Let me read the key files I need to verify the fix approach.
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py · lines 370-409)
+  ⎿  Read 40 lines
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py · lines 575-604)
+  ⎿  Read 30 lines
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py · lines 680-699)
+  ⎿  Read 20 lines
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py · lines 500-569)
+  ⎿  Read 70 lines
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py · lines 80-139)
+  ⎿  Read 60 lines
+
+⏺ Now let me check the SubmitState dataclass and how count_commits_ahead works, since that also uses parent_branch:
+
+⏺ Read(/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py · lines 1-130)
+  ⎿  Read 130 lines
+
+⏺ Search(pattern: "def count_commits_ahead", path: "/Users/schrockn/code/erk/packages/erk-shared")
+  ⎿  Found 49 lines
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py:19:    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-20-        """Count commits in HEAD that are not in base_branch.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-21-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-22-        Uses `git rev-list --count {base_branch}..HEAD`.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-23-
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-24-        Args:
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-25-            cwd: Working directory
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-26-            base_branch: Branch to compare against
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-27-
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-28-        Returns:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-29-            Number of commits ahead, or 0 on error
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-30-        """
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-31-        ...
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-32-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-33-    @abstractmethod
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/abc.py-34-    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py:17:    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-18-        """Count commits in HEAD that are not in base_branch."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-19-        result = subprocess.run(
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-20-            ["git", "rev-list", "--count", f"{base_branch}..HEAD"],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-21-            cwd=cwd,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-22-            capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-23-            text=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-24-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-25-        )
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-26-        if result.returncode != 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-27-            return 0
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-28-        count_str = result.stdout.strip()
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-29-        if not count_str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-30-            return 0
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-31-        return int(count_str)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/real.py-32-
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py:22:    def count_commits_ahead(self, cwd: Path, base_branch: str) -&gt; int:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-23-        """Query operation (read-only, delegates to wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-24-        return self._wrapped.count_commits_ahead(cwd, base_branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-25-
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-26-    def count_commits_behind(self, cwd: Path, target_branch: str) -&gt; int:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-27-        """Query operation (read-only, delegates to wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-28-        return self._wrapped.count_commits_behind(cwd, target_branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-29-
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-30-    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -&gt; str | None:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-31-        """Query operation (read-only, delegates to wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-32-        return self._wrapped.get_merge_base(repo_root, ref1, ref2)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-33-
+     packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-34-    def get_diff_to_branch(self, cwd: Path, branch: str) -&gt; str:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-35-        """Query operation (read-only, delegates to wrapped)."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/dry_run.py-36-        return self._wrapped.get_diff_to_branch(cwd, branch)
+
+⏺ Let me check one more thing - whether there's a utility to check if a ref exists:
+
+⏺ Search(pattern: "def ref_exists|def remote_ref_exists|rev-parse.*--verify|show-ref", path: "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git")
+  ⎿  Found 49 lines
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:41:                cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-42-                operation_context=f"check if branch '{branch_name}' exists",
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-43-                cwd=cwd,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-44-                check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-45-            )
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-46-            if check_result.returncode == 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-47-                return BranchAlreadyExists(
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-48-                    branch_name=branch_name,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-49-                    message=f"Branch '{branch_name}' already exists",
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:66:            cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-67-            operation_context=f"check if branch '{branch_name}' exists",
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-68-            cwd=cwd,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-69-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-70-        )
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-71-        if check_result.returncode != 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-72-            # Branch doesn't exist - goal achieved
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-73-            return
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-74-
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:206:                ["git", "show-ref", "--verify", f"refs/heads/{candidate}"],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-207-                cwd=repo_root,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-208-                capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-209-                check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-210-            )
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-211-            if result.returncode == 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-212-                return candidate
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-213-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-214-        # 3. Final fallback: 'main'
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:231:            ["git", "rev-parse", "--verify", name],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-232-            cwd=repo_root,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-233-            capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-234-            text=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-235-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-236-        )
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-237-        if result.returncode == 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-238-            return name
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-239-        error_msg = (
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:345:            ["git", "rev-parse", "--verify", remote_branch],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-346-            cwd=cwd,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-347-            capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-348-            text=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-349-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-350-        )
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-351-        if result.returncode != 0:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-352-            return BranchDivergence(is_diverged=False, ahead=0, behind=0)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-353-
+
+⏺ Search(pattern: "def branch_exists_on_remote", path: "/Users/schrockn/code/erk/packages/erk-shared")
+  ⎿  Found 41 lines
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:189:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-190-        """Check if a branch exists on a remote.
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-191-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-192-        Args:
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-193-            repo_root: Path to the git repository root
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-194-            remote: Remote name (e.g., "origin")
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-195-            branch: Branch name to check
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-196-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-197-        Returns:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-198-            True if branch exists on remote, False otherwise
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-199-        """
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-200-        ...
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-201-
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:101:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-102-        """Check if a branch exists on a remote."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-103-        return self._wrapped.branch_exists_on_remote(repo_root, remote,
+     branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-104-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-105-    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-106-        """Get number of commits ahead and behind tracking branch."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-107-        return self._wrapped.get_ahead_behind(cwd, branch)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-108-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-109-    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-110-        """Get sync status for all local branches."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-111-        return self._wrapped.get_all_branch_sync_info(repo_root)
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-112-
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-113-    def is_branch_diverged_from_remote(
+     --
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:245:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-246-        """Check if a branch exists on a remote."""
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-247-        result = subprocess.run(
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-248-            ["git", "ls-remote", remote, branch],
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-249-            cwd=repo_root,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-250-            capture_output=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-251-            text=True,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-252-            check=False,
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-253-        )
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-254-        return bool(result.stdout.strip())
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-255-
+     packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-256-    def get_ahead_behind(self, cwd: Path, branch: str) -&gt; tuple[int, int]:
+     /Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-257-        """Get number of commits ahead and behind tracking branch."""
+
+⏺ Now I have a complete understanding of the issue and the code. Let me write the plan.
+
+⏺ Updated plan
+  ⎿  Wrote 108 lines to /Users/schrockn/.claude/plans/robust-finding-umbrella.md
+        1 # Plan: Fix stale local branch ref in PR diff/commit operations
+        2
+        3 ## Context
+        4
+        5 `erk:pr-submit` (and `erk exec get-pr-context`) generates PR descriptions by diffing the current branch against its parent. The parent branch name (e.g., `"master"
+          `) is resolved as a **local ref**, so when the local trunk hasn't been synced recently (`gt sync` / `git pull`), the diff and commit messages include unrelated cha
+          nges from other merged PRs.
+        6
+        7 **Evidence:** Daniel's gist shows `get-pr-context` returning commit messages from 4 unrelated PRs because local `master` was stale vs `origin/master`.
+        8
+        9 **Root cause:** `discover_branch_context()` and `prepare_state()` resolve `parent_branch` as a local name. This flows into:
+       10 - `git diff master...HEAD` (3-dot) — merge-base from stale local master
+       11 - `git log master..HEAD` (2-dot) — includes commits already on `origin/master`
+       12 - `git rev-list --count master..HEAD` — overcounts commits ahead
+       13
+       14 ## Approach
+       15
+       16 Add a `diff_base` concept that resolves the parent branch to its remote-tracking ref (`origin/{branch}`) when available. Keep `parent_branch` as the bare local nam
+          e for `gh pr create --base` and display.
+       17
+       18 ### Step 1: Add `resolve_remote_tracking_ref` to `GitBranchOps` ABC
+       19
+       20 Add a method that checks if `refs/remotes/origin/{branch}` exists locally (no network call) and returns `origin/{branch}` if so, otherwise returns the bare branch
+          name.
+       21
+       22 **Files (4-place ABC pattern):**
+       23 - `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` — abstract method
+       24 - `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` — `git rev-parse --verify refs/remotes/origin/{branch}`
+       25 - `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py` — delegate to wrapped
+       26 - `tests/fakes/gateway/git_branch_ops.py` — configurable set of remote branches
+       27
+       28 ```python
+       29 # ABC
+       30 @abstractmethod
+       31 def resolve_remote_tracking_ref(self, repo_root: Path, branch: str) -&gt; str:
+       32     """Return origin/{branch} if remote-tracking ref exists locally, else branch."""
+       33     ...
+       34
+       35 # Real
+       36 def resolve_remote_tracking_ref(self, repo_root: Path, branch: str) -&gt; str:
+       37     if branch.startswith("origin/"):
+       38         return branch
+       39     result = subprocess.run(
+       40         ["git", "rev-parse", "--verify", f"refs/remotes/origin/{branch}"],
+       41         cwd=repo_root, capture_output=True, text=True, check=False,
+       42     )
+       43     if result.returncode == 0:
+       44         return f"origin/{branch}"
+       45     return branch
+       46 ```
+       47
+       48 ### Step 2: Add `diff_base` to `BranchDiscovery`
+       49
+       50 **File:** `src/erk/cli/commands/pr/shared.py`
+       51
+       52 - Add `diff_base: str` field to `BranchDiscovery` dataclass
+       53 - In `discover_branch_context`, resolve: `diff_base = ctx.git.branch.resolve_remote_tracking_ref(repo_root, parent_branch)`
+       54
+       55 ### Step 3: Use `diff_base` in exec scripts
+       56
+       57 **File:** `src/erk/cli/commands/exec/scripts/get_pr_context.py`
+       58 - Line 61: `run_diff_extraction(base_branch=discovery.diff_base)` (was `discovery.parent_branch`)
+       59 - Line 69: `get_commit_messages_since(cwd, discovery.diff_base)` (was `discovery.parent_branch`)
+       60
+       61 **File:** `src/erk/cli/commands/exec/scripts/update_pr_description.py`
+       62 - Line 94: `run_diff_extraction(base_branch=discovery.diff_base)`
+       63 - Line 123: `get_commit_messages_since(cwd, discovery.diff_base)`
+       64
+       65 ### Step 4: Use remote ref in submit pipeline
+       66
+       67 **File:** `src/erk/cli/commands/pr/submit_pipeline.py`
+       68
+       69 In `prepare_state` (after line 157), resolve the diff base:
+       70 ```python
+       71 diff_base = ctx.git.branch.resolve_remote_tracking_ref(repo_root, parent_branch)
+       72 ```
+       73
+       74 Then in the 3 places that set `base_branch` (lines 386, 538, 561), use the resolved ref instead of `state.parent_branch`:
+       75 ```python
+       76 base_branch=ctx.git.branch.resolve_remote_tracking_ref(state.repo_root, state.parent_branch),
+       77 ```
+       78
+       79 Or better: store `diff_base` on `SubmitState` and use it. But that requires adding a field. Simpler: resolve at the 3 `base_branch=` assignment sites.
+       80
+       81 Also fix `count_commits_ahead` at line 409 to use the resolved ref.
+       82
+       83 ### Step 5: Tests
+       84
+       85 - Unit test for `resolve_remote_tracking_ref` in the fake: verify it returns `origin/{branch}` when configured, bare name otherwise
+       86 - Update `test_get_pr_context.py` to configure the fake with remote branches
+       87 - Update submit pipeline tests to verify `base_branch` uses remote-tracking ref
+       88
+       89 ## Files to modify
+       90
+       91 | File | Change |
+       92 |------|--------|
+       93 | `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` | Add abstract `resolve_remote_tracking_ref` |
+       94 | `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` | Real implementation |
+       95 | `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py` | Delegate |
+       96 | `tests/fakes/gateway/git_branch_ops.py` | Fake with configurable remote branches |
+       97 | `src/erk/cli/commands/pr/shared.py` | Add `diff_base` to `BranchDiscovery` |
+       98 | `src/erk/cli/commands/exec/scripts/get_pr_context.py` | Use `discovery.diff_base` |
+       99 | `src/erk/cli/commands/exec/scripts/update_pr_description.py` | Use `discovery.diff_base` |
+      100 | `src/erk/cli/commands/pr/submit_pipeline.py` | Resolve remote ref for `base_branch` |
+      101 | `tests/unit/cli/commands/exec/scripts/test_get_pr_context.py` | Update for diff_base |
+      102
+      103 ## Verification
+      104
+      105 1. Run unit tests: `pytest tests/unit/cli/commands/exec/scripts/test_get_pr_context.py -v`
+      106 2. Run submit pipeline tests: `pytest tests/unit/cli/commands/pr/ -v`
+      107 3. Run full test suite to catch regressions
+      108 4. Manual test: on a branch where local `master` is behind `origin/master`, run `erk exec get-pr-context` and verify diff/commit_messages only contain branch-speci
+          fic changes
+
+⏺ Let me re-read the plan I already wrote to make sure it's solid.
+
+⏺ Reading Plan(/Users/schrockn/.claude/plans/robust-finding-umbrella.md)
+  ⎿  Read 109 lines
+
+⏺ The plan is solid. Let me tighten up the ambiguity in Step 4 before submitting.
+
+⏺ Updated plan
+  ⎿  Added 13 lines, removed 10 lines
+      66
+      67  **File:** `src/erk/cli/commands/pr/submit_pipeline.py`
+      68
+      69 -In `prepare_state` (after line 157), resolve the diff base:
+      70 -```python
+      71 -diff_base = ctx.git.branch.resolve_remote_tracking_ref(repo_root, parent_branch)
+      72 -```
+      69 +Resolve at each assignment site (avoids adding new fields to `SubmitState`):
+      70
+      74 -Then in the 3 places that set `base_branch` (lines 386, 538, 561), use the resolved ref instead of `state.parent_branch`:
+      75 -```python
+      76 -base_branch=ctx.git.branch.resolve_remote_tracking_ref(state.repo_root, state.parent_branch),
+      77 -```
+      71 +1. **`_graphite_first_flow` line 386** — change `base_branch=state.parent_branch` to:
+      72 +   ```python
+      73 +   base_branch=ctx.git.branch.resolve_remote_tracking_ref(state.repo_root, state.parent_branch),
+      74 +   ```
+      75
+      79 -Or better: store `diff_base` on `SubmitState` and use it. But that requires adding a field. Simpler: resolve at the 3 `base_branch=` assignment sites.
+      76 +2. **`_core_submit_flow` lines 538, 561** — same change at both `base_branch=` assignments
+      77
+      81 -Also fix `count_commits_ahead` at line 409 to use the resolved ref.
+      78 +3. **`_core_submit_flow` line 409** (`count_commits_ahead`) — resolve before use:
+      79 +   ```python
+      80 +   diff_base = ctx.git.branch.resolve_remote_tracking_ref(state.repo_root, state.parent_branch)
+      81 +   commit_count = ctx.git.analysis.count_commits_ahead(state.cwd, diff_base)
+      82 +   ```
+      83
+      84 +4. **`generate_description` line 690** (`get_commit_messages_since`) — uses `state.parent_branch` but should use `state.base_branch` (which is now resolved). Chang
+         +e to `state.base_branch`.
+      85 +
+      86  ### Step 5: Tests
+      87
+      88  - Unit test for `resolve_remote_tracking_ref` in the fake: verify it returns `origin/{branch}` when configured, bare name otherwise
+
+⏺ Reading Plan(/Users/schrockn/.claude/plans/robust-finding-umbrella.md)
+  ⎿  Read 112 lines
+
+⏺ Here's the plan:
+
+  Plan: Fix stale local branch ref in PR diff/commit operations
+
+  Problem: erk:pr-submit diffs against local master instead of origin/master. When local trunk is stale, the diff and commit messages include unrelated merged PRs.
+
+  Fix: Add resolve_remote_tracking_ref to GitBranchOps ABC that returns origin/{branch} when the remote-tracking ref exists locally (no network call). Use it for all diff/log/count
+   operations while keeping bare parent_branch for gh pr create --base.
+
+  5 steps across 9 files:
+  1. ABC 4-place pattern: add resolve_remote_tracking_ref method
+  2. Add diff_base field to BranchDiscovery dataclass
+  3. Use diff_base in get_pr_context.py and update_pr_description.py
+  4. Resolve remote ref at base_branch assignment sites in submit_pipeline.py
+  5. Update tests
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ br:master
+
+📋 Plan: Fix stale local branch ref in PR diff/commit operations
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?
+
+❯ 1. Create new branch and planned PR
+     Stays on current branch. Saves plan as a draft PR for implementation in a worktree.
+  2. Implement without saving
+     Implement directly on the current branch without saving a plan PR.
+  3. View/Edit the Plan
+     Open plan in editor to review or modify before deciding.
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+  6. Skip interview and plan immediately
+
+Enter to select · ↑/↓ to navigate · Esc to cancel%                                                                                                                             direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+OK workspace:3
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk git:(debugging-mcp)
+
+did we end up creating this pr?</user>
+</session>
