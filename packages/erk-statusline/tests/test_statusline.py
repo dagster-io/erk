@@ -39,6 +39,7 @@ from erk_statusline.statusline import (
     get_git_root_via_gateway,
     get_git_status_via_gateway,
     get_github_repo_via_gateway,
+    get_model_code,
     get_objective_issue,
     get_plan_number,
     get_pr_info_via_branch_manager,
@@ -1656,3 +1657,39 @@ class TestMainSetsGitOptionalLocks:
             with patch("builtins.print"):
                 main()
         assert os.environ["GIT_OPTIONAL_LOCKS"] == "0"
+
+
+class TestGetModelCode:
+    """Test model indicator code generation."""
+
+    def test_opus_1m(self) -> None:
+        result = get_model_code(display_name="Claude Opus 4.6", model_id="claude-opus-4-6[1m]")
+        assert result == "O¹ᴹ"
+
+    def test_sonnet_1m(self) -> None:
+        result = get_model_code(display_name="Claude Sonnet 4.6", model_id="claude-sonnet-4-6[1m]")
+        assert result == "S¹ᴹ"
+
+    def test_haiku_1m(self) -> None:
+        result = get_model_code(display_name="Claude Haiku 4.5", model_id="claude-haiku-4-5[1m]")
+        assert result == "H¹ᴹ"
+
+    def test_sonnet_standard(self) -> None:
+        result = get_model_code(display_name="Claude Sonnet 4.6", model_id="claude-sonnet-4-6")
+        assert result == "S"
+
+    def test_opus_standard(self) -> None:
+        result = get_model_code(display_name="Claude Opus 4.6", model_id="claude-opus-4-6")
+        assert result == "O"
+
+    def test_haiku_standard(self) -> None:
+        result = get_model_code(display_name="Claude Haiku 4.5", model_id="claude-haiku-4-5")
+        assert result == "H"
+
+    def test_unknown_model(self) -> None:
+        result = get_model_code(display_name="Gemini Pro", model_id="gemini-pro")
+        assert result == "G"
+
+    def test_empty_display_name(self) -> None:
+        result = get_model_code(display_name="", model_id="unknown")
+        assert result == "?"
