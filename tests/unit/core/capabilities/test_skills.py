@@ -14,38 +14,37 @@ from erk.core.capabilities.registry import get_capability
 # =============================================================================
 
 
-def test_fake_driven_testing_capability_properties() -> None:
-    """Test fake-driven-testing capability has correct properties via registry."""
-    cap = get_capability("fake-driven-testing")
+def test_erk_exec_capability_properties() -> None:
+    """Test erk-exec capability has correct properties via registry."""
+    cap = get_capability("erk-exec")
     assert cap is not None
-    assert cap.name == "fake-driven-testing"
-    assert "test" in cap.description.lower()
-    assert ".claude/skills/fake-driven-testing" in cap.installation_check_description
+    assert cap.name == "erk-exec"
+    assert ".claude/skills/erk-exec" in cap.installation_check_description
 
 
 def test_skill_capability_is_installed_false_when_missing(tmp_path: Path) -> None:
     """Test skill capability is_installed returns False when skill directory missing."""
-    cap = get_capability("fake-driven-testing")
+    cap = get_capability("erk-exec")
     assert cap is not None
     assert cap.is_installed(tmp_path, backend="claude") is False
 
 
 def test_skill_capability_is_installed_true_when_exists(tmp_path: Path) -> None:
     """Test skill capability is_installed returns True when skill directory exists."""
-    (tmp_path / ".claude" / "skills" / "fake-driven-testing").mkdir(parents=True)
-    cap = get_capability("fake-driven-testing")
+    (tmp_path / ".claude" / "skills" / "erk-exec").mkdir(parents=True)
+    cap = get_capability("erk-exec")
     assert cap is not None
     assert cap.is_installed(tmp_path, backend="claude") is True
 
 
 def test_skill_capability_artifacts() -> None:
     """Test that skill capabilities list correct artifacts."""
-    cap = get_capability("fake-driven-testing")
+    cap = get_capability("erk-exec")
     assert cap is not None
     artifacts = cap.artifacts
 
     assert len(artifacts) == 1
-    assert artifacts[0].path == ".claude/skills/fake-driven-testing/"
+    assert artifacts[0].path == ".claude/skills/erk-exec/"
     assert artifacts[0].artifact_type == "directory"
 
 

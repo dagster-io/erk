@@ -124,7 +124,7 @@ def test_get_managed_artifacts_returns_dict() -> None:
 
     assert isinstance(managed, dict)
     # Should contain at least the skills we know about
-    assert ("fake-driven-testing", "skill") in managed
+    assert ("erk-exec", "skill") in managed
 
 
 def test_get_managed_artifacts_contains_all_artifact_types() -> None:
@@ -146,14 +146,14 @@ def test_get_managed_artifacts_maps_to_capability_name() -> None:
     managed = get_managed_artifacts()
 
     # Check a few known mappings
-    assert managed[("fake-driven-testing", "skill")] == "fake-driven-testing"
+    assert managed[("erk-exec", "skill")] == "erk-exec"
     assert managed[("devrun", "agent")] == "devrun-agent"
     assert managed[("plan-implement", "workflow")] == "erk-impl-workflow"
 
 
 def test_is_capability_managed_returns_true_for_known_artifacts() -> None:
     """Test is_capability_managed returns True for artifacts declared by capabilities."""
-    assert is_capability_managed("fake-driven-testing", "skill") is True
+    assert is_capability_managed("erk-exec", "skill") is True
     assert is_capability_managed("devrun", "agent") is True
     assert is_capability_managed("plan-implement", "workflow") is True
     assert is_capability_managed("user-prompt-hook", "hook") is True
@@ -170,6 +170,6 @@ def test_is_capability_managed_returns_false_for_unknown_artifacts() -> None:
 
 def test_is_capability_managed_type_matters() -> None:
     """Test that is_capability_managed checks both name AND type."""
-    # fake-driven-testing is a skill, not an agent
-    assert is_capability_managed("fake-driven-testing", "skill") is True
-    assert is_capability_managed("fake-driven-testing", "agent") is False
+    # erk-exec is a skill, not an agent
+    assert is_capability_managed("erk-exec", "skill") is True
+    assert is_capability_managed("erk-exec", "agent") is False
