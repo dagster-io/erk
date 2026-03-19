@@ -26,7 +26,7 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "dignified-python",  # npx-managed
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
         "refac-cli-push-down",
-        "refac-mock-to-fake",
+        "fdt-refactor-mock-to-fake",
         "refac-module-to-subpackage",
         "rename-swarm",
         "session-inspector",
