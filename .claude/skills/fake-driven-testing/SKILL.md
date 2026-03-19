@@ -12,7 +12,7 @@ description:
 
 **Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
 
-**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+**No prerequisites.** This skill is self-contained. It focuses on testing architecture, not language-specific style.
 
 ## Overview
 
@@ -50,11 +50,20 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 **Adding/changing a gateway interface?**
 → Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
 
-**Creating a backend (higher-level abstraction over gateways)?**
-→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+**Wondering where the DI boundary is?**
+→ Read `gateway-architecture.md#the-di-boundary-only-fake-gateways` — only gateways get fakes
+
+**Need to understand non-ideal states vs exceptions?**
+→ Read `non-ideal-states.md`
+
+**Found tests using unittest.mock that should use fakes?**
+→ Read `mock-to-fake-conversion.md`
 
 **Need to implement a specific pattern (CliRunner, builders, etc.)?**
 → Read `patterns.md`
+
+**Want to extend the gateway system (e.g., dry-run preview)?**
+→ Read `advanced-extensions.md`
 
 **Not sure if I'm doing it right?**
 → Read `anti-patterns.md`
@@ -69,7 +78,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 **Read when**:
 
 - Adding or changing gateway/ABC interfaces
-- Understanding the ABC/Real/Fake/DryRun pattern
+- Understanding the ABC/Real/Fake pattern
 - Need examples of gateway implementations
 - Want to understand what gateways are (and why they're thin)
 - **Creating a backend** (higher-level abstraction that composes gateways)
@@ -77,12 +86,46 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 **Contents**:
 
 - What are gateway classes? (naming: gateways/adapters/providers)
-- The four implementations (ABC, Real, Fake, DryRun)
+- The three core implementations (ABC, Real, Fake)
 - Code examples for each
 - When to add/change gateway methods
 - Design principles (keep gateways thin)
 - Common gateway types (Database, API, FileSystem, MessageQueue)
-- **Gateways vs Backends** - critical distinction for DI boundaries
+- **The DI boundary** — only gateways get fakes
+
+### 📖 `non-ideal-states.md`
+
+**Read when**:
+
+- Designing return types for gateway operations that can fail
+- Deciding between exceptions and discriminated unions
+- Implementing error injection in fakes
+- Understanding error boundaries (where try/except belongs)
+
+**Contents**:
+
+- Non-ideal states vs exceptions (the core distinction)
+- Decision framework for choosing between them
+- How this shapes gateway signatures and fake design
+- Error boundaries (try/except only in Real implementations)
+- Three test categories per discriminated union operation
+- The tracking-on-error decision
+- isinstance() for type narrowing (never truthiness)
+
+### 📖 `mock-to-fake-conversion.md`
+
+**Read when**:
+
+- Tests use `unittest.mock.patch` or `@patch` decorators
+- An agent wrote tests with mocks instead of gateway fakes
+- Converting existing mock-based tests to the gateway pattern
+
+**Contents**:
+
+- Step-by-step conversion workflow (audit, find/create gateway, inject, rewrite)
+- "subprocess.run is never the right gateway boundary"
+- Monkeypatch decision tree (when it's still OK)
+- Common pitfalls (wrong abstraction level, subprocess-level gateways)
 
 ### 📖 `testing-strategy.md`
 
@@ -305,8 +348,8 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
 3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
 4. **Test what you're building**: No speculative tests, only active work
-5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
-6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+5. **Update all layers**: When changing interfaces, update ABC/Real/Fake
+6. **The DI boundary**: Only gateways get fakes; everything above them is tested with real logic and fake gateways
 
 ## Layer Selection Guide
 
@@ -343,6 +386,10 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 **For step-by-step guidance**: Use `workflows.md`
 
 **For implementation details**: Use `patterns.md`
+
+**For error handling design**: Check `non-ideal-states.md`
+
+**For converting mocks to fakes**: Check `mock-to-fake-conversion.md`
 
 **For validation**: Check `anti-patterns.md`
 

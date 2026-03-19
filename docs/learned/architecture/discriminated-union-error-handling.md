@@ -27,7 +27,7 @@ tripwires:
 
 # Discriminated Union Error Handling
 
-Erk uses discriminated unions (`SuccessType | ErrorType`) for LBYL-compliant error handling at gateway and pipeline boundaries. This pattern makes failure modes explicit in type signatures and enables callers to branch on specific error types.
+Erk uses discriminated unions (`SuccessType | ErrorType`) at gateway and pipeline boundaries. Non-ideal states are **optional outcomes visible in the type signature** — any reader (human or AI agent) can see from `T | ErrorType` what can happen and write control flow accordingly. This is the primary advantage over exceptions: **Python exceptions are not knowable from the type signature**, making them hostile to agent-driven development and harder for both humans and agents to reason about.
 
 ## The Core Trade-off: Unions vs Exceptions
 
@@ -330,12 +330,12 @@ See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 ### vs. Exceptions
 
-| Discriminated Unions        | Exceptions              |
-| --------------------------- | ----------------------- |
-| Explicit in type signature  | Hidden control flow     |
-| Caller must handle          | Can be silently ignored |
-| LBYL-compliant              | EAFP approach           |
-| IDE shows possible failures | Requires doc reading    |
+| Discriminated Unions                            | Exceptions                                        |
+| ----------------------------------------------- | ------------------------------------------------- |
+| Optional outcomes visible in the type signature | Not knowable from the type signature              |
+| Self-documenting for humans and AI agents       | Requires reading implementation (and its callees) |
+| Caller must handle                              | Can be silently ignored                           |
+| LBYL-compliant                                  | EAFP approach                                     |
 
 ### vs. None Return
 

@@ -61,6 +61,18 @@ def test_fake_database_tracks_queries(tmp_path: Path) -> None:
     assert result[0]["name"] == "Alice"
 ```
 
+### Three Required Test Categories
+
+Every fake method needs three test categories:
+
+| Category              | What it verifies                         | Why it matters                                        |
+| --------------------- | ---------------------------------------- | ----------------------------------------------------- |
+| **Default success**   | No-arg construction returns success      | Proves fakes are zero-config for happy paths          |
+| **Error injection**   | Constructor-configured error is returned | Proves failure paths work without modifying internals |
+| **Mutation tracking** | Operations record calls via properties   | Proves assertions can verify what operations occurred |
+
+Organize tests **by operation** (one test class per ABC method), not by category. Each class covers all three categories for its operation.
+
 ### What to Test
 
 - **State mutations**: Verify operations update internal state correctly
@@ -431,9 +443,9 @@ Does the test use ANY external dependencies? (files, git, network, etc.)
 
 ```python
 def test_fake_git_tracks_branches():
-    fake = FakeGit()  # Testing the fake itself
-    fake.create_branch("feature")
-    assert "feature" in fake.branches  # Checking fake's internal state
+    fake = FakeDatabase()  # Testing the fake itself
+    fake.execute("INSERT INTO users VALUES (1, 'Alice')")
+    assert len(fake.executed_commands) == 1  # Checking fake's internal state
 ```
 
 **Layer 2 "real-sanity" patterns:**
@@ -463,10 +475,11 @@ def test_sanitize_branch_name():
 
 ```python
 def test_create_worktree_command():
-    fake_git = FakeGit()  # Using fake
-    result = create_worktree(fake_git, name="feature")
-    assert result.success
-    assert "feature" in fake_git.worktrees
+    fake_db = FakeDatabase()  # Using fake
+    service = UserService(database=fake_db)
+    result = service.create_user("Alice")
+    assert result.id is not None
+    assert len(fake_db.executed_commands) == 1
 ```
 
 **Layer 5 "smoke" patterns:**
