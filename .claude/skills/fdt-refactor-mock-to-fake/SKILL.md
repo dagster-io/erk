@@ -1,5 +1,5 @@
 ---
-name: refac-mock-to-fake
+name: fdt-refactor-mock-to-fake
 description: >
   Refactor tests that use unittest.mock.patch or MagicMock into erk's gateway-based
   fake pattern. Use when tests import unittest.mock, use @patch decorators, or
