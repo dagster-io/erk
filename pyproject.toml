@@ -69,7 +69,6 @@ packages = ["src/erk"]
 # Commands: erk namespace only (not local)
 ".claude/commands/erk" = "erk/data/claude/commands/erk"
 # Skills (bundled to claude path; codex backend falls back to claude path at runtime)
-".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
 ".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
 ".claude/skills/erk-exec" = "erk/data/claude/skills/erk-exec"
 ".claude/skills/objective" = "erk/data/claude/skills/objective"

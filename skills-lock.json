@@ -5,6 +5,16 @@
       "source": "dagster-io/skills",
       "sourceType": "github",
       "computedHash": "522e3f4f33436966a478f8ce94140439981392a91d661cf90b6035f6ebc1e35a"
+    },
+    "fake-driven-testing": {
+      "source": "dagster-io/fake-driven-testing",
+      "sourceType": "github",
+      "computedHash": "d61ed53bd408c3a3a67817c487cb9b8461dc370ef4025e894c791478f0f33417"
+    },
+    "fdt-refactor-mock-to-fake": {
+      "source": "dagster-io/fake-driven-testing",
+      "sourceType": "github",
+      "computedHash": "a7c88842ce3f9e65d3db5227fd6da2ea4f379f832641d83cece6868e7a457445"
     }
   }
 }
