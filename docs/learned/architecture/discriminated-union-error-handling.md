@@ -330,12 +330,12 @@ See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 ### vs. Exceptions
 
-| Discriminated Unions                             | Exceptions                                        |
-| ------------------------------------------------ | ------------------------------------------------- |
-| Optional outcomes visible in the type signature  | Not knowable from the type signature               |
-| Self-documenting for humans and AI agents        | Requires reading implementation (and its callees) |
-| Caller must handle                               | Can be silently ignored                            |
-| LBYL-compliant                                   | EAFP approach                                      |
+| Discriminated Unions                            | Exceptions                                        |
+| ----------------------------------------------- | ------------------------------------------------- |
+| Optional outcomes visible in the type signature | Not knowable from the type signature              |
+| Self-documenting for humans and AI agents       | Requires reading implementation (and its callees) |
+| Caller must handle                              | Can be silently ignored                           |
+| LBYL-compliant                                  | EAFP approach                                     |
 
 ### vs. None Return
 
