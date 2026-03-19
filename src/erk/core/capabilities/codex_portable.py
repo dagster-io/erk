@@ -17,7 +17,6 @@ def codex_portable_skills() -> frozenset[str]:
     # npx handles distribution directly. Remove skills from here as they migrate.
     return frozenset(
         {
-            "fake-driven-testing",
             "erk-diff-analysis",
             "erk-exec",
             "objective",

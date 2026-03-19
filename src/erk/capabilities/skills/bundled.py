@@ -24,6 +24,7 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         # bundled_skills() to _UNBUNDLED_SKILLS and can be removed from
         # codex_portable_skills() and pyproject.toml force-include.
         "dignified-python",  # npx-managed
+        "fake-driven-testing",  # npx-managed
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
         "refac-cli-push-down",
         "fdt-refactor-mock-to-fake",
@@ -50,7 +51,6 @@ _REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
 def bundled_skills() -> dict[str, str]:
     """Return the bundled skills dict. Cached to avoid re-creation."""
     return {
-        "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
         "erk-exec": "Erk exec subcommand reference",
         "objective": "Objective tracking and management",

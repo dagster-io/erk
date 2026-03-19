@@ -17,12 +17,12 @@ from erk.core.capabilities.registry import get_capability
 
 def test_skill_capability_managed_artifacts() -> None:
     """Test that SkillCapability declares its managed artifacts."""
-    cap = get_capability("fake-driven-testing")
+    cap = get_capability("erk-exec")
     assert cap is not None
     managed = cap.managed_artifacts
 
     assert len(managed) == 1
-    assert managed[0].name == "fake-driven-testing"
+    assert managed[0].name == "erk-exec"
     assert managed[0].artifact_type == "skill"
 
 
