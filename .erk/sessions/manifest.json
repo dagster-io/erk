@@ -16,6 +16,23 @@
       "raw_size_kb": 751,
       "xml_size_kb": 99,
       "git_branch": "plnd/O9272-extract-slots-packag-03-20-1429"
+    },
+    {
+      "session_id": "75172a38-f866-456b-b376-47bb2f7fe0e6",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T15:29:54.851701+00:00",
+      "files": [
+        "impl-75172a38-f866-456b-b376-47bb2f7fe0e6-75172a38-f866-456b-b376-47bb2f7fe0e6-part1.xml",
+        "impl-75172a38-f866-456b-b376-47bb2f7fe0e6-75172a38-f866-456b-b376-47bb2f7fe0e6-part2.xml",
+        "impl-75172a38-f866-456b-b376-47bb2f7fe0e6-75172a38-f866-456b-b376-47bb2f7fe0e6-part3.xml",
+        "impl-75172a38-f866-456b-b376-47bb2f7fe0e6-75172a38-f866-456b-b376-47bb2f7fe0e6-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 24,
+      "raw_size_kb": 2901,
+      "xml_size_kb": 246,
+      "git_branch": "plnd/O9272-move-slot-cmds-check-03-20-1504"
     }
   ]
 }
