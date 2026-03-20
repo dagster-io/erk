@@ -12,7 +12,6 @@ import click
 from erk_dev.cli.output import user_output
 
 PYPI_README_TEXT = "This package name is reserved."
-PLACEHOLDER_VERSION = "0.0.1"
 
 
 def validate_package_name(name: str) -> None:
@@ -59,7 +58,7 @@ def format_toml_string(value: str) -> str:
     return json.dumps(value)
 
 
-def render_pyproject(package_name: str, module_name: str, description: str) -> str:
+def render_pyproject(package_name: str, module_name: str, description: str, version: str) -> str:
     """Render the pyproject.toml contents."""
     project_name = format_toml_string(package_name)
     escaped_description = format_toml_string(description)
@@ -73,7 +72,7 @@ def render_pyproject(package_name: str, module_name: str, description: str) -> s
         "\n"
         "[project]\n"
         f"name = {project_name}\n"
-        f'version = "{PLACEHOLDER_VERSION}"\n'
+        f'version = "{version}"\n'
         f"description = {escaped_description}\n"
         f'readme = {{text = {readme_text}, content-type = "text/plain"}}\n'
         'requires-python = ">=3.13"\n'
@@ -83,9 +82,9 @@ def render_pyproject(package_name: str, module_name: str, description: str) -> s
     )
 
 
-def render_init_py() -> str:
+def render_init_py(version: str) -> str:
     """Render the contents of __init__.py."""
-    return f'"""Reserved package name."""\n\n__version__ = "{PLACEHOLDER_VERSION}"\n'
+    return f'"""Reserved package name."""\n\n__version__ = "{version}"\n'
 
 
 def write_project_files(
@@ -93,6 +92,7 @@ def write_project_files(
     module_name: str,
     package_name: str,
     description: str,
+    version: str,
 ) -> None:
     """Create the minimal package structure."""
     src_dir = project_dir / "src" / module_name
@@ -103,10 +103,10 @@ def write_project_files(
     src_dir.mkdir(parents=True)
 
     init_path = src_dir / "__init__.py"
-    init_path.write_text(render_init_py(), encoding="utf-8")
+    init_path.write_text(render_init_py(version), encoding="utf-8")
 
     pyproject_path = project_dir / "pyproject.toml"
-    pyproject_content = render_pyproject(package_name, module_name, description)
+    pyproject_content = render_pyproject(package_name, module_name, description, version)
     pyproject_path.write_text(pyproject_content, encoding="utf-8")
 
 
@@ -169,9 +169,17 @@ def confirm_publish(name: str, force: bool) -> None:
     show_default=True,
     help="Package description",
 )
+@click.option(
+    "--version",
+    default="0.0.1",
+    show_default=True,
+    help="Package version to publish",
+)
 @click.option("--dry-run", is_flag=True, help="Show operations without publishing")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def reserve_pypi_name_command(name: str, description: str, dry_run: bool, force: bool) -> None:
+def reserve_pypi_name_command(
+    name: str, description: str, version: str, dry_run: bool, force: bool
+) -> None:
     """Reserve a package name on PyPI by publishing a placeholder package."""
     validate_package_name(name)
     module_name = module_name_from_package(name)
@@ -180,7 +188,7 @@ def reserve_pypi_name_command(name: str, description: str, dry_run: bool, force:
     ensure_command_available("uvx")
 
     if dry_run:
-        user_output(f"[DRY RUN] Would reserve PyPI package name '{name}'")
+        user_output(f"[DRY RUN] Would reserve PyPI package name '{name}' version '{version}'")
         user_output(
             f"[DRY RUN] Would create temporary project structure with module '{module_name}'"
         )
@@ -196,7 +204,7 @@ def reserve_pypi_name_command(name: str, description: str, dry_run: bool, force:
     with tempfile.TemporaryDirectory(prefix="reserve-pypi-name-") as temp_dir:
         project_dir = Path(temp_dir)
         user_output(f"Creating temporary project at {project_dir}")
-        write_project_files(project_dir, module_name, name, description)
+        write_project_files(project_dir, module_name, name, description, version)
 
         user_output("Building package artifacts...")
         artifacts = build_package(project_dir)
