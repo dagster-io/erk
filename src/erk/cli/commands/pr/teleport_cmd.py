@@ -22,7 +22,6 @@ from erk.cli.activation import (
 from erk.cli.commands.checkout_helpers import (
     ensure_branch_has_worktree,
     navigate_and_display_checkout,
-    script_error_handler,
 )
 from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
 from erk.cli.ensure import Ensure
@@ -30,6 +29,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk.core.worktree_pool import load_pool_state
+from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.github.types import PRNotFound
 from erk_slots.common import find_assignment_by_worktree, update_slot_assignment_tip
 

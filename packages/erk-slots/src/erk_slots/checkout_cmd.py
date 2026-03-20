@@ -1,11 +1,17 @@
 """Slot checkout command - checkout a branch into a pool slot."""
 
+from contextlib import nullcontext
+from pathlib import Path
+
 import click
 
 from erk.cli.core import discover_repo_context
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
+from erk_shared.cli_alias import alias
+from erk_shared.core.script_error import script_error_handler
 from erk_shared.output.output import user_output
 from erk_slots.common import (
     allocate_slot_for_branch,
@@ -14,7 +20,8 @@ from erk_slots.common import (
 )
 
 
-@click.command("checkout")
+@alias("co")
+@click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH")
 @click.option(
     "--new-slot",
@@ -27,8 +34,9 @@ from erk_slots.common import (
     is_flag=True,
     help="Auto-unassign oldest branch if pool is full",
 )
+@script_option
 @click.pass_obj
-def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool) -> None:
+def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool, script: bool) -> None:
     """Checkout BRANCH into a pool slot.
 
     By default, if running inside an assigned slot, updates the slot's
@@ -38,12 +46,69 @@ def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool) -> 
     The branch must already exist. Use `erk branch create` to create
     a new branch.
 
+    Navigate to target slot:
+      source <(erk slot checkout BRANCH --script)
+
     Examples:
 
         erk slot checkout feature/auth        # Stack in current slot
         erk slot checkout feature/auth --new-slot  # Allocate new slot
         erk slot checkout feature/auth --force     # Auto-evict if full
     """
+    with script_error_handler(ctx) if script else nullcontext():
+        _slot_checkout_body(ctx, branch=branch, new_slot=new_slot, force=force, script=script)
+
+
+def _navigate_and_show(
+    ctx: ErkContext,
+    *,
+    worktree_path: Path,
+    branch: str,
+    script: bool,
+    script_message: str,
+    user_message: str,
+) -> None:
+    from erk.cli.activation import (
+        activation_config_activate_only,
+        ensure_worktree_activate_script,
+        print_activation_instructions,
+    )
+    from erk.cli.commands.checkout_helpers import navigate_to_worktree
+
+    should_output = navigate_to_worktree(
+        ctx,
+        worktree_path=worktree_path,
+        branch=branch,
+        script=script,
+        command_name="slot-checkout",
+        script_message=script_message,
+        relative_path=None,
+        post_cd_commands=None,
+    )
+    if should_output:
+        user_output(user_message)
+        script_path = ensure_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=None,
+        )
+        same_worktree = (
+            worktree_path.exists()
+            and ctx.cwd.exists()
+            and worktree_path.resolve() == ctx.cwd.resolve()
+        )
+        print_activation_instructions(
+            script_path,
+            source_branch=None,
+            force=False,
+            config=activation_config_activate_only(),
+            copy=True,
+            same_worktree=same_worktree,
+        )
+
+
+def _slot_checkout_body(
+    ctx: ErkContext, *, branch: str, new_slot: bool, force: bool, script: bool
+) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
@@ -78,11 +143,17 @@ def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool) -> 
                     now=ctx.time.now().isoformat(),
                 )
                 ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)
-                user_output(
-                    click.style(
-                        f"✓ Stacked {branch} in {slot_result.slot_name} (in place)",
-                        fg="green",
-                    )
+                styled_msg = click.style(
+                    f"✓ Stacked {branch} in {slot_result.slot_name} (in place)",
+                    fg="green",
+                )
+                _navigate_and_show(
+                    ctx,
+                    worktree_path=slot_result.worktree_path,
+                    branch=branch,
+                    script=script,
+                    script_message=f'echo "Stacked {branch} in {slot_result.slot_name} (in place)"',
+                    user_message=styled_msg,
                 )
                 return
 
@@ -97,13 +168,29 @@ def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool) -> 
     )
 
     if slot_result.already_assigned:
-        user_output(
+        msg = (
             click.style("✓ ", fg="green")
             + f"Branch '{branch}' already assigned to {slot_result.slot_name}"
         )
+        _navigate_and_show(
+            ctx,
+            worktree_path=slot_result.worktree_path,
+            branch=branch,
+            script=script,
+            script_message=f'echo "Branch {branch} already assigned to {slot_result.slot_name}"',
+            user_message=msg,
+        )
     else:
-        user_output(
+        msg = (
             click.style("✓ ", fg="green")
             + f"Assigned {click.style(branch, fg='yellow')} "
             + f"to {click.style(slot_result.slot_name, fg='cyan')}"
+        )
+        _navigate_and_show(
+            ctx,
+            worktree_path=slot_result.worktree_path,
+            branch=branch,
+            script=script,
+            script_message=f'echo "Assigned {branch} to {slot_result.slot_name}"',
+            user_message=msg,
         )

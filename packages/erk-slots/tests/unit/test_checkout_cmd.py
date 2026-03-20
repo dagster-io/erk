@@ -364,6 +364,139 @@ def test_slot_checkout_already_assigned_returns_existing() -> None:
         assert "erk-slot-01" in result.output
 
 
+def test_slot_checkout_already_assigned_shows_activation_instructions() -> None:
+    """Test that already-assigned checkout shows activation instructions."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        worktrees = env.build_worktrees("main")
+        worktrees[env.cwd].append(WorktreeInfo(path=worktree_path, branch="feature-a"))
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            current_branches={env.cwd: "main", worktree_path: "feature-a"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-a"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        existing_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="feature-a",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, existing_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["slot", "checkout", "feature-a"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "source" in result.output
+        assert "activate.sh" in result.output
+
+
+def test_slot_checkout_new_allocation_shows_activation_instructions() -> None:
+    """Test that new allocation shows activation instructions."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["slot", "checkout", "feature-test"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "source" in result.output
+        assert "activate.sh" in result.output
+
+
+def test_slot_checkout_stack_in_place_suppresses_navigation() -> None:
+    """Test that stack-in-place does NOT print activation instructions (same_worktree=True)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-create a pool state with cwd assigned as a slot
+        initial_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="feature-a",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["slot", "checkout", "feature-b"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Stacked" in result.output
+        # same_worktree=True → activation instructions should be suppressed
+        assert "source" not in result.output
+
+
 def test_slot_checkout_reuses_inactive_worktree() -> None:
     """Test that slot checkout reuses an inactive worktree."""
     runner = CliRunner()
