@@ -1,0 +1,1146 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>i'm considering making a plugin system for erk to make it more composable. for example i think that few people will want to use the slots system but i want to keep it around. how would you suggest structuring this?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="11026" cache_read_input_tokens="15072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11026}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the current architecture and how features like slots are structured before making recommendations.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11026" cache_read_input_tokens="15072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11026}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Ut6nwDbJ8sV2bNYhZ4vXwc">
+    <param name="description">Explore erk architecture and plugin patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 851 chars]... need a comprehensive understanding of the current architecture to design a plugin system.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11026" cache_read_input_tokens="15072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11026}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Q8m5t1r1xC8cWtnHN7EuBG">
+    <param name="description">Explore slots system in detail</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 558 chars]...understand slots as a concrete example of a feature that could be extracted into a plugin.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11026" cache_read_input_tokens="15072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11026}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011C8MH7so4yuAECmkVeeGw5">
+    <param name="description">Explore existing composability patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 746 chars]...rstand what composability patterns already exist that could inform a plugin system design.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11026" cache_read_input_tokens="15072" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11026}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ut6nwDbJ8sV2bNYhZ4vXwc">
+Perfect! Now I have a comprehensive understanding. Let me provide you with a detailed summary of the erk architecture:
+
+## Comprehensive Erk Architecture Analysis
+
+I've thoroughly explored the erk codebase and can now provide you with a detailed understanding for designing a plugin system. Here's what I found:
+
+### 1. **CLI Structure &amp; Command Registration**
+
+**Location**: `/Users/schrockn/code/erk/src/erk/cli/cli.py` (main CLI entry point)
+
+**Pattern**:
+- Click-based CLI with organized command groups
+- Commands are in `/src/erk/cli/commands/` organized by functional domain
+- Each group lives in a directory with `__init__.py` defining the group and `{verb}_cmd.py` files for individual commands
+- Groups register subcommands using `register_with_aliases()` helper from `erk.cli.alias`
+- Main CLI collects all groups via `cli.add_command()` (lines 183-223 in cli.py)
+
+**Command Registration Pattern** (from `slot/__init__.py`):
+```python
+@click.group("slot", cls=ErkCommandGroup, grouped=False)
+def slot_group() -&gt; None:
+    """Manage worktree pool slots."""
+    pass
+
+slot_group.add_command(slot_assign)
+register_with_aliases(slot_group, slot_list)
+```
+
+**Command Groups Found**: artifact, branch, cc, codespace, completion, config, docs, exec, info, init, json, learn, md, objective, one_shot, pr, project, run, slot, stack, wt, admin, workflow
+
+
+... [181 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Q8m5t1r1xC8cWtnHN7EuBG">
+Now let me compile a comprehensive analysis of the slots system:
+
+## Deep Understanding of Erk's Slots System
+
+I've thoroughly explored the slots system across erk's codebase. Here's a comprehensive analysis:
+
+### 1. **What Are Slots?**
+
+Slots are a reusable pool of pre-allocated git worktrees that enable fast branch switching. Instead of creating/destroying worktrees on demand (expensive file system operations), erk maintains a fixed-size pool (default 4, configurable) of worktree directories that can be reassigned to different branches.
+
+**Key metaphor:** Parking spaces for branches. Each slot is a reserved worktree directory that can hold any feature branch.
+
+### 2. **Core Data Structures** (`/Users/schrockn/code/erk/src/erk/core/worktree_pool.py`)
+
+```
+PoolState (frozen dataclass)
+├── version: str (schema version)
+├── pool_size: int (max slots, default 4)
+├── slots: tuple[SlotInfo, ...] (initialized slots)
+└── assignments: tuple[SlotAssignment, ...] (branch→slot mappings)
+
+SlotInfo (frozen dataclass)
+└── name: str (e.g., "erk-slot-01")
+
+SlotAssignment (frozen dataclass)
+├── slot_name: str
+├── branch_name: str
+├── assigned_at: str (ISO timestamp for LRU)
+└── worktree_path: Path
+```
+
+... [194 lines omitted] ...
+
+  - Non-interactive: Error with instructions
+  </tool_result>
+  <tool_result tool="toolu_011C8MH7so4yuAECmkVeeGw5">
+Perfect! Now I have a comprehensive understanding. Let me create a detailed report of the composability and extensibility patterns in erk.
+
+## Composability &amp; Extensibility Patterns in Erk
+
+Based on my thorough exploration of the codebase, documentation, and configuration, here are the key patterns that enable composability and extensibility:
+
+### 1. **Capability System Architecture** (Primary Extensibility Pattern)
+
+**Location:** `src/erk/core/capabilities/` and `src/erk/capabilities/`
+
+The capability system is erk's primary plugin-like extensibility mechanism. It provides a standardized interface for registering optional features:
+
+- **Base Class:** `Capability` ABC in `src/erk/core/capabilities/base.py` defines required properties (`name`, `description`, `scope`, `installation_check_description`, `artifacts`, `managed_artifacts`) and methods (`is_installed()`, `install()`, `uninstall()`)
+
+- **Registry Pattern:** Hardcoded tuple in `src/erk/core/capabilities/registry.py`'s `_all_capabilities()` function registers all capabilities. Uses `@cache` for lazy initialization and tuple unpacking (`*create_bundled_skill_capabilities()`) for batch registration.
+
+- **Type Hierarchy:**
+  - `SkillCapability` (in `src/erk/core/capabilities/skill_capability.py`) - Installs Claude skills from bundled artifacts
+  - `ReminderCapability` (in `src/erk/core/capabilities/reminder_capability.py`) - Injects context via `.erk/state.toml` hooks
+  - `ReviewCapability` - Code review definitions
+  - Direct `Capability` subclasses - Complex multi-file installations (workflows, settings, etc.)
+
+**Current Implementations:**
+- **Required Bundled Skills:** erk-diff-analysis, erk-exec, objective, pr-operations, pr-feedback-classifier
+- **Optional Bundled Skills:** gh, gt, dignified-code-simplifier, erk-planning (tombstone)
+- **Workflows:** ErkImplWorkflowCapability, LearnWorkflowCapability, OneShotWorkflowCapability, etc.
+- **Reminders:** DevrunReminderCapability, DignifiedPythonReminderCapability, etc.
+- **Reviews:** DignifiedPythonReviewDefCapability, TripwiresReviewDefCapability, etc.
+
+**Extensibility Pattern:** New capabilities are added via:
+
+... [196 lines omitted] ...
+
+4. **Drift Prevention Tests:** Tests verify every `codex_portable_skills()` entry has a registered capability, preventing silent registration failures.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10284" cache_read_input_tokens="26098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration results. Let me read a few key files to firm up my understanding before designing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10284" cache_read_input_tokens="26098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011jfbVhQRBPUskkimYLozNx">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/capabilities/registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10284" cache_read_input_tokens="26098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011jfbVhQRBPUskkimYLozNx">
+     1→"""Capability registry - hardcoded list of all capabilities."""
+     2→
+     3→from functools import cache
+     4→
+     5→from erk.capabilities.agents.devrun import DevrunAgentCapability
+     6→from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
+     7→from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+     8→from erk.capabilities.hooks import HooksCapability
+     9→from erk.capabilities.learned_docs import LearnedDocsCapability
+    10→from erk.capabilities.reminders.devrun import DevrunReminderCapability
+    11→from erk.capabilities.reminders.dignified_python import DignifiedPythonReminderCapability
+    12→from erk.capabilities.reminders.explore_docs import ExploreDocsReminderCapability
+    13→from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
+    14→from erk.capabilities.reviews.dignified_code_simplifier import (
+    15→    DignifiedCodeSimplifierReviewDefCapability,
+    16→)
+    17→from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
+    18→from erk.capabilities.reviews.tripwires import TripwiresReviewDefCapability
+    19→from erk.capabilities.ruff_format import RuffFormatCapability
+    20→from erk.capabilities.skills.bundled import create_bundled_skill_capabilities
+    21→from erk.capabilities.statusline import StatuslineCapability
+    22→from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+    23→from erk.capabilities.workflows.learn import LearnWorkflowCapability
+    24→from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
+    25→from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
+    26→from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
+    27→from erk.core.capabilities.base import Capability
+    28→from erk_shared.context.types import AgentBackend
+    29→
+    30→
+
+... [115 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VBxZSEfPvGn2S5cPfLqNEu">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/cli.py</param>
+    <param name="limit">100</param>
+    <param name="offset">170</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10284" cache_read_input_tokens="26098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VBxZSEfPvGn2S5cPfLqNEu">
+   170→        logging.basicConfig(level=logging.DEBUG, format="%(name)s - %(levelname)s - %(message)s")
+   171→
+   172→    # Show version change banner (only on actual CLI runs, not completions)
+   173→    if not ctx.resilient_parsing:
+   174→        _show_version_change_banner()
+   175→        _show_version_warning()
+   176→
+   177→    # Only create context if not already provided (e.g., by tests)
+   178→    if ctx.obj is None:
+   179→        ctx.obj = create_context(dry_run=False)
+   180→
+   181→
+   182→# Register all commands
+   183→# Commands with @alias decorators use register_with_aliases() to auto-register aliases
+   184→cli.add_command(admin_group)
+   185→cli.add_command(artifact_group)
+   186→register_with_aliases(cli, branch_group)  # Has @alias("br")
+   187→cli.add_command(cc_group)
+   188→cli.add_command(codespace_group)
+   189→cli.add_command(completion_group)
+   190→cli.add_command(config_group)
+   191→cli.add_command(doctor_cmd)
+   192→cli.add_command(down_cmd)
+   193→register_with_aliases(cli, implement)  # Has @alias("impl")
+   194→cli.add_command(init_group)
+   195→cli.add_command(land)
+   196→cli.add_command(reconcile)
+   197→if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
+   198→    from erk.cli.commands.learn.learn_cmd import learn_cmd
+   199→
+
+... [36 lines omitted] ...
+
+   232→    # UserFacingCliError extends click.ClickException, so Click handles it
+  </tool_result>
+  <tool_use name="Read" id="toolu_019J4qkjotjZqESNB1RSLifa">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/capabilities/base.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10284" cache_read_input_tokens="26098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10284}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019J4qkjotjZqESNB1RSLifa">
+     1→"""Base classes and types for the capability system.
+     2→
+     3→Capabilities are optional features that can be installed via `erk init capability add &lt;name&gt;`.
+     4→Each capability knows how to detect if it's installed and how to install itself.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→from typing import Literal
+    11→
+    12→from erk_shared.context.types import AgentBackend
+    13→
+    14→# Type alias for capability scope
+    15→CapabilityScope = Literal["project", "user"]
+    16→
+    17→# Artifact types that capabilities can declare they manage
+    18→ManagedArtifactType = Literal[
+    19→    "skill", "command", "agent", "workflow", "action", "hook", "prompt", "review"
+    20→]
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class ManagedArtifact:
+    25→    """Describes an artifact managed by a capability for artifact detection.
+    26→
+    27→    This bridges capability declarations with artifact detection/health checks.
+    28→    Used by the registry to determine which artifacts are erk-managed.
+    29→    """
+    30→
+
+... [165 lines omitted] ...
+
+    61→    raise ValueError(f"Unknown agent backend: {backend!r}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5837" cache_read_input_tokens="36382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the key integration points where slots are coupled to core commands.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5837" cache_read_input_tokens="36382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0164teDYmGv498ckJnyrTryE">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5837" cache_read_input_tokens="36382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0164teDYmGv498ckJnyrTryE">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import re
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import write_worktree_activate_script
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    13→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    14→from erk_shared.gateway.console.abc import Console
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class SlotAllocationResult:
+    22→    """Result of allocating a slot for a branch."""
+    23→
+    24→    slot_name: str
+    25→    worktree_path: Path
+    26→    already_assigned: bool  # True if branch was already in a slot
+    27→
+    28→
+    29→# Default pool configuration
+    30→DEFAULT_POOL_SIZE = 4
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013k88zf9Tyq4yZCDZGU934y">
+    <param name="pattern">allocate_slot_for_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5837" cache_read_input_tokens="36382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013k88zf9Tyq4yZCDZGU934y">
+Found 6 files
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/cli/commands/checkout_helpers.py
+src/erk/cli/commands/slot/assign_cmd.py
+src/erk/cli/commands/wt/create_from_cmd.py
+src/erk/cli/commands/slot/common.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Wyb3dQrKxT2DYLEpv5N7M4">
+    <param name="pattern">from erk\.cli\.commands\.slot</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5837" cache_read_input_tokens="36382" output_tokens="352" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5837, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wyb3dQrKxT2DYLEpv5N7M4">
+src/erk/cli/commands/wt/delete_cmd.py:12:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/wt/create_from_cmd.py:11:from erk.cli.commands.slot.common import allocate_slot_for_branch
+src/erk/cli/commands/wt/list_cmd.py:10:from erk.cli.commands.slot.common import is_placeholder_branch
+src/erk/cli/commands/land_cmd.py:40:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/land_cmd.py:45:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/slot/assign_cmd.py:5:from erk.cli.commands.slot.common import allocate_slot_for_branch
+src/erk/cli/commands/slot/__init__.py:6:from erk.cli.commands.slot.assign_cmd import slot_assign
+src/erk/cli/commands/slot/__init__.py:7:from erk.cli.commands.slot.init_pool_cmd import slot_init_pool
+src/erk/cli/commands/slot/__init__.py:8:from erk.cli.commands.slot.list_cmd import slot_list
+src/erk/cli/commands/slot/__init__.py:9:from erk.cli.commands.slot.repair_cmd import slot_repair
+src/erk/cli/commands/slot/__init__.py:10:from erk.cli.commands.slot.unassign_cmd import slot_unassign
+src/erk/cli/commands/slot/repair_cmd.py:8:from erk.cli.commands.slot.diagnostics import (
+src/erk/cli/commands/slot/diagnostics.py:7:from erk.cli.commands.slot.common import generate_slot_name
+src/erk/cli/commands/config.py:10:from erk.cli.commands.slot.common import DEFAULT_POOL_SIZE
+src/erk/cli/commands/slot/init_pool_cmd.py:5:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/branch/checkout_cmd.py:23:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/branch/delete_cmd.py:10:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/slot/unassign_cmd.py:8:from erk.cli.commands.slot.common import get_placeholder_branch_name
+src/erk/cli/commands/branch/create_cmd.py:15:from erk.cli.commands.slot.common import allocate_slot_for_branch, update_slot_assignment_tip
+src/erk/cli/commands/slot/list_cmd.py:10:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/branch/list_cmd.py:8:from erk.cli.commands.slot.common import is_placeholder_branch
+src/erk/cli/commands/stack/consolidate_cmd.py:10:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/cli.py:36:from erk.cli.commands.slot import slot_group
+src/erk/cli/commands/navigation_helpers.py:17:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/reconcile_pipeline.py:22:from erk.cli.commands.slot.common import find_branch_assignment
+src/erk/cli/commands/reconcile_pipeline.py:23:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/checkout_helpers.py:22:from erk.cli.commands.slot.common import allocate_slot_for_branch
+src/erk/cli/commands/pr/dispatch_cmd.py:14:from erk.cli.commands.slot.common import is_placeholder_branch
+src/erk/cli/commands/pr/teleport_cmd.py:28:from erk.cli.commands.slot.common import find_assignment_by_worktree, update_slot_assignment_tip
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2336" cache_read_input_tokens="42219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a comprehensive understanding. The key challenge is clear: slots is referenced from ~15 command files. Let me design the plugin system.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2336" cache_read_input_tokens="42219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2336}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <user>[Request interrupted by user]</user>
+  <user>potential inspiration for plugin structure: /Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-cli</user>
+  <user>[Request interrupted by user]</user>
+  <user>i don't want a full plan. just ideation</user>
+  <user>[Request interrupted by user]</user>
+  <user>i don't want a full plan. just ideation</user>
+  <user>[Request interrupted by user]</user>
+  <user>❯ potential inspiration for plugin structure: /Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-cli
+
+i don't want a full plan. just ideation</user>
+  <tool_use name="Agent" id="toolu_01U1MsoqBmhwT5hdWm1vKFZA">
+    <param name="description">Explore dagster-dg-cli plugin structure</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Explore /User...[truncated 561 chars]...ugh but focused on the extensibility/plugin patterns, not the full implementation details.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="545" cache_read_input_tokens="44555" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 545, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U1MsoqBmhwT5hdWm1vKFZA">
+Perfect! I have enough information now. Let me compile my findings into a comprehensive report of the plugin/extension architecture:
+
+## Dagster DG CLI Plugin/Extension Architecture
+
+Based on my thorough exploration of the `/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-cli` codebase, here's the complete plugin and extensibility architecture:
+
+### 1. **Entry Point Discovery Mechanism**
+
+**Location:** `/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-core/dagster_dg_core/context.py` (lines 549-595)
+
+The system discovers plugins via Python entry points defined in `pyproject.toml`:
+- **Primary entry point group:** `dagster_dg_cli.registry_modules`
+- **Supported formats:** 
+  - `[project.entry-points."dagster_dg_cli.registry_modules"]` in `pyproject.toml` (current standard)
+  - `[options.entry_points]` in `setup.cfg` (legacy support)
+
+**Backward compatibility:** The code maintains support for deprecated entry point groups:
+- `dagster_dg.library`
+- `dagster_dg.plugin`
+- `dagster_dg_cli.plugin`
+
+Entry points map names to module paths, e.g.:
+```toml
+[project.entry-points."dagster_dg_cli.registry_modules"]
+my_components = "my_package.components"
+```
+
+### 2. **Component/Plugin Registry System**
+
+**Location:** `/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-core/dagster_dg_core/component.py` (lines 25-129)
+
+... [118 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="6512" cache_read_input_tokens="45100" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6512}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's what I see after looking at both codebases:
+
+## The Hard Problem
+
+Slots isn't hard to extract as CLI commands — the `erk slot *` group is self-contained. The hard part is that `allocate_slot_for_branch` is called from **6 different commands** (branch create, branch checkout, checkout_helpers, slot assign, wt create-from, plus land/navigation for unassign). That's the deep coupling.
+
+## Three Approaches Worth Considering
+
+### 1. WorktreeStrategy protocol (my favorite)
+
+The real abstraction isn't "slots" — it's **"given a branch, where does its worktree go?"** Slots is one answer. Direct `git worktree add` is another.
+
+```python
+class WorktreeStrategy(ABC):
+    @abstractmethod
+    def allocate(self, ctx, repo, branch_name) -&gt; WorktreeAllocation: ...
+    
+    @abstractmethod  
+    def deallocate(self, ctx, repo, branch_name) -&gt; None: ...
+```
+
+Put this on `ErkContext`. Core commands call `ctx.worktree_strategy.allocate(...)`. The slots plugin provides `PoolWorktreeStrategy`. A simpler `DirectWorktreeStrategy` is the default. Branch create, checkout, land — they all just call the strategy without knowing which one.
+
+This is the dagster-dg-cli insight applied: **the plugin boundary should be at the domain abstraction, not at the CLI layer**.
+
+### 2. Entry points for separate packages (dagster-dg style)
+
+```toml
+# packages/erk-slots/pyproject.toml
+[project.entry-points."erk.plugins"]
+slots = "erk_slots"
+```
+
+Core discovers plugins at startup, each plugin can contribute:
+- CLI command groups
+- A `WorktreeStrategy` implementation  
+- Capabilities (skills, hooks, etc.)
+- Config schema extensions
+
+This is the full dagster-dg pattern. Clean separation, but real packaging overhead for a private tool.
+
+### 3. Feature modules with conditional loading (pragmatic)
+
+Extend the pattern you already have with learned-docs:
+
+```python
+# cli.py — already doing this!
+if is_learned_docs_available(...):
+    cli.add_command(learn_cmd)
+
+# Same pattern for slots
+if is_feature_enabled("slots", config):
+    cli.add_command(slot_group)
+```
+
+The integration points use a thin indirection layer rather than importing slot internals directly. Less elegant but extremely low-effort.
+
+## What I'd Actually Suggest
+
+**Combine 1 and 3.** Extract the `WorktreeStrategy` protocol onto ErkContext (approach 1) — this decouples the 6 integration points cleanly. Then use config-gated loading (approach 3) for the CLI commands and the strategy selection. Don't bother with entry_points packaging until you have a second user or a real distribution need.
+
+The key insight from dagster-dg is that their entry_points discovery is solving a **distribution** problem (third-party packages finding each other). Your problem is **composability within a monorepo** — config-gated loading with a clean protocol boundary gets you 90% of the value at 10% of the complexity.
+
+The slots extraction would look like:
+- `WorktreeStrategy` ABC in `erk-shared` (next to other gateway ABCs)
+- `DirectWorktreeStrategy` as default (just creates worktrees)
+- `PoolWorktreeStrategy` wrapping current slot logic
+- `ctx.worktree_strategy` replacing all `allocate_slot_for_branch` call sites
+- Config chooses which strategy: `[worktrees] strategy = "pool"` vs `"direct"`
+
+If you later want true separate packages, the protocol boundary is already clean — you just add the entry_points discovery layer on top.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6512" cache_read_input_tokens="45100" output_tokens="1599" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6512, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>I want do a breaking change to do this. I think the idea is that the slots package would add a slots group and we would disentangle slots from all other interactions</user>
+  <usage input_tokens="3" cache_creation_input_tokens="5202" cache_read_input_tokens="51612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5202}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>That's a much cleaner cut than the strategy protocol approach. Instead of abstracting the coupling, just delete it.
+
+The current implicit behavior — "every branch create/checkout automatically gets a slot" — is the source of all the coupling. If you make slot assignment explicit (`erk slot assign BRANCH`), then:
+
+- **`branch create`** just creates a branch (+ worktree via `git worktree add` directly)
+- **`branch checkout`** just checks out  
+- **`land`** just lands, no slot cleanup
+- **Navigation (up/down)** doesn't auto-allocate
+- **`pr checkout`/`teleport`** no slot awareness
+
+The slot plugin becomes fully self-contained: `erk slot assign`, `erk slot unassign`, `erk slot list`, `erk slot repair`, `erk slot init-pool`. All the integration flows through the user explicitly choosing to use slots.
+
+The interesting design question becomes: **what does the non-slot worktree story look like?** Right now the slot system *is* the worktree management layer. Once disentangled, `branch create` and `branch checkout` need their own simple worktree logic — probably just direct `git worktree add` into `~/.erk/repos/{repo}/worktrees/{branch-name}/` with no pool, no LRU, no eviction. That's the thing you'd need to build as part of the disentanglement, not just delete.
+
+The other question is whether `erk slot assign` should work *after* the branch already has a direct worktree (move it into a slot) or only at creation time. That determines whether slots and direct worktrees can coexist or if it's a config-time choice.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5202" cache_read_input_tokens="51612" output_tokens="886" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5202, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>  - Navigation (up/down) doesn't auto-allocate
+
+these would be slot subcommands
+
+branch checkout
+
+we would eliminate branch checkout and there would be slot checkout instead
+
+land is a place where I think we want a pluggability point since slot autocleanup is nice
+
+slot teleport would be the slot-aware variant</user>
+  <assistant>
+
+Got it, this is crystallizing. The mental model is:
+
+**Slots isn't a feature that enhances branch commands — it's an alternative workflow that replaces them.** If you're a slots user, you live in `erk slot *`. If you're not, you use simpler worktree commands (or just raw git).
+
+So the decomposition is:
+
+- **`erk slot assign`** — allocate branch to pool slot
+- **`erk slot checkout`** — (currently `branch checkout`) check out into a slot
+- **`erk slot up/down`** — (currently `erk up/down`) navigate stack within slots
+- **`erk slot teleport`** — (currently `pr teleport`) PR-aware slot assignment
+- **`erk slot list/repair/init-pool/unassign`** — as-is
+
+And for `land`, rather than moving it into the slot plugin, it gets a hook point. Something like a post-land callback that the slot plugin registers to auto-unassign. That way non-slot users get clean `land` and slot users get cleanup for free.
+
+The question that follows: is `land` the only command that needs a plugin hook, or are there others where "core command + optional plugin behavior" is the right pattern vs "plugin owns the whole command"? `wt delete` comes to mind — currently it calls `execute_unassign`. `stack consolidate` too. Those could either become slot subcommands or use the same hook pattern as land.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1109" cache_read_input_tokens="56814" output_tokens="344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1109, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>any wt command with slot dependencies should just be a slot command.</user>
+  <assistant>
+
+Clean rule. If it touches slots, it's a slot command. No hooks, no indirection.
+
+That leaves `land` as the interesting edge case. It's fundamentally a core command (merge PR, delete branch, move to next) but slot users want auto-unassign. Options:
+
+1. **`slot land`** — slot plugin owns the whole command, wraps core land logic
+2. **Post-land hook point** — core `land` emits an event, slot plugin listens
+3. **Just don't auto-clean** — user runs `erk slot unassign` after landing manually
+
+Option 3 is the simplest and most consistent with the "slots is explicit" philosophy. The branch is gone after landing anyway — the slot becomes inactive and gets reclaimed next time you `slot assign`. The LRU/inactive-slot-reuse logic already handles this. So maybe land doesn't need any slot awareness at all.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="519" cache_read_input_tokens="57923" output_tokens="210" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 519, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>let's start with 3 and add think about doing a hook later</user>
+  <assistant>
+
+Agreed. Simplest thing that works, and the pool already handles stale slots gracefully.
+
+So to summarize the design so far:
+
+- **Slot plugin** owns: `assign`, `checkout`, `up`, `down`, `teleport`, `list`, `repair`, `init-pool`, `unassign`, plus any current `wt` commands that touch slots (like `wt delete` with unassign, `wt create-from` with allocation)
+- **Core** owns: `land`, `branch create`, `branch list`, `wt list` — all slot-free
+- **No hooks or indirection** — clean boundary, no cross-imports
+- **Stale slot cleanup is implicit** — pool reuse handles landed branches naturally
+
+Want me to do a more concrete inventory of which files move vs stay vs get simplified? Or are you at a good stopping point for ideation?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="386" cache_read_input_tokens="58442" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 386, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;command-message&gt;erk:objective-create&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-create&lt;/command-name&gt;
+&lt;command-args&gt;let's create an objective for this workstream&lt;/command-args&gt;</user>
+  <user># /erk:objective-create
+
+Create a new objective through an interactive, guided process. You describe what you want to accomplish, and Claude proposes a structured objective for your approval.
+
+## Usage
+
+```bash
+/erk:objective-create
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Prompt for Description
+
+Ask the user to describe what they want to accomplish:
+
+```
+What do you want to accomplish? Describe it however makes sense to you - goals,
+constraints, design decisions you've already made, context about the codebase, etc.
+
+I'll structure it into a formal objective for your review.
+```
+
+Wait for the user's response. They may provide:
+
+- A brief summary
+- A detailed brain dump
+- Existing notes or documentation
+- A combination of the above
+
+### Step 2: Analyze and Explore
+
+Based on the user's description:
+
+1. **Identify key elements:**
+   - What is the transformation/goal?
+   - What design decisions are mentioned or implied?
+   - What constraints exist?
+   - What's the scope?
+
+2. **Explore the codebase if needed:**
+   - If the user references specific code, read it to understand context
+   - If architecture decisions are mentioned, verify current state
+   - Gather enough context to propose realistic phases
+
+3. **Capture context for downstream implementers:**
+
+   During objective creation, you gather valuable context that would otherwise be lost: web searches, codebase exploration, user feedback, and your reasoning. **This context belongs in the objective issue.**
+
+   Ask yourself: "What would a future agent (or human) implementing this need to know?"
+
+   Examples of valuable context:
+   - **Inventories**: Grep results showing all instances of a pattern, categorized by type
+   - **Root cause analysis**: Why the current state exists, what caused the problem
+   - **Codebase findings**: Relevant files, existing patterns, architectural constraints
+   - **External research**: API docs, library behavior, migration guides discovered via web search
+   - **Design rationale**: Why certain approaches were chosen or rejected
+   - **User preferences**: Feedback and decisions made during the conversation
+
+   This context goes in a dedicated section after the Roadmap (see template below)
+
+### Step 3: Ask for Structure Preference
+
+After understanding the user's goals, present structure options using AskUserQuestion:
+
+```
+How would you like the objective structured?
+```
+
+**Options:**
+
+1. **Steelthread (Recommended)** - Phase 1 is a minimal vertical slice proving the concept works end-to-end, followed by Phase 2 to complete the feature. Best when you can demonstrate value with a partial implementation.
+2. **Linear** - Sequential phases, each building on the previous. Good when infrastructure must exist before any use case works (e.g., database schema before queries).
+3. **Single** - One phase, one PR. For small, focused objectives that don't need phasing.
+4. **Custom** - User describes their preferred structure
+
+**Selection guidelines:**
+
+- **Steelthread**: Default choice. Use when feasible - it de-risks the approach early by proving the concept works.
+- **Linear**: Use when a steelthread doesn't make sense - e.g., building a new abstraction layer that has no value until complete.
+- **Single**: Use for objectives small enough to implement in one PR (typically 1-2 days of work).
+- **Custom**: Use when the user has a specific structure in mind.
+
+### Step 4: Propose Structured Objective
+
+Write a structured objective proposal and show it to the user. Use the appropriate template based on their structure choice:
+
+**Generating the Roadmap Section**
+
+Do NOT manually write roadmap tables or metadata blocks. Instead, construct a JSON object describing the phases and steps, then generate the complete roadmap section:
+
+```bash
+echo '&lt;json&gt;' | erk exec objective-render-roadmap
+```
+
+This outputs a complete `## Roadmap` section with phase headers, tables, test sections, and a machine-readable metadata block (auto-generated, guaranteed consistent with tables). Include the command's output directly in the objective body.
+
+**JSON input format:** Each phase needs `name` (string) and `steps` (list of `{"id": "...", "description": "..."}`). Optional fields: `description` (phase description), `pr_count` (defaults to "1 PR"), `test` (acceptance test description). Each step can optionally include `"slug": "kebab-case-slug"` — if omitted, a slug is auto-generated from the description.
+
+#### Steelthread Template (Recommended)
+
+The objective body follows this structure. The `## Roadmap` section is generated by `erk exec objective-render-roadmap`.
+
+```markdown
+# Objective: [Clear, Concise Title]
+
+[1-2 sentence summary of the transformation]
+
+## Goal
+
+[What the end state looks like - concrete examples of the new API/behavior/architecture]
+
+## Design Decisions
+
+- **[Decision 1]**: [rationale]
+- **[Decision 2]**: [rationale]
+
+## Roadmap
+
+[INSERT OUTPUT from: echo '&lt;json&gt;' | erk exec objective-render-roadmap]
+
+## Implementation Context
+
+[Current architecture, target architecture, patterns to follow - include if helpful]
+
+## Exploration Notes
+
+[Context gathered during objective creation that implementers will need]
+
+## Related Documentation
+
+- Skills to load: [relevant skills]
+- Docs to reference: [relevant docs]
+```
+
+**Steelthread JSON example:**
+
+```json
+{
+  "phases": [
+    {
+      "name": "[Name] Steelthread",
+      "description": "Minimal vertical slice proving the concept works end-to-end.",
+      "steps": [
+        { "id": "1.1", "description": "[Minimal infrastructure]" },
+        { "id": "1.2", "description": "[Wire into one command/path]" }
+      ],
+      "test": "[End-to-end acceptance test for steelthread]"
+    },
+    {
+      "name": "Complete [Name]",
+      "description": "Fill out remaining functionality.",
+      "steps": [
+        { "id": "2.1", "description": "[Extend to remaining commands]" },
+        { "id": "2.2", "description": "[Full test coverage]" }
+      ],
+      "test": "[Full acceptance criteria]"
+    }
+  ]
+}
+```
+
+#### Linear Template
+
+Same body structure as Steelthread. Use this JSON pattern for the roadmap:
+
+```json
+{
+  "phases": [
+    {
+      "name": "[Foundation]",
+      "description": "[Infrastructure needed by subsequent phases]",
+      "steps": [{ "id": "1.1", "description": "..." }],
+      "test": "[Verification criteria]"
+    },
+    {
+      "name": "[Build on Foundation]",
+      "description": "[Uses Phase 1 infrastructure]",
+      "steps": [{ "id": "2.1", "description": "..." }],
+      "test": "[Verification criteria]"
+    }
+  ]
+}
+```
+
+#### Single Template
+
+Same body structure with one phase:
+
+```json
+{
+  "phases": [
+    {
+      "name": "[Implementation]",
+      "steps": [
+        { "id": "1", "description": "..." },
+        { "id": "2", "description": "..." }
+      ],
+      "test": "[Acceptance criteria]"
+    }
+  ]
+}
+```
+
+**Key structuring principles:**
+
+1. **One PR per phase**: Each phase should be a self-contained PR that:
+   - Has a coherent, reviewable scope
+   - Includes its own tests (unit + integration as appropriate)
+   - Leaves the system in a working state when merged
+
+2. **Always shippable**: After each merged PR, the system must remain functional. Never leave the codebase in a broken state between phases.
+
+3. **Test per phase**: Every phase needs a **Test:** section describing acceptance criteria. This becomes the definition of "done" for that PR.
+
+**Section guidelines:**
+
+- **Goal**: Always include - this is the north star
+- **Design Decisions**: Include if there are meaningful choices already made
+- **Roadmap**: Include for bounded objectives - break into shippable phases (1 PR each typically)
+- **Principles/Guidelines**: Include for perpetual objectives instead of a roadmap
+- **Implementation Context**: Include for larger refactors where current/target state matters
+- **Exploration Notes**: Include when you gathered valuable context during creation (inventories, research, reasoning). This is often the most valuable section for implementers
+- **Related Documentation**: Include if specific skills or docs are relevant
+
+**For perpetual objectives**, replace the Roadmap section with:
+
+```markdown
+## Principles
+
+- [Guiding principle 1]
+- [Guiding principle 2]
+```
+
+After showing the proposal, ask:
+
+```
+Does this capture what you're thinking? I can adjust any section, add more detail
+to the roadmap, or restructure the phases.
+```
+
+### Step 5: Iterate Until Approved
+
+The user may:
+
+- **Approve as-is**: Proceed to Step 6
+- **Request changes**: Make the requested adjustments and show again
+- **Add information**: Incorporate new details and show again
+- **Restructure**: Reorganize phases/nodes based on feedback
+
+Continue iterating until the user approves.
+
+### Step 6: Write to Plan File and Create Objective
+
+Once approved:
+
+1. **Write the objective to scratch storage:**
+
+   ```bash
+   mkdir -p .erk/scratch/sessions/4fd06031-7a4b-4f49-b5fc-04eecdf6fc44/
+   ```
+
+   Write the approved objective content to:
+
+   ```
+   .erk/scratch/sessions/4fd06031-7a4b-4f49-b5fc-04eecdf6fc44/objective-body.md
+   ```
+
+   This is the Priority 1 lookup path for `objective-save-to-issue --session-id`.
+
+2. **Generate a slug** from the objective content:
+   - Create a concise, descriptive slug (3-5 words, kebab-case) that captures the essence of the objective
+   - **Pattern:** `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`
+   - **Length:** 3-40 characters
+   - **Rules:** lowercase only, must start with a letter, hyphens between words only, no consecutive hyphens, no underscores/spaces/dots
+   - **Valid:** `build-auth-system`, `refactor-gateway`, `add-dark-mode`, `fix-tui-layout`
+   - **Invalid:** `Build-Auth` (uppercase), `123-start` (starts with digit), `my--slug` (consecutive hyphens), `ab` (too short)
+   - If the backend rejects the slug, fix it according to the rules above and retry
+
+3. **Create the objective with validation:**
+
+   ```bash
+   erk exec objective-save-to-issue --session-id=&lt;session-id&gt; --slug=&lt;generated-slug&gt; --format=display --validate
+   ```
+
+   This creates the objective and validates the roadmap in one step.
+   If validation fails, fix the objective content and re-run.
+
+4. **Report success:**
+
+   ```
+   Objective #&lt;number&gt; created
+   URL: &lt;issue-url&gt;
+   Roadmap validation: clean (or "none (objective has no roadmap)" if no roadmap)
+
+   Next steps:
+   - Use /local:objective-view &lt;number&gt; to view the dependency graph
+   - Use /erk:objective-plan &lt;number&gt; to create plans for specific nodes
+   - Track progress by updating node status in the issue
+   ```
+
+---
+
+## Output Format
+
+- **Start**: Single prompt asking what they want to accomplish
+- **After description**: Ask for structure preference
+- **After structure choice**: Show proposed structured objective
+- **Iteration**: Show updated objective after each change
+- **Success**: Issue number, URL, and next steps
+
+---
+
+## Differences from /erk:plan-save
+
+| Feature          | /erk:plan-save      | /erk:objective-create           |
+| ---------------- | ------------------- | ------------------------------- |
+| Label            | `erk-plan`          | `erk-objective` only            |
+| Purpose          | Implementation plan | Roadmap or perpetual focus area |
+| Title prefix     | `[erk-plan]`        | None                            |
+| Metadata block   | Yes                 | No                              |
+| Commands section | Yes                 | No                              |
+| Body content     | Metadata only       | Objective directly              |
+| Input            | Existing plan file  | Interactive creation            |
+
+---
+
+## Types of Objectives
+
+**Bounded objectives** - Have a clear end state and roadmap:
+
+- "Refactor GitHub gateway into facade pattern"
+- "Add dark mode support"
+
+**Perpetual objectives** - Ongoing areas of focus without a defined end:
+
+- "Improve test coverage"
+- "Documentation maintenance"
+- "Performance optimization"
+
+The structure adapts to the type - perpetual objectives may have principles/guidelines instead of a phased roadmap.
+
+---
+
+## Error Cases
+
+| Scenario                     | Action                           |
+| ---------------------------- | -------------------------------- |
+| User provides no description | Re-prompt with examples          |
+| Not authenticated            | Report GitHub auth error         |
+| Issue creation fails         | Report API error, offer to retry |
+| Plan file write fails        | Report error with path           |
+
+
+ARGUMENTS: let's create an objective for this workstream</user>
+  <assistant>
+
+Based on our conversation, I have a good understanding of the objective. Let me structure it.
+
+The core transformation is: **extract the slot/pool system from erk's core into a self-contained plugin, establishing erk's first plugin boundary.** All slot-aware behavior moves into `erk slot *` subcommands — no cross-imports from core commands into slot code.
+
+Let me explore what's needed for the plugin infrastructure side before proposing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3595" cache_read_input_tokens="58828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3595}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DXmxukxAQmkR3GfyfmD5zz">
+    <param name="pattern">from erk\.cli\.commands\.slot</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3595" cache_read_input_tokens="58828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3595}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DXmxukxAQmkR3GfyfmD5zz">
+src/erk/cli/cli.py:36:from erk.cli.commands.slot import slot_group
+src/erk/cli/commands/wt/delete_cmd.py:12:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/config.py:10:from erk.cli.commands.slot.common import DEFAULT_POOL_SIZE
+src/erk/cli/commands/branch/checkout_cmd.py:23:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/wt/create_from_cmd.py:11:from erk.cli.commands.slot.common import allocate_slot_for_branch
+src/erk/cli/commands/branch/delete_cmd.py:10:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/wt/list_cmd.py:10:from erk.cli.commands.slot.common import is_placeholder_branch
+src/erk/cli/commands/branch/create_cmd.py:15:from erk.cli.commands.slot.common import allocate_slot_for_branch, update_slot_assignment_tip
+src/erk/cli/commands/land_cmd.py:40:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/land_cmd.py:45:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/branch/list_cmd.py:8:from erk.cli.commands.slot.common import is_placeholder_branch
+src/erk/cli/commands/pr/teleport_cmd.py:28:from erk.cli.commands.slot.common import find_assignment_by_worktree, update_slot_assignment_tip
+src/erk/cli/commands/pr/dispatch_cmd.py:14:from erk.cli.commands.slot.common import is_placeholder_branch
+src/erk/cli/commands/slot/assign_cmd.py:5:from erk.cli.commands.slot.common import allocate_slot_for_branch
+src/erk/cli/commands/slot/__init__.py:6:from erk.cli.commands.slot.assign_cmd import slot_assign
+src/erk/cli/commands/slot/__init__.py:7:from erk.cli.commands.slot.init_pool_cmd import slot_init_pool
+src/erk/cli/commands/slot/__init__.py:8:from erk.cli.commands.slot.list_cmd import slot_list
+src/erk/cli/commands/slot/__init__.py:9:from erk.cli.commands.slot.repair_cmd import slot_repair
+src/erk/cli/commands/slot/__init__.py:10:from erk.cli.commands.slot.unassign_cmd import slot_unassign
+src/erk/cli/commands/slot/repair_cmd.py:8:from erk.cli.commands.slot.diagnostics import (
+src/erk/cli/commands/slot/diagnostics.py:7:from erk.cli.commands.slot.common import generate_slot_name
+src/erk/cli/commands/slot/init_pool_cmd.py:5:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/slot/unassign_cmd.py:8:from erk.cli.commands.slot.common import get_placeholder_branch_name
+src/erk/cli/commands/slot/list_cmd.py:10:from erk.cli.commands.slot.common import (
+src/erk/cli/commands/stack/consolidate_cmd.py:10:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/reconcile_pipeline.py:22:from erk.cli.commands.slot.common import find_branch_assignment
+src/erk/cli/commands/reconcile_pipeline.py:23:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/navigation_helpers.py:17:from erk.cli.commands.slot.unassign_cmd import execute_unassign
+src/erk/cli/commands/checkout_helpers.py:22:from erk.cli.commands.slot.common import allocate_slot_for_branch
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0194pb3Xqn8P9n7Tu6HAAbD5">
+    <param name="pattern">from erk\.core\.worktree_pool</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3595" cache_read_input_tokens="58828" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3595, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0194pb3Xqn8P9n7Tu6HAAbD5">
+src/erk/cli/commands/wt/delete_cmd.py:21:from erk.core.worktree_pool import load_pool_state
+src/erk/cli/commands/land_cmd.py:53:from erk.core.worktree_pool import (
+src/erk/cli/commands/slot/common.py:13:from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+src/erk/cli/commands/slot/repair_cmd.py:15:from erk.core.worktree_pool import PoolState, SlotAssignment
+src/erk/cli/commands/slot/diagnostics.py:10:from erk.core.worktree_pool import PoolState, SlotAssignment
+src/erk/cli/commands/slot/init_pool_cmd.py:14:from erk.core.worktree_pool import (
+src/erk/cli/commands/slot/unassign_cmd.py:12:from erk.core.worktree_pool import (
+src/erk/cli/commands/slot/list_cmd.py:17:from erk.core.worktree_pool import PoolState, load_pool_state
+src/erk/cli/commands/stack/consolidate_cmd.py:21:from erk.core.worktree_pool import load_pool_state
+src/erk/cli/commands/branch/checkout_cmd.py:34:from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+src/erk/cli/commands/branch/delete_cmd.py:25:from erk.core.worktree_pool import SlotAssignment, load_pool_state
+src/erk/cli/commands/branch/create_cmd.py:21:from erk.core.worktree_pool import load_pool_state
+src/erk/cli/commands/navigation_helpers.py:23:from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+src/erk/cli/commands/reconcile_pipeline.py:26:from erk.core.worktree_pool import load_pool_state
+src/erk/cli/commands/pr/teleport_cmd.py:33:from erk.core.worktree_pool import load_pool_state
+src/erk/core/health_checks/legacy_slot_naming.py:5:from erk.core.worktree_pool import load_pool_state
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2206" cache_read_input_tokens="62423" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2206}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have the full inventory. Here's the coupling map:
+
+**15 non-slot files** import from slot modules. Per our discussion:
+- 6 commands become slot subcommands (checkout, create-from, delete, up/down, teleport)
+- 9 core commands get simplified (branch create/delete/list, wt list, land, reconcile, stack consolidate, pr dispatch, config)
+
+How would you like the objective structured?
+
+1. **Steelthread** — Phase 1: plugin infrastructure + move one command (e.g., branch checkout → slot checkout) + simplify one core command (branch create). Phase 2: complete all remaining moves and simplifications.
+2. **Linear** — Phase 1: plugin infrastructure (entry point discovery, conditional loading). Phase 2: disentangle all core commands. Phase 3: move commands into slot plugin.
+3. **Single** — one big PR
+4. **Custom** — your preferred breakdown
+
+My recommendation is steelthread — proving the plugin boundary works end-to-end with one command before committing to the full migration.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2206" cache_read_input_tokens="62423" output_tokens="1005" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>steelthread</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1149" cache_read_input_tokens="64629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1149}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the proposed objective:
+
+---
+
+# Objective: Extract Slot System into Plugin
+
+Disentangle the slot/pool system from erk's core commands and establish erk's first plugin boundary. Slot-aware behavior moves entirely into `erk slot *` subcommands — no cross-imports from core into slot code. Core commands become simpler, and the slot system becomes optional.
+
+## Goal
+
+- **Zero slot imports from core commands**: `branch create`, `branch delete`, `branch list`, `wt list`, `land`, `reconcile`, `stack consolidate`, `pr dispatch`, `config` have no knowledge of slots
+- **Slot plugin owns all slot-aware commands**: `assign`, `unassign`, `checkout` (from branch checkout), `up`/`down` (from navigation), `teleport` (from pr teleport), `create-from` (from wt create-from), `delete` (from wt delete), `list`, `repair`, `init-pool`
+- **Plugin discovery**: slot group is registered via entry point or conditional loading, not hardcoded import in cli.py
+- **No hooks/indirection for land**: stale slots are reclaimed implicitly by pool reuse logic — no post-land cleanup needed
+
+## Design Decisions
+
+- **Slots is an alternative workflow, not an enhancement**: if you use slots, you live in `erk slot *`. Core commands don't know slots exist.
+- **Breaking change**: no backwards compatibility shims. Commands move, imports break, users adapt.
+- **No land hook (yet)**: start with implicit pool reuse for stale slot cleanup. Hook system is a future consideration.
+- **Config-gated loading over entry points (initially)**: like the existing `is_learned_docs_available` pattern in cli.py. Entry points can come later if needed for distribution.
+- **Plugin boundary at the CLI layer**: the slot plugin imports from core (context, gateways, worktree_pool), but core never imports from slot. One-directional dependency.
+
+## Roadmap
+
+Let me generate this.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1149" cache_read_input_tokens="64629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1149}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XtGgmVSYWqnUto7rzcBw7v">
+    <param name="command">echo '{
+  "phases": [
+    {
+      "name": "Plugin Steelthread",
+      "description": "Esta...[truncated 2749 chars]...s work without slots enabled. CI passes."
+    }
+  ]
+}' | erk exec objective-render-roadmap</param>
+    <param name="description">Generate roadmap section for objective</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1149" cache_read_input_tokens="64629" output_tokens="1680" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1149, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XtGgmVSYWqnUto7rzcBw7v">
+## Roadmap
+
+### Phase 1: Plugin Steelthread (1 PR)
+
+Establish the plugin boundary with one moved command and one simplified command, proving the architecture works end-to-end.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|----|
+| 1.1 | Create plugin loading infrastructure: conditional slot group registration in cli.py gated on config, replacing hardcoded import | pending | - |
+| 1.2 | Move branch checkout into slot checkout: create erk slot checkout command with full slot-aware checkout logic, remove branch checkout command | pending | - |
+| 1.3 | Simplify branch create: remove allocate_slot_for_branch and update_slot_assignment_tip calls, make it create branch + direct worktree only | pending | - |
+| 1.4 | Remove slot imports from config.py (DEFAULT_POOL_SIZE) — pool config becomes internal to slot plugin | pending | - |
+
+**Test:** erk slot checkout works with full pool allocation. erk branch create works without slot awareness. Slot group does not load when disabled in config. No imports from erk.cli.commands.slot in branch/ or config.py.
+
+### Phase 2: Complete Slot Extraction (1 PR)
+
+Move all remaining slot-aware commands and simplify all core commands.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|----|
+| 2.1 | Move navigation into slot plugin: erk slot up / erk slot down with slot-aware worktree allocation, remove slot imports from navigation_helpers.py | pending | - |
+| 2.2 | Move pr teleport into slot plugin: erk slot teleport with find_assignment_by_worktree and update_slot_assignment_tip | pending | - |
+| 2.3 | Move wt create-from and wt delete into slot plugin: erk slot create-from and erk slot delete with slot allocation/unassign logic | pending | - |
+| 2.4 | Simplify land: remove execute_unassign calls and pool state imports, rely on implicit pool reuse | pending | - |
+| 2.5 | Simplify remaining core commands: branch delete (remove unassign), branch list and wt list (remove is_placeholder_branch), reconcile_pipeline (remove slot awareness), stack consolidate (remove unassign) | pending | - |
+| 2.6 | Move legacy_slot_naming health check into slot plugin, move worktree_pool.py into slot package or keep in core as data layer | pending | - |
+
+**Test:** Zero imports from erk.cli.commands.slot in any non-slot file. grep confirms no cross-boundary imports. All slot subcommands work. All simplified core commands work without slots enabled. CI passes.
+
+
+... [73 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Here's the full proposal:
+
+---
+
+# Objective: Extract Slot System into Plugin
+
+Disentangle the slot/pool system from erk's core commands and establish erk's first plugin boundary. Slot-aware behavior moves entirely into `erk slot *` subcommands — no cross-imports from core into slot code. Core commands become simpler, and the slot system becomes optional.
+
+## Goal
+
+- **Zero slot imports from core commands**: `branch create`, `branch delete`, `branch list`, `wt list`, `land`, `reconcile`, `stack consolidate`, `pr dispatch`, `config` have no knowledge of slots
+- **Slot plugin owns all slot-aware commands**: `assign`, `unassign`, `checkout` (from branch checkout), `up`/`down` (from navigation), `teleport` (from pr teleport), `create-from` (from wt create-from), `delete` (from wt delete), `list`, `repair`, `init-pool`
+- **Plugin discovery**: slot group registered via conditional loading, not hardcoded import
+- **No hooks/indirection for land**: stale slots reclaimed implicitly by pool reuse
+
+## Design Decisions
+
+- **Slots is an alternative workflow, not an enhancement**: slot users live in `erk slot *`. Core commands don't know slots exist.
+- **Breaking change**: no backwards compatibility shims. Commands move, imports break, users adapt.
+- **No land hook (yet)**: implicit pool reuse for stale slot cleanup. Hook system is a future consideration.
+- **Config-gated loading over entry points (initially)**: like the existing `is_learned_docs_available` pattern. Entry points can come later.
+- **One-directional dependency**: slot plugin imports from core (context, gateways, worktree_pool), but core never imports from slot.
+
+## Roadmap
+
+*(as generated above — Phase 1 steelthread + Phase 2 complete extraction)*
+
+## Exploration Notes
+
+**Current coupling inventory** (15 non-slot files importing from slot modules):
+- **Commands that become slot subcommands**: `branch/checkout_cmd.py`, `wt/create_from_cmd.py`, `wt/delete_cmd.py`, `navigation_helpers.py`, `pr/teleport_cmd.py`, `checkout_helpers.py`
+- **Commands that get simplified**: `branch/create_cmd.py`, `branch/delete_cmd.py`, `branch/list_cmd.py`, `wt/list_cmd.py`, `land_cmd.py`, `reconcile_pipeline.py`, `stack/consolidate_cmd.py`, `pr/dispatch_cmd.py`, `config.py`
+- **Health check**: `core/health_checks/legacy_slot_naming.py`
+
+**Key functions to relocate/remove from core commands**: `allocate_slot_for_branch`, `update_slot_assignment_tip`, `execute_unassign`, `find_branch_assignment`, `find_assignment_by_worktree`, `is_placeholder_branch`, `DEFAULT_POOL_SIZE`
+
+**Data layer question**: `core/worktree_pool.py` (PoolState, SlotAssignment, SlotInfo) could stay in core as a data layer the plugin uses, or move into the slot package. Keeping it in core is simpler for Phase 1.
+
+## Related Documentation
+
+- `docs/learned/erk/slot-pool-architecture.md` — slot pool design
+- `docs/learned/architecture/slot-pool-state-sync.md` — sync algorithm
+- `docs/learned/cli/slot-assign-from-current-branch.md` — flag behavior
+- Skills: `dignified-python`, `fake-driven-testing`
+
+---
+
+Does this capture what you're thinking? I can adjust any section, add more detail to the roadmap, or restructure the phases.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3075" cache_read_input_tokens="65778" output_tokens="894" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3075, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>ah one more thing I want the slots system in its own python package</user>
+  <assistant>
+
+Makes sense — that reinforces the boundary. A `packages/erk-slots/` workspace package (like `erk-mcp`, `erk-statusline`) with its own `pyproject.toml`. The main `erk` package declares it as an optional dependency, and cli.py conditionally loads the slot group if the package is importable.
+
+Let me update the roadmap to reflect this.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1066" cache_read_input_tokens="68853" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1066}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014kdCxJGdGS91XvQs4r8vZ1">
+    <param name="command">echo '{
+  "phases": [
+    {
+      "name": "Plugin Steelthread",
+      "description": "Esta...[truncated 3004 chars]...k with erk-slots uninstalled. CI passes."
+    }
+  ]
+}' | erk exec objective-render-roadmap</param>
+    <param name="description">Generate updated roadmap with separate package</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1066" cache_read_input_tokens="68853" output_tokens="1093" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1066, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
