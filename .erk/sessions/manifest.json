@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9290,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T21:11:20.744738+00:00",
+      "files": [
+        "impl--de5073e8-b8a3-4eae-810c-225f497c7be2-part1.xml",
+        "impl--de5073e8-b8a3-4eae-810c-225f497c7be2-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 10,
+      "raw_size_kb": 552,
+      "xml_size_kb": 101,
+      "git_branch": "plnd/consolidate-dispatch-docs-03-20-1653"
+    }
+  ]
+}
