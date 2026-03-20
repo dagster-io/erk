@@ -65,6 +65,8 @@ def test_get_plan_info_success() -> None:
     assert "erk-pr" in output["labels"]
     assert isinstance(output["url"], str)
     assert output["backend"] == "github-draft-pr"
+    assert "head_ref_name" in output
+    assert "base_ref_name" in output
 
 
 def test_get_plan_info_includes_objective_id() -> None:

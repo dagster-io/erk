@@ -63,7 +63,6 @@ from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
 from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
-from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
@@ -215,7 +214,6 @@ exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-su
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
-exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
 exec_group.add_command(get_pr_view, name="get-pr-view")
 exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
 exec_group.add_command(get_issue_body, name="get-issue-body")

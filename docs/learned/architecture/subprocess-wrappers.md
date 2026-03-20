@@ -250,7 +250,7 @@ This pattern is especially important in CI where large content is common and she
 
 ## Lenient vs. Strict Handlers
 
-Some subprocess operations should fail gracefully while others should fail fast. The `_get_pr_for_plan_direct()` pattern from `trigger-async-learn` demonstrates the lenient approach.
+Some subprocess operations should fail gracefully while others should fail fast.
 
 ### Decision Matrix
 
@@ -265,9 +265,7 @@ Some subprocess operations should fail gracefully while others should fail fast.
 
 Use when the operation is **optional** and the caller should decide how to handle absence:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
-
-See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+Returns `T | None` — `None` on any failure (missing data, API errors, not found).
 
 **Characteristics:**
 
@@ -285,7 +283,7 @@ See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_as
 
 Use when the operation is **critical** and failure should be explicit:
 
-See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+A strict handler raises `SystemExit(1)` with JSON error output on any failure, providing clear error messages to the user.
 
 **Characteristics:**
 
@@ -305,7 +303,7 @@ The `trigger-async-learn` command uses **lenient handler** for PR lookup:
 
 ```python
 # Lenient: Try to get PR info, but don't fail if unavailable
-pr_info = _get_pr_for_plan_direct(...)
+pr_info = get_pr_info(...)
 if pr_info is None:
     # No PR found - that's OK, just skip review comments
     click.echo("No PR found for plan, skipping review comments", err=True)
@@ -328,7 +326,7 @@ trigger_workflow(...)
 
 **Contrast with strict handler:**
 
-The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+A user-facing command like `get-plan-info` is **strict** because the user explicitly asked for the data and expects either the answer or a clear error message.
 
 ### See Also
 
