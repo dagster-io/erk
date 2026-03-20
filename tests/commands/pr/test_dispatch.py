@@ -122,7 +122,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
         assert inputs["plan_backend"] == "planned_pr"
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_number"] == "42"
         assert inputs["branch_name"] == plan_branch
 
         # Verify: no new PR was created (planned-PR already exists)
@@ -247,7 +247,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             f"Output: {result.output}"
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_number"] == "42"
         assert "Traceback" not in result.output
 
 
@@ -321,7 +321,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             f"Output: {result.output}"
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_number"] == "42"
         assert "Traceback" not in result.output
 
 

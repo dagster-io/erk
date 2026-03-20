@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
-      plan_id: ${{ steps.read_result.outputs.plan_id }}
-      plan_title: ${{ steps.read_result.outputs.plan_title }}
+      pr_number: ${{ steps.read_result.outputs.pr_number }}
+      pr_title: ${{ steps.read_result.outputs.pr_title }}
       base_branch: ${{ steps.trunk.outputs.trunk_branch }}
       has_plans: ${{ steps.read_result.outputs.has_plans }}
     steps:
@@ -134,15 +134,15 @@ jobs:
           echo "has_plans=$HAS_PLANS" >> $GITHUB_OUTPUT
 
           if [ "$HAS_PLANS" = "true" ]; then
-            PLAN_ID=$(jq -r '.pr_number' .erk/impl-context/plan-result.json)
-            PLAN_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
-            echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
-            echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
-            echo "Found plans to consolidate: #$PLAN_ID - $PLAN_TITLE"
+            PR_NUMBER=$(jq -r '.pr_number' .erk/impl-context/plan-result.json)
+            PR_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+            echo "Found plans to consolidate: #$PR_NUMBER - $PR_TITLE"
           else
             echo "No learn plans found to consolidate"
-            echo "plan_id=" >> $GITHUB_OUTPUT
-            echo "plan_title=" >> $GITHUB_OUTPUT
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            echo "pr_title=" >> $GITHUB_OUTPUT
           fi
 
       - name: Fail workflow if planning failed
@@ -171,15 +171,15 @@ jobs:
 
   implement:
     needs: consolidate
-    if: needs.consolidate.outputs.has_plans == 'true' && needs.consolidate.outputs.plan_id != ''
+    if: needs.consolidate.outputs.has_plans == 'true' && needs.consolidate.outputs.pr_number != ''
     uses: ./.github/workflows/plan-implement.yml
     with:
-      plan_id: ${{ needs.consolidate.outputs.plan_id }}
-      plan_title: ${{ needs.consolidate.outputs.plan_title }}
+      pr_number: ${{ needs.consolidate.outputs.pr_number }}
+      pr_title: ${{ needs.consolidate.outputs.pr_title }}
       submitted_by: ${{ inputs.submitted_by }}
       distinct_id: ${{ inputs.distinct_id }}
       branch_name: ${{ inputs.branch_name }}
-      pr_number: ${{ inputs.pr_number }}
+      impl_pr_number: ${{ inputs.pr_number }}
       model_name: ${{ inputs.model_name }}
       base_branch: ${{ needs.consolidate.outputs.base_branch }}
       plan_backend: planned_pr

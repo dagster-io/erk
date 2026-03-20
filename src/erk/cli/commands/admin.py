@@ -524,12 +524,12 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, pr: int | None, watch: bool
         workflow="plan-implement.yml",
         ref=current_branch,
         inputs={
-            "plan_id": str(pr_number),
+            "pr_number": str(pr_number),
             "submitted_by": username,
             "distinct_id": distinct_id,
-            "plan_title": "Test workflow run",
+            "pr_title": "Test workflow run",
             "branch_name": test_branch,
-            "pr_number": str(draft_pr_number),
+            "impl_pr_number": str(draft_pr_number),
             "base_branch": trunk,
         },
     )

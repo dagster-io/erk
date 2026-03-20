@@ -68,12 +68,12 @@ def test_plan_next_steps_implement_new_wt_dangerous() -> None:
 def test_format_pr_next_steps_plain_hierarchical_format() -> None:
     """format_pr_next_steps_plain produces hierarchical output."""
     output = format_pr_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
-    assert "Implement plan #42:" in output
+    assert "Implement PR #42:" in output
     assert "In current wt:" in output
     assert "In new wt:" in output
     assert "(dangerously):" in output
-    assert "Checkout plan #42:" in output
-    assert "Dispatch to queue:" in output
+    assert "Checkout PR #42:" in output
+    assert "Dispatch PR #42:" in output
 
 
 def test_format_pr_next_steps_plain_contains_implement() -> None:
