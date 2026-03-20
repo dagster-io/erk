@@ -17,6 +17,7 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
@@ -630,6 +631,27 @@ class LocalGitHub(ABC):
 
         Returns:
             List of PRReviewThread sorted by (path, line)
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Get PR-level reviews for a pull request.
+
+        Fetches reviews submitted via GitHub's "Review changes" flow
+        (not inline thread comments). Returns APPROVED, CHANGES_REQUESTED,
+        and COMMENTED reviews. Excludes PENDING (draft) and DISMISSED.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            List of PRReview sorted by submitted_at
         """
         ...
 

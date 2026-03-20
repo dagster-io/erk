@@ -25,6 +25,7 @@ from erk_shared.gateway.github.graphql_queries import (
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
     GET_PR_CHECK_RUNS_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
+    GET_PR_REVIEWS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
     RESOLVE_REVIEW_THREAD_MUTATION,
@@ -56,7 +57,9 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewComment,
+    PRReviewState,
     PRReviewThread,
     PullRequestInfo,
     RepoInfo,
@@ -1955,6 +1958,73 @@ class RealLocalGitHub(LocalGitHub):
         # Sort by path, then by line (None sorts first)
         threads.sort(key=lambda t: (t.path, t.line or 0))
         return threads
+
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Get PR-level reviews for a pull request via GraphQL."""
+        assert self._repo_info is not None, "repo_info required for get_pr_reviews"
+
+        # GH-API-AUDIT: GraphQL - reviews query
+        # WHY GRAPHQL: REST API doesn't reliably expose review state + body in one call
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_PR_REVIEWS_QUERY}",
+            "-f",
+            f"owner={self._repo_info.owner}",
+            "-f",
+            f"repo={self._repo_info.name}",
+            "-F",
+            f"number={pr_number}",
+        ]
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        response = json.loads(stdout)
+
+        return self._parse_reviews_response(response)
+
+    def _parse_reviews_response(self, response: dict[str, Any]) -> list[PRReview]:
+        """Parse GraphQL reviews response into PRReview objects.
+
+        Args:
+            response: GraphQL response data
+
+        Returns:
+            List of PRReview sorted by submitted_at
+        """
+        reviews: list[PRReview] = []
+
+        pr_data = response.get("data", {}).get("repository", {}).get("pullRequest")
+        if pr_data is None:
+            return reviews
+
+        review_nodes = pr_data.get("reviews", {}).get("nodes", [])
+
+        for node in review_nodes:
+            if node is None:
+                continue
+
+            author = node.get("author")
+            author_login = author.get("login") if author else "unknown"
+
+            raw_state = node.get("state", "COMMENTED")
+            state: PRReviewState = raw_state
+
+            review = PRReview(
+                id=node.get("id", ""),
+                author=author_login,
+                body=node.get("body", ""),
+                state=state,
+                submitted_at=node.get("submittedAt", ""),
+            )
+            reviews.append(review)
+
+        reviews.sort(key=lambda r: r.submitted_at)
+        return reviews
 
     def get_pr_check_runs(
         self,

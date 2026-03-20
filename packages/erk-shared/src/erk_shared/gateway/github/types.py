@@ -9,6 +9,8 @@ from erk_shared.non_ideal_state import EnsurableResult
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
+PRReviewState = Literal["PENDING", "COMMENTED", "APPROVED", "CHANGES_REQUESTED", "DISMISSED"]
+
 MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
 
 
@@ -47,6 +49,28 @@ class BodyFile:
 
 # Type alias for body content passed to update methods
 BodyContent = BodyText | BodyFile
+
+
+@dataclass(frozen=True)
+class PRReview:
+    """A PR-level review submission (not an inline thread comment).
+
+    Represents a review submitted via GitHub's "Review changes" flow,
+    which can include a body comment and a state change (approve/request changes).
+
+    Attributes:
+        id: GraphQL node ID of the review
+        author: Login of the reviewer
+        body: Review body text (may be empty for pure approval/request-changes)
+        state: Review state (APPROVED, CHANGES_REQUESTED, COMMENTED, etc.)
+        submitted_at: ISO 8601 timestamp when the review was submitted
+    """
+
+    id: str
+    author: str
+    body: str
+    state: PRReviewState
+    submitted_at: str
 
 
 @dataclass(frozen=True)
