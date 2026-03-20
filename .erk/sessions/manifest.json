@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9273,
+  "sessions": [
+    {
+      "session_id": "4fd06031-7a4b-4f49-b5fc-04eecdf6fc44",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-20T14:30:26.509726+00:00",
+      "files": [
+        "planning-4fd06031-7a4b-4f49-b5fc-04eecdf6fc44-4fd06031-7a4b-4f49-b5fc-04eecdf6fc44-part1.xml",
+        "planning-4fd06031-7a4b-4f49-b5fc-04eecdf6fc44-4fd06031-7a4b-4f49-b5fc-04eecdf6fc44-part2.xml"
+      ],
+      "user_turns": 27,
+      "duration_minutes": 37,
+      "raw_size_kb": 1367,
+      "xml_size_kb": 138,
+      "git_branch": "gt-skills"
+    }
+  ]
+}
