@@ -2,13 +2,13 @@
 
 import click
 
-from erk.cli.alias import register_with_aliases
 from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
 from erk.cli.commands.stack.list_cmd import list_stack
 from erk.cli.commands.stack.move_cmd import move_stack
 from erk.cli.commands.stack.split_old.command import split_cmd as split_stack
 from erk.cli.commands.stack.sync_cmd import sync_stack_cmd
 from erk.cli.graphite_command import GraphiteGroup
+from erk_shared.cli_alias import register_with_aliases
 
 
 @click.group("stack", cls=GraphiteGroup)

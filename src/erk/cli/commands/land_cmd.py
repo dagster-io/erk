@@ -37,12 +37,6 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     run_objective_update_after_land,
 )
-from erk.cli.commands.slot.common import (
-    extract_slot_number,
-    find_branch_assignment,
-    get_placeholder_branch_name,
-)
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -60,6 +54,12 @@ from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.stack.validation import validate_parent_is_trunk
+from erk_slots.common import (
+    extract_slot_number,
+    find_branch_assignment,
+    get_placeholder_branch_name,
+)
+from erk_slots.unassign_cmd import execute_unassign
 
 
 @dataclass(frozen=True)

@@ -4,12 +4,12 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.alias import alias
-from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time, get_pr_status_emoji
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.types import PullRequestInfo
+from erk_slots.common import is_placeholder_branch
 
 
 @alias("ls")

@@ -7,7 +7,6 @@ from typing import Any, cast
 import click
 import tomlkit
 
-from erk.cli.commands.slot.common import DEFAULT_POOL_SIZE
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -22,6 +21,7 @@ from erk_shared.config.schema import (
 )
 from erk_shared.context.types import GlobalConfig
 from erk_shared.output.output import machine_output, user_output
+from erk_slots.common import DEFAULT_POOL_SIZE
 
 # Maps CLI key prefix to GlobalConfig attribute name.
 # User-facing keys use "interactive_claude.*" but GlobalConfig attribute is "interactive_agent".

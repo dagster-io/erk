@@ -14,7 +14,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.implement_shared import (
     PlanSource,
@@ -36,6 +35,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.cli_alias import alias
 from erk_shared.context.types import RepoContext
 from erk_shared.impl_folder import create_impl_folder, get_impl_dir, resolve_impl_dir, save_plan_ref
 from erk_shared.output.output import user_output

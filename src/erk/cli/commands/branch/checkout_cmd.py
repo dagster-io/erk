@@ -12,7 +12,6 @@ from erk.cli.activation import (
     print_activation_instructions,
     render_activation_script,
 )
-from erk.cli.alias import alias
 from erk.cli.commands.checkout_helpers import (
     display_sync_status,
     navigate_to_worktree,
@@ -20,19 +19,14 @@ from erk.cli.commands.checkout_helpers import (
 )
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
-from erk.cli.commands.slot.common import (
-    allocate_slot_for_branch,
-    update_slot_assignment_tip,
-)
-from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
-from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.output.output import user_output
@@ -306,29 +300,6 @@ def _find_root_worktree(worktrees: list[WorktreeInfo]) -> WorktreeInfo | None:
     return None
 
 
-def _find_current_slot_assignment(state: PoolState, cwd: Path) -> SlotAssignment | None:
-    """Find slot assignment matching the current working directory.
-
-    Inlined to avoid circular import from navigation_helpers.
-
-    Args:
-        state: Current pool state
-        cwd: Current working directory path
-
-    Returns:
-        SlotAssignment if cwd is a pool slot, None otherwise
-    """
-    if not cwd.exists():
-        return None
-    resolved_path = cwd.resolve()
-    for assignment in state.assignments:
-        if not assignment.worktree_path.exists():
-            continue
-        if assignment.worktree_path.resolve() == resolved_path:
-            return assignment
-    return None
-
-
 def _setup_impl_for_plan(
     ctx: ErkContext,
     *,
@@ -452,22 +423,12 @@ def _rebase_and_track_for_plan(
     default=None,
     help="PR number or URL with erk-pr label",
 )
-@click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
-@click.option(
-    "--new-slot",
-    is_flag=True,
-    help="Allocate a new slot for the branch (default: checkout in current worktree)",
-)
-@click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @script_option
 @click.pass_obj
 def branch_checkout(
     ctx: ErkContext,
     branch: str | None,
     for_plan: str | None,
-    no_slot: bool,
-    new_slot: bool,
-    force: bool,
     script: bool,
 ) -> None:
     """Checkout BRANCH by finding and switching to its worktree.
@@ -497,9 +458,6 @@ def branch_checkout(
             ctx,
             branch=branch,
             for_plan=for_plan,
-            no_slot=no_slot,
-            new_slot=new_slot,
-            force=force,
             script=script,
         )
 
@@ -509,9 +467,6 @@ def _branch_checkout_impl(
     *,
     branch: str | None,
     for_plan: str | None,
-    no_slot: bool,
-    new_slot: bool,
-    force: bool,
     script: bool,
 ) -> None:
     """Implementation body for branch_checkout — separated for error wrapping."""
@@ -525,10 +480,6 @@ def _branch_checkout_impl(
 
     if for_plan is None and branch is None:
         user_output("Error: Must provide BRANCH argument or --for-plan option.")
-        raise SystemExit(1) from None
-
-    if new_slot and no_slot:
-        user_output("Error: --new-slot and --no-slot cannot be used together.")
         raise SystemExit(1) from None
 
     # Use existing repo from context if available (for tests), otherwise discover
@@ -606,176 +557,67 @@ def _branch_checkout_impl(
             worktrees = ctx.git.worktree.list_worktrees(repo.root)
             matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
         else:
-            # Root not available or not trunk - auto-create worktree
-            if no_slot:
-                # Legacy behavior: branch-name-based paths
-                _worktree_path, is_newly_created = ensure_worktree_for_branch(
-                    ctx, repo, branch, is_plan_derived=False
+            # Root not available or not trunk - checkout in current worktree
+            # Ensure branch exists (may need to create tracking branch)
+            # Skip if --for-plan already handled branch creation
+            if setup is None:
+                local_branches = ctx.git.branch.list_local_branches(repo.root)
+                if branch not in local_branches:
+                    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+                    remote_ref = f"origin/{branch}"
+                    if remote_ref in remote_branches:
+                        user_output(
+                            f"Branch '{branch}' exists on origin, creating local tracking branch..."
+                        )
+                        ctx.git.remote.fetch_branch(repo.root, "origin", branch)
+                        ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
+                    else:
+                        user_output(
+                            f"Error: Branch '{branch}' does not exist.\n"
+                            f"To create a new branch and worktree, run:\n"
+                            f"  erk wt create --branch {branch}"
+                        )
+                        raise SystemExit(1) from None
+
+            # Checkout in current worktree (like git checkout)
+            current_wt = _find_containing_worktree(worktrees, ctx.cwd)
+            wt_path = current_wt.path if current_wt is not None else repo.root
+            ctx.branch_manager.checkout_branch(wt_path, branch)
+            target_wt = WorktreeInfo(path=wt_path, branch=branch)
+
+            if setup is not None:
+                _rebase_and_track_for_plan(
+                    ctx,
+                    repo_root=repo.root,
+                    worktree_path=target_wt.path,
+                    branch=branch,
+                    parent_branch=parent_branch,
+                    trunk=trunk,
                 )
-            else:
-                # New behavior: slot allocation
-                # First check if this is the trunk branch - trunk cannot have a slot
-                trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
-                if branch == trunk_branch:
-                    user_output(
-                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
-                        f"The trunk branch should be checked out in the root worktree.\n"
-                        f"To switch to {trunk_branch}, use:\n"
-                        f"  erk br co root"
-                    )
-                    raise SystemExit(1) from None
+                _setup_impl_for_plan(
+                    ctx,
+                    setup=setup,
+                    worktree_path=target_wt.path,
+                    branch_name=branch,
+                    script=script,
+                )
 
-                # Ensure branch exists (may need to create tracking branch)
-                # Skip if --for-plan already handled branch creation
-                if setup is None:
-                    local_branches = ctx.git.branch.list_local_branches(repo.root)
-                    if branch not in local_branches:
-                        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
-                        remote_ref = f"origin/{branch}"
-                        if remote_ref in remote_branches:
-                            user_output(
-                                f"Branch '{branch}' exists on origin,"
-                                " creating local tracking branch..."
-                            )
-                            ctx.git.remote.fetch_branch(repo.root, "origin", branch)
-                            ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
-                        else:
-                            user_output(
-                                f"Error: Branch '{branch}' does not exist.\n"
-                                f"To create a new branch and worktree, run:\n"
-                                f"  erk wt create --branch {branch}"
-                            )
-                            raise SystemExit(1) from None
-
-                # Detect if running in an assigned slot (for stack-in-place)
-                # Unless --new-slot forces a new allocation
-                state = load_pool_state(repo.pool_json_path)
-                current_assignment = None
-                if state is not None and not new_slot:
-                    current_assignment = _find_current_slot_assignment(state, repo.root)
-
-                if current_assignment is not None:
-                    # Stack in place — update assignment to new tip, no new slot
-                    assert state is not None
-                    slot_result = update_slot_assignment_tip(
-                        repo.pool_json_path,
-                        state,
-                        current_assignment,
-                        branch_name=branch,
-                        now=ctx.time.now().isoformat(),
-                    )
-                    user_output(
-                        click.style(
-                            f"✓ Stacked {branch} in {slot_result.slot_name} (in place)", fg="green"
-                        )
-                    )
-
-                    # Checkout the branch before _setup_impl_for_plan, which may
-                    # sys.exit(0) in script mode and skip _perform_checkout.
-                    ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)
-
-                    # Build a synthetic WorktreeInfo for the existing worktree.
-                    # Branch is already checked out above.
-                    target_wt = WorktreeInfo(
-                        path=slot_result.worktree_path,
-                        branch=branch,
-                    )
-
-                    if setup is not None:
-                        _rebase_and_track_for_plan(
-                            ctx,
-                            repo_root=repo.root,
-                            worktree_path=target_wt.path,
-                            branch=branch,
-                            parent_branch=parent_branch,
-                            trunk=trunk,
-                        )
-                        _setup_impl_for_plan(
-                            ctx,
-                            setup=setup,
-                            worktree_path=target_wt.path,
-                            branch_name=branch,
-                            script=script,
-                        )
-
-                    worktrees = ctx.git.worktree.list_worktrees(repo.root)
-                    _perform_checkout(
-                        ctx,
-                        repo_root=repo.root,
-                        target_worktree=target_wt,
-                        branch=branch,
-                        script=script,
-                        is_newly_created=False,
-                        worktrees=worktrees,
-                        force_script_activation=True,
-                    )
-                    return
-                elif new_slot:
-                    # Allocate slot for the branch (only with explicit --new-slot)
-                    slot_result = allocate_slot_for_branch(
-                        ctx,
-                        repo,
-                        branch,
-                        force=force,
-                        reuse_inactive_slots=True,
-                        cleanup_artifacts=True,
-                    )
-                    is_newly_created = not slot_result.already_assigned
-                    if is_newly_created:
-                        msg = f"✓ Assigned {branch} to {slot_result.slot_name}"
-                        user_output(click.style(msg, fg="green"))
-                else:
-                    # Default: checkout in current worktree (like git checkout)
-                    current_wt = _find_containing_worktree(worktrees, ctx.cwd)
-                    wt_path = current_wt.path if current_wt is not None else repo.root
-                    ctx.branch_manager.checkout_branch(wt_path, branch)
-                    target_wt = WorktreeInfo(path=wt_path, branch=branch)
-
-                    if setup is not None:
-                        _rebase_and_track_for_plan(
-                            ctx,
-                            repo_root=repo.root,
-                            worktree_path=target_wt.path,
-                            branch=branch,
-                            parent_branch=parent_branch,
-                            trunk=trunk,
-                        )
-                        _setup_impl_for_plan(
-                            ctx,
-                            setup=setup,
-                            worktree_path=target_wt.path,
-                            branch_name=branch,
-                            script=script,
-                        )
-
-                    worktrees = ctx.git.worktree.list_worktrees(repo.root)
-                    _perform_checkout(
-                        ctx,
-                        repo_root=repo.root,
-                        target_worktree=target_wt,
-                        branch=branch,
-                        script=script,
-                        is_newly_created=False,
-                        worktrees=worktrees,
-                        force_script_activation=True,
-                    )
-                    return
-
-            # Refresh worktree list to include the newly created worktree
             worktrees = ctx.git.worktree.list_worktrees(repo.root)
-            matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
+            _perform_checkout(
+                ctx,
+                repo_root=repo.root,
+                target_worktree=target_wt,
+                branch=branch,
+                script=script,
+                is_newly_created=False,
+                worktrees=worktrees,
+                force_script_activation=True,
+            )
+            return
 
         # Fall through to jump to the worktree
 
     if len(matching_worktrees) == 1:
-        # --new-slot was requested but the branch already existed in a worktree
-        # (not one we just created in the len==0 branch above)
-        if new_slot and not is_newly_created:
-            raise click.ClickException(
-                f"Branch '{branch}' is already checked out in {matching_worktrees[0].path.name}. "
-                f"Cannot create a new slot for an existing branch."
-            )
-
         # Exactly one worktree contains this branch
         target_worktree = matching_worktrees[0]
 
@@ -810,12 +652,6 @@ def _branch_checkout_impl(
 
     else:
         # Multiple worktrees contain this branch
-        if new_slot:
-            raise click.ClickException(
-                f"Branch '{branch}' is already checked out in multiple worktrees. "
-                f"Cannot create a new slot for an existing branch."
-            )
-
         # Check if any worktree has the branch directly checked out
         directly_checked_out = [wt for wt in matching_worktrees if wt.branch == branch]
 

@@ -2,7 +2,6 @@
 
 import click
 
-from erk.cli.alias import register_with_aliases
 from erk.cli.commands.pr.address_cmd import address
 from erk.cli.commands.pr.check_cmd import pr_check
 from erk.cli.commands.pr.checkout_cmd import pr_checkout
@@ -20,6 +19,7 @@ from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
 from erk.cli.commands.pr.submit_cmd import pr_submit
 from erk.cli.commands.pr.teleport_cmd import pr_teleport
 from erk.cli.commands.pr.view.cli import pr_view
+from erk_shared.cli_alias import register_with_aliases
 
 
 @click.group("pr")

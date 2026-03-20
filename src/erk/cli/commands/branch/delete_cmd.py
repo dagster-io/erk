@@ -7,7 +7,6 @@ import click
 
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.delete_cmd import (
     _close_plan_for_worktree,
     _close_pr_for_branch,
@@ -26,6 +25,7 @@ from erk.core.worktree_pool import SlotAssignment, load_pool_state
 from erk.core.worktree_utils import find_worktree_with_branch
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanState
+from erk_slots.unassign_cmd import execute_unassign
 
 
 @dataclass(frozen=True)

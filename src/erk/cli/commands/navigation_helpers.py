@@ -14,7 +14,6 @@ from erk.cli.activation import (
     render_activation_script,
 )
 from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -28,6 +27,7 @@ from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, marker_exists
+from erk_slots.unassign_cmd import execute_unassign
 
 
 def check_pending_learn_marker(worktree_path: Path, force: bool) -> None:

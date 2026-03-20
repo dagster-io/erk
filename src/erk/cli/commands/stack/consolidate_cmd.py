@@ -7,7 +7,6 @@ import click
 
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option
@@ -22,6 +21,7 @@ from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.output.output import user_output
+from erk_slots.unassign_cmd import execute_unassign
 
 
 def _format_section_header(text: str, separator_length: int = 59) -> str:

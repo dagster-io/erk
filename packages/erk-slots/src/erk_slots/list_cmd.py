@@ -6,15 +6,15 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.alias import alias
-from erk.cli.commands.slot.common import (
-    DEFAULT_POOL_SIZE,
-    generate_slot_name,
-)
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk.core.worktree_pool import PoolState, load_pool_state
+from erk_shared.cli_alias import alias
+from erk_slots.common import (
+    DEFAULT_POOL_SIZE,
+    generate_slot_name,
+)
 
 SlotStatus = Literal["available", "assigned", "error"]
 SlotReason = Literal["worktree-missing", "branch-mismatch", "-"]

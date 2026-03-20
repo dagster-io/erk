@@ -2,7 +2,7 @@
 
 import click
 
-from erk.cli.alias import alias, get_aliases, register_with_aliases
+from erk_shared.cli_alias import alias, get_aliases, register_with_aliases
 
 
 def test_alias_decorator_adds_aliases_to_command() -> None:

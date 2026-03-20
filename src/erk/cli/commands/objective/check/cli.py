@@ -4,7 +4,6 @@ import json
 
 import click
 
-from erk.cli.alias import alias
 from erk.cli.commands.objective.check.operation import (
     ObjectiveCheckRequest,
     ObjectiveCheckResult,
@@ -13,6 +12,7 @@ from erk.cli.commands.objective.check.operation import (
 from erk.cli.repo_resolution import resolved_repo_option
 from erk.core.context import ErkContext
 from erk_shared.agentclick.machine_command import MachineCommandError
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
 

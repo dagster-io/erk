@@ -107,8 +107,8 @@ def test_checkout_does_not_call_ensure_graphite_tracking() -> None:
 def test_checkout_auto_creates_worktree_without_graphite() -> None:
     """Checking out unchecked-out branch works without Graphite.
 
-    Default behavior (no --new-slot) checks out the branch in the current
-    worktree rather than creating a new one.
+    Default behavior checks out the branch in the current worktree rather
+    than creating a new one.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

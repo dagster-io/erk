@@ -12,7 +12,6 @@ from erk.cli.activation import (
     write_worktree_activate_script,
 )
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
-from erk.cli.commands.slot.common import allocate_slot_for_branch, update_slot_assignment_tip
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
@@ -28,6 +27,7 @@ from erk_shared.plan_workflow import (
     PlanValidationFailed,
     prepare_plan_for_worktree,
 )
+from erk_slots.common import allocate_slot_for_branch, update_slot_assignment_tip
 
 
 @click.command("create", cls=CommandWithHiddenOptions)

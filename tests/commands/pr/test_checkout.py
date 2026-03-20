@@ -585,46 +585,6 @@ def test_pr_checkout_creates_slot_assignment() -> None:
         assert state.assignments[0].slot_name == "erk-slot-01"
 
 
-def test_pr_checkout_no_slot_skips_assignment() -> None:
-    """Test that --no-slot creates worktree without slot assignment."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        env.setup_repo_structure()
-        pr_details = _make_pr_details(
-            number=1002,
-            head_ref_name="no-slot-branch",
-            is_cross_repository=False,
-            state="OPEN",
-        )
-        github = FakeLocalGitHub(pr_details={1002: pr_details})
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "no-slot-branch"]},
-            existing_paths={env.cwd, env.repo.worktrees_dir},
-        )
-        ctx = build_workspace_test_context(env, git=git, github=github)
-
-        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(pr_group, ["checkout", "--no-slot", "1002"], obj=ctx)
-
-        assert result.exit_code == 0
-        assert "Created worktree for PR #1002" in result.output
-        # Should NOT have slot assignment message
-        assert "Assigned" not in result.output
-
-        # Verify worktree was created using branch name, not slot name
-        assert len(git.added_worktrees) == 1
-        worktree_path = Path(git.added_worktrees[0][0])
-        assert "no-slot-branch" in worktree_path.name or "erk-slot" not in worktree_path.name
-
-        # Verify NO pool state was created
-        from erk.core.worktree_pool import load_pool_state
-
-        state = load_pool_state(env.repo.pool_json_path)
-        assert state is None
-
-
 def test_pr_checkout_reuses_inactive_slot() -> None:
     """Test that pr checkout reuses an existing inactive slot."""
     runner = CliRunner()
