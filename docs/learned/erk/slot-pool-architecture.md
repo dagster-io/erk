@@ -202,4 +202,4 @@ max_slots = 6  # Override default of 4
 ## Related Topics
 
 - [Branch Cleanup](branch-cleanup.md) - Cleaning up branches and worktrees
-- Load `gt-graphite` skill for worktree stack mental model
+- Load `graphite` + `erk-gt` skills for worktree stack mental model

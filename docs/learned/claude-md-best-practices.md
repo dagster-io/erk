@@ -191,7 +191,7 @@ tripwires:
 A useful mental model for organizing content across skill and documentation layers:
 
 1. **Mandatory skills** (always load first): Fundamentally change how you write code (e.g., `dignified-python`, `fake-driven-testing`)
-2. **Context-specific skills** (load when context applies): Domain-specific guidance (e.g., `gt-graphite`, `learned-docs`)
+2. **Context-specific skills** (load when context applies): Domain-specific guidance (e.g., `graphite` + `erk-gt`, `learned-docs`)
 3. **Tool routing** (use agents instead of direct commands): Delegation patterns (e.g., `devrun` agent for pytest/ty/ruff)
 4. **Documentation lookup** (reference when needed): Detailed guides accessed via `docs/learned/index.md`
 
