@@ -37,13 +37,13 @@ Skills are agent-agnostic by design. The same skill can be installed for Claude 
 
 Each agent has its own installation path:
 
-| Agent | Directory |
-|---|---|
-| Claude Code | `.claude/skills/` |
-| Cursor | `.cursor/skills/` |
-| Windsurf | `.windsurf/skills/` |
-| GitHub Copilot | `.github/skills/` |
-| Multi-agent (canonical) | `.agents/skills/` |
+| Agent                   | Directory           |
+| ----------------------- | ------------------- |
+| Claude Code             | `.claude/skills/`   |
+| Cursor                  | `.cursor/skills/`   |
+| Windsurf                | `.windsurf/skills/` |
+| GitHub Copilot          | `.github/skills/`   |
+| Multi-agent (canonical) | `.agents/skills/`   |
 
 Use `-a <agent>` to target a specific agent, or `--all` to install for all supported agents.
 
@@ -208,14 +208,14 @@ npx skills experimental_sync
 
 Skills can be added from various sources:
 
-| Format | Example |
-|---|---|
-| GitHub shorthand | `owner/repo` |
-| GitHub with subdirectory | `owner/repo -s skill-name` |
-| Full GitHub URL | `https://github.com/owner/repo` |
-| GitLab URL | `https://gitlab.com/owner/repo` |
-| Direct skill path | `https://github.com/owner/repo/tree/main/skills/my-skill` |
-| Local path | `./path/to/skill` |
+| Format                   | Example                                                   |
+| ------------------------ | --------------------------------------------------------- |
+| GitHub shorthand         | `owner/repo`                                              |
+| GitHub with subdirectory | `owner/repo -s skill-name`                                |
+| Full GitHub URL          | `https://github.com/owner/repo`                           |
+| GitLab URL               | `https://gitlab.com/owner/repo`                           |
+| Direct skill path        | `https://github.com/owner/repo/tree/main/skills/my-skill` |
+| Local path               | `./path/to/skill`                                         |
 
 ## Workflow Patterns
 
@@ -257,11 +257,11 @@ npx skills experimental_install
 
 ## Environment Variables
 
-| Variable | Purpose |
-|---|---|
+| Variable                    | Purpose                            |
+| --------------------------- | ---------------------------------- |
 | `INSTALL_INTERNAL_SKILLS=1` | Enable internal skill installation |
-| `DISABLE_TELEMETRY` | Disable usage telemetry |
-| `DO_NOT_TRACK` | Alternative telemetry opt-out |
+| `DISABLE_TELEMETRY`         | Disable usage telemetry            |
+| `DO_NOT_TRACK`              | Alternative telemetry opt-out      |
 
 ## Version Note
 
