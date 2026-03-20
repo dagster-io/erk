@@ -3,6 +3,7 @@ members = [
     "packages/erk-dev",
     "packages/erk-mcp",
     "packages/erk-shared",
+    "packages/erk-slots",
     "packages/erk-statusline",
 ]
 
@@ -10,6 +11,7 @@ members = [
 erk-dev = { workspace = true }
 erk-mcp = { workspace = true }
 erk-shared = { workspace = true }
+erk-slots = { workspace = true }
 erk-statusline = { workspace = true }
 
 [project]
@@ -47,6 +49,7 @@ erk = "erk.cli.cli:main"
 dev = [
     "erk-dev",
     "erk-mcp",
+    "erk-slots",
     "ruff>=0.5.0",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
@@ -114,10 +117,10 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "erk_mcp", "erk_shared", "erk_statusline"]
+known-first-party = ["erk", "erk_dev", "erk_mcp", "erk_shared", "erk_slots", "erk_statusline"]
 
 [tool.ty.src]
-include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]
+include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-slots/src", "packages/erk-statusline/src"]
 exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.ty.environment]
@@ -130,7 +133,7 @@ exclude = [".claude/skills/", ".agents/skills/"]
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["."]
-testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests", "packages/erk-shared/tests"]
+testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-slots/tests", "packages/erk-statusline/tests", "packages/erk-shared/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
