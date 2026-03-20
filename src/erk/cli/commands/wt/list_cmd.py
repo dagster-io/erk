@@ -15,7 +15,7 @@ from erk_shared.cli_alias import alias
 from erk_shared.gateway.git.abc import BranchSyncInfo
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.impl_folder import get_impl_path, read_plan_ref
-from erk_slots.common import is_placeholder_branch
+from erk_shared.slots.naming import is_placeholder_branch
 
 
 def _get_sync_status(ctx: ErkContext, worktree_path: Path, branch: str | None) -> str:

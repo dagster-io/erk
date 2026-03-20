@@ -206,6 +206,9 @@ def ensure_branch_has_worktree(
             create_branch=False,
         )
     else:
+        # Inline: erk_slots.common depends on erk types (ErkContext, RepoContext,
+        # PoolState); module-level import creates circular dep through
+        # erk.cli.commands -> erk_slots -> erk.core.
         from erk_slots.common import allocate_slot_for_branch
 
         result = allocate_slot_for_branch(

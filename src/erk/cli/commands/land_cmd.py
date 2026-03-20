@@ -53,12 +53,9 @@ from erk.core.worktree_utils import is_root_worktree
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
+from erk_shared.slots.naming import extract_slot_number, get_placeholder_branch_name
 from erk_shared.stack.validation import validate_parent_is_trunk
-from erk_slots.common import (
-    extract_slot_number,
-    find_branch_assignment,
-    get_placeholder_branch_name,
-)
+from erk_slots.common import find_branch_assignment
 from erk_slots.unassign_cmd import execute_unassign
 
 
