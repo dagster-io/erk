@@ -33,6 +33,24 @@
       "raw_size_kb": 369,
       "xml_size_kb": 87,
       "git_branch": "plnd/rebase-to-resolve-conflict-03-20-1533"
+    },
+    {
+      "session_id": "dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-20T19:42:36.076071+00:00",
+      "files": [
+        "impl-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-part1.xml",
+        "impl-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-part2.xml",
+        "impl-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-part3.xml",
+        "impl-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-part4.xml",
+        "impl-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-dbd6ae42-ccc5-4228-8c57-9e5f2d94dce1-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 6,
+      "raw_size_kb": 399,
+      "xml_size_kb": 98,
+      "git_branch": "plnd/rebase-to-resolve-conflict-03-20-1533"
     }
   ]
 }
