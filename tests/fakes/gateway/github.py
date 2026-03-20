@@ -70,6 +70,7 @@ class FakeLocalGitHub(LocalGitHub):
         pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
         review_threads_rate_limited: bool = False,
         resolve_thread_failures: set[str] | None = None,
+        unresolve_thread_failures: set[str] | None = None,
         pr_diff_error: str | None = None,
         workflow_runs_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
@@ -160,6 +161,7 @@ class FakeLocalGitHub(LocalGitHub):
         self._pr_review_threads = pr_review_threads or {}
         self._review_threads_rate_limited = review_threads_rate_limited
         self._resolve_thread_failures = resolve_thread_failures or set()
+        self._unresolve_thread_failures = unresolve_thread_failures or set()
         self._pr_diff_error = pr_diff_error
         self._workflow_runs_error = workflow_runs_error
         self._artifact_download_callback = artifact_download_callback
@@ -181,6 +183,7 @@ class FakeLocalGitHub(LocalGitHub):
         self._pr_review_threads = pr_review_threads or {}
         self._pr_check_runs: dict[int, list[PRCheckRun]] = pr_check_runs or {}
         self._resolved_thread_ids: set[str] = set()
+        self._unresolved_thread_ids: set[str] = set()
         self._thread_replies: list[tuple[str, str]] = []
         self._pr_review_comments: list[tuple[int, str, str, str, int]] = []
         self._pr_comments: list[tuple[int, str]] = []
@@ -950,10 +953,12 @@ class FakeLocalGitHub(LocalGitHub):
             raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
         threads = self._pr_review_threads.get(pr_number, [])
 
-        # Apply any resolutions that happened during test
+        # Apply any resolutions/unresolutions that happened during test
         result_threads: list[PRReviewThread] = []
         for t in threads:
-            is_resolved = t.is_resolved or t.id in self._resolved_thread_ids
+            is_resolved = (
+                t.is_resolved or t.id in self._resolved_thread_ids
+            ) and t.id not in self._unresolved_thread_ids
             if is_resolved and not include_resolved:
                 continue
             # Create new thread with updated resolution status
@@ -999,6 +1004,26 @@ class FakeLocalGitHub(LocalGitHub):
     def resolved_thread_ids(self) -> set[str]:
         """Read-only access to tracked thread resolutions for test assertions."""
         return self._resolved_thread_ids
+
+    def unresolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Record thread unresolution in mutation tracking set.
+
+        Returns False if thread_id is in unresolve_thread_failures set.
+        Otherwise returns True to simulate successful unresolution.
+        """
+        if thread_id in self._unresolve_thread_failures:
+            return False
+        self._unresolved_thread_ids.add(thread_id)
+        return True
+
+    @property
+    def unresolved_thread_ids(self) -> set[str]:
+        """Read-only access to tracked thread unresolutions for test assertions."""
+        return self._unresolved_thread_ids
 
     def add_review_thread_reply(
         self,

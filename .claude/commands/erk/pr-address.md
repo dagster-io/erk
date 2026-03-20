@@ -47,6 +47,25 @@ Determine the execution mode before any work begins:
 
 ---
 
+### Phase 0.5: Reopen Contested Threads
+
+Before classifying feedback, check for resolved threads with unaddressed reviewer pushback:
+
+```bash
+erk exec reopen-contested-threads [--pr <number> if specified]
+```
+
+If `contested_threads` is non-empty, report:
+
+- Table of reopened threads (path, line)
+- "These threads will be included in the classification below."
+
+If empty, proceed silently. If `success` is false, warn but continue (non-blocking).
+
+This step applies to both Code Review Mode and Plan File Mode (before PF-1).
+
+---
+
 ### Plan File Mode
 
 > **CRITICAL**: In Plan File Mode, you are editing a _document_ — the plan. When a reviewer says "make the language about X more emphatic" or "add a step for Y", you modify the plan _text_. You do NOT make changes to any files described in the plan.

@@ -298,6 +298,17 @@ class DryRunLocalGitHub(LocalGitHub):
         """
         return True
 
+    def unresolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """No-op for unresolving review thread in dry-run mode.
+
+        Returns True to indicate success without actually unresolving.
+        """
+        return True
+
     def add_review_thread_reply(
         self,
         repo_root: Path,

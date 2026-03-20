@@ -28,6 +28,7 @@ from erk_shared.gateway.github.graphql_queries import (
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
     RESOLVE_REVIEW_THREAD_MUTATION,
+    UNRESOLVE_REVIEW_THREAD_MUTATION,
 )
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -2084,6 +2085,42 @@ class RealLocalGitHub(LocalGitHub):
             return False
 
         return thread_data.get("isResolved", False)
+
+    def unresolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Unresolve a PR review thread via GraphQL mutation.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            thread_id: GraphQL node ID of the thread
+
+        Returns:
+            True if unresolved successfully
+        """
+        # GH-API-AUDIT: GraphQL - unresolveReviewThread mutation
+        # WHY GRAPHQL: No REST endpoint exists for unresolving review threads
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={UNRESOLVE_REVIEW_THREAD_MUTATION}",
+            "-f",
+            f"threadId={thread_id}",
+        ]
+
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        response = json.loads(stdout)
+
+        # Check if the thread was unresolved (isResolved should be False)
+        thread_data = response.get("data", {}).get("unresolveReviewThread", {}).get("thread")
+        if thread_data is None:
+            return False
+
+        return not thread_data.get("isResolved", True)
 
     def add_review_thread_reply(
         self,

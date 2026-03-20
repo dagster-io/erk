@@ -41,6 +41,16 @@ RESOLVE_REVIEW_THREAD_MUTATION = """mutation($threadId: ID!) {
   }
 }"""
 
+# Mutation to unresolve a PR review thread
+UNRESOLVE_REVIEW_THREAD_MUTATION = """mutation($threadId: ID!) {
+  unresolveReviewThread(input: {threadId: $threadId}) {
+    thread {
+      id
+      isResolved
+    }
+  }
+}"""
+
 # Mutation to add a reply comment to a PR review thread
 ADD_REVIEW_THREAD_REPLY_MUTATION = """mutation($threadId: ID!, $body: String!) {
   addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $threadId, body: $body}) {

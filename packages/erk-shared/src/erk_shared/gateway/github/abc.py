@@ -671,6 +671,23 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def unresolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Unresolve a PR review thread.
+
+        Args:
+            repo_root: Repository root (for owner/repo context)
+            thread_id: GraphQL node ID of the thread
+
+        Returns:
+            True if unresolved successfully
+        """
+        ...
+
+    @abstractmethod
     def add_review_thread_reply(
         self,
         repo_root: Path,
