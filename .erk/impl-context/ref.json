@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix inaccurate \"dedicated worktree\" copy in exit plan mode hook"
+}
