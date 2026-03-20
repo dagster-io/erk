@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9286,
+  "sessions": [
+    {
+      "session_id": "157bafef-00db-4abb-9d6e-c9a1f9cf51a2",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-20T16:08:03.116248+00:00",
+      "files": [
+        "planning-157bafef-00db-4abb-9d6e-c9a1f9cf51a2-157bafef-00db-4abb-9d6e-c9a1f9cf51a2-part1.xml",
+        "planning-157bafef-00db-4abb-9d6e-c9a1f9cf51a2-157bafef-00db-4abb-9d6e-c9a1f9cf51a2-part2.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 20,
+      "raw_size_kb": 1401,
+      "xml_size_kb": 96,
+      "git_branch": "plnd/O9272-move-slot-cmds-check-03-20-1504"
+    }
+  ]
+}
