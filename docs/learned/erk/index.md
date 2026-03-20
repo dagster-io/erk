@@ -19,6 +19,7 @@
 - **[remote-workflow-template.md](remote-workflow-template.md)** — creating a new remote workflow command, triggering GitHub Actions from CLI, building commands like erk launch pr-address
 - **[same-worktree-navigation.md](same-worktree-navigation.md)** — modifying navigation commands (up/down), activation instructions, worktree deletion in same-worktree scenarios
 - **[slot-pool-architecture.md](slot-pool-architecture.md)** — understanding slot pool design, implementing slot-related features, debugging slot assignment issues
+- **[stack-sync.md](stack-sync.md)** — working with erk stack sync, syncing stack branches with remote, implementing or testing stack-wide divergence resolution
 - **[stub-branch-lifecycle.md](stub-branch-lifecycle.md)** — working with slot pool or branch cleanup, debugging Graphite branch tracking
 - **[workspace-activation.md](workspace-activation.md)** — modifying worktree activation scripts, debugging stale package versions in worktrees, understanding how workspace packages are refreshed, changing activation script generation
 - **[worktree-branch-mismatch.md](worktree-branch-mismatch.md)** — debugging erk up/down navigation failures, understanding how erk handles manual git checkout in worktrees, working with find_worktree_for_branch_or_path()

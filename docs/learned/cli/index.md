@@ -37,6 +37,7 @@
 - **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
 - **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
+- **[exec-review-activity-log.md](exec-review-activity-log.md)** — working with review activity logs on PRs, fetching existing review summary comments, building workflows that read PR comment sections
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands, Understanding why exec commands use context injection instead of Path.cwd(), Deciding where to import gateway ABCs from
 - **[exec-script-performance.md](exec-script-performance.md)** — optimizing exec script execution time, reducing gh subprocess overhead in exec scripts, bundling multiple API calls into a single exec script
@@ -65,7 +66,7 @@
 - **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git
 - **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
 - **[prompt-consolidation-pattern.md](prompt-consolidation-pattern.md)** — implementing interactive prompts, consolidating multiple yes/no prompts, working with ctx.console.confirm, testing commands with user prompts
-- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr rebase command, adding conflict confirmation UI to CLI commands, understanding rebase convergence paths
+- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr resolve-conflicts command, adding conflict confirmation UI to CLI commands, understanding how erk handles merge conflict resolution
 - **[rich-table-output.md](rich-table-output.md)** — building CLI tables with color or formatting, adding Rich output to a Click command, creating sparklines or colored status indicators in CLI
 - **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
 - **[shell-activation-pattern.md](shell-activation-pattern.md)** — generating commands that switch to a different worktree, debugging why erk br co doesn't change directory, building CLI commands that need shell-level directory changes, understanding why plan checkout commands use source
@@ -73,10 +74,12 @@
 - **[slash-command-llm-turn-optimization.md](slash-command-llm-turn-optimization.md)** — writing a slash command that makes 3+ sequential tool calls to fetch data, optimizing a slash command that feels slow due to many LLM round-trips, deciding whether to bundle API calls into an exec script or keep them in the command
 - **[slot-assign-from-current-branch.md](slot-assign-from-current-branch.md)** — modifying slot assign command behavior, adding --from-current-branch to other commands, understanding branch switching after slot operations
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
+- **[teleport-slot-awareness.md](teleport-slot-awareness.md)** — modifying erk pr teleport command, understanding how teleport updates slot assignments, working with slot pool and teleport interaction
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with user confirmations, designing commands that perform destructive mutations, adding confirmation prompts to CLI commands, deciding where to place confirmation logic in a command
 - **[upgrade-workflow.md](upgrade-workflow.md)** — modifying erk init --upgrade behavior, adding new entries to REQUIRED_GITIGNORE_ENTRIES, working with the erk doctor --check-hooks flag, understanding how erk upgrades existing repositories
 - **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
 - **[workflow-run-list.md](workflow-run-list.md)** — modifying workflow run list display, working with erk workflow run list, understanding run-name format parsing, modifying workflow run display
+- **[workflow-run-management.md](workflow-run-management.md)** — cancelling a GitHub Actions workflow run, retrying a failed GitHub Actions workflow run, working with erk workflow run cancel or retry
 - **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create-from, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
 - **[wt-create-from.md](wt-create-from.md)** — setting up a local worktree for an existing branch, working with a PR branch that needs a worktree slot, understanding the difference between erk wt create and erk wt create-from

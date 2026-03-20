@@ -104,6 +104,8 @@ Rules triggered by matching actions in code.
 
 **exec reference check fails in CI** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. Run 'erk-dev gen-exec-reference-docs' via devrun agent. This is routine maintenance after exec script changes, not a bug to investigate.
 
+**expecting get-review-activity-log to fail on missing marker** → Read [Exec get-review-activity-log](exec-review-activity-log.md) first. The command always exits 0, even when the marker is not found. Check the 'found' field in the JSON response to determine whether the comment was located.
+
 **expecting status to auto-update after manual PR edits** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Only the update-objective-node command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
 
 **filtering session sources without logging which sessions were skipped and why** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering makes debugging impossible. Log to stderr when skipping sessions, include the reason (empty/warmup/filtered).
@@ -122,9 +124,11 @@ Rules triggered by matching actions in code.
 
 **importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
+**initiating a rebase inside erk pr resolve-conflicts** → Read [Resolve Conflicts Workflow](rebase-confirmation-workflow.md) first. erk pr resolve-conflicts does NOT initiate rebases. It requires an active rebase already in progress. Users start the rebase themselves (git rebase, gt restack), then call this command.
+
 **landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flow](learn-plan-land-flow.md) first. Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge.
 
-**launching Claude for conflict resolution without showing conflicted files first** → Read [Rebase Confirmation Workflow](rebase-confirmation-workflow.md) first. Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md.
+**launching Claude for conflict resolution without showing conflicted files first** → Read [Resolve Conflicts Workflow](rebase-confirmation-workflow.md) first. Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md.
 
 **making 5+ sequential gh api subprocess calls in an exec script** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PlanListService.
 
@@ -139,6 +143,8 @@ Rules triggered by matching actions in code.
 **manually deleting branches that were merged via GitHub web UI** → Read [erk reconcile Command](commands/reconcile.md) first. Use erk reconcile instead. It handles the full lifecycle: learn PR creation, objective updates, slot cleanup, branch deletion, and worktree removal.
 
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
+
+**modifying teleport in-place without updating slot assignment** → Read [Teleport Slot Awareness](teleport-slot-awareness.md) first. When teleporting in-place, the current worktree's slot assignment must be updated to track the new branch. Missing this breaks the slot pool's branch tracking. See `_teleport_in_place()` in teleport_cmd.py.
 
 **moving uv sync inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync runs OUTSIDE the guard (always executes, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.
 

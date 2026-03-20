@@ -4,7 +4,7 @@ last_audited: "2026-02-17 09:00 PT"
 audit_result: clean
 read_when:
   - "configuring plans to be stored in a separate repository"
-  - "setting up plans.repo in config.toml"
+  - "setting up github.repo in config.toml"
 ---
 
 # External Plans Repository Configuration
@@ -16,7 +16,7 @@ Configure erk to store plans in a separate repository from your working reposito
 In `.erk/config.toml`:
 
 ```toml
-[plans]
+[github]
 repo = "owner/repo"
 ```
 
@@ -25,7 +25,7 @@ repo = "owner/repo"
 **Example:**
 
 ```toml
-[plans]
+[github]
 repo = "myorg/engineering-plans"
 ```
 

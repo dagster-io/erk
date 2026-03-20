@@ -365,13 +365,13 @@ queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
 ## ctx.plan_backend
 
-- `ctx.plan_backend` — The PlanBackend ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
+- `ctx.plan_backend` — The `ManagedPrBackend` ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
 
-After PR #8210, the `PlanStore` ABC was consolidated into `PlanBackend`. There is no separate read-side interface.
+After PR #8210, the `PlanStore` ABC was consolidated into `ManagedPrBackend` (formerly `PlanBackend`). There is no separate read-side interface.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend -->
+<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, ManagedPrBackend -->
 
-**Source:** See `PlanBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
 
 ## TUI Exit-with-Command Pattern
 

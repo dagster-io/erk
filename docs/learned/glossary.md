@@ -342,11 +342,11 @@ max_slots = 6
 [pool.checkout]
 commands = ["git fetch origin"]
 
-[plans]
+[github]
 repo = "owner/plans-repo"  # Store plans in separate repo
 ```
 
-When `[plans] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
+When `[github] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
 
 **Access**: Via `load_config(repo_root)` function.
 
@@ -384,7 +384,7 @@ commands = ["source ~/.zshrc"]
 - `post_create.commands`: Concatenation (repo commands run first, then local)
 - `post_create.shell`: Override (local wins if set)
 - `pool.max_slots`: Override (local wins if set)
-- `plans.repo`: Override (local wins if set)
+- `github.repo`: Override (local wins if set)
 
 **Access**: Via `load_local_config(repo_root)` + `merge_configs_with_local()`.
 

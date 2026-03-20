@@ -1,34 +1,34 @@
 ---
-title: PlanRowData Field Reference
+title: PrRowData Field Reference
 read_when:
   - "writing command availability predicates"
   - "understanding what data is available for TUI commands"
-  - "checking which PlanRowData fields are nullable"
-last_audited: "2026-02-23 00:15 PT"
+  - "checking which PrRowData fields are nullable"
+last_audited: "2026-03-20 00:00 PT"
 audit_result: edited
 ---
 
-# PlanRowData Field Reference
+# PrRowData Field Reference
 
 Quick reference for writing command availability predicates and understanding
-`PlanRowData` usage patterns.
+`PrRowData` usage patterns (formerly `PlanRowData` — renamed as part of the plan→PR rename).
 
 ## Overview
 
-`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+`PrRowData` is a frozen dataclass containing all data for a single plan/PR row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
 
 **Location:** `src/erk/tui/data/types.py`
 
 ## Field Categories
 
-### Plan Info
+### Plan/PR Info
 
-| Field        | Type          | Description                   | Nullable?                     |
-| ------------ | ------------- | ----------------------------- | ----------------------------- |
-| `plan_id`    | `int`         | Plan identifier               | Never                         |
-| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
-| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
-| `plan_body`  | `str`         | Raw plan body text (markdown) | Never (empty string possible) |
+| Field        | Type          | Description                 | Nullable?                     |
+| ------------ | ------------- | --------------------------- | ----------------------------- |
+| `pr_number`  | `int`         | Plan/PR identifier          | Never                         |
+| `pr_url`     | `str \| None` | Full URL to the PR          | Yes                           |
+| `full_title` | `str`         | Complete plan title         | Never (empty string possible) |
+| `pr_body`    | `str`         | Raw PR body text (markdown) | Never (empty string possible) |
 
 ### PR Info
 
@@ -193,7 +193,7 @@ Many pieces of data have both a raw value and a display value:
 
 ## Testing with make_plan_row()
 
-The test helper `make_plan_row()` in `tests/fakes/gateway/plan_data_provider.py` creates `PlanRowData` instances with sensible defaults. Override only the fields you need:
+The test helper `make_plan_row()` in `tests/fakes/gateway/plan_data_provider.py` creates `PrRowData` instances with sensible defaults. Override only the fields you need:
 
 ```python
 from tests.fakes.gateway.plan_data_provider import make_plan_row

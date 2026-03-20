@@ -25,7 +25,7 @@
 - **[modal-widget-embedding.md](modal-widget-embedding.md)** — reusing PlanDataTable in a modal screen, embedding complex widgets in Textual modal screens, handling null safety for optional gateway fields in TUI
 - **[multi-operation-tracking.md](multi-operation-tracking.md)** — adding a new background operation to the TUI, implementing status bar progress for a workflow command, debugging operation lifecycle or stuck operations
 - **[one-shot-prompt-modal.md](one-shot-prompt-modal.md)** — adding a new modal or input screen to the TUI, working with the one-shot dispatch workflow in erk dash, adding global keybindings that trigger modals
-- **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PlanRowData fields are nullable
+- **[plan-row-data.md](plan-row-data.md)** — writing command availability predicates, understanding what data is available for TUI commands, checking which PrRowData fields are nullable
 - **[plan-title-rendering-pipeline.md](plan-title-rendering-pipeline.md)** — debugging why plan titles display incorrectly, troubleshooting missing prefixes in TUI, understanding plan data flow in TUI
 - **[runs-tab-architecture.md](runs-tab-architecture.md)** — working with TUI Runs tab, adding columns to RunDataTable, understanding branch resolution in runs, modifying workflow run display in TUI
 - **[stacked-pr-indicator.md](stacked-pr-indicator.md)** — adding or modifying PR indicators in the TUI dashboard, understanding blocking vs. informational indicators, working with stacked PR detection
