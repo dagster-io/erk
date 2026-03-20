@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9306,
+  "sessions": [
+    {
+      "session_id": "dc653882-1418-46a7-8eb4-eaf7fbeecffb",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-20T19:38:32.587089+00:00",
+      "files": [
+        "planning-dc653882-1418-46a7-8eb4-eaf7fbeecffb-dc653882-1418-46a7-8eb4-eaf7fbeecffb.xml"
+      ],
+      "user_turns": 9,
+      "duration_minutes": 23,
+      "raw_size_kb": 439,
+      "xml_size_kb": 61,
+      "git_branch": "plnd/slot-co-next-steps-03-20-1814"
+    }
+  ]
+}
