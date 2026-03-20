@@ -8,7 +8,7 @@ tripwires:
   - action: "treating missing PR as an error in the learn pipeline"
     warning: "No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction."
   - action: "adding a new PR-dependent step to trigger-async-learn"
-    warning: "Any new PR-dependent step must handle the None case from _get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None."
+    warning: "Any new PR-dependent step must handle the None case from PR lookup. The entire PR comment block is gated on pr_result not being None."
 ---
 
 # Learn Without PR Context
@@ -21,11 +21,9 @@ Treating missing PR context as an error would block learn from running in these 
 
 ## Graceful Degradation Architecture
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
-
 The `trigger-async-learn` orchestrator resolves the plan's PR through a chain of lookups: issue → metadata block → branch name → PR. Each step returns `None` on failure, and the entire PR comment-fetching block is gated on the result.
 
-When `_get_pr_for_plan_direct` returns `None`, the orchestrator logs a warning and skips PR comment fetching. No review comments or discussion comments are written to the learn materials directory. The downstream learn agent receives only preprocessed session XML — which still contains all planning rationale, implementation decisions, and tool interactions.
+When PR lookup returns `None`, the orchestrator logs a warning and skips PR comment fetching. No review comments or discussion comments are written to the learn materials directory. The downstream learn agent receives only preprocessed session XML — which still contains all planning rationale, implementation decisions, and tool interactions.
 
 When a PR _is_ found, the orchestrator fetches two separate comment types via gateway calls (not `gh` CLI):
 
@@ -49,7 +47,7 @@ The learn pipeline must work identically in all cases. The quality difference is
 
 ## Anti-Patterns
 
-**Assuming PR always exists**: Any code in the learn pipeline that calls gateway PR methods without first checking `_get_pr_for_plan_direct` will crash on no-PR plans. The existing orchestrator gates all PR operations behind a single `None` check — new PR-dependent steps must live inside that same gate.
+**Assuming PR always exists**: Any code in the learn pipeline that calls gateway PR methods without first checking the PR lookup result will crash on no-PR plans. The existing orchestrator gates all PR operations behind a single `None` check — new PR-dependent steps must live inside that same gate.
 
 **Using `gh` CLI for PR detection in Python**: The orchestrator uses typed gateway calls with discriminated union returns, not subprocess calls to `gh`. This provides type safety and LBYL error handling. Don't mix the two approaches.
 

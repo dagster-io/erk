@@ -933,36 +933,34 @@ During the planning stage:
 
 Commands that depend on plan-header metadata should handle missing fields gracefully:
 
-#### Example: `get-pr-for-plan` Dependency
+#### Example: `get-plan-info` Dependency
 
-The `get-pr-for-plan` command requires `branch_name` from plan-header:
+The `get-plan-info` command returns plan metadata including `head_ref_name` and `base_ref_name`:
 
 ```bash
-erk exec get-pr-for-plan <issue_number>
+erk exec get-plan-info <issue_number>
 ```
 
 **Failure modes:**
 
-1. **Plan not submitted** (`branch_name` is null) → Returns sentinel value `no-branch-in-plan`
-2. **Metadata read failure** → Returns error with diagnostic message
+1. **Plan not found** → Returns `{"success": false, "error": "plan_not_found"}`
+2. **Branch not yet created** → `head_ref_name` is null in output
 
 **Correct handling:**
 
 ```bash
-PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
+PLAN_INFO=$(erk exec get-plan-info <issue_number>)
 
-if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
+if echo "$PLAN_INFO" | jq -e '.success == false' > /dev/null 2>&1; then
+  echo "Plan not found"
+  exit 1
+fi
+
+HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name // empty')
+if [ -z "$HEAD_REF" ]; then
   echo "Plan has not been submitted yet (no branch created)"
   exit 1
 fi
-
-if [ "$PR_NUMBER" = "error" ]; then
-  echo "Failed to read plan metadata"
-  exit 1
-fi
-
-# PR_NUMBER is valid
-gh pr view "$PR_NUMBER"
 ```
 
 #### Validation Checklist Before Plan Dispatch
@@ -974,40 +972,41 @@ Before dispatching a plan for implementation, validate:
 | Plan exists         | `erk exec get-issue-body <number>`                | `success: true` |
 | Has erk-pr label    | Check `labels` field in output                    | Contains label  |
 | Branch exists       | `erk exec get-plan-metadata <number> branch_name` | Non-null value  |
-| PR exists           | `erk exec get-pr-for-plan <number>`               | PR number       |
+| PR exists           | `erk exec get-plan-info <number>`                 | `head_ref_name` |
 | Not already running | Check for `workflow-started` comment on issue     | No such comment |
 | Issue is open       | Check `state` field in `get-issue-body` output    | `OPEN`          |
 
-#### When `get-pr-for-plan` Becomes Available
+#### When Branch Metadata Becomes Available
 
-The `get-pr-for-plan` command becomes functional after:
+The `head_ref_name` field in `get-plan-info` output becomes non-null after:
 
 1. **Plan submission** completes (Phase 2: `erk pr submit`)
 2. **Branch and PR creation** finishes
-3. **Metadata update** writes `branch_name` to plan-header
 
 **Timeline:**
 
-- **Planning** (Phase 1): ❌ Not available (`no-branch-in-plan`)
-- **Submitted** (Phase 2): ✅ Available (returns PR number)
+- **Planning** (Phase 1): ❌ `head_ref_name` is null
+- **Submitted** (Phase 2): ✅ `head_ref_name` populated
 - **Implementing** (Phase 4): ✅ Available
 - **Merged** (Phase 5): ✅ Available (PR still exists, just closed)
 
 **Anti-pattern:**
 
 ```bash
-# DON'T: Assume get-pr-for-plan always succeeds
-PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
-gh pr view "$PR_NUMBER"  # Fails if plan not submitted
+# DON'T: Assume head_ref_name always exists
+PLAN_INFO=$(erk exec get-plan-info <issue_number>)
+HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name')
+gh pr view "$HEAD_REF"  # Fails if plan not submitted
 ```
 
 **Correct pattern:**
 
 ```bash
-# DO: Check for sentinel value
-PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
+# DO: Check for null head_ref_name
+PLAN_INFO=$(erk exec get-plan-info <issue_number>)
+HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name // empty')
 
-if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
+if [ -z "$HEAD_REF" ]; then
   echo "Plan has not been submitted yet. Run: erk pr submit <number>"
   exit 1
 fi

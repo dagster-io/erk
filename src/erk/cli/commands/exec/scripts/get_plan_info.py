@@ -7,7 +7,8 @@ Usage:
 Output:
     JSON with plan info fields:
     {"success": true, "pr_number": "42", "title": "...", "state": "OPEN",
-     "labels": [...], "url": "...", "objective_id": null, "backend": "github"}
+     "labels": [...], "url": "...", "objective_id": null, "backend": "github",
+     "head_ref_name": "...", "base_ref_name": "..."}
 
     With --include-body, adds "body": "..." containing plan content.
 
@@ -67,6 +68,8 @@ def get_plan_info(
         "url": plan.url,
         "objective_id": plan.objective_id,
         "backend": backend.get_provider_name(),
+        "head_ref_name": plan.metadata.get("head_ref_name"),
+        "base_ref_name": plan.metadata.get("base_ref_name"),
     }
 
     if include_body:

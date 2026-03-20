@@ -31,8 +31,6 @@ The gap between steps 1 and 2 is unavoidable: the plan must exist before the bra
 
 When code needs to look up a PR from a plan, `branch_name` may be missing from metadata. The system uses two layers:
 
-<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, get_pr_for_plan -->
-
 **Layer 1 — Metadata lookup**: Read `branch_name` from the `plan-header` block. This succeeds when `impl-signal started` ran successfully.
 
 **Layer 2 — Git context inference** (removed): Previously, if `branch_name` was missing, the system checked whether the current git branch matched the `P{issue_number}-` prefix. This fallback was removed in PR #8269 (which deleted `get_branch_issue()`). Resolution now relies solely on Layer 1 metadata lookup and `plan-ref.json`.

@@ -137,10 +137,10 @@ Found N session(s) for PR #<pr-number>:
 Before gathering sessions, get the PR information for this plan (needed by analysis agents):
 
 ```bash
-erk exec get-pr-for-plan <pr-number>
+erk exec get-plan-info <pr-number>
 ```
 
-This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists. Save the PR number for the parallel agents below.
+This returns JSON with plan details (`pr_number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`, `objective_id`, `backend`) or an error if not found. Save the PR number for the parallel agents below.
 
 **Session discovery priority:**
 
