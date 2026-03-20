@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Extract slot naming utilities to `erk-shared`"
-}
