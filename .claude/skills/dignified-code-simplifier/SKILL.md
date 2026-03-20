@@ -31,6 +31,7 @@ You will analyze recently modified code and apply refinements that:
    - IMPORTANT: Avoid **nested** ternary operators (ternaries inside ternaries) - prefer if/else chains for multiple conditions
    - Simple single-level ternaries are idiomatic, acceptable, and often **preferable** to avoid unnecessary variable assignment or multi-line if/else blocks. Do NOT suggest replacing them. Examples: `slug = branch_slug if branch_slug else fallback()`, `x = a if condition else b`, `root = obj.primary if obj.primary else obj.fallback`, `{"key": val_a if condition else val_b}`, `[x if x else default for x in items]`
    - NEVER suggest `.or_else()` or similar non-Python patterns as alternatives to ternaries
+   - Conditional context managers (ternary in `with` statements) should generally stay inline — context managers belong in `with` statements where the `__enter__`/`__exit__` lifecycle is explicit. Do NOT suggest extracting them to intermediate variables by default. Example: `with (cm_a if condition else nullcontext()):` is correct. If the inline expression is genuinely overwhelming, suggest extracting the logic into a helper function that returns the context manager rather than assigning to a local variable.
    - Choose clarity over brevity - explicit code is often better than overly compact code
 
 4. **Maintain Balance**: Avoid over-simplification that could:
