@@ -21,6 +21,7 @@ from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.slot_allocation import is_placeholder_branch
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.types import IssueNotFound

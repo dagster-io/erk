@@ -1,10 +1,4 @@
-"""Checkout navigation helpers - shared across checkout commands.
-
-This module is separate from navigation_helpers.py to avoid circular imports.
-navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
-which imports wt.checkout_cmd. By having checkout-specific helpers here,
-we break that cycle.
-"""
+"""Checkout navigation helpers - shared across checkout commands."""
 
 import logging
 import sys
@@ -20,6 +14,7 @@ from erk.cli.activation import (
 from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.slot_allocation import allocate_slot_for_branch
 from erk_shared.output.output import user_output
 
 logger = logging.getLogger(__name__)
@@ -206,11 +201,6 @@ def ensure_branch_has_worktree(
             create_branch=False,
         )
     else:
-        # Inline: erk_slots.common depends on erk types (ErkContext, RepoContext,
-        # PoolState); module-level import creates circular dep through
-        # erk.cli.commands -> erk_slots -> erk.core.
-        from erk_slots.common import allocate_slot_for_branch
-
         result = allocate_slot_for_branch(
             ctx,
             repo,

@@ -3,16 +3,7 @@
 from pathlib import Path
 
 from erk.cli.config import LoadedConfig
-from erk.core.worktree_pool import (
-    PoolState,
-    SlotAssignment,
-    SlotInfo,
-    load_pool_state,
-    save_pool_state,
-)
-from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.slots.naming import DEFAULT_POOL_SIZE
-from erk_slots.common import (
+from erk.core.slot_allocation import (
     find_assignment_by_worktree,
     find_inactive_slot,
     find_next_available_slot,
@@ -21,6 +12,15 @@ from erk_slots.common import (
     is_slot_initialized,
     sync_pool_assignments,
 )
+from erk.core.worktree_pool import (
+    PoolState,
+    SlotAssignment,
+    SlotInfo,
+    load_pool_state,
+    save_pool_state,
+)
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.slots.naming import DEFAULT_POOL_SIZE, extract_slot_number
 from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.test_context import context_for_test
 
