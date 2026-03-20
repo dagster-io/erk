@@ -70,8 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
-      plan_id: ${{ steps.read_result.outputs.plan_id }}
-      plan_title: ${{ steps.read_result.outputs.plan_title }}
+      pr_number: ${{ steps.read_result.outputs.pr_number }}
+      pr_title: ${{ steps.read_result.outputs.pr_title }}
       base_branch: ${{ steps.trunk.outputs.trunk_branch }}
     steps:
       - name: Validate required secrets
@@ -194,33 +194,33 @@ jobs:
         id: read_result
         if: steps.plan.outputs.plan_success == 'true' && steps.verify.outputs.rejected != 'true'
         run: |
-          PLAN_ID=$(jq -r '.pr_number' .erk/impl-context/plan-result.json)
-          PLAN_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
-          echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
-          echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
-          echo "Plan saved as #$PLAN_ID: $PLAN_TITLE"
+          PR_NUMBER=$(jq -r '.pr_number' .erk/impl-context/plan-result.json)
+          PR_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+          echo "Plan saved as #$PR_NUMBER: $PR_TITLE"
 
       - name: Validate plan format
         if: >
           steps.plan.outputs.plan_success == 'true'
           && steps.verify.outputs.rejected != 'true'
-          && steps.read_result.outputs.plan_id != ''
+          && steps.read_result.outputs.pr_number != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
-          erk pr check ${{ steps.read_result.outputs.plan_id }}
+          erk pr check ${{ steps.read_result.outputs.pr_number }}
 
       - name: Register one-shot plan with issue and PR
         if: >
           steps.plan.outputs.plan_success == 'true'
           && steps.verify.outputs.rejected != 'true'
-          && steps.read_result.outputs.plan_id != ''
+          && steps.read_result.outputs.pr_number != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec register-one-shot-plan \
-            --pr-number "${{ steps.read_result.outputs.plan_id }}" \
+            --pr-number "${{ steps.read_result.outputs.pr_number }}" \
             --run-id "${{ github.run_id }}" \
             --impl-pr-number "${{ inputs.pr_number }}" \
             --submitted-by "${{ inputs.submitted_by }}" \
@@ -230,29 +230,29 @@ jobs:
         if: >
           steps.plan.outputs.plan_success == 'true'
           && steps.verify.outputs.rejected != 'true'
-          && steps.read_result.outputs.plan_id != ''
+          && steps.read_result.outputs.pr_number != ''
           && inputs.objective_issue != ''
           && inputs.node_id != ''
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
           NODE_ID: ${{ inputs.node_id }}
-          PLAN_NUMBER: ${{ steps.read_result.outputs.plan_id }}
+          PR_NUMBER: ${{ steps.read_result.outputs.pr_number }}
         run: |
           erk exec update-objective-node \
             "$OBJECTIVE_ISSUE" \
             --node "$NODE_ID" \
-            --pr "$PLAN_NUMBER"
+            --pr "$PR_NUMBER"
 
       - name: Commit plan to branch (plan-only mode)
         if: >
           inputs.plan_only
           && steps.plan.outputs.plan_success == 'true'
           && steps.verify.outputs.rejected != 'true'
-          && steps.read_result.outputs.plan_id != ''
+          && steps.read_result.outputs.pr_number != ''
         env:
-          PLAN_ID: ${{ steps.read_result.outputs.plan_id }}
-          PLAN_TITLE: ${{ steps.read_result.outputs.plan_title }}
+          PR_NUMBER: ${{ steps.read_result.outputs.pr_number }}
+          PR_TITLE: ${{ steps.read_result.outputs.pr_title }}
         run: |
           # Plan is already in .erk/impl-context/plan.md (written directly by Claude)
           mkdir -p .erk/impl-context
@@ -260,9 +260,9 @@ jobs:
           # Create ref.json with plan metadata
           jq -n \
             --arg provider "github" \
-            --arg plan_id "$PLAN_ID" \
-            --arg title "$PLAN_TITLE" \
-            '{provider: $provider, plan_id: $plan_id, title: $title}' \
+            --arg pr_id "$PR_NUMBER" \
+            --arg title "$PR_TITLE" \
+            '{provider: $provider, pr_id: $pr_id, title: $title}' \
             > .erk/impl-context/ref.json
 
           # Remove prompt files from the branch (they served their purpose)
@@ -276,9 +276,9 @@ jobs:
           # Stage and commit
           git add -f .erk/impl-context/
           if [[ -n $(git status --porcelain) ]]; then
-            git commit -m "Add plan for PR #$PLAN_ID"
+            git commit -m "Add plan for PR #$PR_NUMBER"
             git push origin "$(git branch --show-current)"
-            echo "Committed plan for #$PLAN_ID to branch"
+            echo "Committed plan for #$PR_NUMBER to branch"
           else
             echo "No changes to commit"
           fi
@@ -291,15 +291,15 @@ jobs:
 
   implement:
     needs: plan
-    if: needs.plan.outputs.plan_id != '' && !inputs.plan_only
+    if: needs.plan.outputs.pr_number != '' && !inputs.plan_only
     uses: ./.github/workflows/plan-implement.yml
     with:
-      plan_id: ${{ needs.plan.outputs.plan_id }}
-      plan_title: ${{ needs.plan.outputs.plan_title }}
+      pr_number: ${{ needs.plan.outputs.pr_number }}
+      pr_title: ${{ needs.plan.outputs.pr_title }}
       submitted_by: ${{ inputs.submitted_by }}
       distinct_id: ${{ inputs.distinct_id }}
       branch_name: ${{ inputs.branch_name }}
-      pr_number: ${{ inputs.pr_number }}
+      impl_pr_number: ${{ inputs.pr_number }}
       model_name: ${{ inputs.model_name }}
       base_branch: ${{ needs.plan.outputs.base_branch }}
       plan_backend: ${{ inputs.plan_backend }}

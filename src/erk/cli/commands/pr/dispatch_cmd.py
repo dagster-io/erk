@@ -284,11 +284,11 @@ def _dispatch_planned_pr_plan(
     user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
 
     inputs = {
-        "plan_id": str(pr_number),
-        "submitted_by": submitted_by,
-        "plan_title": validated.title,
-        "branch_name": branch_name,
         "pr_number": str(pr_number),
+        "submitted_by": submitted_by,
+        "pr_title": validated.title,
+        "branch_name": branch_name,
+        "impl_pr_number": str(pr_number),
         "base_branch": base_branch,
         "plan_backend": "planned_pr",
         **workflow_config,
@@ -511,11 +511,11 @@ def _dispatch_planned_pr_plan_remote(
         ref if ref is not None else remote.get_default_branch_name(owner=owner, repo=repo_name)
     )
     inputs = {
-        "plan_id": str(pr_number),
-        "submitted_by": submitted_by,
-        "plan_title": validated.title,
-        "branch_name": branch_name,
         "pr_number": str(pr_number),
+        "submitted_by": submitted_by,
+        "pr_title": validated.title,
+        "branch_name": branch_name,
+        "impl_pr_number": str(pr_number),
         "base_branch": base_branch,
         "plan_backend": "planned_pr",
     }

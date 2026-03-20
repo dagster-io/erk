@@ -53,13 +53,13 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PLAN_NUMBER" \
+          erk exec update-plan-header "$PR_NUMBER" \
             "last_dispatched_run_id=$RUN_ID" \
             "last_dispatched_node_id=$NODE_ID" \
             "last_dispatched_at=$TIMESTAMP"
@@ -131,13 +131,13 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PLAN_NUMBER" \
+          erk exec update-plan-header "$PR_NUMBER" \
             "last_dispatched_run_id=$RUN_ID" \
             "last_dispatched_node_id=$NODE_ID" \
             "last_dispatched_at=$TIMESTAMP"

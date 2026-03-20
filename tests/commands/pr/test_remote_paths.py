@@ -483,7 +483,7 @@ def test_dispatch_remote_dispatches_workflow() -> None:
     # Verify workflow was dispatched
     assert len(fake_remote.dispatched_workflows) == 1
     dispatched = fake_remote.dispatched_workflows[0]
-    assert dispatched.inputs["plan_id"] == "42"
+    assert dispatched.inputs["pr_number"] == "42"
     assert dispatched.inputs["plan_backend"] == "planned_pr"
     assert dispatched.inputs["branch_name"] == "plnd/remote-test"
 

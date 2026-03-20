@@ -45,13 +45,13 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PLAN_NUMBER" \
+          erk exec update-plan-header "$PR_NUMBER" \
             "last_dispatched_run_id=$RUN_ID" \
             "last_dispatched_node_id=$NODE_ID" \
             "last_dispatched_at=$TIMESTAMP"
@@ -69,7 +69,7 @@ jobs:
         run: |
           BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "plan_id=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+          echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
 
       - name: Save pre-implementation HEAD
         id: pre_impl
@@ -126,11 +126,11 @@ jobs:
           fi
 
       - name: Push preprocessed session to planned-pr-context branch
-        if: always() && steps.session.outputs.session_id && steps.plan_info.outputs.plan_id
+        if: always() && steps.session.outputs.session_id && steps.plan_info.outputs.pr_number
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_ID: ${{ steps.plan_info.outputs.plan_id }}
+          PR_NUMBER: ${{ steps.plan_info.outputs.pr_number }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           SESSION_FILE: ${{ steps.session.outputs.session_file }}
         run: |
@@ -139,14 +139,14 @@ jobs:
             --session-id "$SESSION_ID" \
             --stage address \
             --source remote \
-            --pr-number "$PLAN_ID"
+            --pr-number "$PR_NUMBER"
 
       - name: Update plan header with remote impl info
-        if: always() && steps.plan_info.outputs.plan_id
+        if: always() && steps.plan_info.outputs.pr_number
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_ID: ${{ steps.plan_info.outputs.plan_id }}
+          PR_NUMBER: ${{ steps.plan_info.outputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           BRANCH_NAME: ${{ steps.plan_info.outputs.branch_name }}
@@ -154,7 +154,7 @@ jobs:
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PLAN_ID" \
+          erk exec update-plan-header "$PR_NUMBER" \
             "last_remote_impl_at=$TIMESTAMP" \
             "last_remote_impl_run_id=$RUN_ID" \
             "last_remote_impl_session_id=$SESSION_ID" \
