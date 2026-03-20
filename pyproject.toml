@@ -101,7 +101,7 @@ packages = ["src/erk"]
 target-version = "py311"
 line-length = 100
 src = ["src"]
-exclude = [".claude/skills/"]
+exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.ruff.lint]
 select = [
@@ -117,14 +117,14 @@ known-first-party = ["erk", "erk_dev", "erk_mcp", "erk_shared", "erk_statusline"
 
 [tool.ty.src]
 include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]
-exclude = [".claude/skills/"]
+exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.ty.environment]
 python-version = "3.11"
 python = ".venv"
 
 [tool.erk.reviews]
-exclude = [".claude/skills/"]
+exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
