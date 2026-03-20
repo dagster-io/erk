@@ -5,6 +5,12 @@ from pathlib import Path
 
 import click
 
+from erk.cli.activation import (
+    activation_config_activate_only,
+    ensure_worktree_activate_script,
+    print_activation_instructions,
+)
+from erk.cli.commands.checkout_helpers import navigate_to_worktree
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
@@ -68,13 +74,6 @@ def _navigate_and_show(
     script_message: str,
     user_message: str,
 ) -> None:
-    from erk.cli.activation import (
-        activation_config_activate_only,
-        ensure_worktree_activate_script,
-        print_activation_instructions,
-    )
-    from erk.cli.commands.checkout_helpers import navigate_to_worktree
-
     should_output = navigate_to_worktree(
         ctx,
         worktree_path=worktree_path,

@@ -403,17 +403,18 @@ def render_plan_body_block(block: MetadataBlock) -> str:
 <!-- /erk:metadata-block:{block.key} -->"""
 
 
-def format_execution_commands(pr_number: int, *, url: str) -> str:
+def format_execution_commands(pr_number: int, *, url: str, branch_name: str) -> str:
     """Format execution commands section for plan issues.
 
     Args:
         pr_number: GitHub PR issue number
         url: GitHub issue URL
+        branch_name: Branch name for checkout commands
 
     Returns:
         Formatted markdown with copy-pasteable commands
     """
-    return format_next_steps_markdown(pr_number, url=url)
+    return format_next_steps_markdown(pr_number, url=url, branch_name=branch_name)
 
 
 def format_plan_commands_section(pr_number: int) -> str:
@@ -453,7 +454,7 @@ def format_plan_issue_body_simple(plan_content: str) -> str:
     return render_plan_body_block(plan_block)
 
 
-def format_plan_issue_body(plan_content: str, pr_number: int, *, url: str) -> str:
+def format_plan_issue_body(plan_content: str, pr_number: int, *, url: str, branch_name: str) -> str:
     """Format the complete issue body for a plan issue.
 
     Creates an issue body with:
@@ -465,13 +466,14 @@ def format_plan_issue_body(plan_content: str, pr_number: int, *, url: str) -> st
         plan_content: The plan markdown content
         pr_number: GitHub PR issue number (for command formatting)
         url: GitHub issue URL
+        branch_name: Branch name for checkout commands
 
     Returns:
         Complete issue body ready for GitHub
     """
     plan_block = create_plan_body_block(plan_content)
     plan_markdown = render_plan_body_block(plan_block)
-    commands_section = format_execution_commands(pr_number, url=url)
+    commands_section = format_execution_commands(pr_number, url=url, branch_name=branch_name)
 
     return f"""{plan_markdown}
 
