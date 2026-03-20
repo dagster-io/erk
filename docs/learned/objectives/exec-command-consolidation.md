@@ -31,7 +31,9 @@ The script combines three operations into a single invocation:
 
 1. **Fetch context** — Builds roadmap context and fetches objective content from GitHub
 2. **Update nodes** — Marks relevant roadmap nodes as done with PR references, updates the comment tracking table
-3. **Post action comment** — Formats and posts a structured action comment to the objective issue
+3. **Fetch changed files** — Retrieves the list of files changed in the PR for insight generation
+
+Action comment posting is deferred to the calling skill, which generates plan-vs-actual insights and populates `lessons_learned`.
 
 ## TypedDict Schema
 
@@ -40,7 +42,7 @@ The script combines three operations into a single invocation:
 Result types are defined in `erk_shared/objective_apply_landed_update_result.py`:
 
 - **`NodeUpdateDict`** — Tracks `node_id`, `previous_pr` for each updated node
-- **`ApplyLandedUpdateResultDict`** — Success result including `objective`, `plan`, `pr`, `roadmap`, `node_updates`, `action_comment_id`
+- **`ApplyLandedUpdateResultDict`** — Success result including `objective`, `plan`, `pr`, `roadmap`, `node_updates`, `changed_files`
 - **`ApplyLandedUpdateErrorDict`** — Error case with `success` flag and `error` message
 
 ## Auto-Discovery Pattern

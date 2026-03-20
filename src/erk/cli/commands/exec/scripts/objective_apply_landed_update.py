@@ -1,8 +1,8 @@
 """Apply mechanical updates to an objective after landing a PR.
 
-Combines the fetch-context, update-nodes, and post-action-comment steps into
-a single call, eliminating 5+ sequential agent commands.  Only prose
-reconciliation (which requires LLM judgment) is left to the calling skill.
+Combines the fetch-context and update-nodes steps into a single call,
+eliminating 5+ sequential agent commands.  Prose reconciliation, insight
+generation, and action comment posting are left to the calling skill.
 
 The PR number doubles as the plan number (in erk, the PR IS the plan).
 
@@ -12,7 +12,7 @@ Usage:
 
 Output:
     JSON with {success, objective, plan, pr, roadmap, node_updates,
-    action_comment_id} or {success, error}
+    changed_files} or {success, error}
 
 Exit Codes:
     0: Success - all mechanical updates applied
@@ -27,9 +27,6 @@ from erk.cli.commands.exec.scripts.objective_fetch_context import (
     _build_roadmap_context,
     _fetch_objective_content,
 )
-from erk.cli.commands.exec.scripts.objective_post_action_comment import (
-    _format_action_comment,
-)
 from erk.cli.commands.exec.scripts.update_objective_node import (
     _find_node_refs,
     _replace_node_refs_in_body,
@@ -42,7 +39,6 @@ from erk_shared.context.helpers import (
     require_github,
     require_plan_backend,
     require_repo_root,
-    require_time,
 )
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -178,8 +174,8 @@ def objective_apply_landed_update(
 ) -> None:
     """Apply mechanical updates to an objective after landing a PR.
 
-    Fetches context, updates roadmap nodes to done, and posts an action comment
-    in a single call. Returns rich JSON for the agent to use in prose reconciliation.
+    Fetches context, updates roadmap nodes to done, and returns rich JSON
+    for the agent to use in prose reconciliation and insight generation.
 
     The PR number is used as the plan number (in erk, the PR IS the plan).
     """
@@ -187,7 +183,6 @@ def objective_apply_landed_update(
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
     plan_backend = require_plan_backend(ctx)
-    time = require_time(ctx)
     remote = get_remote_github(erk_ctx)
 
     if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
@@ -280,30 +275,11 @@ def objective_apply_landed_update(
         # Rebuild roadmap from the updated body
         roadmap = _build_roadmap_context(updated_body, pr_id)
 
+    # --- Fetch changed files ---
+    changed_files = github.get_pr_changed_files(repo_root, pr_number)
+
     # --- Auto-close if all nodes complete ---
     auto_closed = auto_close and roadmap["all_complete"]
-
-    # --- Post action comment ---
-    date_str = time.now().strftime("%Y-%m-%d")
-    phase_step = ", ".join(matched_steps) if matched_steps else "N/A"
-
-    roadmap_updates = [f"Node {nid}: -> done" for nid in matched_steps]
-
-    comment_title = "Objective Complete" if auto_closed else f"Landed PR #{pr_number}"
-    comment_body = _format_action_comment(
-        title=comment_title,
-        date=date_str,
-        pr_number=pr_number,
-        phase_step=phase_step,
-        what_was_done=[f"Landed {pr.title} (#{pr_number})"],
-        lessons_learned=[],
-        roadmap_updates=roadmap_updates,
-        body_reconciliation=[],
-    )
-
-    action_comment_id = remote.add_issue_comment(
-        owner=owner, repo=repo_name, issue_number=objective_number, body=comment_body
-    )
 
     if auto_closed:
         github.issues.close_issue(repo_root, objective_number)
@@ -336,7 +312,7 @@ def objective_apply_landed_update(
         "pr": pr_info,
         "roadmap": roadmap,
         "node_updates": node_updates,
-        "action_comment_id": action_comment_id,
+        "changed_files": changed_files,
         "auto_closed": auto_closed,
     }
     click.echo(json.dumps(result))

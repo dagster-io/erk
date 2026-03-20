@@ -229,23 +229,23 @@ erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 
 **Path**: `.claude/commands/erk/system/objective-update-with-landed-pr.md`
 
-**What it does**: Updates objective after landing a PR. Marks steps as done, posts action comment, reconciles stale prose sections.
+**What it does**: Updates objective after landing a PR. Marks steps as done, generates plan-vs-actual insights, posts action comment with lessons learned, reconciles stale prose sections.
 
 **Mutation flow**:
 
 1. Determine which steps the PR completed (compare plan to roadmap)
-2. Compose action comment with summary and lessons learned
-3. **Compose updated objective body:**
+2. **Compose updated objective body:**
    - Parse YAML frontmatter
    - Update relevant step(s): set `pr: "#<number>"` and `status: "done"`
    - Serialize updated YAML and replace metadata block
    - Also update markdown table in objective-body comment
    - Reconcile stale prose sections (Design Decisions, Implementation Context)
-4. Post action comment to GitHub
+3. Generate plan-vs-actual insights from changed files and commit messages
+4. Post action comment to GitHub (with populated `lessons_learned`)
 5. Write updated body to GitHub
 6. Check if all steps are done/skipped → close objective if complete
 
-**Agent workflow**: Single-agent pattern. Agent fetches context, then performs all updates directly (roadmap steps, prose reconciliation, action comment, validation).
+**Agent workflow**: Single-agent pattern. The exec script handles mechanical updates (node marking, changed files). The skill handles insight generation, action comment posting, and prose reconciliation.
 
 ### Node Description Reconciliation
 
@@ -390,8 +390,9 @@ All roadmap steps completed:
 │   ↓                                                      │
 │ erk system:objective-update-with-landed-pr               │
 │   ↓                                                      │
-│ - Post action comment                                    │
 │ - Update roadmap: pr="#N", status="done"                 │
+│ - Generate plan-vs-actual insights                       │
+│ - Post action comment (with lessons_learned)             │
 │ - Reconcile stale prose sections                         │
 └─────────────────────────────────────────────────────────┘
                           ↓

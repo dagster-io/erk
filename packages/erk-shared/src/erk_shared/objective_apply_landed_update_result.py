@@ -31,7 +31,7 @@ class ApplyLandedUpdateResultDict(TypedDict):
     pr: PRInfoDict
     roadmap: RoadmapContextDict
     node_updates: list[NodeUpdateDict]
-    action_comment_id: int
+    changed_files: list[str]
     auto_closed: bool
 
 

@@ -157,8 +157,8 @@ OBJECTIVE_COMMENT_BODY = textwrap.dedent("""\
 
 
 class TestApplyLandedUpdateHappyPath:
-    def test_updates_nodes_and_posts_comment(self, tmp_path: Path) -> None:
-        """All matched nodes updated to done, action comment posted, returns rich JSON."""
+    def test_updates_nodes_and_returns_changed_files(self, tmp_path: Path) -> None:
+        """All matched nodes updated to done, changed files returned, returns rich JSON."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
         plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="Add auth system", body="pr body")
@@ -176,6 +176,7 @@ class TestApplyLandedUpdateHappyPath:
         fake_github = FakeLocalGitHub(
             issues_gateway=fake_issues,
             pr_details={6517: pr},
+            pr_changed_files={6517: ["src/auth.py", "tests/test_auth.py"]},
         )
         remote = _make_remote(
             {6423: objective, 6513: plan},
@@ -220,13 +221,11 @@ class TestApplyLandedUpdateHappyPath:
         assert node_updates[0]["node_id"] == "1.1"
         assert node_updates[1]["node_id"] == "1.2"
 
-        # Action comment was posted
-        assert data["action_comment_id"] is not None
-        assert len(remote.added_issue_comments) == 1
-        added_comment = remote.added_issue_comments[0]
-        assert added_comment.issue_number == 6423
-        assert "Landed PR #6517" in added_comment.body
-        assert "Add auth system" in added_comment.body
+        # Changed files returned
+        assert data["changed_files"] == ["src/auth.py", "tests/test_auth.py"]
+
+        # No action comment posted (deferred to skill)
+        assert len(remote.added_issue_comments) == 0
 
         # Issue body was updated
         assert len(remote.updated_issue_bodies) == 1
@@ -291,8 +290,8 @@ class TestApplyLandedUpdateHappyPath:
 
 
 class TestApplyLandedUpdateNoNodes:
-    def test_no_node_flags_still_posts_comment(self, tmp_path: Path) -> None:
-        """When no --node flags are passed, still posts action comment."""
+    def test_no_node_flags_returns_empty_updates(self, tmp_path: Path) -> None:
+        """When no --node flags are passed, returns empty node_updates and changed_files."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
         plan = _make_issue(number=6517, title="My Plan", body=PLAN_BODY_WITH_OBJECTIVE)
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
@@ -341,9 +340,10 @@ class TestApplyLandedUpdateNoNodes:
         data = json.loads(result.output)
         assert data["success"] is True
         assert data["node_updates"] == []
+        assert data["changed_files"] == []
 
-        # Action comment still posted
-        assert len(remote.added_issue_comments) == 1
+        # No action comment posted (deferred to skill)
+        assert len(remote.added_issue_comments) == 0
 
         # Issue body NOT updated (no nodes to update)
         assert len(remote.updated_issue_bodies) == 0
@@ -660,10 +660,6 @@ class TestApplyLandedUpdateAutoClose:
         # Issue was closed
         assert 6423 in fake_issues.closed_issues
 
-        # Action comment says "Objective Complete"
-        assert len(remote.added_issue_comments) == 1
-        assert "Objective Complete" in remote.added_issue_comments[0].body
-
     def test_no_auto_close_when_not_all_complete(self, tmp_path: Path) -> None:
         """Some nodes pending + --auto-close → auto_closed: false, issue stays open."""
         objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
@@ -720,10 +716,6 @@ class TestApplyLandedUpdateAutoClose:
 
         # Issue was NOT closed
         assert 6423 not in fake_issues.closed_issues
-
-        # Action comment says "Landed PR" (not "Objective Complete")
-        assert len(remote.added_issue_comments) == 1
-        assert "Landed PR #6517" in remote.added_issue_comments[0].body
 
 
 class TestApplyLandedUpdateDiscovery:
