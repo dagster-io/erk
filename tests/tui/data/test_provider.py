@@ -858,6 +858,139 @@ class TestCommentCountsDisplay:
         assert row.comments_display == "-"
 
 
+class TestObjectiveRowSelfReference:
+    """Tests for objective row self-referencing in _build_row_data.
+
+    When a plan has the 'erk-objective' label and no objective_issue in its
+    header, the row IS the objective itself — so objective_issue and
+    objective_url should point to the plan's own PR number and URL.
+    """
+
+    def test_objective_label_sets_self_reference(self, tmp_path: Path) -> None:
+        """Plan with erk-objective label and no objective_issue uses own PR number."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        github = FakeLocalGitHub(pr_plan_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPrDataProvider(
+            ctx=ctx,
+            location=location,
+            http_client=FakeHttpClient(),
+        )
+
+        plan = Plan(
+            pr_identifier="100",
+            title="Objective: Build feature X",
+            body="",
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/100",
+            labels=["erk-objective"],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=100,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.objective_issue == 100
+        assert row.objective_url == "https://github.com/test/repo/issues/100"
+        assert row.objective_display == "#100"
+
+    def test_non_objective_label_no_self_reference(self, tmp_path: Path) -> None:
+        """Plan without erk-objective label and no objective_issue shows dash."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        github = FakeLocalGitHub(pr_plan_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPrDataProvider(
+            ctx=ctx,
+            location=location,
+            http_client=FakeHttpClient(),
+        )
+
+        plan = Plan(
+            pr_identifier="200",
+            title="Regular Plan",
+            body="",
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/200",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        row = provider._build_row_data(
+            plan=plan,
+            pr_number=200,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_pr_number={},
+            use_graphite=False,
+        )
+
+        assert row.objective_issue is None
+        assert row.objective_url is None
+        assert row.objective_display == "-"
+
+
 class TestStackedPrDetection:
     """Tests for stacked PR (🥞) detection in _build_row_data.
 
