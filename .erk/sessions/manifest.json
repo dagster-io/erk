@@ -16,6 +16,20 @@
       "raw_size_kb": 1367,
       "xml_size_kb": 138,
       "git_branch": "gt-skills"
+    },
+    {
+      "session_id": "64974cbb-3af6-4e7f-b922-5311f98a463b",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T14:34:48.755871+00:00",
+      "files": [
+        "impl-64974cbb-3af6-4e7f-b922-5311f98a463b-64974cbb-3af6-4e7f-b922-5311f98a463b.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 275,
+      "xml_size_kb": 56,
+      "git_branch": "plnd/O9272-extract-slots-packag-03-20-1429"
     }
   ]
 }
