@@ -1,0 +1,824 @@
+<session>
+  <meta branch="plnd/fix-stale-diff-base-03-18-1256" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9255&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9255` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start setting up the implementation for plan #9255.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28605" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016W3ZiCDvSZGwCSDvXeSUk2">
+    <param name="command">erk exec setup-impl --issue 9255 2&gt;&amp;1</param>
+    <param name="description">Set up implementation for plan #9255</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28605" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016W3ZiCDvSZGwCSDvXeSUk2">
+Already on PR branch 'plnd/fix-stale-diff-base-03-18-1256', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-stale-diff-base-03-18-1256", "pr_number": 9255, "pr_url": "https://github.com/dagster-io/erk/pull/9255", "branch": "plnd/fix-stale-diff-base-03-18-1256", "pr_title": "[erk-pr] Fix stale local branch ref in PR diff/commit operations", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9255, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading the plan now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="28605" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Go1VnDsUT6bpafq6DXyCY1">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-stale-diff-base-03-18-1256/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="28605" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Go1VnDsUT6bpafq6DXyCY1">
+     1→# Fix: Statusline model indicator shows S¹ᴹ for Opus 1M
+     2→
+     3→## Context
+     4→
+     5→The statusline incorrectly shows `S¹ᴹ` (Sonnet 1M) when Opus 4.6 with 1M context is selected. The model ID is `claude-opus-4-6[1m]`, and the code checks for `[1m]` first, hardcoding `S¹ᴹ` for any 1M model regardless of type.
+     6→
+     7→## File to modify
+     8→
+     9→`packages/erk-statusline/src/erk_statusline/statusline.py` (lines 1200-1210)
+    10→
+    11→## Current (buggy) code
+    12→
+    13→```python
+    14→model = data.get("model", {}).get("display_name", "")
+    15→model_id = data.get("model", {}).get("id", "")
+    16→if "[1m]" in model_id.lower():
+    17→    model_code = "S¹ᴹ"        # BUG: always Sonnet regardless of actual model
+    18→elif "sonnet" in model.lower():
+    19→    model_code = "S"
+    20→elif "opus" in model.lower():
+    21→    model_code = "O"
+    22→else:
+    23→    model_code = model[:1].upper() if model else "?"
+    24→```
+    25→
+    26→## Fix
+    27→
+    28→Determine the model letter first, then append 1M suffix if present:
+    29→
+    30→```python
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Plan is clear. Let me set up the todos and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="990" cache_read_input_tokens="28939" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01UgW3tvpk9qxHicLCeYqs27">
+    <param name="todos">[{'content': 'Signal GitHub implementation started', 'status': 'pending', 'activeForm': 'S...[truncated 243 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="990" cache_read_input_tokens="28939" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UgW3tvpk9qxHicLCeYqs27">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0146RLnpZsMxs1Cb1hq8baQb">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="29929" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0146RLnpZsMxs1Cb1hq8baQb">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_011g2yh2UAHHKpcz5RJDMEsW">
+    <param name="todos">[{'content': 'Signal GitHub implementation started', 'status': 'completed', 'activeForm': ...[truncated 249 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="30150" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011g2yh2UAHHKpcz5RJDMEsW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me find and fix the buggy code in statusline.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="30322" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CFQba4qeKeHpTPmY54ViKm">
+    <param name="pattern">if \"\[1m\]\" in model_id</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="30322" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CFQba4qeKeHpTPmY54ViKm">
+1203:        if "[1m]" in model_id.lower():
+  </tool_result>
+  <tool_use name="Read" id="toolu_016tHKvZo3zTYUUjesfcpU8k">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">1198</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="30530" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016tHKvZo3zTYUUjesfcpU8k">
+  1198→                    github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
+  1199→
+  1200→        # Get model code
+  1201→        model = data.get("model", {}).get("display_name", "")
+  1202→        model_id = data.get("model", {}).get("id", "")
+  1203→        if "[1m]" in model_id.lower():
+  1204→            model_code = "S¹ᴹ"
+  1205→        elif "sonnet" in model.lower():
+  1206→            model_code = "S"
+  1207→        elif "opus" in model.lower():
+  1208→            model_code = "O"
+  1209→        else:
+  1210→            model_code = model[:1].upper() if model else "?"
+  1211→
+  1212→        # Get repo info from GitHub data
+  1213→        repo_info = get_repo_info(github_data)
+  1214→        if repo_info:
+  1215→            repo_name = repo_info.repo
+  1216→
+  1217→        # Log final checks status for debugging
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NdJ5rpiVjeNFj9aFG9YnMw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">        if "[1m]" in model_id.lower():
+            model_code = "S¹ᴹ"
+        elif "sonnet...[truncated 80 chars]...odel_code = "O"
+        else:
+            model_code = model[:1].upper() if model else "?"</param>
+    <param name="new_string">        if "opus" in model.lower():
+            model_code = "O"
+        elif "sonnet" in ...[truncated 146 chars]...() if model else "?"
+        if "[1m]" in model_id.lower():
+            model_code += "¹ᴹ"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="510" cache_read_input_tokens="30726" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NdJ5rpiVjeNFj9aFG9YnMw">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the change looks correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="31236" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AzjGaVCsa7T7edRXmmLnvz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">1200</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="31236" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AzjGaVCsa7T7edRXmmLnvz">
+  1200→        # Get model code
+  1201→        model = data.get("model", {}).get("display_name", "")
+  1202→        model_id = data.get("model", {}).get("id", "")
+  1203→        if "opus" in model.lower():
+  1204→            model_code = "O"
+  1205→        elif "sonnet" in model.lower():
+  1206→            model_code = "S"
+  1207→        elif "haiku" in model.lower():
+  1208→            model_code = "H"
+  1209→        else:
+  1210→            model_code = model[:1].upper() if model else "?"
+  1211→        if "[1m]" in model_id.lower():
+  1212→            model_code += "¹ᴹ"
+  1213→
+  1214→        # Get repo info from GitHub data
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The fix looks correct. Now let me mark the fix as complete and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="31612" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01EqLFZFbWZ5wUHDBa8kQsDN">
+    <param name="todos">[{'content': 'Signal GitHub implementation started', 'status': 'completed', 'activeForm': ...[truncated 251 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="31612" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EqLFZFbWZ5wUHDBa8kQsDN">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013bZBMZQeJCySrfRz1rDxK9">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT FOUND"</param>
+    <param name="description">Check for post-plan-implement-ci hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="32221" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013bZBMZQeJCySrfRz1rDxK9">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+EXISTS
+  </tool_result>
+  <tool_use name="Read" id="toolu_016smqjWorjSbfJ6r94oT6k1">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="167" cache_read_input_tokens="32447" cache_creation="{'ephemeral_5m_input_tokens': 167, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016smqjWorjSbfJ6r94oT6k1">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01GPFAHCkegJ5zHoApdaYzDm">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="32614" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GPFAHCkegJ5zHoApdaYzDm">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>Now running CI via devrun:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1914" cache_read_input_tokens="32614" cache_creation="{'ephemeral_5m_input_tokens': 1914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Mk5op7U92PSH5W8eWEanaE">
+    <param name="description">Run fast-ci from repo root</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /home/runner/work/erk/erk and execute: make fast-ci. Report all output including any failures.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1914" cache_read_input_tokens="32614" cache_creation="{'ephemeral_5m_input_tokens': 1914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mk5op7U92PSH5W8eWEanaE">
+## Summary
+
+**make fast-ci failed: 1 issue found**
+
+**Error Location:**
+- `/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md` - Exec Reference Check failed
+
+**Failure Details:**
+
+The Exec Reference Check detected that `.claude/skills/erk-exec/reference.md` is out of date. The output message states:
+```
+FAIL: .claude/skills/erk-exec/reference.md is out of date
+Run 'erk-dev gen-exec-reference-docs' to regenerate it.
+```
+
+**Test Results:**
+All other checks and tests passed:
+- Lint: All checks passed
+- Format Check: 1728 files already formatted
+- Markdown Check: Passed
+- Type checking (ty): All checks passed
+- Unit Tests (erk): 5987 passed in 14.68s
+- Unit Tests (erk-dev): 136 passed in 6.05s
+- Unit Tests (erk-statusline): 115 passed in 0.82s
+- Unit Tests (erk-mcp): 50 passed
+
+The root cause is the stale reference documentation file that needs to be regenerated using the `erk-dev gen-exec-reference-docs` command.
+agentId: a16dcc4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The only failure is a stale exec reference doc. Let me regenerate it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="34528" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FZFqPzjZ9iuSJd21hz5DYa">
+    <param name="command">erk-dev gen-exec-reference-docs 2&gt;&amp;1</param>
+    <param name="description">Regenerate exec reference docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="34528" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FZFqPzjZ9iuSJd21hz5DYa">
+Exit code 127
+/bin/bash: line 1: erk-dev: command not found
+  </tool_result>
+  <tool_use name="Task" id="toolu_01FreYJdVPUyJKpjbex5recg">
+    <param name="description">Run gen-exec-reference-docs via make</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /home/runner/work/erk/erk and execute: make gen-exec-reference-docs. Report all ...[truncated 6 chars]...sn't exist, run `make help` to find the right target for regenerating exec reference docs.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="310" cache_read_input_tokens="34993" cache_creation="{'ephemeral_5m_input_tokens': 310, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FreYJdVPUyJKpjbex5recg">
+Perfect! The command executed successfully. Here's the output:
+
+**Command executed:** `uv run erk-dev gen-exec-reference-docs`
+
+**Output:**
+```
+Generated .claude/skills/erk-exec/reference.md (formatted)
+  93 top-level commands documented
+```
+
+**Summary:** The exec reference documentation has been successfully regenerated. The tool generated the reference documentation file at `.claude/skills/erk-exec/reference.md` with 93 top-level commands documented.
+agentId: ab41744 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Reference docs regenerated. Now run CI again to confirm all passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="35303" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Mvt8MFmUFNhMXSTgBupDMG">
+    <param name="description">Re-run fast-ci to confirm all pass</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /home/runner/work/erk/erk and execute: make fast-ci. Report all output including pass/fail status of each check.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="35303" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mvt8MFmUFNhMXSTgBupDMG">
+The `make fast-ci` command failed with exit code 2. Here's the summary of all check results:
+
+**FAILED CHECKS:**
+
+1. **Prettier Check (FAILED)** - Code style issues found in 2 files:
+   - `docs/learned/integrations/github-review-decision.md`
+   - `docs/learned/tui/status-indicators.md`
+   - Run Prettier with --write to fix
+
+**PASSED CHECKS:**
+
+- AGENTS.md standard: PASSED
+- CLAUDE.md and AGENTS.md files properly paired (0 violations)
+- Lint: All checks passed
+- Format Check: 1728 files already formatted
+- Markdown Check: OK
+- Exec Reference Check: OK (.claude/skills/erk-exec/reference.md is up to date)
+- Type checking (ty): All checks passed
+- Unit Tests (erk): 5987 passed in 14.87s
+- Tests (erk-dev): 136 passed in 5.83s
+- Tests (erk-statusline): 115 passed in 0.77s
+- Tests (erk-mcp): 50 passed (output cut off but passing)
+
+**Root Cause:** The Prettier formatter has detected formatting issues in 2 markdown documentation files. The pipeline halted before completing the erk-mcp test output, but test execution appears to be passing.
+agentId: a70b3f0 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier failures in docs files. Let me fix them:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="670" cache_read_input_tokens="35600" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01DM5xUH1nNRdcL1xQCkQmuf">
+    <param name="description">Run prettier to fix markdown files</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /home/runner/work/erk/erk and execute: make prettier. Report all output.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="670" cache_read_input_tokens="35600" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DM5xUH1nNRdcL1xQCkQmuf">
+prettier passed: All matched files use Prettier code style!
+
+The output shows that `prettier` checked all markdown files (indicated by the glob pattern `**/*.md`) and verified they conform to the Prettier code style. All files are unchanged, which means they are already properly formatted. The command completed successfully with no formatting issues detected.
+agentId: ad4f2b1 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Hmm, `make prettier` reports all files already formatted, but the check step found issues. Let me run the full CI again to see the current state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="36270" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01MPMuiCeRBA4HkRk16Y1HRj">
+    <param name="description">Re-run fast-ci after prettier</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /home/runner/work/erk/erk and execute: make fast-ci. Report all output including pass/fail for each check.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="36270" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MPMuiCeRBA4HkRk16Y1HRj">
+All checks passed! Here's a summary:
+
+**Fast CI Results - All Passed**
+
+1. **Lint** - PASSED: `All checks passed!`
+2. **Format Check** - PASSED: `1728 files already formatted`
+3. **Prettier Check** - PASSED: `All matched files use Prettier code style!`
+4. **Markdown Check** - PASSED
+5. **Exec Reference Check** - PASSED: `.claude/skills/erk-exec/reference.md is up to date`
+6. **Type Check (ty)** - PASSED: `All checks passed!`
+7. **Unit Tests (erk)** - PASSED: `5987 passed in 14.84s`
+8. **Tests (erk-dev)** - PASSED: `136 passed in 5.86s`
+9. **Tests (erk-statusline)** - PASSED: `115 passed in 0.80s`
+10. **Tests (erk-mcp)** - PASSED: `50 passed`
+11. **AGENTS.md Standard** - PASSED: `PASSED` with 19 CLAUDE.md files checked and 0 violations
+
+All make fast-ci checks are passing with no issues detected.
+agentId: a01e508 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now submitting the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="652" cache_read_input_tokens="36506" cache_creation="{'ephemeral_5m_input_tokens': 652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01Qh3J1EbJPJUmhZfGe8snhd">
+    <param name="todos">[{'content': 'Signal GitHub implementation started', 'status': 'completed', 'activeForm': ...[truncated 253 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="652" cache_read_input_tokens="36506" cache_creation="{'ephemeral_5m_input_tokens': 652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qh3J1EbJPJUmhZfGe8snhd">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016APTXWGgxPQKa7P9We65bR">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="37158" cache_creation="{'ephemeral_5m_input_tokens': 222, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016APTXWGgxPQKa7P9We65bR">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9255
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016yHrtt9DhwwVxgxn3EJ4u4">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="136" cache_read_input_tokens="37380" cache_creation="{'ephemeral_5m_input_tokens': 136, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+</session>

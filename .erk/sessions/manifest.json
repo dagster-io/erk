@@ -17,6 +17,25 @@
       "raw_size_kb": 120,
       "xml_size_kb": 95,
       "git_branch": "master"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T00:08:23.754223+00:00",
+      "files": [
+        "impl--23c8e125-dc9b-4cbe-8c52-0ec24c7351bc-part1.xml",
+        "impl--23c8e125-dc9b-4cbe-8c52-0ec24c7351bc-part2.xml",
+        "impl--23c8e125-dc9b-4cbe-8c52-0ec24c7351bc-part3.xml",
+        "impl--23c8e125-dc9b-4cbe-8c52-0ec24c7351bc-part4.xml",
+        "impl--23c8e125-dc9b-4cbe-8c52-0ec24c7351bc-part5.xml",
+        "impl--23c8e125-dc9b-4cbe-8c52-0ec24c7351bc-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 6,
+      "raw_size_kb": 130,
+      "xml_size_kb": 63,
+      "git_branch": "plnd/fix-stale-diff-base-03-18-1256"
     }
   ]
 }
