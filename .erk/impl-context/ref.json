@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Rename workflow YAML inputs and env vars from plan_id/plan_title to pr_number/pr_title (Node 7.1)"
+}
