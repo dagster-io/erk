@@ -20,20 +20,20 @@ Work with Graphite (`gt`) for creating, navigating, and managing stacked pull re
 
 ## Quick Reference
 
-| I want to... | Command |
-|--------------|---------|
-| Create a new branch/PR | `gt create branch-name -m "message"` |
-| Amend current branch | `gt modify -m "message"` |
-| Navigate up the stack | `gt up` |
-| Navigate down the stack | `gt down` |
-| Jump to top of stack | `gt top` |
-| Jump to bottom of stack | `gt bottom` |
-| View stack structure | `gt ls` |
-| Submit stack for review | `gt submit --no-interactive` |
-| Rebase stack on trunk | `gt restack` |
-| Change branch parent | `gt track --parent <branch>` |
-| Rename current branch | `gt rename <new-name>` |
-| Move branch in stack | `gt move` |
+| I want to...            | Command                              |
+| ----------------------- | ------------------------------------ |
+| Create a new branch/PR  | `gt create branch-name -m "message"` |
+| Amend current branch    | `gt modify -m "message"`             |
+| Navigate up the stack   | `gt up`                              |
+| Navigate down the stack | `gt down`                            |
+| Jump to top of stack    | `gt top`                             |
+| Jump to bottom of stack | `gt bottom`                          |
+| View stack structure    | `gt ls`                              |
+| Submit stack for review | `gt submit --no-interactive`         |
+| Rebase stack on trunk   | `gt restack`                         |
+| Change branch parent    | `gt track --parent <branch>`         |
+| Rename current branch   | `gt rename <new-name>`               |
+| Move branch in stack    | `gt move`                            |
 
 ---
 
@@ -91,6 +91,7 @@ gt branch info
 If you see "ERROR: Cannot perform this operation on untracked branch":
 
 **Option A (Recommended): Track temporarily, then re-parent**
+
 1. Track current branch: `gt track -p main`
 2. Create your stack normally with `gt create`
 3. After creating ALL branches, re-parent your first new branch onto main:
@@ -101,6 +102,7 @@ If you see "ERROR: Cannot perform this operation on untracked branch":
    ```
 
 **Option B: Stash changes and start from main**
+
 1. `git stash`
 2. `git checkout main && git pull`
 3. Create new branch and unstash: `git checkout -b temp-working && git stash pop`
@@ -193,6 +195,7 @@ gt ls
 ```
 
 If the first branch has a parent other than `main`:
+
 ```bash
 gt checkout <first-branch>
 gt track -p main
@@ -230,6 +233,7 @@ gh pr edit <PR_NUMBER> --title "stack-name: description" --body-file /tmp/pr-bod
 ```
 
 PR descriptions must include:
+
 - **Stack Context**: What is the bigger goal of this stack?
 - **What?** (optional for small changes): Super terse, focus on what not why
 - **Why?**: What prompted the change? Why this solution? How does it fit into the stack?
@@ -252,22 +256,23 @@ enable the frontend warning (PR 2) to display it.
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| "Cannot perform this operation on untracked branch" | Run `gt track -p main` first |
-| Stack parented on wrong branch | Use `gt track -p main` then `gt restack` |
-| Need to reorder PRs | Use `gt move` |
-| Conflicts during restack | Resolve conflicts, then `git rebase --continue` |
-| Want to split a PR | Reset commits (`git reset HEAD^`), re-stage selectively, create new branches |
-| Need to delete a branch (non-interactive) | `gt delete <branch> -f -q` |
-| `gt restack` hitting unrelated conflicts | Use targeted `git rebase <target>` instead (see below) |
-| Rebase interrupted mid-conflict | Check if files are resolved but unstaged, then `git add` + `git rebase --continue` |
+| Problem                                             | Solution                                                                           |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| "Cannot perform this operation on untracked branch" | Run `gt track -p main` first                                                       |
+| Stack parented on wrong branch                      | Use `gt track -p main` then `gt restack`                                           |
+| Need to reorder PRs                                 | Use `gt move`                                                                      |
+| Conflicts during restack                            | Resolve conflicts, then `git rebase --continue`                                    |
+| Want to split a PR                                  | Reset commits (`git reset HEAD^`), re-stage selectively, create new branches       |
+| Need to delete a branch (non-interactive)           | `gt delete <branch> -f -q`                                                         |
+| `gt restack` hitting unrelated conflicts            | Use targeted `git rebase <target>` instead (see below)                             |
+| Rebase interrupted mid-conflict                     | Check if files are resolved but unstaged, then `git add` + `git rebase --continue` |
 
 ---
 
 ## Advanced: Surgical Rebasing in Complex Stacks
 
 In deeply nested stacks with many sibling branches, `gt restack` can be problematic:
+
 - It restacks ALL branches that need it, not just your stack
 - Can hit conflicts in completely unrelated branches
 - Is all-or-nothing - hard to be surgical
@@ -275,6 +280,7 @@ In deeply nested stacks with many sibling branches, `gt restack` can be problema
 ### When to Use `git rebase` Instead of `gt restack`
 
 Use direct `git rebase` when:
+
 - You only want to update specific branches in your stack
 - `gt restack` is hitting conflicts in unrelated branches
 - You need to skip obsolete commits during the rebase
@@ -305,6 +311,7 @@ gt modify --no-edit
 If a rebase was interrupted (e.g., Claude session ran out of context):
 
 1. **Check status:**
+
    ```bash
    git status
    # Look for "interactive rebase in progress" and "Unmerged paths"
@@ -313,6 +320,7 @@ If a rebase was interrupted (e.g., Claude session ran out of context):
 2. **Read the "unmerged" files** - they may already be resolved (no conflict markers)
 
 3. **If already resolved, just stage and continue:**
+
    ```bash
    git add <resolved-files>
    git rebase --continue
@@ -334,10 +342,12 @@ gt delete branch-to-delete -f -q --downstack
 ```
 
 **Flags:**
+
 - `-f` / `--force`: Delete even if not merged or closed
 - `-q` / `--quiet`: Implies `--no-interactive`, minimizes output
 
 **After deleting intermediate branches**, children are automatically restacked onto the parent. If you need to manually update tracking:
+
 ```bash
 gt checkout child-branch
 gt track --parent new-parent-branch
