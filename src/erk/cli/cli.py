@@ -160,7 +160,7 @@ def _show_version_warning() -> None:
         logging.warning("Failed to check version: %s", e)
 
 
-@click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
+@click.group(cls=ErkCommandGroup, grouped=True, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.pass_context

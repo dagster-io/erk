@@ -83,7 +83,7 @@ class ErkCommandGroup(click.Group):
         grouped: If True, organize commands into sections. If False, show flat list.
     """
 
-    def __init__(self, grouped: bool = True, **kwargs: object) -> None:
+    def __init__(self, *, grouped: bool, **kwargs: object) -> None:
         super().__init__(**cast(dict[str, Any], kwargs))
         self.grouped = grouped
 
