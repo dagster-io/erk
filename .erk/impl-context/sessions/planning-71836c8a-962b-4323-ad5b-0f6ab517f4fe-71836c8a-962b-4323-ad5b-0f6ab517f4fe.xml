@@ -1,0 +1,512 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>upload.pypi.org/legacy/
+  Caused by: Upload failed with status code 400 Bad Request. Server says: 400 This filename was previously used by a file that has since been deleted. Use a different version. See https://pypi.org/help/#file-name-reuse for more information.
+Traceback (most recent call last):
+  File "/Users/schrockn/code/erk/.venv/bin/erk-dev", line 10, in &lt;module&gt;
+    sys.exit(cli())
+             ~~~^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/schrockn/code/erk/packages/erk-dev/src/erk_dev/commands/reserve_pypi_name/command.py", line 205, in reserve_pypi_name_command
+    publish_artifacts(project_dir, artifacts)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/code/erk/packages/erk-dev/src/erk_dev/commands/reserve_pypi_name/command.py", line 150, in publish_artifacts
+    run_command(publish_command, project_dir / "dist", "uvx uv-publish")
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/code/erk/packages/erk-dev/src/erk_dev/commands/reserve_pypi_name/command.py", line 120, in run_command
+    subprocess.run(command, check=True, cwd=cwd)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['uvx', 'uv-publish', '/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/reserve-pypi-name-lyrovpg4/dist/.gitignore', '/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/reserve-pypi-name-lyrovpg4/dist/twerk-0.0.1-py3-none-any.whl', '/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/reserve-pypi-name-lyrovpg4/dist/twerk-0.0.1.tar.gz']' returned non-zero exit status 2.
+(erk) ➜  erk git:(decomposed-objective) git co msater
+error: pathspec 'msater' did not match any file(s) known to git
+(erk) ➜  erk git:(decomposed-objective) erk-dev reserve-pypi-name --name twerk -h
+Usage: erk-dev reserve-pypi-name [OPTIONS]
+
+  Reserve a package name on PyPI by publishing a placeholder package.
+
+Options:
+  --name TEXT         Package name to reserve  [required]
+  --description TEXT  Package description  [default: Reserved package name]
+  --dry-run           Show operations without publishing
+  --force             Skip confirmation prompt
+  -h, --help          Show this message and exit.
+(erk) ➜  erk git:(decomposed-objective) git co master
+Switched to branch 'master'
+Your branch is up to date with 'origin/master'.
+(erk) ➜  erk git:(master)
+
+i need to be able add a version to this</user>
+  <usage input_tokens="3" cache_creation_input_tokens="27341" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27341}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NeJz1viGuw4UNkjbVejQhF">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-dev/src/erk_dev/commands/reserve_pypi_name/command.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="27341" cache_read_input_tokens="0" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 27341, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NeJz1viGuw4UNkjbVejQhF">
+     1→"""Reserve PyPI package name command."""
+     2→
+     3→import json
+     4→import shlex
+     5→import shutil
+     6→import subprocess
+     7→import tempfile
+     8→from pathlib import Path
+     9→
+    10→import click
+    11→
+    12→from erk_dev.cli.output import user_output
+    13→
+    14→PYPI_README_TEXT = "This package name is reserved."
+    15→PLACEHOLDER_VERSION = "0.0.1"
+    16→
+    17→
+    18→def validate_package_name(name: str) -&gt; None:
+    19→    """Validate the provided package name against PyPI constraints."""
+    20→    if not name:
+    21→        user_output("✗ Package name cannot be empty")
+    22→        raise SystemExit(1)
+    23→
+    24→    allowed_characters = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")
+    25→    if not set(name).issubset(allowed_characters):
+    26→        user_output(f"✗ Invalid package name: {name}")
+    27→        user_output("  Name must contain only letters, digits, _, -, .")
+    28→        raise SystemExit(1)
+    29→
+    30→    start_character = name[0]
+
+... [179 lines omitted] ...
+
+   114→    """Run a subprocess command with error reporting."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4530" cache_read_input_tokens="27341" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4530}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>This is straightforward — the version is hardcoded as `"0.0.1"` and PyPI won't allow reuse of deleted filenames. You need a `--version` option.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4530" cache_read_input_tokens="27341" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4530}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Pfk4khKnCGNuy3i8YVtkUN">
+    <param name="file_path">/Users/schrockn/.claude/plans/idempotent-honking-bonbon.md</param>
+    <param name="content"># Add `--version` option to `reserve-pypi-name` command
+
+## Context
+
+PyPI rejects uploads ...[truncated 623 chars]...## Verification
+
+```
+erk-dev reserve-pypi-name --name twerk --version 0.0.2 --dry-run
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4530" cache_read_input_tokens="27341" output_tokens="510" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4530, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pfk4khKnCGNuy3i8YVtkUN">
+File created successfully at: /Users/schrockn/.claude/plans/idempotent-honking-bonbon.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01QnCpVwZxJFRjVXi841JXzS">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="31871" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QnCpVwZxJFRjVXi841JXzS">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01U2KyE2uag3jNQVUPJd5zMC">
+    <param name="plan"># Add `--version` option to `reserve-pypi-name` command
+
+## Context
+
+PyPI rejects uploads ...[truncated 623 chars]...## Verification
+
+```
+erk-dev reserve-pypi-name --name twerk --version 0.0.2 --dry-run
+```
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/idempotent-honking-bonbon.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="32422" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U2KyE2uag3jNQVUPJd5zMC">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/idempotent-honking-bonbon.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add `--version` option to `reserve-pypi-name` command
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 71836c8a-962b-4323-ad5b-0f6ab517f4fe \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CQYKDTUNTjkCYQTPoWJk1S">
+    <param name="file_path">/Users/schrockn/.claude/plans/idempotent-honking-bonbon.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="792" cache_read_input_tokens="33160" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 792, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CQYKDTUNTjkCYQTPoWJk1S">
+     1→# Add `--version` option to `reserve-pypi-name` command
+     2→
+     3→## Context
+     4→
+     5→PyPI rejects uploads that reuse filenames from previously deleted packages. The `reserve-pypi-name` command hardcodes version `0.0.1`, so if a name was reserved and then deleted, re-reserving fails. Adding a `--version` option lets the user specify an alternative version (e.g., `0.0.2`).
+     6→
+     7→## Changes
+     8→
+     9→**File:** `packages/erk-dev/src/erk_dev/commands/reserve_pypi_name/command.py`
+    10→
+    11→1. Add `--version` click option with default `"0.0.1"`
+    12→2. Thread `version` parameter through to `render_pyproject()` and `render_init_py()` (replacing `PLACEHOLDER_VERSION` usage)
+    13→3. Remove the `PLACEHOLDER_VERSION` constant
+    14→4. Update dry-run output to show the version being used
+    15→
+    16→## Verification
+    17→
+    18→```
+    19→erk-dev reserve-pypi-name --name twerk --version 0.0.2 --dry-run
+    20→```
+    21→
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01HF2bi6i2i2MteRmYmQDyAz">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="33952" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 412, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HF2bi6i2i2MteRmYmQDyAz">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Add `--version` option to `reserve-pypi-name` command
+
+### Context
+
+PyPI rejects uploads that reuse filenames from previously deleted packages. The `reserve-pypi-name` command hardcodes version `0.0.1`, so if a name was reserved and then deleted, re-reserving fails. Adding a `--version` option lets the user specify an alternative version (e.g., `0.0.2`).
+
+### Changes
+
+**File:** `packages/erk-dev/src/erk_dev/commands/reserve_pypi_name/command.py`
+
+1. Add `--version` click option with default `"0.0.1"`
+2. Thread `version` parameter through to `render_pyproject()` and `render_init_py()` (replacing `PLACEHOLDER_VERSION` usage)
+3. Remove the `PLACEHOLDER_VERSION` constant
+4. Update dry-run output to show the version being used
+
+### Verification
+
+```
+erk-dev reserve-pypi-name --name twerk --version 0.0.2 --dry-run
+```</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="34364" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018veTX3LmMXEU8Bsqv9m9DK">
+    <param name="questions">[{'question': "What would you like to do with this plan?\n\n⚠️ Currently on 'master'. We s...[truncated 378 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="34364" output_tokens="465" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018veTX3LmMXEU8Bsqv9m9DK">
+User has answered your questions: "What would you like to do with this plan?
+
+⚠️ Currently on 'master'. We strongly discourage implementing directly on the trunk branch."="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01FPaLqQ6GLGX9EzQkZapNWP">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="539" cache_read_input_tokens="35697" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 539, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FPaLqQ6GLGX9EzQkZapNWP">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="71836c8a-962b-4323-ad5b-0f6ab517f4fe" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="71836c8a-962b-4323-ad5b-0f6ab517f4fe" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "71836c8a-962b-4323-ad5b-0f6ab517f4fe" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "71836c8a-962b-4323-ad5b-0f6ab517f4fe" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "71836c8a-962b-4323-ad5b-0f6ab517f4fe" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "71836c8a-962b-4323-ad5b-0f6ab517f4fe" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2494" cache_read_input_tokens="36236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2494}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1: Parse Arguments** — No flags passed. All flag variables are empty.
+
+**Step 2: Branch Slug** — `add-version-reserve-pypi`
+
+**Step 3: Plan Summary** — "Adds a --version CLI option to reserve-pypi-name so users can specify an alternative version when PyPI rejects reuse of previously deleted filenames. Replaces the hardcoded PLACEHOLDER_VERSION constant."
+
+**Step 4: Running save command.**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2494" cache_read_input_tokens="36236" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2494}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LbDzaN8wQARRbKU7aFBv16">
+    <param name="command">erk exec plan-save --format json --session-id="71836c8a-962b-4323-ad5b-0f6ab517f4fe" --bra...[truncated 140 chars]...use of previously deleted filenames. Replaces the hardcoded PLACEHOLDER_VERSION constant."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2494" cache_read_input_tokens="36236" output_tokens="538" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2494, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LbDzaN8wQARRbKU7aFBv16">
+{"success": true, "pr_number": 9269, "pr_url": "https://github.com/dagster-io/erk/pull/9269", "title": "[erk-pr] Add `--version` option to `reserve-pypi-name` command", "branch_name": "plnd/add-version-reserve-pypi-03-20-1238", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/71836c8a-962b-4323-ad5b-0f6ab517f4fe/plan_snapshots/000001-234e1d61"}
+  </tool_result>
+  <assistant>No objective linked — skipping Steps 5-6.
+
+**Step 7: Pushing planning session.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="702" cache_read_input_tokens="38730" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 702}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CBoVHGX5LfSGoP6fxJGV21">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="702" cache_read_input_tokens="38730" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 702, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CBoVHGX5LfSGoP6fxJGV21">
+SESSION_ID=71836c8a-962b-4323-ad5b-0f6ab517f4fe
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/71836c8a-962b-4323-ad5b-0f6ab517f4fe.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AEBJ6489nRN5eormDpknkU">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...23-ad5b-0f6ab517f4fe" --stage planning --source local --pr-number 9269 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="39432" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
