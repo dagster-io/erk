@@ -1,0 +1,1017 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:replan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:replan&lt;/command-name&gt;
+&lt;command-args&gt;│ #9210 │ Replace erk pr rebase with resolve-conflicts            │ Unimplemented      │&lt;/command-args&gt;</user>
+  <user># /erk:replan
+
+Recomputes existing plan(s) against the current codebase state, creating a new plan and closing the original(s).
+
+Supports consolidating multiple plans into a single unified plan.
+
+## Usage
+
+```bash
+/erk:replan 2521                          # Single plan replan
+/erk:replan https://github.com/owner/repo/pull/2521
+/erk:replan 123 456 789                   # Consolidate multiple plans
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Parse Plan References
+
+Split `│ #9210 │ Replace erk pr rebase with resolve-conflicts            │ Unimplemented      │` on whitespace. For each argument:
+
+- If numeric (e.g., `2521`), use directly as pr number
+- If URL (e.g., `https://github.com/owner/repo/pull/2521`), extract the number from the path
+
+Store all pr numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple plans provided.
+
+If no argument provided, ask the user for the pr number.
+
+### Step 2: Validate Plans and Extract Metadata (Delegated)
+
+Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-plan-info` + N × `get-plan-metadata`) out of the main conversation context.
+
+Launch a Task agent with:
+
+- `subagent_type`: `general-purpose`
+- `model`: `haiku`
+
+**Agent prompt** (adapt pr numbers from Step 1):
+
+&gt; For each of the following PR numbers: [list pr numbers]
+&gt;
+&gt; 1. Run `erk exec get-plan-info &lt;number&gt;` for each plan
+&gt; 2. Run `erk exec get-plan-metadata &lt;number&gt; objective_issue` for each plan
+&gt;
+&gt; Then return a structured summary in EXACTLY this format:
+&gt;
+&gt; ```
+&gt; VALIDATION: PASS or FAIL
+&gt; CONSOLIDATION_MODE: true or false (true if multiple plans)
+&gt; IS_LEARN_PLAN: true or false (true if ANY plan has erk-learn label)
+&gt;
+&gt; PLANS:
+&gt; # | Title | State | erk-plan | erk-learn | objective_issue
+&gt; &lt;number&gt; | &lt;title&gt; | &lt;open/closed&gt; | &lt;yes/no&gt; | &lt;yes/no&gt; | &lt;number or none&gt;
+&gt; ...
+&gt;
+&gt; OBJECTIVE_STATUS: AGREED:&lt;number&gt;, AGREED:none, or CONFLICT
+&gt;
+&gt; ERRORS:
+&gt; &lt;only present if VALIDATION is FAIL, list each error&gt;
+&gt;
+&gt; WARNINGS:
+&gt; &lt;only present if any issues are closed, list each warning&gt;
+&gt; ```
+&gt;
+&gt; Rules for OBJECTIVE_STATUS:
+&gt;
+&gt; - AGREED:&lt;number&gt; — all plans that have an objective_issue share the same value
+&gt; - AGREED:none — no plans have an objective_issue
+&gt; - CONFLICT — plans have different objective_issue values
+&gt;
+&gt; Rules for VALIDATION:
+&gt;
+&gt; - FAIL if any plan does not exist
+&gt; - FAIL if any plan is missing BOTH the erk-plan AND erk-learn labels (must have at least one)
+&gt; - PASS otherwise (closed plans are warnings, not failures)
+
+**After the agent returns**, parse the structured summary:
+
+1. **If VALIDATION is FAIL**: Display each error and abort:
+
+   ```
+   Error: PR #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).
+   ```
+
+   ```
+   Error: PR #&lt;number&gt; not found.
+   ```
+
+2. **If WARNINGS present**: Display each warning but continue:
+
+   ```
+   Warning: PR #&lt;number&gt; is already closed. Proceeding with replan anyway.
+   ```
+
+3. **Store extracted data**:
+   - `IS_LEARN_PLAN` from the summary
+   - `CONSOLIDATION_MODE` from the summary
+   - Each plan's title (from the ISSUES table)
+   - Resolved `objective_issue`:
+     - If OBJECTIVE_STATUS is `AGREED:&lt;number&gt;`, use that number
+     - If OBJECTIVE_STATUS is `AGREED:none`, no objective
+     - If OBJECTIVE_STATUS is `CONFLICT`, ask the user which objective to use
+
+### Step 3: Plan Content Fetching (Delegated to Step 4)
+
+Plan content is fetched by each Explore agent in Step 4, not in the main context.
+This avoids dumping large plan bodies into the main conversation.
+
+Skip to Step 4.
+
+### Step 4: Deep Investigation
+
+Use the Explore agent (Task tool with subagent_type=Explore) to perform deep investigation of the codebase.
+
+**If CONSOLIDATION_MODE:**
+
+Launch parallel Explore agents (one per plan, using `run_in_background: true`), each investigating:
+
+- Plan items and their current status
+- Overlap potential with other plans being consolidated
+- File mentions and their current state
+
+**For each plan (parallel or sequential):**
+
+#### 4a: Fetch Plan Content (Agent's First Action)
+
+Each Explore agent MUST fetch its plan's content as its first action. This keeps the raw plan content inside the agent's context instead of the main conversation.
+
+**Fetch command:**
+
+```bash
+erk exec get-plan-info &lt;number&gt; --include-body
+```
+
+**Parse the response:** The JSON response includes a `body` field containing the full plan content. Extract `body` from the JSON output.
+
+**If the command fails (exit code 1):**
+
+Return an error to the main agent:
+
+```
+Error: PR #&lt;number&gt; not found.
+```
+
+The agent should fail early if it cannot fetch the plan content, rather than proceeding with incomplete information.
+
+#### 4b: Check Plan Items Against Codebase
+
+For each implementation item in the plan (now fetched in 4a):
+
+- Search for relevant files, functions, or patterns
+- Determine status: **implemented**, **partially implemented**, **not implemented**, or **obsolete**
+
+Build a comparison table showing:
+
+| Plan Item | Current Status | Notes |
+| --------- | -------------- | ----- |
+| ...       | ...            | ...   |
+
+#### 4c: Deep Investigation (MANDATORY)
+
+Go beyond the plan items to understand the actual implementation:
+
+1. **Data Structures**: Find all relevant types, dataclasses, and their fields
+2. **Helper Functions**: Identify utility functions and their purposes
+3. **Lifecycle &amp; State**: Understand how state flows through the system
+4. **Naming Conventions**: Document actual names used (not guessed names)
+5. **Entry Points**: Map all places that trigger the relevant functionality
+6. **Configuration**: Find config options, defaults, and overrides
+
+#### 4d: Document Corrections and Discoveries
+
+Create two lists per plan:
+
+1. **Corrections to Original Plan**: Wrong assumptions, incorrect names, outdated information
+2. **Additional Details**: Implementation specifics, architectural insights, edge cases
+
+### Step 4e: Consolidation Analysis (CONSOLIDATION_MODE only)
+
+If consolidating multiple plans:
+
+1. **Identify Overlap**: Find items that appear in multiple plans
+2. **Merge Strategy**: Determine how to combine overlapping items
+3. **Dependency Ordering**: Order items by dependency across all plans
+4. **Attribution Tracking**: Track which items came from which plan
+
+### Step 4f: Wait for All Background Investigations (CRITICAL)
+
+**BEFORE proceeding to Step 5 or Step 6, you MUST wait for ALL background agents to complete.**
+
+If you launched agents with `run_in_background: true`:
+
+1. **Check agent status**: Use TaskOutput with `block: true` to wait for each background agent
+2. **Collect all results**: Do not proceed until every agent has returned its findings
+3. **Synthesize findings**: Combine results from all agents into a unified investigation summary
+
+**Why this matters:**
+
+- Background agents may discover critical corrections or implementation details
+- Creating the plan before investigations complete leads to incomplete or inaccurate plans
+- The consolidated plan quality depends on having ALL investigation data
+
+**How to wait:**
+
+For each background agent task_id, use TaskOutput tool with:
+
+- `block: true` to wait for completion
+- `timeout: 600000` (10 minutes)
+
+Then read the agent's findings from the output.
+
+Only after ALL agents have completed should you proceed to Step 5.
+
+### Step 5: Post Investigation to Original Plan(s)
+
+Before creating the new plan, post investigation findings to each original plan as a comment:
+
+```bash
+gh pr comment &lt;original_number&gt; --body "## Deep Investigation Notes (for implementing agent)
+
+### Corrections to Original Plan
+- [List corrections discovered]
+
+### Additional Details Not in Original Plan
+- [List new details discovered]
+
+### Key Architectural Insights
+- [List important discoveries]"
+```
+
+If consolidating, include note:
+
+```
+Note: This plan is being consolidated with #&lt;other_numbers&gt; into a unified plan.
+```
+
+### Step 6: Create New Plan (Always)
+
+**Always create a new plan**, regardless of implementation status.
+
+#### 6a: Gather Investigation Context
+
+Before entering Plan Mode, collect all investigation findings from Steps 4-5:
+
+1. **Investigation status per plan**: Completion percentages (e.g., "4/11 items implemented")
+2. **Specific discoveries**: File paths, line numbers, commit hashes, PR numbers
+3. **Corrections found**: What the original plan(s) got wrong
+4. **Codebase evidence**: Actual function names, class signatures, config values
+
+For consolidation mode, also gather:
+
+- **Overlap analysis**: Which items appeared in multiple plans
+- **Merge decisions**: Why items were combined or kept separate
+- **Attribution map**: Which source plan contributed each item
+
+#### 6b: Enter Plan Mode with Full Context
+
+Use EnterPlanMode to create an updated plan.
+
+**CRITICAL:** The plan content MUST include the investigation findings, not just summarize them. Each implementation step should have:
+
+- **Specific file paths** (e.g., `docs/learned/architecture/gateway-inventory.md:45`)
+- **What to change** (not "update X" but "add entry for CommandExecutor with ABC at line 105")
+- **Evidence** (commit hashes, PR numbers, current line numbers)
+- **Verification criteria** (how to confirm the step is complete)
+
+**Anti-pattern (sparse):**
+
+```
+1. Update gateway documentation
+2. Add missing tripwires
+```
+
+**Correct pattern (comprehensive):**
+
+```
+1. **Update gateway-inventory.md** (`docs/learned/architecture/gateway-inventory.md`)
+   - Add missing entries: CommandExecutor (abc.py:105), PlanDataProvider (abc.py:142)
+   - Fix import paths at lines 45, 67 (change `erk.gateways.` → `erk.gateway.`)
+   - Verification: All gateways in `src/erk/gateway/` have entries
+```
+
+---
+
+#### Single Plan Format
+
+```markdown
+# Plan: [Updated Title]
+
+&gt; **Replans:** #&lt;original_pr_number&gt;
+
+## What Changed Since Original Plan
+
+- [List major codebase changes that affect this plan]
+
+## Investigation Findings
+
+### Corrections to Original Plan
+
+- [List any wrong assumptions or incorrect names]
+
+### Additional Details Discovered
+
+- [List implementation specifics not in original plan]
+
+## Remaining Gaps
+
+- [List items from original plan that still need implementation]
+
+## Implementation Steps
+
+1. [Updated step 1]
+2. [Updated step 2]
+```
+
+---
+
+#### Consolidated Plan Format (CONSOLIDATION_MODE)
+
+```markdown
+# Plan: [Unified Title]
+
+&gt; **Consolidates:** #123, #456, #789
+
+## Source Plans
+
+| #   | Title             | Items Merged |
+| --- | ----------------- | ------------ |
+| 123 | [Title from plan] | X items      |
+| 456 | [Title from plan] | Y items      |
+| 789 | [Title from plan] | Z items      |
+
+## What Changed Since Original Plans
+
+- [List major codebase changes affecting any of the plans]
+
+## Investigation Findings
+
+### Corrections to Original Plans
+
+- **#123**: [corrections]
+- **#456**: [corrections]
+- **#789**: [corrections]
+
+### Additional Details Discovered
+
+- [Combined implementation specifics]
+
+### Overlap Analysis
+
+- [Items that appeared in multiple plans, now merged]
+
+## Remaining Gaps
+
+- [Combined items that still need implementation]
+
+## Implementation Steps
+
+1. [Step] _(from #123)_
+2. [Merged step] _(from #123, #456)_
+3. [Step] _(from #456)_
+4. [Step] _(from #789)_
+
+## Attribution
+
+Items by source:
+
+- **#123**: Steps 1, 2
+- **#456**: Steps 2, 3
+- **#789**: Step 4
+```
+
+---
+
+### Step 7: Save and Close
+
+After the user approves the plan in Plan Mode:
+
+1. Exit Plan Mode
+2. Run `/erk:plan-save` to create the new plan:
+   - **If any source plan(s) had `erk-learn` label** (`IS_LEARN_PLAN=true`): Add `--plan-type=learn` to the command
+   - **If the source plan(s) had an `objective_issue`**: Pass `--objective=&lt;number&gt;` to `/erk:plan-save`:
+     ```
+     /erk:plan-save --objective=&lt;objective_number&gt;
+     ```
+   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2 via `--objective=&lt;number&gt;`
+   - **Otherwise**: Run `/erk:plan-save` without flags
+3. **If an objective was linked**, verify the link was saved correctly:
+   ```bash
+   erk exec get-plan-metadata &lt;new_pr_number&gt; objective_issue
+   ```
+   If the objective link is missing, fix it with:
+   ```bash
+   erk exec update-plan-header &lt;new_pr_number&gt; objective_issue=&lt;number&gt;
+   ```
+4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
+   ```bash
+   echo "[{\"pr_number\": &lt;new_pr_number&gt;, \"label\": \"erk-consolidated\"}]" | erk exec add-plan-labels
+   ```
+   This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
+5. Close original plan(s) with comment linking to the new one:
+
+**Single plan:**
+
+```bash
+echo "[{\"pr_number\": &lt;original_number&gt;, \"comment\": \"Superseded by #&lt;new_number&gt; - see updated plan that accounts for codebase changes.\"}]" | erk exec close-prs
+```
+
+**Consolidated plans:**
+
+```bash
+echo '[{"pr_number": 123, "comment": "Consolidated into #&lt;new_number&gt; with #456, #789"}, {"pr_number": 456, "comment": "Consolidated into #&lt;new_number&gt; with #123, #789"}, {"pr_number": 789, "comment": "Consolidated into #&lt;new_number&gt; with #123, #456"}]' | erk exec close-prs
+```
+
+Display final summary:
+
+**Single plan:**
+
+```
+✓ Created new PR #&lt;new_number&gt;
+✓ Closed original PR #&lt;original_number&gt;
+
+Next steps:
+- Review the new plan: gh pr view &lt;new_number&gt;
+- Dispatch for implementation: erk pr dispatch &lt;new_number&gt;
+```
+
+**Consolidated plans:**
+
+```
+✓ Created consolidated PR #&lt;new_number&gt;
+✓ Closed original PRs: #123, #456, #789
+
+Source plans consolidated:
+- #123: [title]
+- #456: [title]
+- #789: [title]
+
+Next steps:
+- Review the consolidated plan: gh pr view &lt;new_number&gt;
+- Dispatch for implementation: erk pr dispatch &lt;new_number&gt;
+```
+
+### Step 8: Validate New Plan
+
+After saving and closing, verify the new plan is in a healthy state:
+
+```bash
+erk exec get-plan-info &lt;new_pr_number&gt;
+```
+
+Check the returned labels:
+
+- Has `erk-plan` label (required for dispatch)
+- If CONSOLIDATION_MODE: has `erk-consolidated` label
+- If IS_LEARN_PLAN: has `erk-learn` label
+
+If any expected label is missing, add it:
+
+```bash
+erk exec add-plan-label &lt;new_pr_number&gt; --label "&lt;missing_label&gt;"
+```
+
+Display validation result:
+
+```
+✓ PR #&lt;number&gt; validated: OPEN, labels: [list of labels]
+```
+
+If validation finds the plan is not OPEN, report the issue and stop.
+
+---
+
+## Error Cases
+
+| Error                    | Message                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Plan not found           | `Error: PR #&lt;number&gt; not found.`                                                        |
+| Not a plan               | `Error: PR #&lt;number&gt; is not a valid plan (missing both erk-plan and erk-learn labels).` |
+| No plan content          | `Error: No plan content found in PR #&lt;number&gt;.`                                         |
+| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh &amp;&amp; gh auth login`           |
+| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                            |
+
+---
+
+## Important Notes
+
+- **DO NOT implement the plan** - This command only creates an updated plan
+- **DO NOT skip codebase analysis** - Always verify current state before replanning
+- **Use Explore agent** for comprehensive codebase searches (Task tool with subagent_type=Explore)
+- **Parallel investigation** for multiple plans (run_in_background: true)
+- Original plan(s) closed only after the new plan is successfully created
+- The new plan references all original plan(s) for traceability
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15446" cache_read_input_tokens="15074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15446}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll replan PR #9210. Let me start by validating the plan and extracting metadata.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15446" cache_read_input_tokens="15074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15446}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XksTe7k4MwnWKHeiAhFYaB">
+    <param name="description">Validate plan #9210 metadata</param>
+    <param name="model">haiku</param>
+    <param name="prompt">For PR number 9210:
+
+1. Run `erk exec get-plan-info 9210`
+2. Run `erk exec get-plan-metada...[truncated 747 chars]...labels (must have at least one)
+- PASS otherwise (closed plans are warnings, not failures)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15446" cache_read_input_tokens="15074" output_tokens="561" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XksTe7k4MwnWKHeiAhFYaB">
+Based on the command outputs, here is the structured summary:
+
+```
+VALIDATION: FAIL
+CONSOLIDATION_MODE: false
+IS_LEARN_PLAN: false
+
+PLANS:
+# | Title | State | erk-plan | erk-learn | objective_issue
+9210 | Replace `erk pr rebase` with `erk pr resolve-conflicts` | OPEN | no | no | none
+
+OBJECTIVE_STATUS: AGREED:none
+
+ERRORS:
+- Plan 9210 is missing both erk-plan and erk-learn labels (must have at least one)
+```
+
+The plan fails validation because it has neither the `erk-plan` nor the `erk-learn` label. According to the validation rules, a plan must have at least one of these labels.
+agentId: aec48c5c9462640ef (use SendMessage with to: 'aec48c5c9462640ef' to continue this agent)
+&lt;usage&gt;total_tokens: 20768
+tool_uses: 2
+duration_ms: 5682&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="30520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 817}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Error:** PR #9210 is not a valid plan (missing both `erk-plan` and `erk-learn` labels).
+
+The PR exists and is OPEN ("Replace `erk pr rebase` with `erk pr resolve-conflicts`"), but it lacks the required labels. Would you like me to add the `erk-plan` label and then proceed with the replan?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="30520" output_tokens="302" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 817, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>no let's close 9210. grab the content. replan a pr</user>
+  <tool_use name="Bash" id="toolu_017M7XBYVnknj6C3uUqTdJBe">
+    <param name="command">erk exec get-plan-info 9210 --include-body</param>
+    <param name="description">Fetch full plan content for #9210</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="476" cache_read_input_tokens="31337" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 476, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017M7XBYVnknj6C3uUqTdJBe">
+{"success": true, "pr_number": "9210", "title": "Replace `erk pr rebase` with `erk pr resolve-conflicts`", "state": "OPEN", "labels": ["erk-pr"], "url": "https://github.com/dagster-io/erk/pull/9210", "objective_id": null, "backend": "github-draft-pr", "body": "# Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`\n\n## Context\n\n`erk pr rebase` currently does two things: initiates rebases (via `gt restack` or `git rebase`) AND resolves conflicts. The user wants erk to stop initiating rebases -- that's the user's job. Erk should only help resolve conflicts from an already in-progress rebase.\n\nThe remote CI workflow (`erk launch pr-rebase`, the GitHub Action, the exec script) stays unchanged -- CI automation legitimately needs to initiate rebases autonomously.\n\n## Files to Create\n\n### 1. `src/erk/cli/commands/pr/resolve_conflicts_cmd.py`\n\nNew command that only handles in-progress rebases with conflicts. Extracted from the convergence path in `rebase_cmd.py` (lines 134-155). No Graphite logic, no `--target` flag, no rebase initiation.\n\n```python\n@click.command(\"resolve-conflicts\")\n# --dangerous, --safe flags (same as current)\ndef resolve_conflicts(ctx, *, dangerous, safe):\n    # 1. resolve_dangerous\n    # 2. Check executor.is_available()\n    # 3. Check is_rebase_in_progress() -- error if False\n    # 4. Show conflicted files\n    # 5. Confirm with user\n    # 6. execute_interactive(command=\"/erk:pr-resolve-conflicts\", permission_mode=\"edits\")\n```\n\nError message when no rebase in progress:\n&gt; \"No rebase in progress. Start a rebase first with 'git rebase &lt;branch&gt;', 'gt restack', etc., then run this command when conflicts arise.\"\n\nPause message when user declines:\n&gt; \"Conflicts remain -- run 'erk pr resolve-conflicts' again when ready.\"\n\n### 2. `.claude/commands/erk/pr-resolve-conflicts.md`\n\nSame conflict resolution steps as current `pr-rebase.md` (steps 1-8), with updated framing:\n- Description: \"Resolve merge conflicts from an in-progress rebase\"\n- Remove the \"start a fresh rebase\" language\n- Add note: \"This command resolves conflicts from a rebase already in progress. It does NOT initiate a rebase.\"\n- Steps remain identical (check status, separate auto-generated files, resolve each, stage, `git rebase --continue`, loop, regenerate, verify, ask about pushing)\n\n### 3. `tests/commands/pr/test_resolve_conflicts.py`\n\nTests adapted from existing `test_rebase.py`, keeping only the conflict-resolution tests:\n\n| Test | Source |\n|------|--------|\n| rebase_in_progress_launches_tui | `test_pr_rebase_in_progress_launches_tui` (line 95) |\n| no_rebase_in_progress_error | New -- verify error message |\n| user_declines | `test_pr_rebase_conflict_user_declines` (line 258) |\n| claude_not_available | `test_pr_rebase_claude_not_available` (line 233) |\n| safe_flag | `test_pr_rebase_safe_flag_disables_dangerous` (line 145) |\n| dangerous_and_safe_mutually_exclusive | `test_pr_rebase_dangerous_and_safe_mutually_exclusive` (line 173) |\n| live_dangerously_false | `test_pr_rebase_live_dangerously_false_runs_safe` (line 197) |\n| no_conflicted_files_still_confirms | `test_pr_rebase_conflict_no_conflicted_files_still_confirms` (line 287) |\n\nAll tests invoke `[\"resolve-conflicts\", ...]` and assert command is `/erk:pr-resolve-conflicts`. Uses `build_workspace_test_context` (not graphite context -- no graphite-specific logic in new command).\n\n## Files to Modify\n\n### 4. `src/erk/cli/commands/pr/__init__.py`\n\n- Remove: `from erk.cli.commands.pr.rebase_cmd import rebase` and `pr_group.add_command(rebase, name=\"rebase\")`\n- Add: `from erk.cli.commands.pr.resolve_conflicts_cmd import resolve_conflicts` and `pr_group.add_command(resolve_conflicts, name=\"resolve-conflicts\")`\n\n### 5. `src/erk/cli/output.py`\n\nDelete dead code (unused after removing `rebase_cmd.py`):\n- `RebaseResult` dataclass (lines 252-258)\n- `stream_rebase` function (lines 261-366)\n\nKeep: `DivergenceFixResult`, `stream_diverge_fix`, `format_implement_summary`, `stream_command_with_feedback`\n\n## Files to Delete\n\n### 6. `src/erk/cli/commands/pr/rebase_cmd.py`\n### 7. `.claude/commands/erk/pr-rebase.md`\n### 8. `tests/commands/pr/test_rebase.py`\n### 9. `tests/commands/pr/test_rebase_remote.py` (already just a comment file)\n\n## Files NOT Changed\n\nRemote CI infrastructure stays as-is (pr-rebase is accurate naming for the remote workflow):\n- `src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py`\n- `.github/workflows/pr-rebase.yml`\n- `src/erk/cli/constants.py` (`REBASE_WORKFLOW_NAME`, `WORKFLOW_COMMAND_MAP`)\n- `src/erk/cli/commands/launch_cmd.py` (`_dispatch_pr_rebase`, all launch logic)\n- `src/erk/cli/commands/admin.py` (`CLAUDE_CI_WORKFLOWS`)\n- `src/erk/capabilities/workflows/pr_rebase.py`\n- All TUI references (`registry.py`, `workers.py`) -- they dispatch `erk launch pr-rebase`\n- All tests for the above unchanged files\n\n## Verification\n\n1. Run `uv run pytest tests/commands/pr/test_resolve_conflicts.py` -- new tests pass\n2. Run `uv run pytest tests/commands/pr/` -- no broken imports from removed files\n3. Run `uv run pytest tests/commands/launch/` -- launch pr-rebase tests still pass\n4. Run `uv run pytest tests/tui/` -- TUI tests still pass\n5. Run `uv run ruff check src/erk/cli/output.py` -- no lint issues after dead code removal\n6. Run `uv run ty check src/erk/cli/commands/pr/resolve_conflicts_cmd.py` -- type check passes\n"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1944" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got the plan content. Now let me close #9210 and investigate the current codebase state in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1944" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N7dRq4uWdVGDF5oHjFcVeb">
+    <param name="command">echo '[{"pr_number": 9210, "comment": "Closing to replan against current codebase state."}]' | erk exec close-prs</param>
+    <param name="description">Close original plan #9210</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1944" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N7dRq4uWdVGDF5oHjFcVeb">
+{
+  "success": true,
+  "results": [
+    {
+      "pr_number": 9210,
+      "success": true,
+      "comment_id": "4100523008"
+    }
+  ]
+}
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01SWZBohupBN2RgnnG7DHeXV">
+    <param name="description">Investigate rebase/resolve-conflicts codebase</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1898 chars]...ince the original plan was written
+
+Return a comprehensive status table of all plan items.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1944" cache_read_input_tokens="31813" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SWZBohupBN2RgnnG7DHeXV">
+Perfect. Now I have all the information needed. Let me create a comprehensive status report:
+
+## Comprehensive Investigation Report: PR #9210 Codebase Status
+
+### Summary
+**Status**: Plan not yet implemented. `erk pr rebase` command **still exists** and is fully functional. The new `erk pr resolve-conflicts` command has **NOT been created**. The original plan from March 11, 2026 (snapshot in `.erk/scratch/`) documents what needs to be done, but no implementation has occurred.
+
+---
+
+### ITEM-BY-ITEM STATUS TABLE
+
+| # | Item | File/Location | Status | Details |
+|---|------|---------------|--------|---------|
+| 1 | `rebase_cmd.py` exists? | `src/erk/cli/commands/pr/rebase_cmd.py` | ✅ EXISTS | 156 lines. Full implementation with Graphite + git rebase logic, conflict resolution fallback via Claude TUI. See lines 1-156. |
+| 2 | `resolve_conflicts_cmd.py` exists? | `src/erk/cli/commands/pr/resolve_conflicts_cmd.py` | ❌ DOES NOT EXIST | Plan calls for creating this file. Needs to extract conflict-resolution logic from rebase_cmd.py lines 134-155. |
+| 3 | PR command registration | `src/erk/cli/commands/pr/__init__.py` | ✅ REBASE REGISTERED | Line 17: imports `rebase` from `rebase_cmd`. Line 38: `pr_group.add_command(rebase, name="rebase")`. No resolve-conflicts registration yet. |
+| 4 | `.claude/commands/erk/pr-rebase.md` exists? | `.claude/commands/erk/pr-rebase.md` | ✅ EXISTS | 62 lines. Comprehensive conflict resolution guide with auto-generated file handling, conflict marker detection, staging, regeneration. |
+| 5 | `.claude/commands/erk/pr-resolve-conflicts.md` exists? | `.claude/commands/erk/pr-resolve-conflicts.md` | ❌ DOES NOT EXIST | Plan calls for creating this file with same content as pr-rebase.md but updated framing to emphasize "rebase already in progress". |
+| 6 | `stream_rebase` in output.py? | `src/erk/cli/output.py:261-366` | ✅ EXISTS | Dataclass `RebaseResult` (lines 252-258), function `stream_rebase()` (lines 261-366). Used by rebase_cmd.py to stream `/erk:pr-rebase` execution. Plan calls for deletion. |
+| 7 | `RebaseResult` dataclass | `src/erk/cli/output.py:252-258` | ✅ EXISTS | Frozen dataclass with `success`, `error_message`, `requires_interactive` fields. Plan marks for deletion. |
+| 8 | `test_rebase.py` exists? | `tests/commands/pr/test_rebase.py` | ✅ EXISTS | 365 lines. 16 test functions covering non-Graphite rebase, Graphite restack, conflict handling, safe/dangerous flags, user confirmation, Claude availability. Plan calls for adapting to new resolve_conflicts tests + deletion of old file. |
+| 9 | `test_rebase_remote.py` exists? | `tests/commands/pr/test_rebase_remote.py` | ✅ EXISTS (STUB) | 12 lines. File is just a comment noting migration to `tests/commands/launch/test_launch_cmd.py`. Plan calls for deletion. |
+| 10 | Remote CI script exists? | `src/erk/cli/commands/exec/scripts/rebase_with_conflict_resolution.py` | ✅ EXISTS | 375 lines. Full implementation of remote rebase with Claude conflict resolution. **NOT to be modified per plan** — remote infrastructure unchanged. |
+| 11 | `.github/workflows/pr-rebase.yml` exists? | `.github/workflows/pr-rebase.yml` | ✅ EXISTS | 169 lines. GitHub Actions workflow dispatching remote rebase. **NOT to be modified per plan**. Dispatches `erk exec rebase-with-conflict-resolution` script. |
+| 12 | `REBASE_WORKFLOW_NAME` constant | `src/erk/cli/constants.py:17` | ✅ EXISTS | Line 17: `REBASE_WORKFLOW_NAME = "pr-rebase.yml"`. Used in `WORKFLOW_COMMAND_MAP` (line 35). **NOT to be modified per plan**. |
+| 13 | Gateway methods: `is_rebase_in_progress` | `packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py:77-88` | ✅ EXISTS | Abstract method in `GitRebaseOps` ABC. Returns bool, checks `.git/rebase-merge` or `.git/rebase-apply`. |
+| 14 | Gateway methods: `get_conflicted_files` | `packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:74-85` | ✅ EXISTS | Abstract method in `GitStatusOps` ABC. Returns `list[str]` of conflicted file paths via `git status --porcelain`. |
+| 15 | `build_workspace_test_context` helper | `tests/test_utils/context_builders.py:22-83` | ✅ EXISTS | Factory function for test context. Lines 22-83 show signature and defaults. Accepts `env`, `dry_run`, `use_graphite`, `**kwargs`. Used throughout test suite. |
+| 16 | `build_graphite_test_context` helper | `tests/test_utils/context_builders.py:86-107` | ✅ EXISTS | Convenience wrapper. Line 107: calls `build_workspace_test_context(..., use_graphite=True, ...)`. |
+
+
+... [115 lines omitted] ...
+
+- `test_pr_rebase_non_graphite_no_target_error` (line 73)
+  - Returns: `RebaseSuccess` or `RebaseError` (dataclasses at lines 49-63)
+1. Create `src/erk/cli/commands/pr/resolve_conflicts_cmd.py` (extract lines 134-155 from rebase_cmd.py, add error check for no-rebase-in-progress)
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4937" cache_read_input_tokens="33757" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4937}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Closed #9210. Investigation confirms nothing has been implemented — the codebase is unchanged. Let me write the updated plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4937" cache_read_input_tokens="33757" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4937}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011EarHcX9aYRd6zCAAk2QY9">
+    <param name="file_path">/Users/schrockn/.claude/plans/declarative-doodling-zephyr.md</param>
+    <param name="content"># Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`
+
+&gt; **Replans:** #9210
+
+## ...[truncated 5177 chars]...6. `uv run ty check src/erk/cli/commands/pr/resolve_conflicts_cmd.py` — type check passes
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4937" cache_read_input_tokens="33757" output_tokens="1914" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4937, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011EarHcX9aYRd6zCAAk2QY9">
+File created successfully at: /Users/schrockn/.claude/plans/declarative-doodling-zephyr.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01UndoEsgxHeRM7fWppT5fiA">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1956" cache_read_input_tokens="38694" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1956, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UndoEsgxHeRM7fWppT5fiA">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_011WroAJLDrNP7KUrDxKxWMj">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for plan save and close operations'}]</param>
+    <param name="plan"># Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`
+
+&gt; **Replans:** #9210
+
+## ...[truncated 5177 chars]...6. `uv run ty check src/erk/cli/commands/pr/resolve_conflicts_cmd.py` — type check passes
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/declarative-doodling-zephyr.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2803" cache_read_input_tokens="38694" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2803, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011WroAJLDrNP7KUrDxKxWMj">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/declarative-doodling-zephyr.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NT9BYDeC57gzbXdFPdJBXb">
+    <param name="file_path">/Users/schrockn/.claude/plans/declarative-doodling-zephyr.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="744" cache_read_input_tokens="41497" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 744, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NT9BYDeC57gzbXdFPdJBXb">
+     1→# Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`
+     2→
+     3→&gt; **Replans:** #9210
+     4→
+     5→## Context
+     6→
+     7→`erk pr rebase` currently does two things: initiates rebases (via `gt restack` or `git rebase`) AND resolves conflicts. The user wants erk to stop initiating rebases locally — that's the user's job. Erk should only help resolve conflicts from an already in-progress rebase.
+     8→
+     9→Remote CI infrastructure (`erk launch pr-rebase`, GitHub Action, exec script) stays unchanged — CI automation legitimately needs to initiate rebases autonomously.
+    10→
+    11→## What Changed Since Original Plan
+    12→
+    13→Nothing — the original plan (#9210) was never implemented. All files are in their original state. This replan corrects the missing `erk-plan` label and re-validates against current codebase.
+    14→
+    15→## Investigation Findings
+    16→
+    17→- `rebase_cmd.py` (156 lines) still exists with two-phase logic: mechanical rebase + conflict resolution via Claude
+    18→- Conflict resolution path is lines 134-155: detect conflicts, show files, confirm, launch TUI
+    19→- `stream_rebase` in `output.py` (lines 261-366) and `RebaseResult` (lines 252-258) are only used by `rebase_cmd.py` — safe to delete
+    20→- Gateway methods `is_rebase_in_progress()` and `get_conflicted_files()` exist in erk-shared and are ready to use
+    21→- Remote CI: `rebase_with_conflict_resolution.py`, `pr-rebase.yml`, constants — all untouched, all stay
+    22→- Test file `test_rebase.py` has 16 tests; 7 are conflict-resolution tests to adapt, rest are rebase-initiation tests to drop
+    23→
+    24→## Implementation Steps
+    25→
+    26→### 1. Create `src/erk/cli/commands/pr/resolve_conflicts_cmd.py`
+    27→
+    28→New command extracted from `rebase_cmd.py` lines 134-155. No Graphite logic, no `--target` flag, no rebase initiation.
+    29→
+    30→```python
+
+... [80 lines omitted] ...
+
+    36→    # 3. Check is_rebase_in_progress() -- error if False
+    42→Error when no rebase in progress:
+    63→| `test_no_rebase_in_progress_error` | NEW — verify error message |
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01AbVjvchzinRRYzRXuc2tza">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2257" cache_read_input_tokens="42241" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2257, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AbVjvchzinRRYzRXuc2tza">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01332H3PWae6VwHWaEXgPAsZ">
+    <param name="questions">[{'question': '📋 Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`\nCurrent co...[truncated 394 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3590" cache_read_input_tokens="42241" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3590, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01332H3PWae6VwHWaEXgPAsZ">
+User has answered your questions: "📋 Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01LpnR4QAG288aASBQf6kds4">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="45831" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LpnR4QAG288aASBQf6kds4">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2308" cache_read_input_tokens="46143" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2308}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KEYRZ21qLS7Ldq9hJuW1vn">
+    <param name="command">erk exec plan-save --format json --session-id="d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" --bra...[truncated 162 chars]...onflicts rather than initiating rebases. Remote CI rebase infrastructure stays unchanged."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2308" cache_read_input_tokens="46143" output_tokens="396" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2308, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KEYRZ21qLS7Ldq9hJuW1vn">
+{"success": true, "pr_number": 9280, "pr_url": "https://github.com/dagster-io/erk/pull/9280", "title": "[erk-pr] Plan: Replace `erk pr rebase` with `erk pr resolve-conflicts`", "branch_name": "plnd/rebase-to-resolve-conflict-03-20-1533", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b/plan_snapshots/000001-dbd70ca7"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01P99aE5psagddT2ZeXmDJjv">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="48451" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 582}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BtpdB6UHJzHNeoxepNqQQW">
+    <param name="command">erk exec upload-impl-session --session-id "d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="48451" output_tokens="190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 582, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P99aE5psagddT2ZeXmDJjv">
+SESSION_ID=d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/d689f0a0-66d5-476d-b81d-8ed9ab0b4e4b.jsonl
+  </tool_result>
+  <tool_result tool="toolu_01BtpdB6UHJzHNeoxepNqQQW">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q4iXrXQsjXfN8rZeshKznm">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...6d-b81d-8ed9ab0b4e4b" --stage planning --source local --pr-number 9280 2&gt;/dev/null || true</param>
+    <param name="description">Push session with PR context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="49033" output_tokens="193" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 456, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
