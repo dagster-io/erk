@@ -16,6 +16,21 @@
       "raw_size_kb": 1124,
       "xml_size_kb": 132,
       "git_branch": "master"
+    },
+    {
+      "session_id": "ec56892a-5191-4f37-85e2-8719a9c0c24f",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T17:19:49.084384+00:00",
+      "files": [
+        "impl-ec56892a-5191-4f37-85e2-8719a9c0c24f-ec56892a-5191-4f37-85e2-8719a9c0c24f-part1.xml",
+        "impl-ec56892a-5191-4f37-85e2-8719a9c0c24f-ec56892a-5191-4f37-85e2-8719a9c0c24f-part2.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 8,
+      "raw_size_kb": 1111,
+      "xml_size_kb": 102,
+      "git_branch": "plnd/O9109-test-renames-phase5-03-20-1708"
     }
   ]
 }
