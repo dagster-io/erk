@@ -152,6 +152,8 @@ Skills persist for the entire session. Once loaded, they remain in context.
 - DO NOT reload skills already loaded in this session
 - Check skill documentation for backend-specific invocation patterns
 
+**npx skills:** Use `-a claude` for Claude Code skills. The `.agents/` canonical directory covers Codex. Do NOT use `--all` — this repo does not support Windsurf or Cursor.
+
 ## Documentation-First Discovery
 
 Before launching Plan or Explore agents, search for relevant documentation:
