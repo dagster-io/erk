@@ -1,8 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Objective #9109 Nodes 7.2 + 7.3 \u2014 Test Renames for Phases 5-6 + Directory Cleanup",
-  "objective_id": 9109,
-  "node_ids": [
-    "7.2"
-  ]
-}
