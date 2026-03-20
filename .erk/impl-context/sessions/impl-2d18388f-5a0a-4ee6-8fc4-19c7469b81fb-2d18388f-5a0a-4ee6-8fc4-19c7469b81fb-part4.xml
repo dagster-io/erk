@@ -1,0 +1,86 @@
+<session>
+  <meta source="agent-a57abe6" />
+  <meta branch="plnd/surface-pr-level-reviews-03-17-1002" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `make fast-ci` in /home/runner/work/erk/erk and report all results including any errors. Do NOT fix any errors - just report them.</user>
+  <assistant>I'll run `make fast-ci` and report all results without making any fixes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12298" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01C9vQfzvKbNqCsJQ7fLomQf">
+    <param name="command">make fast-ci</param>
+    <param name="description">Run make fast-ci target</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12298" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C9vQfzvKbNqCsJQ7fLomQf">
+Exit code 2
+Downloading cpython-3.13.12-linux-x86_64-gnu (download) (33.4MiB)
+ Downloaded cpython-3.13.12-linux-x86_64-gnu (download)
+Using CPython 3.13.12
+Creating virtual environment at: .venv
+   Building erk-mcp @ file:///home/runner/work/erk/erk/packages/erk-mcp
+   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+      Built erk-mcp @ file:///home/runner/work/erk/erk/packages/erk-mcp
+      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+Installed 111 packages in 51ms
+[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
+[[33mwarn[39m] docs/learned/tui/status-indicators.md
+[[33mwarn[39m] Code style issues found in 2 files. Run Prettier with --write to fix.
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+make: *** [Makefile:97: fast-ci] Error 1
+
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1728 files already formatted
+
+--- Prettier Check ---
+
+... [139 lines omitted] ...
+
+warning[unused-type-ignore-comment]: Unused blanket `type: ignore` directive
+  </tool_result>
+  <assistant>## Summary
+
+`make fast-ci` **FAILED** with exit code 2. Here are the issues found:
+
+### Formatting Issues (Prettier)
+
+**Code style issues found in 2 files:**
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+### Reference Documentation Out of Date
+
+**File:** `.claude/skills/erk-exec/reference.md`
+- **Error:** Out of date
+- **Action Required:** Run `erk-dev gen-exec-reference-docs` to regenerate
+
+### Type Checking Issues (ty)
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/real.py:2016:47`
+
+**Issue:** Unused blanket `type: ignore` comment
+```
+Line 2016: state: PRReviewState = raw_state  # type: ignore[assignment]
+```
+**Suggestion:** Remove the unused `type: ignore[assignment]` suppression comment
+
+**Summary:** Found 1 diagnostic
+
+### Test Results (Passed)
+
+- **erk:** 5990 passed in 25.08s
+- **erk-dev:** 136 passed in 5.54s
+- **erk-statusline:** 115 passed in 0.79s
+- **erk-mcp:** 50 passed (count displayed)
+
+The CI pipeline has 3 blocking issues: 2 Prettier formatting violations and 1 outdated reference documentation file, plus 1 type checking warning.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1746" cache_read_input_tokens="12298" cache_creation="{'ephemeral_5m_input_tokens': 1746, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

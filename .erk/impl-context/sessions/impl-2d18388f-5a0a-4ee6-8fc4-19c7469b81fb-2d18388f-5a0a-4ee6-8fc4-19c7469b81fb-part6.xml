@@ -1,0 +1,96 @@
+<session>
+  <meta source="agent-ae70f2a" />
+  <meta branch="plnd/surface-pr-level-reviews-03-17-1002" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `make fast-ci` in /home/runner/work/erk/erk and report all results including any errors. Do NOT fix any errors - just report them.</user>
+  <assistant>I'll run `make fast-ci` in the specified directory and report all results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="0" cache_read_input_tokens="12298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012XnCD7z26H3XfyR8AN8exr">
+    <param name="command">make fast-ci</param>
+    <param name="description">Run make fast-ci target</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="0" cache_read_input_tokens="12298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012XnCD7z26H3XfyR8AN8exr">
+Exit code 2
+[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
+[[33mwarn[39m] docs/learned/tui/status-indicators.md
+[[33mwarn[39m] Code style issues found in 2 files. Run Prettier with --write to fix.
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+make: *** [Makefile:97: fast-ci] Error 1
+
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1728 files already formatted
+
+--- Prettier Check ---
+Checking formatting...
+
+--- Markdown Check ---
+
+--- Exec Reference Check ---
+OK: .claude/skills/erk-exec/reference.md is up to date
+
+--- ty ---
+All checks passed!
+
+... [109 lines omitted] ...
+  </tool_result>
+  <assistant>## make fast-ci Results
+
+**Exit Code: 2 (FAILURE)**
+
+### Summary
+The fast-ci target failed due to Prettier formatting issues. Most checks passed, but the Prettier check found code style violations.
+
+### Detailed Results
+
+**Prettier Check - FAILED**
+- 2 files have code style issues:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+- Message: "Code style issues found in 2 files. Run Prettier with --write to fix."
+
+**Linting - PASSED**
+- All checks passed
+
+**Format Check - PASSED**
+- 1728 files already formatted
+
+**Markdown Check - PASSED**
+
+**Exec Reference Check - PASSED**
+- `.claude/skills/erk-exec/reference.md` is up to date
+
+**Type Check (ty) - PASSED**
+- All checks passed
+
+**Unit Tests (erk) - PASSED**
+- 5990 passed in 13.11s
+
+**Tests (erk-dev) - PASSED**
+- 136 passed in 5.39s
+
+**Tests (erk-statusline) - PASSED**
+- 115 passed in 0.75s
+
+**Tests (erk-mcp) - PASSED**
+- 50 passed (output truncated)
+
+**CLAUDE.md/AGENTS.md Validation - PASSED**
+- AGENTS.md standard: PASSED
+- All CLAUDE.md and AGENTS.md files properly paired
+- 19 CLAUDE.md files checked
+- 0 violations
+
+The pipeline failed at the Prettier formatting check before completing the erk-mcp tests. The issues are in two markdown documentation files that do not conform to Prettier code style.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1239" cache_read_input_tokens="12298" cache_creation="{'ephemeral_5m_input_tokens': 1239, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
