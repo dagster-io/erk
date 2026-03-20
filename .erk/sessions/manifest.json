@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9277,
+  "sessions": [
+    {
+      "session_id": "ce10fdc6-6f71-4922-a909-cfcd2a742cd0",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T15:24:32.277748+00:00",
+      "files": [
+        "impl-ce10fdc6-6f71-4922-a909-cfcd2a742cd0-ce10fdc6-6f71-4922-a909-cfcd2a742cd0-part1.xml",
+        "impl-ce10fdc6-6f71-4922-a909-cfcd2a742cd0-ce10fdc6-6f71-4922-a909-cfcd2a742cd0-part2.xml",
+        "impl-ce10fdc6-6f71-4922-a909-cfcd2a742cd0-ce10fdc6-6f71-4922-a909-cfcd2a742cd0-part3.xml"
+      ],
+      "user_turns": 6,
+      "duration_minutes": 14,
+      "raw_size_kb": 2650,
+      "xml_size_kb": 179,
+      "git_branch": "plnd/O9109-rename-cli-tui-plan-03-20-1505"
+    }
+  ]
+}
