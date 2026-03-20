@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Extract CLI infrastructure to erk-shared and move slot commands to erk-slots package"
+}
