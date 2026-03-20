@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9308,
+  "sessions": [
+    {
+      "session_id": "5a002024-87bc-4cd5-8684-05a25a7f87ab",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T19:58:18.029461+00:00",
+      "files": [
+        "impl-5a002024-87bc-4cd5-8684-05a25a7f87ab-5a002024-87bc-4cd5-8684-05a25a7f87ab-part1.xml",
+        "impl-5a002024-87bc-4cd5-8684-05a25a7f87ab-5a002024-87bc-4cd5-8684-05a25a7f87ab-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 7,
+      "raw_size_kb": 449,
+      "xml_size_kb": 84,
+      "git_branch": "plnd/move-slot-alloc-to-core-03-20-1949"
+    }
+  ]
+}
