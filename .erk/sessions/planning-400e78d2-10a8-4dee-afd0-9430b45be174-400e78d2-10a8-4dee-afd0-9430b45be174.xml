@@ -1,0 +1,789 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:changelog-update&lt;/command-message&gt;
+&lt;command-name&gt;/local:changelog-update&lt;/command-name&gt;</user>
+  <user># /local:changelog-update
+
+Brings the CHANGELOG.md Unreleased section up-to-date with commits merged to master.
+
+&gt; **Note:** Run this regularly during development. At release time, use `/local:changelog-release`.
+
+## Usage
+
+```bash
+/local:changelog-update
+```
+
+## What It Does
+
+1. Reads the "As of" marker in the Unreleased section (adds one if missing)
+2. Finds commits on master since that marker
+3. Categorizes commits and presents proposal for user review
+4. Updates changelog only after user approval
+5. Always updates the "As of" marker to current HEAD (even if no new entries)
+
+---
+
+## Agent Instructions
+
+### Phase 1: Launch Categorization Agent
+
+Launch a subagent to fetch commits, read the CHANGELOG, and categorize:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  description: "Categorize changelog commits",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/changelog/commit-categorizer.md`
+)
+```
+
+### Phase 2: Parse Result
+
+Parse the agent's output by examining the `STATUS` line:
+
+- **`STATUS: ERROR`** - Display the `ERROR_MESSAGE` and stop.
+- **`STATUS: NO_COMMITS`** - Update the "As of" line in CHANGELOG.md to the `HEAD_COMMIT` value. Report "CHANGELOG.md is already up-to-date. Updated marker to {HEAD_COMMIT}." and stop.
+- **`STATUS: OK`** - Extract the proposal text after `---PROPOSAL---` and proceed to Phase 3.
+
+### Phase 3: Present Proposal for Review
+
+**CRITICAL: Do NOT edit the changelog yet. Present the proposal and wait for user approval.**
+
+Display the proposal text from the agent verbatim. The proposal includes categorized entries, filtered commits, low-confidence flags, and asks the user to approve or adjust.
+
+Wait for the user to:
+
+1. Approve as-is
+2. Request adjustments to categorizations
+3. Request rephrased descriptions
+4. Include or exclude specific commits
+
+### Phase 4: Update CHANGELOG.md (After Approval)
+
+Only proceed after the user confirms or provides adjustments.
+
+Update the Unreleased section:
+
+1. **Update "As of" line** to current HEAD commit hash
+2. **Add new entries** under appropriate category headers
+3. **Preserve existing entries** - do not remove or modify them
+4. **Create category headers** only if they have new entries
+
+Category order (if present):
+
+1. Major Changes
+2. Added
+3. Changed
+4. Fixed
+5. Removed
+
+If a category header already exists, append new entries below existing ones.
+
+### Phase 5: Report
+
+After successful update:
+
+```
+Updated CHANGELOG.md:
+- Processed {n} commits
+- Added {m} entries to: {categories}
+- Now as of {commit}
+```
+
+### Entry Format
+
+Format each entry as:
+
+```markdown
+- Brief user-facing description (commit_hash)
+```
+
+Guidelines:
+
+- Focus on **user benefit**, not implementation details
+- Start with a verb (Add, Fix, Improve, Remove, Move, Migrate)
+- Be concise but clear (1 sentence)
+- Include the short commit hash in parentheses
+- Add notes for entries that may cause user-visible issues (e.g., "note: this may cause hard failures, please report if encountered")
+- If a new command or flag is `hidden=True` in Click, add "(hidden)" after the description to indicate it's not visible in default help output
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="11857" cache_read_input_tokens="15082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11857}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01A8MjqapKQiSMh6Z11JpaYp">
+    <param name="description">Categorize changelog commits</param>
+    <param name="subagent_type">commit-categorizer</param>
+    <param name="prompt">Load and follow the agent instructions in `.claude/agents/changelog/commit-categorizer.md`</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11857" cache_read_input_tokens="15082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11857}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A8MjqapKQiSMh6Z11JpaYp">
+Good, confirmed hidden. Now I have all the data I need. Let me compile the proposal.
+
+I have 48 commits total. Let me now read the existing CHANGELOG unreleased entries more carefully to avoid duplicates, then produce the categorization.
+
+Looking at the CHANGELOG unreleased section I already read, I can see it already has entries covering commits from `d5c0167db` (the "As of" marker) backward. The new commits are everything from `4637c3bfa` down to (but not including) `d5c0167db`. Let me identify which commit is `d5c0167db`.
+
+From the JSON output, `d5c0167db` is "Remove outdated documentation link from README (#9216)" at hash `d5c0167db`. The `since_commit` is `64194aa10a102b1004310268f5a5e492b62792ba` but the "As of" marker in CHANGELOG says `d5c0167db`. The tool gets commits since the marker, so all the commits listed are new.
+
+Wait -- looking more carefully, the `since_commit` in the JSON is `64194aa10a102b1004310268f5a5e492b62792ba` and the `d5c0167db` commit IS in the list. Let me re-check: the CHANGELOG says `&lt;!-- As of: d5c0167db --&gt;` but the tool returned `since_commit: 64194aa10a102b1004310268f5a5e492b62792ba`. The commit `d5c0167db` appears as one of the commits in the list, meaning it was included. But wait -- the existing CHANGELOG already has entries that match some of these commits. Let me verify by cross-referencing.
+
+Looking at the existing CHANGELOG entries:
+- `636ea3d02` - already in CHANGELOG (Added)
+- `9261f93b1` - already in CHANGELOG (Added)
+- `9a59f7015` - already in CHANGELOG (Added)
+- `52067f1ff` - already in CHANGELOG (Added)
+- `3ec429ddc` - already in CHANGELOG (Added)
+- `43983f7af` - already in CHANGELOG (Added)
+- `963a7574f` - already in CHANGELOG (Added)
+- `10aa81f32` - already in CHANGELOG (Added)
+- `8bad317c7` - already in CHANGELOG (Added)
+- `f5c0312ad` - already in CHANGELOG (Added)
+- `a024e215e` - already in CHANGELOG (Changed)
+- `80f4e949c` - already in CHANGELOG (Changed)
+- `064a2988e` - already in CHANGELOG (Changed)
+- `34ff359af`, `fe929afcb`, `5b8bb600f`, `9a193b43c`, `63c9de528`, `5c628ddd2`, `bcc0c2d73`, `17dfd5e4c` - already in CHANGELOG (Changed, plan-&gt;PR rename)
+- `70f0d48a0` - already in CHANGELOG (Changed)
+- `052d4bb0e` - already in CHANGELOG (Changed)
+- `396ac2bd9`, `cbcdf9f23` - already in CHANGELOG (Changed)
+- `0836187a3` - already in CHANGELOG (Fixed)
+- `519e224ad` - already in CHANGELOG (Fixed)
+
+... [245 lines omitted] ...
+
+7. `9bef5efe0` - [erk-mcp] prevent response of error messages (#9249)
+15. `133e7b398` - [erk-mcp] fix suppressed errors (#9232)
+7. `9bef5efe0` - [erk-mcp] prevent response of error messages (#9249)
+15. `133e7b398` - [erk-mcp] fix suppressed errors (#9232)
+7. `9bef5efe0` - [erk-mcp] prevent response of error messages (#9249)
+15. `133e7b398` - [erk-mcp] fix suppressed errors (#9232)
+**Detected Roll-Up: erk-mcp hardening** -- 4 commits appear related to "erk-mcp error handling and auth"
+Suggest consolidating into single entries across Added/Fixed: OAuth token support (Added), error handling fixes (Fixed)
+3. `1a2d56da9` - Fix TUI land command argument mismatch and detail screen landing bug causing error toasts on every land operation (1a2d56da9)
+4. `133e7b398`, `9bef5efe0`, `589e79eb3` - Fix erk-mcp error suppression and harden HTTP auth configuration to fail closed (133e7b398)
+   - Reasoning: Roll-up of MCP error handling fixes -- suppressed errors were invisible to users
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7461" cache_read_input_tokens="26939" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the changelog proposal for commits since last sync:
+
+## Proposed Entries
+
+**Added (1):**
+- Wire per-user GitHub OAuth token into erk-mcp for authenticated multi-user deployments (`3735d324e`)
+
+**Changed (3):**
+- Migrate bundled skills (dignified-python, fake-driven-testing) to external repositories with npx-based distribution via `skills-lock.json` (`4637c3bfa`) — rolls up 4 commits
+- Make `erk pr teleport` slot-aware, updating slot assignment when teleporting within a slot-assigned worktree (`5b7386776`)
+- Switch remote dispatch workflows to Sonnet 4.6 (`211f5a0bc`)
+
+**Fixed (4):**
+- Fix statusline model indicator to correctly display Opus/Sonnet/Haiku with 1M context suffix (`3155e0417`)
+- Fix `get_ahead_behind` to compare named branch instead of HEAD, preventing incorrect ahead/behind counts (`cc568acbe`)
+- Fix TUI land command argument mismatch causing error toasts on every land operation (`1a2d56da9`)
+- Fix erk-mcp error suppression and harden HTTP auth configuration to fail closed (`133e7b398`) — rolls up 3 MCP commits
+
+**Removed (1):**
+- Remove dead PR-to-issue linkage infrastructure (`edf4a0561`)
+
+## Filtered Out (21 commits)
+
+Internal refactors, CI fixes, documentation changes, plan-to-PR terminology sweep continuations, and the release commit.
+
+## Low-Confidence Items
+
+1. **`8d37fd466`** (Bidirectional Objective-Plan Linkage) — filtered as internal, but adds user-visible validation to `objective check`. Include as Fixed?
+2. **Hash mismatch** — existing CHANGELOG entry for `--json`/MCP feature uses hash `8bad317c7` (actually the agentclick extraction). Correct to `faa42a0fe`?
+
+---
+
+Approve as-is, or would you like adjustments?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7461" cache_read_input_tokens="26939" output_tokens="527" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>filter
+
+  Changed (3):
+  - Migrate bundled skills (dignified-python, fake-driven-testing) to external repositories with npx-based distribution via skills-lock.json (4637c3bfa) — rolls
+   up 4 commits
+filter
+
+- Remove dead PR-to-issue linkage infrastructure (edf4a0561)</user>
+  <assistant>
+
+Got it. Updated proposal:
+
+**Added (1):**
+- Wire per-user GitHub OAuth token into erk-mcp for authenticated multi-user deployments (`3735d324e`)
+
+**Changed (1):**
+- Make `erk pr teleport` slot-aware, updating slot assignment when teleporting within a slot-assigned worktree (`5b7386776`)
+- Switch remote dispatch workflows to Sonnet 4.6 (`211f5a0bc`)
+
+**Fixed (4):**
+- Fix statusline model indicator to correctly display Opus/Sonnet/Haiku with 1M context suffix (`3155e0417`)
+- Fix `get_ahead_behind` to compare named branch instead of HEAD, preventing incorrect ahead/behind counts (`cc568acbe`)
+- Fix TUI land command argument mismatch causing error toasts on every land operation (`1a2d56da9`)
+- Fix erk-mcp error suppression and harden HTTP auth configuration to fail closed (`133e7b398`) — rolls up 3 MCP commits
+
+Approve, or further adjustments?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="764" cache_read_input_tokens="34400" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 764, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>approve. make plan</user>
+  <tool_use name="Read" id="toolu_015dRjLYZGQMBnZEAgVfGrVe">
+    <param name="file_path">/Users/schrockn/code/erk/CHANGELOG.md</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="417" cache_read_input_tokens="35164" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015dRjLYZGQMBnZEAgVfGrVe">
+     1→# Changelog
+     2→
+     3→All notable changes to erk will be documented in this file.
+     4→
+     5→The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+     6→and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+     7→
+     8→## [Unreleased]
+     9→
+    10→&lt;!-- As of: d5c0167db --&gt;
+    11→
+    12→### Added
+    13→
+    14→- Add `erk json` command namespace providing dedicated machine-readable JSON endpoints for agent and MCP consumption (636ea3d02)
+    15→- Add `erk workflow run cancel` and `erk workflow run retry` commands plus TUI command palette actions for managing workflow runs (9261f93b1)
+    16→- Add implementation failure summary posted as PR comment when remote CI fails (9a59f7015)
+    17→- Add PR status emoji column to Runs tab showing approval state, draft status, and merge conflicts (52067f1ff)
+    18→- Add `erk json objective view` and `erk json objective check` machine commands (3ec429ddc)
+    19→- Add `erk stack sync` command for mechanical divergence resolution across Graphite stacks (hidden) (43983f7af)
+    20→- Add Runs tab to TUI dashboard displaying GitHub Actions workflow runs (963a7574f)
+    21→- Add branch column to Runs tab with vim-style j/k navigation (10aa81f32)
+    22→- Add `--json` and MCP exposure to `erk pr list` and `erk pr view` (8bad317c7)
+    23→- Add prompt validation to one-shot planning workflow to reject invalid prompts (f5c0312ad)
+    24→
+    25→### Changed
+    26→
+    27→- Identify plans by `[erk-pr]`/`[erk-learn]` title prefix instead of `erk-plan` label, simplifying label scheme to two core labels (a024e215e)
+    28→- Rename `[plans]` config section to `[github]` with backwards compatibility fallback (80f4e949c)
+    29→- Rename `--plan` to `--pr` across launch/dispatch commands (064a2988e)
+    30→- Rename plan terminology to PR across core types, gateway interfaces, CLI parameters, JSON output, TUI, and user-facing messages (34ff359af, fe929afcb, 5b8bb600f, 9a193b43c, 63c9de528, 5c628ddd2, bcc0c2d73, 17dfd5e4c)
+
+... [50 lines omitted] ...
+
+    37→- Fix prompt passing to claude CLI via stdin to avoid ARG_MAX errors with large prompts (0836187a3)
+    61→- Add `@json_command` decorator providing structured JSON I/O (`--json` flag) and unified error handling across CLI commands
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01X9cRS6Uryh3B3D1kUMcqYG">
+    <param name="command">git rev-parse --short HEAD</param>
+    <param name="description">Get current HEAD short hash</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1689" cache_read_input_tokens="35581" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1689, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X9cRS6Uryh3B3D1kUMcqYG">
+4637c3bfa
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Rdq3GcgWVmRk8sTqcFDxMQ">
+    <param name="file_path">/Users/schrockn/.claude/plans/parallel-mapping-hoare.md</param>
+    <param name="content"># Plan: Update CHANGELOG.md Unreleased Section
+
+## Context
+
+CHANGELOG.md unreleased sectio...[truncated 1197 chars]...- Read back the Unreleased section after edits to confirm correct formatting and ordering
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="37270" output_tokens="517" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 192, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rdq3GcgWVmRk8sTqcFDxMQ">
+File created successfully at: /Users/schrockn/.claude/plans/parallel-mapping-hoare.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01CNBfgikJFy7nXpAQjbAQao">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="554" cache_read_input_tokens="37462" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 554, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CNBfgikJFy7nXpAQjbAQao">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_013GBZREKHu6iQKVhnR3FYhA">
+    <param name="plan"># Plan: Update CHANGELOG.md Unreleased Section
+
+## Context
+
+CHANGELOG.md unreleased sectio...[truncated 1197 chars]...- Read back the Unreleased section after edits to confirm correct formatting and ordering
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/parallel-mapping-hoare.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="38016" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013GBZREKHu6iQKVhnR3FYhA">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/parallel-mapping-hoare.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Update CHANGELOG.md Unreleased Section
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 400e78d2-10a8-4dee-afd0-9430b45be174 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XfGAFntdHsPzBaXyGVh1ay">
+    <param name="file_path">/Users/schrockn/.claude/plans/parallel-mapping-hoare.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="38754" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 678, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XfGAFntdHsPzBaXyGVh1ay">
+     1→# Plan: Update CHANGELOG.md Unreleased Section
+     2→
+     3→## Context
+     4→
+     5→CHANGELOG.md unreleased section is synced as of `d5c0167db`. There are 7 new user-facing entries to add from commits merged since then. HEAD is `4637c3bfa`.
+     6→
+     7→## Changes to CHANGELOG.md
+     8→
+     9→1. **Update "As of" marker** on line 10: `d5c0167db` → `4637c3bfa`
+    10→
+    11→2. **Append to `### Added`** (after line 23):
+    12→   - `- Wire per-user GitHub OAuth token into erk-mcp for authenticated multi-user deployments (3735d324e)`
+    13→
+    14→3. **Append to `### Changed`** (after line 33):
+    15→   - `- Make `erk pr teleport` slot-aware, updating slot assignment when teleporting within a slot-assigned worktree (5b7386776)`
+    16→   - `- Switch remote dispatch workflows to Sonnet 4.6 (211f5a0bc)`
+    17→
+    18→4. **Append to `### Fixed`** (after line 40):
+    19→   - `- Fix statusline model indicator to correctly display Opus/Sonnet/Haiku with 1M context suffix (3155e0417)`
+    20→   - `- Fix `get_ahead_behind` to compare named branch instead of HEAD, preventing incorrect ahead/behind counts (cc568acbe)`
+    21→   - `- Fix TUI land command argument mismatch causing error toasts on every land operation (1a2d56da9)`
+    22→   - `- Fix erk-mcp error suppression and harden HTTP auth configuration to fail closed (133e7b398)`
+    23→
+    24→No new categories needed. No entries removed. Existing entries preserved as-is.
+    25→
+    26→## Verification
+    27→
+    28→- Read back the Unreleased section after edits to confirm correct formatting and ordering
+    29→
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01RZbxFSc4JTwZc552fJzabS">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="39432" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 610, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RZbxFSc4JTwZc552fJzabS">
+
+  </tool_result>
+  <assistant>
+
+**Plan: Update CHANGELOG.md Unreleased Section**
+
+**Context:** CHANGELOG.md unreleased section is synced as of `d5c0167db`. There are 7 new user-facing entries to add from commits merged since then. HEAD is `4637c3bfa`.
+
+**Changes:**
+1. Update "As of" marker: `d5c0167db` → `4637c3bfa`
+2. Append 1 Added, 2 Changed, 4 Fixed entries under existing category headers</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1536" cache_read_input_tokens="40042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1536}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01H21eAShP21J6PpRQiLPf95">
+    <param name="questions">[{'question': 'This is a CHANGELOG-only edit on master. What would you like to do?', 'head...[truncated 299 chars]...tion': 'Open plan in editor to review or modify before deciding'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1536" cache_read_input_tokens="40042" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H21eAShP21J6PpRQiLPf95">
+User has answered your questions: "This is a CHANGELOG-only edit on master. What would you like to do?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01LCn2L5HSmNFn2En5Rr2zJF">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="41578" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LCn2L5HSmNFn2En5Rr2zJF">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="400e78d2-10a8-4dee-afd0-9430b45be174" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="400e78d2-10a8-4dee-afd0-9430b45be174" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "400e78d2-10a8-4dee-afd0-9430b45be174" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "400e78d2-10a8-4dee-afd0-9430b45be174" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "400e78d2-10a8-4dee-afd0-9430b45be174" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "400e78d2-10a8-4dee-afd0-9430b45be174" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="41943" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Branch slug: `update-changelog-unreleased`
+
+Summary: Adds 7 new user-facing entries to the CHANGELOG.md unreleased section covering erk-mcp OAuth and error handling, TUI fixes, statusline fix, teleport slot awareness, and dispatch model upgrade. Updates the sync marker to current HEAD.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="41943" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0151WXHxBY43A3EEdDf5nPc8">
+    <param name="command">erk exec plan-save --format json --session-id="400e78d2-10a8-4dee-afd0-9430b45be174" --bra...[truncated 174 chars]...port slot awareness, and dispatch model upgrade. Updates the sync marker to current HEAD."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="41943" output_tokens="355" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0151WXHxBY43A3EEdDf5nPc8">
+Exit code 1
+Traceback (most recent call last):
+  File "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 122, in run_subprocess_with_context
+    result = subprocess.run(
+        cmd,
+    ...&lt;8 lines&gt;...
+        **kwargs,
+    )
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', 'fetch', 'origin', 'master']' returned non-zero exit status 128.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 234, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+
+... [49 lines omitted] ...
+
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to fetch branch 'master' from remote 'origin'
+stderr: fatal: unable to access 'https://github.com/dagster-io/erk.git/': Could not resolve host: github.com
+  </tool_result>
+  <assistant>Network error — `Could not resolve host: github.com`. Can't save the plan as a draft PR right now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1773" cache_read_input_tokens="44221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1773}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QTdwYTq7gdiRM3ypKXGPfT">
+    <param name="questions">[{'question': "Network is down (can't resolve github.com). How would you like to proceed?"...[truncated 159 chars]...ion': 'Try saving the plan again after connectivity is restored'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1773" cache_read_input_tokens="44221" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1773, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QTdwYTq7gdiRM3ypKXGPfT">
+User has answered your questions: "Network is down (can't resolve github.com). How would you like to proceed?"="Wait and retry". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019UDfDcWEf2YkYtAuih3WBj">
+    <param name="command">erk exec plan-save --format json --session-id="400e78d2-10a8-4dee-afd0-9430b45be174" --bra...[truncated 174 chars]...port slot awareness, and dispatch model upgrade. Updates the sync marker to current HEAD."</param>
+    <param name="description">Retry saving plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="45994" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 223, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019UDfDcWEf2YkYtAuih3WBj">
+Exit code 1
+Traceback (most recent call last):
+  File "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 122, in run_subprocess_with_context
+    result = subprocess.run(
+        cmd,
+    ...&lt;8 lines&gt;...
+        **kwargs,
+    )
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', 'fetch', 'origin', 'master']' returned non-zero exit status 128.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 234, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+
+... [49 lines omitted] ...
+
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to fetch branch 'master' from remote 'origin'
+stderr: fatal: unable to access 'https://github.com/dagster-io/erk.git/': Could not resolve host: github.com
+  </tool_result>
+  <assistant>Still offline. Network hasn't recovered yet.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1529" cache_read_input_tokens="46217" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1529}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_012qKwFtMg52xBMuGFDSZNV2">
+    <param name="questions">[{'question': "Still can't reach github.com. Want to implement locally on master instead, ...[truncated 171 chars]...er', 'description': "I'll fix connectivity and ask you to retry"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1529" cache_read_input_tokens="46217" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012qKwFtMg52xBMuGFDSZNV2">
+User has answered your questions: "Still can't reach github.com. Want to implement locally on master instead, or keep waiting?"="Wait longer". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>OK, standing by. Let me know when connectivity is restored and I'll retry the save.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="36477" cache_read_input_tokens="15082" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 36477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>retry</user>
+  <tool_use name="Bash" id="toolu_01RKBGmdzVkfmoVBLbiFFoEU">
+    <param name="command">erk exec plan-save --format json --session-id="400e78d2-10a8-4dee-afd0-9430b45be174" --bra...[truncated 174 chars]...port slot awareness, and dispatch model upgrade. Updates the sync marker to current HEAD."</param>
+    <param name="description">Retry saving plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="179" cache_read_input_tokens="51559" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RKBGmdzVkfmoVBLbiFFoEU">
+{"success": true, "pr_number": 9267, "pr_url": "https://github.com/dagster-io/erk/pull/9267", "title": "[erk-pr] Plan: Update CHANGELOG.md Unreleased Section", "branch_name": "plnd/update-changelog-unrelease-03-19-2251", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/400e78d2-10a8-4dee-afd0-9430b45be174/plan_snapshots/000001-4b559a27"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #9267.
+
+No objective link — skipping verification and roadmap update steps.
+
+Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="51738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 383}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PwX1RNyU4eWHNh8cn8jPNm">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="51738" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PwX1RNyU4eWHNh8cn8jPNm">
+SESSION_ID=400e78d2-10a8-4dee-afd0-9430b45be174
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/400e78d2-10a8-4dee-afd0-9430b45be174.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AcWre1vG7ZrGMbMEggtVd6">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...ee-afd0-9430b45be174" --stage planning --source local --pr-number 9267 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="52121" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 229, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
