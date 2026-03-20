@@ -1,6 +1,5 @@
 """Shared utilities for slot commands."""
 
-import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +14,12 @@ from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import IMPL_DIR_RELATIVE
 from erk_shared.output.output import user_output
+from erk_shared.slots.naming import (
+    DEFAULT_POOL_SIZE,
+    extract_slot_number,
+    generate_slot_name,
+    is_placeholder_branch,
+)
 
 
 @dataclass(frozen=True)
@@ -24,58 +29,6 @@ class SlotAllocationResult:
     slot_name: str
     worktree_path: Path
     already_assigned: bool  # True if branch was already in a slot
-
-
-# Default pool configuration
-DEFAULT_POOL_SIZE = 4
-SLOT_NAME_PREFIX = "erk-slot"
-
-
-def extract_slot_number(slot_name: str) -> str | None:
-    """Extract slot number from slot name.
-
-    Args:
-        slot_name: Slot name like "erk-slot-03"
-
-    Returns:
-        Two-digit slot number (e.g., "03") or None if not in expected format
-    """
-    if not slot_name.startswith(SLOT_NAME_PREFIX + "-"):
-        return None
-    suffix = slot_name[len(SLOT_NAME_PREFIX) + 1 :]
-    if len(suffix) != 2 or not suffix.isdigit():
-        return None
-    return suffix
-
-
-def get_placeholder_branch_name(slot_name: str) -> str | None:
-    """Get placeholder branch name for a slot.
-
-    Args:
-        slot_name: Slot name like "erk-slot-03"
-
-    Returns:
-        Placeholder branch name like "__erk-slot-03-br-stub__",
-        or None if slot_name is not in expected format
-    """
-    slot_number = extract_slot_number(slot_name)
-    if slot_number is None:
-        return None
-    return f"__erk-slot-{slot_number}-br-stub__"
-
-
-def is_placeholder_branch(branch_name: str) -> bool:
-    """Check if a branch name is an erk slot placeholder branch.
-
-    Placeholder branches have the format: __erk-slot-XX-br-stub__
-
-    Args:
-        branch_name: Branch name to check
-
-    Returns:
-        True if branch_name matches the placeholder pattern
-    """
-    return bool(re.match(r"^__erk-slot-\d+-br-stub__$", branch_name))
 
 
 def get_pool_size(ctx: ErkContext) -> int:
@@ -90,18 +43,6 @@ def get_pool_size(ctx: ErkContext) -> int:
     if ctx.local_config is not None and ctx.local_config.pool_size is not None:
         return ctx.local_config.pool_size
     return DEFAULT_POOL_SIZE
-
-
-def generate_slot_name(slot_number: int) -> str:
-    """Generate a slot name from a slot number.
-
-    Args:
-        slot_number: 1-based slot number
-
-    Returns:
-        Formatted slot name like "erk-slot-01"
-    """
-    return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
 
 
 def find_next_available_slot(state: PoolState, worktrees_dir: Path | None) -> int | None:

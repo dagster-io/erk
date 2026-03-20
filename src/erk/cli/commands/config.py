@@ -21,7 +21,7 @@ from erk_shared.config.schema import (
 )
 from erk_shared.context.types import GlobalConfig
 from erk_shared.output.output import machine_output, user_output
-from erk_slots.common import DEFAULT_POOL_SIZE
+from erk_shared.slots.naming import DEFAULT_POOL_SIZE
 
 # Maps CLI key prefix to GlobalConfig attribute name.
 # User-facing keys use "interactive_claude.*" but GlobalConfig attribute is "interactive_agent".
