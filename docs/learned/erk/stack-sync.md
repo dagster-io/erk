@@ -34,15 +34,15 @@ Performs stack-wide divergence resolution in 5 phases:
 
 For each branch, the sync determines what to do based on divergence state:
 
-| `BranchSyncAction` | Meaning | When |
-|---|---|---|
-| `ALREADY_SYNCED` | No action needed | Local matches remote, or local is ahead only |
-| `FAST_FORWARDED` | Updated to remote | Local is behind only |
-| `REBASED` | Rebased onto remote | Local diverged (ahead and behind) |
-| `SKIPPED_NO_REMOTE` | Skipped | No remote tracking branch exists |
-| `SKIPPED_OTHER_WORKTREE` | Skipped | Branch is checked out in another worktree |
-| `CONFLICT` | Aborted rebase | Rebase had conflicts; rebase was automatically aborted |
-| `ERROR` | Failure | Unexpected error (e.g., could not resolve remote ref) |
+| `BranchSyncAction`       | Meaning             | When                                                   |
+| ------------------------ | ------------------- | ------------------------------------------------------ |
+| `ALREADY_SYNCED`         | No action needed    | Local matches remote, or local is ahead only           |
+| `FAST_FORWARDED`         | Updated to remote   | Local is behind only                                   |
+| `REBASED`                | Rebased onto remote | Local diverged (ahead and behind)                      |
+| `SKIPPED_NO_REMOTE`      | Skipped             | No remote tracking branch exists                       |
+| `SKIPPED_OTHER_WORKTREE` | Skipped             | Branch is checked out in another worktree              |
+| `CONFLICT`               | Aborted rebase      | Rebase had conflicts; rebase was automatically aborted |
+| `ERROR`                  | Failure             | Unexpected error (e.g., could not resolve remote ref)  |
 
 ## Output Format
 
@@ -62,6 +62,7 @@ Stack synced: 1 fixed, 1 in sync, 1 conflict, 1 skipped
 ## Conflict Handling
 
 When a rebase conflict is detected:
+
 1. The rebase is **automatically aborted** (no in-progress rebase is left behind)
 2. The branch is reported as `CONFLICT`
 3. The summary line includes the conflict count
@@ -70,6 +71,7 @@ When a rebase conflict is detected:
 ## Error Conditions
 
 Fatal errors (non-zero exit) occur when:
+
 - The current branch is in detached HEAD state
 - The current branch is not tracked by Graphite
 

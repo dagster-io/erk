@@ -48,13 +48,14 @@ Each entry maps a skill name to its GitHub source and content hash. Update by ru
 ## Current NPX-Managed Skills
 
 From `.agents/skills/` (as of writing):
+
 - `dignified-python` — Python coding standards (source: `dagster-io/skills`)
 - `fake-driven-testing` — Test architecture patterns (source: `dagster-io/fake-driven-testing`)
 - `fdt-refactor-mock-to-fake` — Refactoring patterns (source: `dagster-io/fake-driven-testing`)
 - `graphite` — Graphite stacked PR management (source: `withgraphite/agent-skills`)
 - `skill-creator` — Skill creation tool (source: `anthropics/skills`)
 
-## _UNBUNDLED_SKILLS Registry
+## \_UNBUNDLED_SKILLS Registry
 
 **Source**: `src/erk/capabilities/skills/bundled.py` (lines 17-38)
 
@@ -82,12 +83,12 @@ When migrating a skill from erk's bundle to external npx distribution (example: 
 
 ## Comparison: Skill Distribution Types
 
-| Type | Where | Who manages | When to use |
-|------|--------|-------------|-------------|
-| Required bundled | `bundled_skills()` + `_REQUIRED_BUNDLED_SKILLS` | erk package | Core skills needed by erk tooling itself |
-| Bundled | `bundled_skills()` | erk package | Erk-specific skills with no external source |
-| Unbundled (npx-managed) | `.agents/skills/` + `_UNBUNDLED_SKILLS` | npx + skills-lock.json | Skills with separate GitHub repos/versioning |
-| Tombstone | `bundled_skills()` with `[REMOVED]` description | erk package | Deleted skills that need to overwrite stale installations |
+| Type                    | Where                                           | Who manages            | When to use                                               |
+| ----------------------- | ----------------------------------------------- | ---------------------- | --------------------------------------------------------- |
+| Required bundled        | `bundled_skills()` + `_REQUIRED_BUNDLED_SKILLS` | erk package            | Core skills needed by erk tooling itself                  |
+| Bundled                 | `bundled_skills()`                              | erk package            | Erk-specific skills with no external source               |
+| Unbundled (npx-managed) | `.agents/skills/` + `_UNBUNDLED_SKILLS`         | npx + skills-lock.json | Skills with separate GitHub repos/versioning              |
+| Tombstone               | `bundled_skills()` with `[REMOVED]` description | erk package            | Deleted skills that need to overwrite stale installations |
 
 ## Related Documentation
 

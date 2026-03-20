@@ -23,6 +23,7 @@ tripwires:
 ### Deserialization
 
 **`parse_dataclass_from_json(cls, data)`** — Parse a JSON dict into a frozen dataclass:
+
 - Checks for `from_json_dict()` classmethod first (custom deserialization)
 - Falls back to generic construction with strict validation:
   - Rejects unknown keys
@@ -30,6 +31,7 @@ tripwires:
   - Raises `ValueError` for missing required fields
 
 **`coerce_json_value(value, target_type)`** — Type coercion with full support for:
+
 - `Literal` (validates against allowed values)
 - `tuple[X, ...]` and `list[X]` (recursive coercion)
 - `X | None` unions
@@ -38,16 +40,19 @@ tripwires:
 ### Serialization
 
 **`serialize_to_json_dict(result)`** — Dataclass → JSON dict:
+
 - Checks for `to_json_dict()` protocol first (custom serialization)
 - Falls back to `dataclasses.asdict()` for plain dataclasses
 
 ### Schema Generation
 
 **`dataclass_result_schema(cls)`** — Auto-generate JSON Schema from dataclass fields:
+
 - Maps Python types to JSON Schema types via `python_type_to_json_schema()`
 - Always includes `success: true` (output schema convention)
 
 **`python_type_to_json_schema(type_hint)`** — Python type → JSON Schema:
+
 - Handles `Literal`, `tuple[X,...]`, `list[X]`, `dict`, `X | None`, primitives
 
 ### I/O Helpers

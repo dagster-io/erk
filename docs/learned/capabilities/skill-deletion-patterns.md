@@ -59,6 +59,7 @@ When deleting a skill, modify these locations:
 1. **`.claude/skills/<name>/SKILL.md`** → Replace with tombstone (keep the file, change content)
 
 2. **`bundled_skills()` dict** in `src/erk/capabilities/skills/bundled.py` → Add tombstone entry:
+
    ```python
    "skill-name": "[REMOVED] Plan management now in slash commands",
    ```
@@ -73,12 +74,12 @@ When deleting a skill, modify these locations:
 
 ## When to Use Tombstone vs. Complete Removal
 
-| Situation | Action |
-|---|---|
-| Skill was previously distributed to external repos | Tombstone (required) |
-| Skill was only used internally (never synced out) | Can completely remove |
-| Skill is being replaced by another approach | Tombstone pointing to replacement |
-| Skill is being renamed | Tombstone for old name + new skill |
+| Situation                                          | Action                             |
+| -------------------------------------------------- | ---------------------------------- |
+| Skill was previously distributed to external repos | Tombstone (required)               |
+| Skill was only used internally (never synced out)  | Can completely remove              |
+| Skill is being replaced by another approach        | Tombstone pointing to replacement  |
+| Skill is being renamed                             | Tombstone for old name + new skill |
 
 In practice: **always use tombstone**. It's hard to track which external repos have installed a skill, so the safe default is to always leave a tombstone.
 
@@ -90,6 +91,7 @@ Complex skill deletions often happen in two phases:
 2. **Phase 2 (tombstone dist)**: Ensure tombstone is in `bundled_skills()` so it distributes on next sync
 
 **Example**: `erk-planning` deletion:
+
 - PR #9223 (phase 1): Deleted planning logic, replaced with slash commands
 - PR #9228 (phase 2): Added tombstone to ensure external repos get the deletion
 

@@ -36,6 +36,7 @@ erk workflow run retry 12345678 --failed  # Retry only failed jobs
 ```
 
 **Options**:
+
 - `--failed` — Only re-run the jobs that failed in the previous run (faster, cheaper than full retry)
 
 Uses `ctx.github.rerun_workflow_run()` with `failed_only` parameter.

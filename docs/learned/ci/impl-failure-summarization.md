@@ -43,6 +43,7 @@ click.echo()              ← stdout written to GITHUB_STEP_SUMMARY
 Command: `erk exec summarize-impl-failure`
 
 **Options**:
+
 - `--session-file` (required): Path to the session JSONL file from the implementation run
 - `--pr-number` (required): PR number to post the comment on
 - `--exit-code`: Process exit code (for context in the summary)
@@ -60,6 +61,7 @@ Stage 1 reduction uses `process_log_content()` + `deduplicate_assistant_messages
 **Location**: `.github/prompts/impl-failure-summarize.md`
 
 The template uses two variables:
+
 - `{{ EXIT_CODE }}`: The process exit code string
 - `{{ SESSION_TAIL }}`: The compressed XML of the session tail
 
@@ -68,6 +70,7 @@ If the template file is missing, a minimal inline prompt is used as fallback.
 ## Model Selection: Haiku
 
 `claude-haiku-4-5-20251001` is used (not Sonnet or Opus) because:
+
 - **Cost**: Failure summarization runs on every failed implementation — at scale, Sonnet would be expensive
 - **Speed**: Haiku is faster, reducing CI latency for failed runs
 - **Accuracy trade-off**: For failure diagnosis (not code generation), Haiku's accuracy is sufficient
@@ -78,9 +81,9 @@ The step is invoked in `.github/workflows/plan-implement.yml` at approximately l
 
 ```yaml
 SUMMARY=$(erk exec summarize-impl-failure \
-    --session-file "$SESSION_FILE" \
-    --pr-number "$PR_NUMBER" \
-    --exit-code "$EXIT_CODE")
+--session-file "$SESSION_FILE" \
+--pr-number "$PR_NUMBER" \
+--exit-code "$EXIT_CODE")
 echo "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
 ```
 

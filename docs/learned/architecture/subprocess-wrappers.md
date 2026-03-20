@@ -370,10 +370,10 @@ result = subprocess.run(
 
 The shell `--body-file` temp file pattern (used in CI workflows for `gh pr comment`) is a different solution to a different problem:
 
-| Scenario | Solution |
-|---|---|
-| Python subprocess calling `claude` | `input=prompt` in `subprocess.run()` |
-| Bash script calling `gh pr comment` | `mktemp` + `--body-file <file>` |
+| Scenario                            | Solution                             |
+| ----------------------------------- | ------------------------------------ |
+| Python subprocess calling `claude`  | `input=prompt` in `subprocess.run()` |
+| Bash script calling `gh pr comment` | `mktemp` + `--body-file <file>`      |
 
 The Python stdin approach avoids temp file management. The shell temp file pattern is used when calling CLI tools that accept `--body-file` arguments.
 

@@ -31,16 +31,17 @@ erk exec get-review-activity-log \
 
 ## Options
 
-| Option | Required | Description |
-|--------|----------|-------------|
-| `--pr-number` | Yes | PR number to search for comments |
-| `--marker` | Yes | HTML marker string identifying the review comment |
+| Option        | Required | Description                                       |
+| ------------- | -------- | ------------------------------------------------- |
+| `--pr-number` | Yes      | PR number to search for comments                  |
+| `--marker`    | Yes      | HTML marker string identifying the review comment |
 
 ## Output
 
 Always emits JSON to stdout (pretty-printed with `indent=2`):
 
 **When found:**
+
 ```json
 {
   "success": true,
@@ -50,6 +51,7 @@ Always emits JSON to stdout (pretty-printed with `indent=2`):
 ```
 
 **When not found:**
+
 ```json
 {
   "success": true,

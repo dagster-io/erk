@@ -31,16 +31,17 @@ tests/
 ## Why Not `src/`?
 
 Production code should not depend on test infrastructure. Placing fakes in `src/` would:
+
 1. Increase the production package size
 2. Create circular dependencies (production code importing test tools)
 3. Violate the principle that `src/` contains only deployable artifacts
 
 ## Where to Put New Fakes
 
-| Fake Type | Location |
-|---|---|
-| Gateway fake (FakeGit, FakeGitHub, etc.) | `tests/fakes/gateway/` |
-| Test-specific double for a service/component | `tests/fakes/tests/` |
+| Fake Type                                    | Location               |
+| -------------------------------------------- | ---------------------- |
+| Gateway fake (FakeGit, FakeGitHub, etc.)     | `tests/fakes/gateway/` |
+| Test-specific double for a service/component | `tests/fakes/tests/`   |
 
 ## Related Documentation
 
