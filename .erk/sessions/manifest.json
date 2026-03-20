@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9274,
+  "sessions": [
+    {
+      "session_id": "3a5683ad-ab88-41d1-b01c-a0d4169e8556",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T14:50:17.394300+00:00",
+      "files": [
+        "impl-3a5683ad-ab88-41d1-b01c-a0d4169e8556-3a5683ad-ab88-41d1-b01c-a0d4169e8556-part1.xml",
+        "impl-3a5683ad-ab88-41d1-b01c-a0d4169e8556-3a5683ad-ab88-41d1-b01c-a0d4169e8556-part2.xml",
+        "impl-3a5683ad-ab88-41d1-b01c-a0d4169e8556-3a5683ad-ab88-41d1-b01c-a0d4169e8556-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 10,
+      "raw_size_kb": 2289,
+      "xml_size_kb": 169,
+      "git_branch": "plnd/O9109-rename-core-statusli-03-20-1438"
+    }
+  ]
+}
