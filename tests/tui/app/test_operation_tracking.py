@@ -214,7 +214,7 @@ class TestOperationTracking:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -256,7 +256,7 @@ class TestOperationTracking:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 

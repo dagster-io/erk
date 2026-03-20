@@ -6,7 +6,7 @@ import pytest
 
 from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PrFilters
-from erk.tui.operations.logic import extract_learn_plan_number
+from erk.tui.operations.logic import extract_learn_pr_number
 from erk.tui.operations.types import OperationResult
 from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
@@ -251,7 +251,7 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -299,7 +299,7 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -339,7 +339,7 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -388,7 +388,7 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=789,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -438,7 +438,7 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -481,7 +481,7 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=42,
+                learn_source_pr=42,
             )
             await pilot.pause(0.3)
 
@@ -540,15 +540,15 @@ class TestLandPrAsync:
                 pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_number=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
             assert any("learn plan #999" in n.lower() for n in notifications)
 
 
-class TestExtractLearnPlanNumber:
-    """Tests for extract_learn_plan_number helper."""
+class TestExtractLearnPrNumber:
+    """Tests for extract_learn_pr_number helper."""
 
     def test_extracts_number_from_output(self) -> None:
         """Should extract learn plan number when present in output."""
@@ -557,7 +557,7 @@ class TestExtractLearnPlanNumber:
             output_lines=("Some output", "Created learn plan #1234", "Done"),
             return_code=0,
         )
-        assert extract_learn_plan_number(result) == 1234
+        assert extract_learn_pr_number(result) == 1234
 
     def test_returns_none_when_not_present(self) -> None:
         """Should return None when no learn plan line in output."""
@@ -566,7 +566,7 @@ class TestExtractLearnPlanNumber:
             output_lines=("Some output", "Done"),
             return_code=0,
         )
-        assert extract_learn_plan_number(result) is None
+        assert extract_learn_pr_number(result) is None
 
     def test_extracts_from_middle_of_line(self) -> None:
         """Should extract number even when text surrounds the pattern."""
@@ -575,7 +575,7 @@ class TestExtractLearnPlanNumber:
             output_lines=("Info: Created learn plan #5678 successfully",),
             return_code=0,
         )
-        assert extract_learn_plan_number(result) == 5678
+        assert extract_learn_pr_number(result) == 5678
 
 
 class TestDispatchToQueueAsync:

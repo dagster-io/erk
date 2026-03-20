@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from textual import work
 
-from erk.tui.operations.logic import extract_learn_plan_number, last_output_line
+from erk.tui.operations.logic import extract_learn_pr_number, last_output_line
 
 if TYPE_CHECKING:
     from erk.tui.app import ErkDashApp
@@ -256,7 +256,7 @@ class BackgroundWorkersMixin:
         pr_number: int,
         branch: str,
         objective_issue: int | None,
-        plan_number: int | None,
+        learn_source_pr: int | None,
     ) -> None:
         """Land PR in background thread with toast."""
         command = [
@@ -267,8 +267,8 @@ class BackgroundWorkersMixin:
             f"--branch={branch}",
             "-f",
         ]
-        if plan_number is not None:
-            command.append(f"--linked-pr-number={plan_number}")
+        if learn_source_pr is not None:
+            command.append(f"--linked-pr-number={learn_source_pr}")
         result = self._run_streaming_operation(
             op_id=op_id,
             command=command,
@@ -285,7 +285,7 @@ class BackgroundWorkersMixin:
             return
 
         self.call_from_thread(self.notify, f"Landed PR #{pr_number}", timeout=3)
-        learn_pr = extract_learn_plan_number(result)
+        learn_pr = extract_learn_pr_number(result)
         if learn_pr is not None:
             self.call_from_thread(self.notify, f"Created learn plan #{learn_pr}", timeout=3)
         self.call_from_thread(self.action_refresh)

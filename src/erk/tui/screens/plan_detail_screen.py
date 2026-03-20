@@ -857,7 +857,7 @@ class PlanDetailScreen(ModalScreen):
                         pr_number=row.pr_number,
                         branch=row.pr_head_branch,
                         objective_issue=row.objective_issue,
-                        plan_number=row.pr_number if not row.is_learn_plan else None,
+                        learn_source_pr=row.pr_number if not row.is_learn_plan else None,
                     )
 
         elif command_id == "incremental_dispatch":

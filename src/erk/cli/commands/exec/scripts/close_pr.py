@@ -1,10 +1,10 @@
 """Close a plan with a comment.
 
 Usage:
-    erk exec close-pr <PLAN_NUMBER> --comment "Closing because..."
+    erk exec close-pr <PR_NUMBER> --comment "Closing because..."
 
 Output:
-    JSON with {success, plan_number, comment_id}
+    JSON with {success, pr_number, comment_id}
 
 Exit Codes:
     0: Success - plan closed with comment

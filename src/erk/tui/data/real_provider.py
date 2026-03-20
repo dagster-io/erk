@@ -465,9 +465,9 @@ class RealPrDataProvider(PrDataProvider):
             plan_ref = read_plan_ref(impl_dir)
             if plan_ref is None or not plan_ref.pr_id.isdigit():
                 continue
-            plan_number = int(plan_ref.pr_id)
-            if plan_number not in worktree_by_pr_number:
-                worktree_by_pr_number[plan_number] = (
+            pr_number = int(plan_ref.pr_id)
+            if pr_number not in worktree_by_pr_number:
+                worktree_by_pr_number[pr_number] = (
                     worktree.path.name,
                     worktree.branch,
                 )

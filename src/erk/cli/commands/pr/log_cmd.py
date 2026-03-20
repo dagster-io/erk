@@ -32,7 +32,7 @@ class PlanCreatedMetadata(TypedDict, total=False):
     """Metadata for plan_created event."""
 
     worktree_name: str
-    plan_number: int
+    pr_number: int
 
 
 class SubmissionQueuedMetadata(TypedDict, total=False):
@@ -222,7 +222,7 @@ def _extract_plan_created_event(data: dict) -> Event | None:
     if "worktree_name" in data:
         metadata["worktree_name"] = data["worktree_name"]
     if "issue_number" in data:
-        metadata["plan_number"] = data["issue_number"]
+        metadata["pr_number"] = data["issue_number"]
 
     return Event(
         timestamp=timestamp,

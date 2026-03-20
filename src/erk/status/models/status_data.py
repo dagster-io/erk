@@ -292,7 +292,7 @@ class DependencyStatus:
 
 
 @dataclass(frozen=True)
-class PlanStatus:
+class PrStatus:
     """Status of .erk/impl-context/ folder."""
 
     exists: bool
@@ -315,7 +315,7 @@ class StatusData:
     pr_status: PullRequestStatus | None
     environment: EnvironmentStatus | None
     dependencies: DependencyStatus | None
-    plan: PlanStatus | None
+    plan: PrStatus | None
     related_worktrees: list[WorktreeDisplayInfo]
 
     @staticmethod

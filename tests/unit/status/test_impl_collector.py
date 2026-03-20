@@ -48,7 +48,7 @@ def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
 
 
 def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
-    """Test collector includes issue reference in PlanStatus."""
+    """Test collector includes issue reference in PrStatus."""
     # Create plan folder (uses ## Step N: format)
     plan_content = "# Test Plan\n\n## Step 1: Step one\n"
     plan_folder = create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
