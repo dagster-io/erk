@@ -73,9 +73,7 @@ def resolve_conflicts(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
         click.echo()
 
     if not click.confirm("Launch Claude to resolve conflicts?", default=True):
-        click.echo(
-            "Conflicts remain -- run 'erk pr resolve-conflicts' again when ready."
-        )
+        click.echo("Conflicts remain -- run 'erk pr resolve-conflicts' again when ready.")
         return
 
     click.echo("Launching Claude...", err=True)

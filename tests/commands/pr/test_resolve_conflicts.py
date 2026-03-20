@@ -28,9 +28,7 @@ def test_rebase_in_progress_launches_tui() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(
-            pr_group, ["resolve-conflicts", "--dangerous"], obj=ctx, input="y\n"
-        )
+        result = runner.invoke(pr_group, ["resolve-conflicts", "--dangerous"], obj=ctx, input="y\n")
 
         assert result.exit_code == 0
         assert "Rebase in progress" in result.output
@@ -86,9 +84,7 @@ def test_user_declines() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(
-            pr_group, ["resolve-conflicts", "--dangerous"], obj=ctx, input="n\n"
-        )
+        result = runner.invoke(pr_group, ["resolve-conflicts", "--dangerous"], obj=ctx, input="n\n")
 
         assert result.exit_code == 0
         assert "Launch Claude to resolve conflicts?" in result.output
@@ -140,9 +136,7 @@ def test_safe_flag() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(
-            pr_group, ["resolve-conflicts", "--safe"], obj=ctx, input="y\n"
-        )
+        result = runner.invoke(pr_group, ["resolve-conflicts", "--safe"], obj=ctx, input="y\n")
 
         assert result.exit_code == 0
         assert len(executor.interactive_calls) == 1
@@ -166,9 +160,7 @@ def test_dangerous_and_safe_mutually_exclusive() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(
-            pr_group, ["resolve-conflicts", "--dangerous", "--safe"], obj=ctx
-        )
+        result = runner.invoke(pr_group, ["resolve-conflicts", "--dangerous", "--safe"], obj=ctx)
 
         assert result.exit_code != 0
         assert "mutually exclusive" in result.output
@@ -227,9 +219,7 @@ def test_no_conflicted_files_still_confirms() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(
-            pr_group, ["resolve-conflicts", "--dangerous"], obj=ctx, input="y\n"
-        )
+        result = runner.invoke(pr_group, ["resolve-conflicts", "--dangerous"], obj=ctx, input="y\n")
 
         assert result.exit_code == 0
         assert "Conflicted files:" not in result.output
