@@ -15,7 +15,6 @@ from erk.cli.activation import (
 from erk.cli.commands.checkout_helpers import (
     display_sync_status,
     navigate_to_worktree,
-    script_error_handler,
 )
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
@@ -27,6 +26,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.cli_alias import alias
+from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.output.output import user_output
