@@ -16,6 +16,22 @@
       "raw_size_kb": 571,
       "xml_size_kb": 100,
       "git_branch": "plnd/add-slot-checkout-nav-03-20-1715"
+    },
+    {
+      "session_id": "5c6962b4-b0e8-4c63-9d2b-704a2d92fb43",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T18:16:19.419213+00:00",
+      "files": [
+        "impl-5c6962b4-b0e8-4c63-9d2b-704a2d92fb43-5c6962b4-b0e8-4c63-9d2b-704a2d92fb43-part1.xml",
+        "impl-5c6962b4-b0e8-4c63-9d2b-704a2d92fb43-5c6962b4-b0e8-4c63-9d2b-704a2d92fb43-part2.xml",
+        "impl-5c6962b4-b0e8-4c63-9d2b-704a2d92fb43-5c6962b4-b0e8-4c63-9d2b-704a2d92fb43-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 10,
+      "raw_size_kb": 1111,
+      "xml_size_kb": 137,
+      "git_branch": "plnd/O9109-delete-get-pr-for-pl-03-20-1803"
     }
   ]
 }

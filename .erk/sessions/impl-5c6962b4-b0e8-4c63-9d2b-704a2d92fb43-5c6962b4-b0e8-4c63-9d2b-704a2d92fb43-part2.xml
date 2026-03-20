@@ -1,0 +1,742 @@
+<session>
+  <meta branch="plnd/O9109-delete-get-pr-for-pl-03-20-1803" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01MvwQtFRi8pR7d51KUCcDXS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Dk3Fb48UP8x72uLpdVa2ej">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.claude/skills/erk-exec/reference.md</param>
+    <param name="old_string">### get-pr-for-plan
+
+Get PR details for a plan.
+
+**Usage:** `erk exec get-pr-for-plan` &lt;pr...[truncated 66 chars]...----- | ----------- |
+| `PR_NUMBER` | Yes      | -           |
+
+### get-pr-review-comments</param>
+    <param name="new_string">### get-pr-review-comments</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="59032" output_tokens="393" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dk3Fb48UP8x72uLpdVa2ej">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.claude/skills/erk-exec/reference.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the docs/learned files. Let me read the relevant sections and update them in batches.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="60360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LaKajWZreu6UQzXYw2gfcA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/cli/pr-operations.md</param>
+    <param name="offset">48</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="60360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LaKajWZreu6UQzXYw2gfcA">
+    48→**Why REST instead of `gh pr list`?** The gateway preserves GraphQL quota for operations that don't have REST equivalents (review threads, timeline events). See `RealGitHub.get_pr_for_branch()` in `packages/erk-shared/src/erk_shared/gateway/github/real.py`.
+    49→
+    50→The command layer uses `gh pr list` because simplicity matters more than quota optimization in one-off user commands.
+    51→
+    52→## The Branch Name Must Match
+    53→
+    54→&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, lines 88-99 --&gt;
+    55→
+    56→GitHub's PR query matches the **exact branch name** including owner prefix (`owner:branch`). If your branch naming changes (e.g., different timestamp suffixes for the same feature), each branch can have its own PR. This is intentional — erk branches are immutable once created.
+    57→
+    58→The `erk exec get-pr-for-plan` script (see `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`) demonstrates fallback logic when `branch_name` is missing from plan metadata: it infers the branch from the current git context if it matches the plan's naming pattern (e.g., `plnd/` prefix).
+    59→
+    60→## Integration: Plan Metadata and PR Discovery
+    61→
+    62→Erk stores `branch_name` in plan-header metadata when a plan is submitted. This creates a durable link: plan → branch → PR. The full discovery strategy (including fallbacks when metadata is missing) is documented in `docs/learned/planning/pr-discovery.md`.
+    63→
+    64→**Why store branch_name?** PR discovery is deterministic when you have the branch name. Without it, you resort to heuristics (searching commit messages, checking issue timelines) that may find the wrong PR or no PR at all.
+    65→
+    66→## Update vs Create Decision Tree
+    67→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01D7CcJ6poWP385YjYdF6Erp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+    <param name="offset">245</param>
+    <param name="limit">95</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="60360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D7CcJ6poWP385YjYdF6Erp">
+   245→
+   246→### See Also
+   247→
+   248→- [GitHub CLI PR Comment Patterns](../ci/github-cli-comment-patterns.md) - Full guide to CI comment posting patterns
+   249→- [GitHub Actions Output Patterns](../ci/github-actions-output-patterns.md) - For `$GITHUB_OUTPUT` (different context)
+   250→
+   251→## Lenient vs. Strict Handlers
+   252→
+   253→Some subprocess operations should fail gracefully while others should fail fast. The `_get_pr_for_plan_direct()` pattern from `trigger-async-learn` demonstrates the lenient approach.
+   254→
+   255→### Decision Matrix
+   256→
+   257→| Aspect                    | Lenient Handler                        | Strict Handler                         |
+   258→| ------------------------- | -------------------------------------- | -------------------------------------- |
+   259→| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+   260→| **Return type**           | `T \| None`                            | `T` or discriminated union             |
+   261→| **Use case**              | Optional operations, fail-open         | Critical operations, fail-closed       |
+   262→| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+   263→
+   264→### Lenient Pattern
+   265→
+   266→Use when the operation is **optional** and the caller should decide how to handle absence:
+   267→
+   268→&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct --&gt;
+   269→
+   270→See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+   271→
+   272→**Characteristics:**
+   273→
+   274→- **No exceptions** - Never raises, always returns `None` on failure
+
+... [65 lines omitted] ...
+
+   275→- **No error messages** - Caller decides what to log
+   276→- **Uniform failure** - All failure modes return `None` consistently
+   286→Use when the operation is **critical** and failure should be explicit:
+   288→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+   292→- **Explicit errors** - Each failure mode has specific error message
+   294→- **Clear contract** - Caller knows exceptions mean critical failure
+   298→- User-facing commands where failure needs explanation
+   300→- CLI commands that should exit with error message
+   331→The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XKFpm1759qs4Vrt9fUSYvi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md</param>
+    <param name="offset">128</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="60360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XKFpm1759qs4Vrt9fUSYvi">
+   128→
+   129→4. **Use return values, not boolean flags** — return `None` on critical failure, actual result on success. Avoid `success: bool` flags that require checking.
+   130→
+   131→## Defense-in-Depth: Two-Layer Pattern
+   132→
+   133→For complex workflows involving multiple failure modes, combine fail-open with **root cause recovery**.
+   134→
+   135→&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct --&gt;
+   136→
+   137→**Example**: The `trigger-async-learn` command needs PR review comments. See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
+   138→
+   139→**Two layers**:
+   140→
+   141→1. **Layer 1: Lenient handler** — returns `None` on ANY failure (missing data, API errors, not found). No exceptions, no error messages. Pure gateway logic.
+   142→
+   143→2. **Layer 2: Root cause recovery** — caller inspects `None` and decides what to do:
+   144→
+   145→   ```python
+   146→   pr_info = _get_pr_for_plan_direct(...)
+   147→
+   148→   if pr_info is None:
+   149→       click.echo("No PR found for plan, skipping review comments", err=True)
+   150→       review_comments = None  # Continue without PR data
+   151→   else:
+   152→       pr_number = pr_info["pr_number"]
+   153→       review_comments = fetch_review_comments(repo_root, pr_number)
+   154→
+   155→   # Workflow continues with or without review comments
+   156→   ```
+   157→
+
+... [30 lines omitted] ...
+
+   160→- **Lenient handler isolates failure modes** — all lookup failures return `None` consistently
+   169→- Multiple failure modes exist (missing data vs API error vs not found)
+   170→- Caller needs to explain failures differently based on context
+   175→| Context          | Critical? | Failure Handling      | Rationale                              |
+   177→| User CLI command | Yes       | Error exit            | User needs immediate feedback          |
+   178→| Async background | No        | Log warning, continue | Review comments are optional for learn |
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SbVVmVsNyjKSZU42ryuSEq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/branch-name-inference.md</param>
+    <param name="offset">28</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="60360" output_tokens="473" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 542, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SbVVmVsNyjKSZU42ryuSEq">
+    28→The gap between steps 1 and 2 is unavoidable: the plan must exist before the branch can be named after it (the branch name contains the issue number). Attempting to set `branch_name` during save would require either predicting the branch name (fragile — the user might choose a custom name) or creating the branch immediately (wrong — the user hasn't started work yet).
+    29→
+    30→## Two-Layer Resolution
+    31→
+    32→When code needs to look up a PR from a plan, `branch_name` may be missing from metadata. The system uses two layers:
+    33→
+    34→&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, get_pr_for_plan --&gt;
+    35→
+    36→**Layer 1 — Metadata lookup**: Read `branch_name` from the `plan-header` block. This succeeds when `impl-signal started` ran successfully.
+    37→
+    38→**Layer 2 — Git context inference** (removed): Previously, if `branch_name` was missing, the system checked whether the current git branch matched the `P{issue_number}-` prefix. This fallback was removed in PR #8269 (which deleted `get_branch_issue()`). Resolution now relies solely on Layer 1 metadata lookup and `plan-ref.json`.
+    39→
+    40→If Layer 1 does not produce a match, the command fails with an actionable error.
+    41→
+    42→## Branch Prefix Contracts
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7219" cache_read_input_tokens="60902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7219}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I need to update all the docs/learned references. Let me do them efficiently.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7219" cache_read_input_tokens="60902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7219}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01H2gCotCcNxidDECAoPPBEy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/cli/pr-operations.md</param>
+    <param name="old_string">## The Branch Name Must Match
+
+&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_p...[truncated 484 chars]...om the current git context if it matches the plan's naming pattern (e.g., `plnd/` prefix).</param>
+    <param name="new_string">## The Branch Name Must Match
+
+GitHub's PR query matches the **exact branch name** includi...[truncated 108 chars]...branch can have its own PR. This is intentional — erk branches are immutable once created.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7219" cache_read_input_tokens="60902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7219}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H2gCotCcNxidDECAoPPBEy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/cli/pr-operations.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012XLC9UZRbfYXvaxqViJFG2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/branch-name-inference.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, get_pr_for_plan --&gt;
+
+**...[truncated 358 chars]...ch_issue()`). Resolution now relies solely on Layer 1 metadata lookup and `plan-ref.json`.</param>
+    <param name="new_string">**Layer 1 — Metadata lookup**: Read `branch_name` from the `plan-header` block. This succe...[truncated 270 chars]...ch_issue()`). Resolution now relies solely on Layer 1 metadata lookup and `plan-ref.json`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7219" cache_read_input_tokens="60902" output_tokens="1336" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7219, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012XLC9UZRbfYXvaxqViJFG2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/branch-name-inference.md has been updated successfully.
+  </tool_result>
+  <assistant>Now the bigger docs. Update `subprocess-wrappers.md` — replace the strict pattern section that references the deleted command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="68121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018gP7iVEJQ2Po1WGbSjLDXC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+    <param name="old_string">Some subprocess operations should fail gracefully while others should fail fast. The `_get_pr_for_plan_direct()` pattern from `trigger-async-learn` demonstrates the lenient approach.</param>
+    <param name="new_string">Some subprocess operations should fail gracefully while others should fail fast.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="68121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018gP7iVEJQ2Po1WGbSjLDXC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01A9brY3bbtmrFAwiu59myMY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_di...[truncated 95 chars]...ict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).</param>
+    <param name="new_string">Returns `T | None` — `None` on any failure (missing data, API errors, not found).</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="68121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A9brY3bbtmrFAwiu59myMY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ay2Rt9me7TwP4oeyjf4mNd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+    <param name="old_string">See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the ...[truncated 55 chars]... JSON error output on any failure, and attempts branch_name recovery via pattern matching.</param>
+    <param name="new_string">A strict handler raises `SystemExit(1)` with JSON error output on any failure, providing clear error messages to the user.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="68121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ay2Rt9me7TwP4oeyjf4mNd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S2LR7J6uxcwrx6HHhY7Nti">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+    <param name="old_string">```python
+# Lenient: Try to get PR info, but don't fail if unavailable
+pr_info = _get_pr_for_plan_direct(...)
+if pr_info is None:</param>
+    <param name="new_string">```python
+# Lenient: Try to get PR info, but don't fail if unavailable
+pr_info = get_pr_info(...)
+if pr_info is None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="68121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S2LR7J6uxcwrx6HHhY7Nti">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AUb1WQpoDxkNJ2VLu9aKnR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+    <param name="old_string">The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.</param>
+    <param name="new_string">A user-facing command like `get-plan-info` is **strict** because the user explicitly asked for the data and expects either the answer or a clear error message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1477" cache_read_input_tokens="68121" output_tokens="1139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1477, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AUb1WQpoDxkNJ2VLu9aKnR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `fail-open-patterns.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="69598" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1497}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TFFgq4x21ckmoDgwUDP2Nf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_di...[truncated 67 chars]...`_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.</param>
+    <param name="new_string">**Example**: The `trigger-async-learn` command needs PR review comments but treats their absence as non-fatal.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="69598" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1497}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TFFgq4x21ckmoDgwUDP2Nf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BeThbpqmZykNbJzgqQohQY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md</param>
+    <param name="old_string">   ```python
+   pr_info = _get_pr_for_plan_direct(...)
+
+   if pr_info is None:</param>
+    <param name="new_string">   ```python
+   pr_info = get_pr_info(...)
+
+   if pr_info is None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="69598" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1497}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BeThbpqmZykNbJzgqQohQY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QPkU4mYGdXKq38T95Uad2i">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md</param>
+    <param name="old_string">The same gateway function (`_get_pr_for_plan_direct`) returns `None` in all cases. The **caller** decides whether `None` is acceptable.</param>
+    <param name="new_string">The lenient handler returns `None` in all failure cases. The **caller** decides whether `None` is acceptable.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="69598" output_tokens="645" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QPkU4mYGdXKq38T95Uad2i">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/fail-open-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the planning docs. Let me read and update `learn-without-pr-context.md`, `pr-discovery.md`, `planned-pr-learn-pipeline.md`, `lifecycle.md`, `index.md`, and `tripwires.md`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1029" cache_read_input_tokens="71095" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1029}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BfRY8zt2AyemsnSuvx3gdY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1029" cache_read_input_tokens="71095" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1029}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BfRY8zt2AyemsnSuvx3gdY">
+     1→---
+     2→title: Learn Without PR Context
+     3→read_when:
+     4→  - debugging learn workflow failures where PR data is missing
+     5→  - implementing new learn pipeline steps that consume PR context
+     6→  - understanding why learn output lacks review feedback
+     7→tripwires:
+     8→  - action: "treating missing PR as an error in the learn pipeline"
+     9→    warning: "No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction."
+    10→  - action: "adding a new PR-dependent step to trigger-async-learn"
+    11→    warning: "Any new PR-dependent step must handle the None case from _get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None."
+    12→---
+    13→
+    14→# Learn Without PR Context
+    15→
+    16→## Why This Matters
+    17→
+    18→The learn pipeline extracts documentation insights from plan sessions. The richest input includes both session XML _and_ PR review comments (inline threads + discussion), but a PR doesn't always exist when learn runs. Plans may be in-progress, abandoned, consolidated into a different PR, or implemented for local testing only.
+    19→
+    20→Treating missing PR context as an error would block learn from running in these valid scenarios. The pipeline is designed so that sessions alone — containing the planning rationale and implementation decisions — provide sufficient material for insight extraction. PR review comments are enrichment, not a prerequisite.
+    21→
+    22→## Graceful Degradation Architecture
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct --&gt;
+    25→
+    26→The `trigger-async-learn` orchestrator resolves the plan's PR through a chain of lookups: issue → metadata block → branch name → PR. Each step returns `None` on failure, and the entire PR comment-fetching block is gated on the result.
+    27→
+    28→When `_get_pr_for_plan_direct` returns `None`, the orchestrator logs a warning and skips PR comment fetching. No review comments or discussion comments are written to the learn materials directory. The downstream learn agent receives only preprocessed session XML — which still contains all planning rationale, implementation decisions, and tool interactions.
+    29→
+    30→When a PR _is_ found, the orchestrator fetches two separate comment types via gateway calls (not `gh` CLI):
+
+... [30 lines omitted] ...
+
+    37→Both use LBYL discriminated union checking (`isinstance(result, PRNotFound)`) rather than exception handling, consistent with erk's error patterns.
+    54→**Using `gh` CLI for PR detection in Python**: The orchestrator uses typed gateway calls with discriminated union returns, not subprocess calls to `gh`. This provides type safety and LBYL error handling. Don't mix the two approaches.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EgkfT7Lwgde6pkpNN2CQdf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1029" cache_read_input_tokens="71095" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1029}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EgkfT7Lwgde6pkpNN2CQdf">
+     1→---
+     2→title: PR Discovery Strategies for Plans
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "finding the PR associated with an erk plan"
+     7→  - "debugging why get-pr-for-plan returns no-branch-in-plan"
+     8→  - "understanding how erk learn finds PRs"
+     9→  - "working with plan-header branch_name field"
+    10→tripwires:
+    11→  - action: "assuming branch_name is always present in plan-header metadata"
+    12→    warning: "branch_name is null until Phase 2 (pr dispatch). Check the plan metadata field lifecycle in lifecycle.md."
+    13→  - action: "looking for alternative PR lookup paths beyond branch-based"
+    14→    warning: "Branch-based lookup via get_pr_for_branch() is the only PR discovery strategy. The issue timeline API was removed."
+    15→---
+    16→
+    17→# PR Discovery Strategies for Plans
+    18→
+    19→Finding the PR associated with a plan is a cross-cutting concern that spans multiple commands (`get-pr-for-plan`, `trigger-async-learn`, `erk pr co`, `erk pr close`). Two fundamentally different strategies exist, chosen based on what metadata is available.
+    20→
+    21→## Discovery Strategy
+    22→
+    23→Plan metadata accumulates progressively through the lifecycle. The `branch_name` field doesn't exist until Phase 2 (submission). Commands that run before submission will not find a PR.
+    24→
+    25→| Available Data | Strategy           | Used By                                                  |
+    26→| -------------- | ------------------ | -------------------------------------------------------- |
+    27→| `branch_name`  | Branch → PR lookup | `get-pr-for-plan`, `trigger-async-learn`, land, dispatch |
+    28→
+    29→## Branch-Based Lookup
+    30→
+
+... [30 lines omitted] ...
+
+    35→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the canonical implementation. This command also includes a **git context fallback**: if `branch_name` is null in metadata but the current branch matches the `P{issue_number}-` naming convention, it infers the branch from git state. This handles cases where `impl-signal` failed to write the metadata.
+    41→The `erk learn` workflow composes both strategies. It uses the branch-based path (via `_get_pr_for_plan_direct()`) but treats PR absence as non-fatal — learn can proceed without review comments if no PR is found.
+    49→**Assuming `get-pr-for-plan` always succeeds**: The command returns structured error codes (`no-branch-in-plan`, `no-pr-for-branch`) that callers must handle. Plans in Phase 1 (created but not submitted) will always return `no-branch-in-plan`.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DjCK4eR4F1kuHBN6xdXexi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/planned-pr-learn-pipeline.md</param>
+    <param name="offset">23</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1029" cache_read_input_tokens="71095" output_tokens="337" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1029, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DjCK4eR4F1kuHBN6xdXexi">
+    23→For draft-PR plans, the learn materials location (session branch) is stored as a comment on the PR rather than in a metadata block. The land command (`land_cmd.py`) has a comment-based fallback to retrieve this information when the metadata block lookup returns nothing.
+    24→
+    25→## Affected Files
+    26→
+    27→- `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` — short-circuit for draft-PR plan ID discovery
+    28→- `src/erk/cli/commands/land_cmd.py` — comment-based fallback for learn materials retrieval
+    29→- `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` — PR lookup utilities used by the pipeline
+    30→
+    31→## Related Documentation
+    32→
+    33→- [Planned PR Backend](planned-pr-backend.md) — Backend overview and plan ID semantics
+    34→- [Planned PR Lifecycle](planned-pr-lifecycle.md) — Full lifecycle including learn trigger
+    35→- [Learn Pipeline Workflow](learn-pipeline-workflow.md) — Overall learn pipeline architecture
+    36→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KWTUgDYUhQE7ArrfXaW1jz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md</param>
+    <param name="old_string">  - action: "adding a new PR-dependent step to trigger-async-learn"
+    warning: "Any new ...[truncated 30 chars]...get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None."</param>
+    <param name="new_string">  - action: "adding a new PR-dependent step to trigger-async-learn"
+    warning: "Any new ...[truncated 16 chars]...ne case from PR lookup. The entire PR comment block is gated on pr_result not being None."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3082" cache_read_input_tokens="72124" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3082}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KWTUgDYUhQE7ArrfXaW1jz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Rb9bpgfUXwnsCne4Wf1o8C">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_di...[truncated 495 chars]...ch still contains all planning rationale, implementation decisions, and tool interactions.</param>
+    <param name="new_string">The `trigger-async-learn` orchestrator resolves the plan's PR through a chain of lookups: ...[truncated 379 chars]...ch still contains all planning rationale, implementation decisions, and tool interactions.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3082" cache_read_input_tokens="72124" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3082}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rb9bpgfUXwnsCne4Wf1o8C">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016MTT7CDNhfvhLnxDqpA1Xv">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md</param>
+    <param name="old_string">**Assuming PR always exists**: Any code in the learn pipeline that calls gateway PR method...[truncated 104 chars]...ons behind a single `None` check — new PR-dependent steps must live inside that same gate.</param>
+    <param name="new_string">**Assuming PR always exists**: Any code in the learn pipeline that calls gateway PR method...[truncated 99 chars]...ons behind a single `None` check — new PR-dependent steps must live inside that same gate.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3082" cache_read_input_tokens="72124" output_tokens="943" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3082, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016MTT7CDNhfvhLnxDqpA1Xv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/learn-without-pr-context.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `pr-discovery.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015M84PY8bryDLdc33Vfr7wN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">  - "debugging why get-pr-for-plan returns no-branch-in-plan"</param>
+    <param name="new_string">  - "debugging why PR lookup returns no-branch-in-plan"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015M84PY8bryDLdc33Vfr7wN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PBW4ufoxuT9utEX5VTdnFX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">Finding the PR associated with a plan is a cross-cutting concern that spans multiple comma...[truncated 56 chars]... Two fundamentally different strategies exist, chosen based on what metadata is available.</param>
+    <param name="new_string">Finding the PR associated with a plan is a cross-cutting concern that spans multiple comma...[truncated 16 chars]...-learn`, `erk pr co`, `erk pr close`). The strategy depends on what metadata is available.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PBW4ufoxuT9utEX5VTdnFX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016bmaVwRQkjsvQqpkVqiVHy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">| `branch_name`  | Branch → PR lookup | `get-pr-for-plan`, `trigger-async-learn`, land, dispatch |</param>
+    <param name="new_string">| `branch_name`  | Branch → PR lookup | `get-plan-info`, `trigger-async-learn`, land, dispatch |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016bmaVwRQkjsvQqpkVqiVHy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TwgCPx1vEdSrj7BFphpSDq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">&lt;!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, get_pr_for_plan --&gt;
+
+Se...[truncated 360 chars]...ata.
+
+**Why branch-based**: Branch-to-PR is a deterministic 1:1 lookup via the GitHub API.</param>
+    <param name="new_string">The `get-plan-info` command exposes `head_ref_name` and `base_ref_name` from plan metadata...[truncated 24 chars]...ery.
+
+**Why branch-based**: Branch-to-PR is a deterministic 1:1 lookup via the GitHub API.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TwgCPx1vEdSrj7BFphpSDq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014Ht896LYk3ANziVPFrQJx4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">The `erk learn` workflow composes both strategies. It uses the branch-based path (via `_ge...[truncated 323 chars]...n of `get-pr-for-plan` logic that avoids subprocess overhead by calling gateways directly.</param>
+    <param name="new_string">The `erk learn` workflow uses the branch-based path but treats PR absence as non-fatal — learn can proceed without review comments if no PR is found.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1169}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Ht896LYk3ANziVPFrQJx4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LuW5fSVH4FW2GcTDTsCCsR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md</param>
+    <param name="old_string">**Assuming `get-pr-for-plan` always succeeds**: The command returns structured error codes...[truncated 43 chars]...ndle. Plans in Phase 1 (created but not submitted) will always return `no-branch-in-plan`.</param>
+    <param name="new_string">**Assuming PR lookup always succeeds**: Plans in Phase 1 (created but not submitted) will not have branch metadata. Callers must handle the absence case.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1169" cache_read_input_tokens="75206" output_tokens="1529" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1169, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LuW5fSVH4FW2GcTDTsCCsR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/pr-discovery.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `planned-pr-learn-pipeline.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="76375" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2108}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MMudEevRsWpJTJCfFPtbzA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/planned-pr-learn-pipeline.md</param>
+    <param name="old_string">- `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` — PR lookup utilities used by the pipeline
+</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2108" cache_read_input_tokens="76375" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2108, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MMudEevRsWpJTJCfFPtbzA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/planned-pr-learn-pipeline.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `lifecycle.md` — this has several references. Let me read the relevant sections:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="78483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 256}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VAJktbKzgEFDacUgt59SgD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md</param>
+    <param name="offset">930</param>
+    <param name="limit">85</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="78483" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VAJktbKzgEFDacUgt59SgD">
+   930→**Implication:** Workflows that need branch information must verify the plan has been submitted (check for `branch_name` field).
+   931→
+   932→### Graceful Failure Patterns for Metadata
+   933→
+   934→Commands that depend on plan-header metadata should handle missing fields gracefully:
+   935→
+   936→#### Example: `get-pr-for-plan` Dependency
+   937→
+   938→The `get-pr-for-plan` command requires `branch_name` from plan-header:
+   939→
+   940→```bash
+   941→erk exec get-pr-for-plan &lt;issue_number&gt;
+   942→```
+   943→
+   944→**Failure modes:**
+   945→
+   946→1. **Plan not submitted** (`branch_name` is null) → Returns sentinel value `no-branch-in-plan`
+   947→2. **Metadata read failure** → Returns error with diagnostic message
+   948→
+   949→**Correct handling:**
+   950→
+   951→```bash
+   952→PR_NUMBER=$(erk exec get-pr-for-plan &lt;issue_number&gt;)
+   953→
+   954→if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
+   955→  echo "Plan has not been submitted yet (no branch created)"
+   956→  exit 1
+   957→fi
+   958→
+   959→if [ "$PR_NUMBER" = "error" ]; then
+
+... [55 lines omitted] ...
+
+   960→  echo "Failed to read plan metadata"
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ei9UWsjkoWgyLaqrEbmFx1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">#### Example: `get-pr-for-plan` Dependency
+
+The `get-pr-for-plan` command requires `branch...[truncated 544 chars]...UMBER is valid
+gh pr view "$PR_NUMBER"
+```
+
+#### Validation Checklist Before Plan Dispatch</param>
+    <param name="new_string">#### Example: `get-plan-info` Dependency
+
+The `get-plan-info` command returns plan metadat...[truncated 566 chars]...d yet (no branch created)"
+  exit 1
+fi
+```
+
+#### Validation Checklist Before Plan Dispatch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1267" cache_read_input_tokens="78739" output_tokens="649" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ei9UWsjkoWgyLaqrEbmFx1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NnVSConx7r3JFkJy8TdXpv">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">| PR exists           | `erk exec get-pr-for-plan &lt;number&gt;`               | PR number       |</param>
+    <param name="new_string">| PR exists           | `erk exec get-plan-info &lt;number&gt;`                 | `head_ref_name` |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="80006" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 703, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NnVSConx7r3JFkJy8TdXpv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DBaiA7f17z4YddqRsVi5vf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">#### When `get-pr-for-plan` Becomes Available
+
+The `get-pr-for-plan` command becomes funct...[truncated 743 chars]... ]; then
+  echo "Plan has not been submitted yet. Run: erk pr submit &lt;number&gt;"
+  exit 1
+fi</param>
+    <param name="new_string">#### When Branch Metadata Becomes Available
+
+The `head_ref_name` field in `get-plan-info` ...[truncated 780 chars]... ]; then
+  echo "Plan has not been submitted yet. Run: erk pr submit &lt;number&gt;"
+  exit 1
+fi</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="80709" output_tokens="819" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 250, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DBaiA7f17z4YddqRsVi5vf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `index.md` and `tripwires.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="80959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 873}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BW7dmUWwBjCgrn6kqhwiWN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/index.md</param>
+    <param name="old_string">- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, deb...[truncated 25 chars]...in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field</param>
+    <param name="new_string">- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, deb...[truncated 19 chars]...in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="80959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 873}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BW7dmUWwBjCgrn6kqhwiWN">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016pjgFBiNay4WzSJ33Wj3xW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context...[truncated 76 chars]..._get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.</param>
+    <param name="new_string">**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context...[truncated 61 chars]...one case from PR lookup. The entire PR comment block is gated on pr_result not being None.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="873" cache_read_input_tokens="80959" output_tokens="547" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 873, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016pjgFBiNay4WzSJ33Wj3xW">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EzBafNTW8EMFhJBASM7xGi">
+    <param name="pattern">get-pr-for-plan|get_pr_for_plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/index.md</param>
+    <param name="output_mode">content</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="81832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 822}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EzBafNTW8EMFhJBASM7xGi">
+58-- **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
+59:- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
+60-- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs plan number distinction
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Up8cgRPAwSutAsugqPuNRg">
+    <param name="pattern">get_pr_for_plan|get-pr-for-plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/tripwires.md</param>
+    <param name="output_mode">content</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="81832" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 822, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Up8cgRPAwSutAsugqPuNRg">
+18-
+19:**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+20-
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Etz5CvLeyWTbBxdrN1VypZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/index.md</param>
+    <param name="offset">57</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="82654" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 599}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Etz5CvLeyWTbBxdrN1VypZ">
+    57→- **[planning-patterns.md](planning-patterns.md)** — preparing to enter plan mode, optimizing plan creation workflow, delegating tasks during planning
+    58→- **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
+    59→- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
+    60→- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs plan number distinction
+    61→- **[refactoring-decomposition.md](refactoring-decomposition.md)** — deleting a function or type that has many callers across the codebase, planning a multi-node objective that removes a backend or feature flag, decomposing a large refactor into reviewable PRs
+  </tool_result>
+  <tool_use name="Read" id="toolu_0147nERhUZm6zTkBbB4eSL2H">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/tripwires.md</param>
+    <param name="offset">17</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="82654" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 599, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0147nERhUZm6zTkBbB4eSL2H">
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+    20→
+    21→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01E9jGNs6Y8kCT9QTT3WxoMW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/index.md</param>
+    <param name="old_string">- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, deb...[truncated 25 chars]...in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field</param>
+    <param name="new_string">- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, deb...[truncated 19 chars]...in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="83253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 813}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E9jGNs6Y8kCT9QTT3WxoMW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/index.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RUmRyu3HoDWQq7DTQh3JrD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context...[truncated 76 chars]..._get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.</param>
+    <param name="new_string">**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context...[truncated 61 chars]...one case from PR lookup. The entire PR comment block is gated on pr_result not being None.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="83253" output_tokens="531" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 813, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RUmRyu3HoDWQq7DTQh3JrD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do a final sweep to confirm no remaining references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="84066" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 676}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015ShPdcByhfbLgyWkghqhxY">
+    <param name="pattern">get-pr-for-plan|get_pr_for_plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="84066" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 676, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015ShPdcByhfbLgyWkghqhxY">
+No matches found
+  </tool_result>
+  <assistant>All references cleaned up. Let me run the tests to verify nothing is broken.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="84742" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HMxYKXe3uWzMUqzVdK2tZW">
+    <param name="description">Run unit tests for exec scripts</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest for the exec scripts tests and report results:
+uv run pytest tests/unit/cli/commands/exec/scripts/ -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="84742" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01GV9xf1ynTG8yp6LnPEYJLQ">
+    <param name="description">Run ruff linter check</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run ruff linter on the changed source files and report results:
+uv run ruff check src/erk/...[truncated 27 chars]...erk/cli/commands/exec/group.py packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="84742" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_018rFLWgkganareDk2Prkf3v">
+    <param name="description">Run ty type checker</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run ty type checker on the changed files and report results:
+uv run ty check src/erk/cli/c...[truncated 22 chars]...erk/cli/commands/exec/group.py packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="84742" output_tokens="442" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
