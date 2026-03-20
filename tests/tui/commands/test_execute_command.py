@@ -82,8 +82,8 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_checkout")
-        assert executor.copied_texts == ["erk br co feature-123"]
-        assert "Copied: erk br co feature-123" in executor.notifications
+        assert executor.copied_texts == ["erk slot co feature-123"]
+        assert "Copied: erk slot co feature-123" in executor.notifications
 
     def test_copy_checkout_notifies_when_worktree_branch_none(self) -> None:
         """copy_checkout shows notification when worktree_branch is None."""
@@ -143,8 +143,8 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_prepare")
-        assert executor.copied_texts == ["erk br co --for-plan 123"]
-        assert "Copied: erk br co --for-plan 123" in executor.notifications
+        assert executor.copied_texts == ["erk slot co --for-plan 123"]
+        assert "Copied: erk slot co --for-plan 123" in executor.notifications
 
     def test_copy_dispatch_copies_command(self) -> None:
         """copy_dispatch copies the dispatch command."""

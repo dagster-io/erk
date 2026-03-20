@@ -345,7 +345,7 @@ class PlanDetailScreen(ModalScreen):
                 severity="warning",
             )
             return
-        cmd = f"erk br co {self._row.worktree_branch}"
+        cmd = f"erk slot co {self._row.worktree_branch}"
         self._copy_and_notify(cmd)
 
     def action_copy_pr_checkout_script(self) -> None:
@@ -359,13 +359,13 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_prepare(self) -> None:
         """Copy basic prepare command to clipboard."""
-        cmd = f"erk br co --for-plan {self._row.pr_number}"
+        cmd = f"erk slot co --for-plan {self._row.pr_number}"
         self._copy_and_notify(cmd)
 
     def action_copy_prepare_activate(self) -> None:
         """Copy one-liner to prepare worktree and start implementation."""
         cmd = (
-            f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'
+            f'source "$(erk slot co --for-plan {self._row.pr_number} --script)"'
             " && erk implement --dangerous"
         )
         self._copy_and_notify(cmd)
@@ -658,7 +658,7 @@ class PlanDetailScreen(ModalScreen):
                     severity="warning",
                 )
                 return
-            cmd = f"erk br co {row.worktree_branch}"
+            cmd = f"erk slot co {row.worktree_branch}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
@@ -677,13 +677,13 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Copied: {text}", severity=None)
 
         elif command_id == "copy_prepare":
-            cmd = f"erk br co --for-plan {row.pr_number}"
+            cmd = f"erk slot co --for-plan {row.pr_number}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
         elif command_id == "copy_prepare_activate":
             cmd = (
-                f'source "$(erk br co --for-plan {row.pr_number} --script)"'
+                f'source "$(erk slot co --for-plan {row.pr_number} --script)"'
                 " && erk implement --dangerous"
             )
             executor.copy_to_clipboard(cmd)
@@ -990,7 +990,7 @@ class PlanDetailScreen(ModalScreen):
                         yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
             # Prepare commands
-            prepare_cmd = f"erk br co --for-plan {self._row.pr_number}"
+            prepare_cmd = f"erk slot co --for-plan {self._row.pr_number}"
             with Container(classes="command-row"):
                 yield Label("[1]", classes="command-key")
                 yield CopyableLabel(prepare_cmd, prepare_cmd)

@@ -200,7 +200,7 @@ def _teleport_in_place(
     # Reset working tree to match the new branch head
     ctx.git.branch.checkout_branch(cwd, branch_name)
 
-    # Slot awareness: update assignment if in a managed slot (matches erk br co)
+    # Slot awareness: update assignment if in a managed slot (matches erk slot co)
     state = load_pool_state(repo.pool_json_path)
     if state is not None:
         current_assignment = find_assignment_by_worktree(state, ctx.git, cwd)

@@ -33,28 +33,28 @@ class TestPrNextSteps:
             pr_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.checkout == "erk br co --for-plan 42"
+        assert steps.checkout == "erk slot co --for-plan 42"
 
     def test_implement_current_wt(self) -> None:
         steps = PrNextSteps(
             pr_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.implement_current_wt == "erk br co --for-plan 42 && erk implement"
+        assert steps.implement_current_wt == "erk slot co --for-plan 42 && erk implement"
 
     def test_implement_current_wt_dangerous(self) -> None:
         steps = PrNextSteps(
             pr_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.implement_current_wt_dangerous == "erk br co --for-plan 42 && erk implement -d"
+        assert steps.implement_current_wt_dangerous == "erk slot co --for-plan 42 && erk implement -d"
 
     def test_checkout_new_slot(self) -> None:
         steps = PrNextSteps(
             pr_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.checkout_new_slot == "erk br co --new-slot --for-plan 42"
+        assert steps.checkout_new_slot == "erk slot co --new-slot --for-plan 42"
 
     def test_implement_new_wt(self) -> None:
         steps = PrNextSteps(
@@ -62,7 +62,7 @@ class TestPrNextSteps:
             url="https://github.com/org/repo/pull/42",
         )
         assert steps.implement_new_wt == (
-            'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement'
+            'source "$(erk slot co --new-slot --for-plan 42 --script)" && erk implement'
         )
 
     def test_implement_new_wt_dangerous(self) -> None:
@@ -71,7 +71,7 @@ class TestPrNextSteps:
             url="https://github.com/org/repo/pull/42",
         )
         assert steps.implement_new_wt_dangerous == (
-            'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement -d'
+            'source "$(erk slot co --new-slot --for-plan 42 --script)" && erk implement -d'
         )
 
     def test_dispatch_slash_command(self) -> None:
@@ -85,7 +85,7 @@ class TestPrNextSteps:
 class TestFormatPrNextStepsPlain:
     def test_contains_for_plan_command(self) -> None:
         output = format_pr_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
-        assert "erk br co --for-plan 42" in output
+        assert "erk slot co --for-plan 42" in output
 
     def test_hierarchical_format(self) -> None:
         output = format_pr_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
@@ -106,4 +106,4 @@ class TestFormatPrNextStepsPlain:
 
     def test_contains_checkout_new_slot(self) -> None:
         output = format_pr_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
-        assert "erk br co --new-slot --for-plan 42" in output
+        assert "erk slot co --new-slot --for-plan 42" in output

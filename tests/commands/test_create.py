@@ -109,7 +109,7 @@ def test_create_with_from_branch_trunk_errors() -> None:
         # Error message should match checkout command for consistency
         assert "Cannot create worktree for trunk branch" in result.stderr
         assert "main" in result.stderr
-        assert "erk br co root" in result.stderr
+        assert "erk slot co root" in result.stderr
         assert "root worktree" in result.stderr
 
         # Verify no worktree was created

@@ -124,7 +124,7 @@ def ensure_worktree_for_branch(
         f'Cannot create worktree for trunk branch "{trunk_branch}".\n'
         f"The trunk branch should be checked out in the root worktree.\n"
         f"To switch to {trunk_branch}, use:\n"
-        f"  erk br co root",
+        f"  erk slot co root",
     )
 
     # Branch not checked out - need to create worktree
@@ -274,7 +274,7 @@ def add_worktree(
             f"Options:\n"
             f"  • Use a different branch name\n"
             f"  • Create a new branch instead: erk create {path.name}\n"
-            f"  • Switch to that worktree: erk br co {branch}",
+            f"  • Switch to that worktree: erk slot co {branch}",
         )
 
         ctx.git.worktree.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
@@ -730,7 +730,7 @@ def create_wt(
         name != trunk_branch,
         f'"{name}" cannot be used as a worktree name.\n'
         f"To switch to the {name} branch in the root repository, use:\n"
-        f"  erk br co root",
+        f"  erk slot co root",
     )
 
     # Apply date prefix and uniqueness for plan-derived names
@@ -821,7 +821,7 @@ def create_wt(
             f'Cannot create worktree for trunk branch "{trunk_branch}".\n'
             f"The trunk branch should be checked out in the root worktree.\n"
             f"To switch to {trunk_branch}, use:\n"
-            f"  erk br co root",
+            f"  erk slot co root",
         )
 
         # Create worktree with existing branch

@@ -240,7 +240,7 @@ def _gather_cleanup_confirmation(
                 + f" Slot '{target.worktree_path.name}' has no assignment "
                 + "(branch checked out outside erk)."
             )
-            user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
+            user_output("  Use `erk pr co` or `erk slot checkout` to track slot usage.")
             proceed = ctx.console.confirm(
                 f"After landing, release slot '{target.worktree_path.name}' "
                 f"and delete branch '{target.branch}'?",

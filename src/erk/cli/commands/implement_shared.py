@@ -576,7 +576,7 @@ def output_activation_instructions(
     else:
         # Provide manual instructions
         user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))
-        user_output(f"  1. Change to worktree:  erk br co {branch}")
+        user_output(f"  1. Change to worktree:  erk slot co {branch}")
         if submit:
             impl_cmd = build_claude_command("/erk:plan-implement", dangerous, model)
             user_output("  2. Run implementation, CI, and submit PR:")

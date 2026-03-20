@@ -137,7 +137,7 @@ class TestDetermineExitAction:
         )
         assert result.action == ExitAction.BLOCK
         assert "PR #42 saved" in result.message
-        assert "erk br co --for-plan 42" in result.message
+        assert "erk slot co --for-plan 42" in result.message
         assert "erk pr dispatch 42" in result.message
         assert "Session complete" in result.message
         assert result.delete_plan_saved_marker is True
@@ -990,7 +990,7 @@ class TestBuildStep2Message:
     def test_contains_implement_current_wt_command(self) -> None:
         """Step 2 shows implement-in-current-worktree command."""
         message = build_step2_message(pr_number=42, url="")
-        assert "erk br co --for-plan 42 && erk implement" in message
+        assert "erk slot co --for-plan 42 && erk implement" in message
 
     def test_contains_implement_new_wt_command(self) -> None:
         """Step 2 shows implement-in-new-worktree command."""
@@ -1000,7 +1000,7 @@ class TestBuildStep2Message:
     def test_contains_checkout_commands(self) -> None:
         """Step 2 shows checkout commands."""
         message = build_step2_message(pr_number=42, url="")
-        assert "erk br co --for-plan 42" in message
+        assert "erk slot co --for-plan 42" in message
 
     def test_contains_dispatch_command(self) -> None:
         """Step 2 shows dispatch commands (CLI and slash command)."""

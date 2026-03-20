@@ -23,7 +23,6 @@ from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
-from erk_slots.common import allocate_slot_for_branch
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 def _write_error_script_and_exit(ctx: ErkContext) -> None:
     """Write a minimal error script and output its path, then exit 1.
 
-    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    Used by ``script_error_handler`` to ensure ``source "$(erk slot co --script)"``
     always receives a valid file path — even on failure — so the shell never
     sees ``source ""``.
     """
@@ -49,7 +48,7 @@ def script_error_handler(ctx: ErkContext) -> Generator[None]:
     """Catch errors in --script mode and emit an error script instead of empty stdout.
 
     Wraps the checkout body so that any error path produces a valid script
-    file on stdout. Without this, ``source "$(erk br co --script)"`` receives
+    file on stdout. Without this, ``source "$(erk slot co --script)"`` receives
     an empty string when the command fails, causing a confusing
     ``source: no such file or directory:`` error.
 
@@ -256,6 +255,8 @@ def ensure_branch_has_worktree(
             create_branch=False,
         )
     else:
+        from erk_slots.common import allocate_slot_for_branch
+
         result = allocate_slot_for_branch(
             ctx,
             repo,

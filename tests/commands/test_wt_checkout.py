@@ -288,4 +288,4 @@ def test_checkout_branch_name_hint() -> None:
         # Assert: Error message suggests using checkout for branch names
         assert "Error:" in result.output
         assert "Hint:" in result.output
-        assert "erk br co" in result.output
+        assert "erk slot co" in result.output

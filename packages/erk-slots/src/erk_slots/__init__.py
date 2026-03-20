@@ -19,7 +19,7 @@ def slot_group() -> None:
 
 
 slot_group.add_command(slot_assign)
-slot_group.add_command(slot_checkout)
+register_with_aliases(slot_group, slot_checkout)
 slot_group.add_command(slot_init_pool)
 slot_group.add_command(slot_repair)
 slot_group.add_command(slot_unassign)

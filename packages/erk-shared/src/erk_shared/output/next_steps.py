@@ -20,11 +20,11 @@ class PrNextSteps:
 
     @property
     def checkout(self) -> str:
-        return f"erk br co --for-plan {self.pr_number}"
+        return f"erk slot co --for-plan {self.pr_number}"
 
     @property
     def checkout_new_slot(self) -> str:
-        return f"erk br co --new-slot --for-plan {self.pr_number}"
+        return f"erk slot co --new-slot --for-plan {self.pr_number}"
 
     @property
     def dispatch_slash_command(self) -> str:
@@ -32,23 +32,23 @@ class PrNextSteps:
 
     @property
     def implement_current_wt(self) -> str:
-        return f"erk br co --for-plan {self.pr_number} && erk implement"
+        return f"erk slot co --for-plan {self.pr_number} && erk implement"
 
     @property
     def implement_current_wt_dangerous(self) -> str:
-        return f"erk br co --for-plan {self.pr_number} && erk implement -d"
+        return f"erk slot co --for-plan {self.pr_number} && erk implement -d"
 
     @property
     def implement_new_wt(self) -> str:
         return (
-            f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
+            f'source "$(erk slot co --new-slot --for-plan {self.pr_number} --script)"'
             " && erk implement"
         )
 
     @property
     def implement_new_wt_dangerous(self) -> str:
         return (
-            f'source "$(erk br co --new-slot --for-plan {self.pr_number} --script)"'
+            f'source "$(erk slot co --new-slot --for-plan {self.pr_number} --script)"'
             " && erk implement -d"
         )
 

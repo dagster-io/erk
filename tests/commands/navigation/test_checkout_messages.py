@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from erk.cli.commands.branch.checkout_cmd import _perform_checkout
+from erk_slots.checkout_cmd import _perform_checkout
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.fakes.gateway.git import FakeGit

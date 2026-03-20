@@ -308,7 +308,7 @@ class TestCreateObjectiveIssue:
         assert len(fake_gh.updated_bodies) == 1
         _issue_num, updated_body = fake_gh.updated_bodies[0]
         assert "## Commands" not in updated_body
-        assert "erk br co --for-plan" not in updated_body
+        assert "erk slot co --for-plan" not in updated_body
 
     def test_objective_with_extra_labels(self, tmp_path: Path) -> None:
         """Objective issues can have extra labels."""

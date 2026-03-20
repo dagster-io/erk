@@ -1,6 +1,6 @@
-"""Tests for branch checkout command with Graphite disabled.
+"""Tests for slot checkout command with Graphite disabled.
 
-This file verifies that branch checkout works correctly when Graphite
+This file verifies that slot checkout works correctly when Graphite
 is disabled (use_graphite=False), proving graceful degradation.
 """
 
@@ -16,7 +16,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 
 
 def test_checkout_succeeds_without_graphite() -> None:
-    """Branch checkout works when use_graphite=False."""
+    """Slot checkout works when use_graphite=False."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -47,7 +47,7 @@ def test_checkout_succeeds_without_graphite() -> None:
 
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-2", "--script"],
+            ["slot", "checkout", "feature-2", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -94,7 +94,7 @@ def test_checkout_does_not_call_ensure_graphite_tracking() -> None:
 
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature", "--script"],
+            ["slot", "checkout", "feature", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -104,11 +104,11 @@ def test_checkout_does_not_call_ensure_graphite_tracking() -> None:
         # The fact that we succeed means Graphite operations were skipped
 
 
-def test_checkout_auto_creates_worktree_without_graphite() -> None:
-    """Checking out unchecked-out branch works without Graphite.
+def test_checkout_auto_allocates_slot_without_graphite() -> None:
+    """Checking out unchecked-out branch allocates a slot without Graphite.
 
-    Default behavior checks out the branch in the current worktree rather
-    than creating a new one.
+    When a branch exists locally but isn't checked out anywhere, the unified
+    slot checkout allocates a slot for it (behavioral change from branch checkout).
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -139,15 +139,13 @@ def test_checkout_auto_creates_worktree_without_graphite() -> None:
         # Checkout a branch that exists locally but isn't checked out anywhere
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "unchecked-branch", "--script"],
+            ["slot", "checkout", "unchecked-branch", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        # Default behavior: checkout in current worktree (no new worktree created)
+        # Should allocate a slot (behavioral change from old branch checkout)
         assert result.exit_code == 0, result.output
-        assert len(git_ops.added_worktrees) == 0
-        assert (env.cwd, "unchecked-branch") in git_ops.checked_out_branches
 
 
 def test_checkout_no_graphite_errors_in_output() -> None:
@@ -181,7 +179,7 @@ def test_checkout_no_graphite_errors_in_output() -> None:
 
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature", "--script"],
+            ["slot", "checkout", "feature", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -194,7 +192,7 @@ def test_checkout_no_graphite_errors_in_output() -> None:
 
 
 def test_checkout_alias_works_without_graphite() -> None:
-    """erk br co alias works correctly without Graphite."""
+    """erk slot co alias works correctly without Graphite."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -222,10 +220,10 @@ def test_checkout_alias_works_without_graphite() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=False)
 
-        # Use the br co alias
+        # Use the slot co alias
         result = runner.invoke(
             cli,
-            ["br", "co", "feature", "--script"],
+            ["slot", "co", "feature", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )

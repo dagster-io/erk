@@ -1,4 +1,4 @@
-"""Tests for erk branch checkout command."""
+"""Tests for erk slot checkout command."""
 
 from pathlib import Path
 
@@ -53,7 +53,7 @@ def test_checkout_to_branch_in_single_worktree() -> None:
         # Checkout feature-2 which is checked out in feature_wt
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-2", "--script"],
+            ["slot", "checkout", "feature-2", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -104,7 +104,7 @@ def test_checkout_to_branch_not_found() -> None:
 
         # Checkout a branch that doesn't exist
         result = runner.invoke(
-            cli, ["branch", "checkout", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
@@ -112,10 +112,11 @@ def test_checkout_to_branch_not_found() -> None:
         assert "erk wt create --branch nonexistent-branch" in result.stderr
 
 
-def test_checkout_creates_worktree_for_unchecked_branch() -> None:
-    """Test that checkout checks out in current worktree when branch exists but is not checked out.
+def test_checkout_allocates_slot_for_unchecked_branch() -> None:
+    """Test that checkout allocates a slot when branch exists but is not checked out.
 
-    Default behavior checks out in the current worktree.
+    Unified slot checkout allocates a new pool slot instead of checking out
+    in the current worktree.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -148,42 +149,23 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
         # Checkout branch that exists but is not checked out
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "existing-branch", "--script"],
+            ["slot", "checkout", "existing-branch", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
-        # Should succeed — default checks out in current worktree (no slot allocation)
+        # Should succeed - allocates a slot
         assert result.exit_code == 0
-        assert "Assigned" not in result.stderr
-
-        # Verify checkout_branch was called on the current worktree
-        assert len(git_ops.checked_out_branches) == 1
-        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
-        assert checkout_path == env.cwd
-        assert checkout_branch == "existing-branch"
-
-        # No new worktree should be created
-        assert len(git_ops.added_worktrees) == 0
 
 
 def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
-    """Test that checkout checks out in current worktree when branch exists but is not checked out.
-
-    Default behavior checks out in the current worktree rather than creating
-    a new worktree.
-    """
+    """Test that checkout allocates a slot when branch exists but is not checked out."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
         wt1 = work_dir / "feature-1-wt"
 
         # feature-1 is checked out, but feature-base is not
-        # (even though it exists in git)
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -193,11 +175,10 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
             },
             current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-1", "feature-base"]},  # feature-base exists
+            local_branches={env.cwd: ["main", "feature-1", "feature-base"]},
             default_branches={env.cwd: "main"},
         )
 
-        # Create RepoContext to avoid filesystem checks
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -211,27 +192,13 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
         # Checkout feature-base which exists in repo but is not checked out
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-base", "--script"],
+            ["slot", "checkout", "feature-base", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
-        # Should succeed — default checks out in current worktree (no slot allocation)
+        # Should succeed - allocates a slot
         assert result.exit_code == 0
-        assert "Assigned" not in result.stderr
-
-        # Verify checkout_branch was called on the current worktree
-        assert len(git_ops.checked_out_branches) == 1
-        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
-        assert checkout_path == env.cwd
-        assert checkout_branch == "feature-base"
-
-        # No new worktree should be created
-        assert len(git_ops.added_worktrees) == 0
 
 
 def test_checkout_works_without_graphite() -> None:
@@ -266,7 +233,7 @@ def test_checkout_works_without_graphite() -> None:
 
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-1", "--script"],
+            ["slot", "checkout", "feature-1", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -317,7 +284,7 @@ def test_checkout_already_on_target_branch() -> None:
         # Checkout feature-1 while already in feature_wt
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-1", "--script"],
+            ["slot", "checkout", "feature-1", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -337,7 +304,6 @@ def test_checkout_already_on_target_branch() -> None:
         assert script_content is not None
 
         # CRITICAL: Message should say "Already on branch" since we're already in target location
-        # Message format: "Already on branch {branch} in worktree {name}"
         assert "Already on branch" in script_content
         assert "feature-1" in script_content
         assert "feature-1-wt" in script_content
@@ -378,7 +344,7 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
         # Checkout feature-2 which is checked out in feature_wt
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-2", "--script"],
+            ["slot", "checkout", "feature-2", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -393,19 +359,13 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
 
 
 def test_checkout_with_multiple_worktrees_same_branch() -> None:
-    """Test error when multiple worktrees have the same branch checked out.
-
-    This is an edge case that shouldn't happen in normal use (git prevents it),
-    but our code should handle it gracefully.
-    """
+    """Test error when multiple worktrees have the same branch checked out."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
         wt1 = work_dir / "wt1"
         wt2 = work_dir / "wt2"
 
-        # Edge case: same branch checked out in multiple worktrees
-        # (shouldn't happen in real git, but test our handling)
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -417,7 +377,6 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Create RepoContext to avoid filesystem checks
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -428,92 +387,23 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Checkout feature-2 which is checked out in multiple worktrees
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-2", "--script"],
+            ["slot", "checkout", "feature-2", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        # Should show error about multiple worktrees
         assert result.exit_code == 1
         assert "exists in multiple worktrees" in result.stderr
 
 
-def test_checkout_creates_worktree_for_remote_only_branch() -> None:
-    """Test checkout checks out in current worktree when branch exists only on origin.
-
-    Default behavior creates a tracking branch and checks out in the current
-    worktree.
-    """
+def test_checkout_allocates_slot_for_remote_only_branch() -> None:
+    """Test checkout allocates a slot when branch exists only on origin."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
 
-        # Branch exists on origin but not locally
-        git_ops = FakeGit(
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="main"),
-                ]
-            },
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},  # feature-remote NOT here
-            remote_branches={env.cwd: ["origin/main", "origin/feature-remote"]},  # But here
-            default_branches={env.cwd: "main"},
-        )
-
-        # Create RepoContext to avoid filesystem checks
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=work_dir,
-            worktrees_dir=work_dir / "worktrees",
-            pool_json_path=work_dir / "pool.json",
-        )
-
-        test_ctx = env.build_context(git=git_ops, repo=repo)
-
-        # Checkout remote branch
-        result = runner.invoke(
-            cli,
-            ["branch", "checkout", "feature-remote", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
-
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
-        # Should succeed — default checks out in current worktree (no slot allocation)
-        assert result.exit_code == 0, f"Expected success, got: {result.stderr}"
-        assert "exists on origin, creating local tracking branch" in result.stderr
-        assert "Assigned" not in result.stderr
-
-        # Verify fetch and tracking branch creation
-        assert ("origin", "feature-remote") in git_ops.fetched_branches
-        assert ("feature-remote", "origin/feature-remote") in git_ops.created_tracking_branches
-
-        # Verify checkout_branch was called on the current worktree
-        assert len(git_ops.checked_out_branches) == 1
-        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
-        assert checkout_path == env.cwd
-        assert checkout_branch == "feature-remote"
-
-        # No new worktree should be created
-        assert len(git_ops.added_worktrees) == 0
-
-
-def test_checkout_fails_when_branch_not_on_origin() -> None:
-    """Test checkout shows error when branch doesn't exist locally or on origin."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        work_dir = env.erk_root / env.cwd.name
-
-        # Branch doesn't exist locally or remotely
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -523,11 +413,10 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
             current_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             local_branches={env.cwd: ["main"]},
-            remote_branches={env.cwd: ["origin/main"]},  # nonexistent-branch NOT here
+            remote_branches={env.cwd: ["origin/main", "origin/feature-remote"]},
             default_branches={env.cwd: "main"},
         )
 
-        # Create RepoContext to avoid filesystem checks
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -538,38 +427,73 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Checkout nonexistent branch
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "nonexistent-branch", "--script"],
+            ["slot", "checkout", "feature-remote", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        # Should fail with error message
+        assert result.exit_code == 0, f"Expected success, got: {result.stderr}"
+        assert "exists on origin, creating local tracking branch" in result.stderr
+
+        # Verify fetch and tracking branch creation
+        assert ("origin", "feature-remote") in git_ops.fetched_branches
+        assert ("feature-remote", "origin/feature-remote") in git_ops.created_tracking_branches
+
+
+def test_checkout_fails_when_branch_not_on_origin() -> None:
+    """Test checkout shows error when branch doesn't exist locally or on origin."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        work_dir = env.erk_root / env.cwd.name
+
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                ]
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=work_dir,
+            worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["slot", "checkout", "nonexistent-branch", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
         assert result.exit_code == 1
         assert "does not exist" in result.stderr
         assert "erk wt create --branch nonexistent-branch" in result.stderr
 
 
 def test_checkout_message_when_switching_worktrees() -> None:
-    """Test that checkout shows 'Switched to worktree' when switching from different location.
-
-    This validates that message logic checks location change, not whether git checkout is needed.
-    Regression test for bug where 'Already on branch X' was shown when switching worktrees even
-    when the branch was already checked out in the target worktree.
-    """
+    """Test that checkout shows 'Switched to worktree' when switching from different location."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
-        # Set up two worktrees: root on main, secondary on feature-branch
         feature_wt = work_dir / "feature-wt"
 
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
-                    # Branch already checked out in target worktree
                     WorktreeInfo(path=feature_wt, branch="feature-branch"),
                 ]
             },
@@ -578,7 +502,6 @@ def test_checkout_message_when_switching_worktrees() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Create RepoContext to avoid filesystem checks
         repo = RepoContext(
             root=env.cwd,
             repo_name=env.cwd.name,
@@ -587,93 +510,30 @@ def test_checkout_message_when_switching_worktrees() -> None:
             pool_json_path=work_dir.parent / "pool.json",
         )
 
-        # Build context with cwd=env.cwd (root worktree)
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Checkout feature-branch from root worktree
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-branch", "--script"],
+            ["slot", "checkout", "feature-branch", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
         assert result.exit_code == 0
 
-        # Verify activation script was generated
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
 
-        # CRITICAL: Message should say "Switched to worktree"
-        # NOT "Already on branch" or "Already in worktree"
-        # Because user is switching from env.cwd to feature_wt
-        # Message format: "Switched to worktree {name}" (when name matches branch)
         assert "Switched to worktree" in script_content
         assert "feature-wt" in script_content
         assert str(feature_wt) in script_content
-
-        # Should NOT contain "Already" since we're switching locations
         assert "Already" not in script_content
-
-        # Should not checkout (branch already checked out in target worktree)
         assert len(git_ops.checked_out_branches) == 0
 
 
-def test_checkout_trunk_with_dirty_root_checks_out_in_current_worktree() -> None:
-    """Test that checkout of trunk when root is dirty checks out in current worktree.
-
-    After slot logic was moved to `erk slot checkout`, `branch checkout` simply
-    does a `git checkout` in the current worktree when the branch isn't found
-    in any worktree and root takeover fails (dirty root).
-    """
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        work_dir = env.erk_root / env.cwd.name
-
-        # Setup: root worktree is on a feature branch, not trunk
-        git_ops = FakeGit(
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="feature-1"),
-                ]
-            },
-            current_branches={env.cwd: "feature-1"},
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-1"]},
-            default_branches={env.cwd: "main"},
-            # Simulate dirty root - uncommitted changes present
-            file_statuses={env.cwd: ([], ["modified_file.txt"], [])},
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=work_dir,
-            worktrees_dir=work_dir / "worktrees",
-            pool_json_path=work_dir / "pool.json",
-        )
-
-        test_ctx = env.build_context(git=git_ops, repo=repo)
-
-        # Checkout trunk - now succeeds by checking out in current worktree
-        result = runner.invoke(
-            cli, ["branch", "checkout", "main"], obj=test_ctx, catch_exceptions=False
-        )
-
-        assert result.exit_code == 0
-
-
 def test_checkout_tracks_untracked_branch_with_graphite() -> None:
-    """Test that checkout tracks untracked branches with Graphite after confirmation.
-
-    When checking out a branch that is not tracked by Graphite, checkout
-    prompts the user. If confirmed, it calls track_branch() with trunk as parent.
-    """
+    """Test that checkout tracks untracked branches with Graphite after confirmation."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -691,7 +551,6 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Graphite has no branches tracked (empty dict)
         graphite = FakeGraphite(branches={})
 
         repo = RepoContext(
@@ -702,30 +561,22 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
             pool_json_path=work_dir / "pool.json",
         )
 
-        # use_graphite=True is required for Graphite tracking behavior
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[True],  # Confirm tracking
+            confirm_responses=[True],
         )
 
-        # Checkout the untracked branch (non-script mode)
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-untracked"],
+            ["slot", "checkout", "feature-untracked"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
         assert result.exit_code == 0
-
-        # Verify track_branch was called with repo root (not worktree path) and trunk as parent
         assert len(graphite.track_branch_calls) == 1
         cwd, branch_name, parent_branch = graphite.track_branch_calls[0]
         assert cwd == env.cwd
@@ -734,11 +585,7 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
 
 
 def test_checkout_skips_tracking_when_user_declines() -> None:
-    """Test that checkout skips tracking when user declines the confirmation.
-
-    When the user responds 'n' to the tracking confirmation, track_branch()
-    should not be called.
-    """
+    """Test that checkout skips tracking when user declines the confirmation."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -756,7 +603,6 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Graphite has no branches tracked (empty dict)
         graphite = FakeGraphite(branches={})
 
         repo = RepoContext(
@@ -767,39 +613,27 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
             pool_json_path=work_dir / "pool.json",
         )
 
-        # use_graphite=True is required for Graphite tracking prompt
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[False],  # Decline tracking
+            confirm_responses=[False],
         )
 
-        # Checkout the untracked branch (non-script mode)
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-untracked"],
+            ["slot", "checkout", "feature-untracked"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
         assert result.exit_code == 0
-
-        # Verify track_branch was NOT called (user declined)
         assert len(graphite.track_branch_calls) == 0
 
 
 def test_checkout_skips_tracking_in_script_mode() -> None:
-    """Test that checkout skips tracking prompt in script mode.
-
-    Script mode cannot prompt interactively, so tracking should be skipped
-    entirely when --script is used.
-    """
+    """Test that checkout skips tracking prompt in script mode."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -817,7 +651,6 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Graphite has no branches tracked (empty dict)
         graphite = FakeGraphite(branches={})
 
         repo = RepoContext(
@@ -828,33 +661,21 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
             pool_json_path=work_dir / "pool.json",
         )
 
-        # use_graphite=True to test that script mode skips tracking prompt
         test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, use_graphite=True)
 
-        # Checkout with --script flag (no interactive prompt)
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-untracked", "--script"],
+            ["slot", "checkout", "feature-untracked", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
         assert result.exit_code == 0
-
-        # Verify track_branch was NOT called (script mode skips tracking)
         assert len(graphite.track_branch_calls) == 0
 
 
 def test_checkout_does_not_track_already_tracked_branch() -> None:
-    """Test that checkout does not call track_branch for already tracked branches.
-
-    When a branch is already tracked by Graphite, checkout should not
-    call track_branch() again (idempotent behavior).
-    """
+    """Test that checkout does not call track_branch for already tracked branches."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -872,7 +693,6 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Graphite already has the branch tracked
         graphite = FakeGraphite(
             branches={
                 "feature-tracked": BranchMetadata(
@@ -895,36 +715,24 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo)
 
-        # Checkout the already tracked branch
         result = runner.invoke(
             cli,
-            ["branch", "checkout", "feature-tracked", "--script"],
+            ["slot", "checkout", "feature-tracked", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
         assert result.exit_code == 0
-
-        # Verify track_branch was NOT called (already tracked)
         assert len(graphite.track_branch_calls) == 0
 
 
 def test_checkout_does_not_track_trunk_branch() -> None:
-    """Test that checkout does not track the trunk branch with Graphite.
-
-    Trunk branches (main/master) are always implicitly tracked by Graphite,
-    so checkout should never call track_branch() for them.
-    """
+    """Test that checkout does not track the trunk branch with Graphite."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
         feature_wt = work_dir / "feature-wt"
 
-        # Setup: We're on feature branch, checking out main
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -937,7 +745,6 @@ def test_checkout_does_not_track_trunk_branch() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Graphite has no branches tracked (empty dict)
         graphite = FakeGraphite(branches={})
 
         repo = RepoContext(
@@ -948,19 +755,11 @@ def test_checkout_does_not_track_trunk_branch() -> None:
             pool_json_path=work_dir / "pool.json",
         )
 
-        # Set cwd to feature_wt to simulate being in that worktree
         test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, cwd=feature_wt)
 
-        # Checkout trunk (main) from feature worktree
         result = runner.invoke(
-            cli, ["branch", "checkout", "main", "--script"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "main", "--script"], obj=test_ctx, catch_exceptions=False
         )
 
-        if result.exit_code != 0:
-            print(f"stderr: {result.stderr}")
-            print(f"stdout: {result.stdout}")
-
         assert result.exit_code == 0
-
-        # Verify track_branch was NOT called for trunk branch
         assert len(graphite.track_branch_calls) == 0

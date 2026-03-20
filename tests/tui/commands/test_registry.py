@@ -300,7 +300,7 @@ def test_display_name_copy_checkout_shows_branch() -> None:
     row = make_pr_row(5831, "Test Plan", worktree_branch="feature-5831")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd = next(c for c in get_all_commands() if c.id == "copy_checkout")
-    assert get_display_name(cmd, ctx) == "erk br co feature-5831"
+    assert get_display_name(cmd, ctx) == "erk slot co feature-5831"
 
 
 def test_display_name_copy_checkout_falls_back_to_pr() -> None:

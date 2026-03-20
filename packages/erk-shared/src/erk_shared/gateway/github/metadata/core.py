@@ -428,7 +428,7 @@ def format_plan_commands_section(pr_number: int) -> str:
     return f"""## Commands
 
 ```bash
-erk br co --for-plan {pr_number}
+erk slot co --for-plan {pr_number}
 ```
 
 ```bash
