@@ -16,6 +16,23 @@
       "raw_size_kb": 1401,
       "xml_size_kb": 96,
       "git_branch": "plnd/O9272-move-slot-cmds-check-03-20-1504"
+    },
+    {
+      "session_id": "e3d603fd-efeb-4f4b-8a56-7c0810a4ba28",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T16:51:09.425196+00:00",
+      "files": [
+        "impl-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-part1.xml",
+        "impl-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-part2.xml",
+        "impl-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-part3.xml",
+        "impl-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-e3d603fd-efeb-4f4b-8a56-7c0810a4ba28-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 27,
+      "raw_size_kb": 2448,
+      "xml_size_kb": 217,
+      "git_branch": "plnd/O9272-move-branch-to-slot-03-20-1607"
     }
   ]
 }
