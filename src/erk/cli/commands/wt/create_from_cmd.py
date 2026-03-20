@@ -13,6 +13,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.slot_allocation import allocate_slot_for_branch
 from erk_shared.output.output import user_output
+from erk_slots.common import allocate_slot_for_branch
 
 
 @click.command("create-from", cls=CommandWithHiddenOptions)

@@ -79,7 +79,7 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         if "/" in worktree_name:
             user_output(
                 "\nHint: It looks like you provided a branch name. "
-                "Use 'erk br co' to switch by branch name."
+                "Use 'erk slot co' to switch by branch name."
             )
 
         raise SystemExit(1)

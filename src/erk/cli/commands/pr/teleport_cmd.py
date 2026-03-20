@@ -32,6 +32,7 @@ from erk.core.slot_allocation import find_assignment_by_worktree, update_slot_as
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.github.types import PRNotFound
+from erk_slots.common import find_assignment_by_worktree, update_slot_assignment_tip
 
 
 @click.command("teleport", cls=CommandWithHiddenOptions)
@@ -200,7 +201,7 @@ def _teleport_in_place(
     # Reset working tree to match the new branch head
     ctx.git.branch.checkout_branch(cwd, branch_name)
 
-    # Slot awareness: update assignment if in a managed slot (matches erk br co)
+    # Slot awareness: update assignment if in a managed slot (matches erk slot co)
     state = load_pool_state(repo.pool_json_path)
     if state is not None:
         current_assignment = find_assignment_by_worktree(state, ctx.git, cwd)

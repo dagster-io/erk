@@ -44,6 +44,7 @@ from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_content
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.slots.naming import is_placeholder_branch
 from erk_shared.subprocess_utils import run_subprocess_with_context
+from erk_slots.common import is_placeholder_branch
 
 logger = logging.getLogger(__name__)
 

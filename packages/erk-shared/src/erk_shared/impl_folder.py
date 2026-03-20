@@ -491,7 +491,7 @@ def add_worktree_creation_comment(
     # Format instructions for implementation
     instructions = f"""The worktree is ready for implementation. You can navigate to it using:
 ```bash
- erk br co {branch_name}
+ erk slot co {branch_name}
 ```
 
 To implement the plan:

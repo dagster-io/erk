@@ -28,6 +28,7 @@ from erk_shared.plan_workflow import (
     PlanValidationFailed,
     prepare_plan_for_worktree,
 )
+from erk_slots.common import allocate_slot_for_branch, update_slot_assignment_tip
 
 
 @click.command("create", cls=CommandWithHiddenOptions)

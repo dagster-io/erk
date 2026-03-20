@@ -8,6 +8,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.slot_allocation import cleanup_worktree_artifacts
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_slots.common import cleanup_worktree_artifacts
 from tests.fakes.gateway.console import FakeConsole
 from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env

@@ -89,10 +89,10 @@ def _display_open_run(ctx: CommandContext) -> str:
 def _display_copy_checkout(ctx: CommandContext) -> str:
     """Display name for copy_checkout command."""
     if ctx.row.worktree_branch:
-        return f"erk br co {ctx.row.worktree_branch}"
+        return f"erk slot co {ctx.row.worktree_branch}"
     if ctx.row.pr_number:
         return f"erk pr co {ctx.row.pr_number}"
-    return "erk br co <branch>"
+    return "erk slot co <branch>"
 
 
 def _display_copy_pr_checkout_script(ctx: CommandContext) -> str:
@@ -415,7 +415,7 @@ def get_all_commands() -> list[CommandDefinition]:
         # === PLAN COPIES ===
         CommandDefinition(
             id="copy_checkout",
-            name="erk br co <branch>",
+            name="erk slot co <branch>",
             description="checkout",
             category=CommandCategory.COPY,
             shortcut="c",
