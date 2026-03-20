@@ -1220,21 +1220,21 @@ class FakeLocalGitHub(LocalGitHub):
         self,
         *,
         location: GitHubRepoLocation,
-        pr_numbers: list[int],
+        plan_numbers: list[int],
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Filter pre-configured issues by number, returning matching PR linkages.
 
         Args:
             location: GitHub repository location (ignored in fake)
-            pr_numbers: List of plan numbers to fetch
+            plan_numbers: List of plan numbers to fetch
 
         Returns:
             Tuple of (filtered_issues, pr_linkages for those plans)
         """
-        if not pr_numbers:
+        if not plan_numbers:
             return ([], {})
 
-        number_set = set(pr_numbers)
+        number_set = set(plan_numbers)
         filtered_issues = [issue for issue in self._issues_data if issue.number in number_set]
 
         pr_linkages: dict[int, list[PullRequestInfo]] = {}

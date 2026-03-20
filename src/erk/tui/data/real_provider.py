@@ -381,7 +381,7 @@ class RealPrDataProvider(PrDataProvider):
 
         issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
             location=self._location,
-            pr_numbers=list(pr_ids),
+            plan_numbers=list(pr_ids),
         )
 
         plans = [github_issue_to_plan(issue) for issue in issues]
