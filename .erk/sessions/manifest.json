@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9292,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T21:22:42.038118+00:00",
+      "files": [
+        "impl--b36f3d1f-e618-43c7-a30d-83f5e430563e-part1.xml",
+        "impl--b36f3d1f-e618-43c7-a30d-83f5e430563e-part2.xml",
+        "impl--b36f3d1f-e618-43c7-a30d-83f5e430563e-part3.xml",
+        "impl--b36f3d1f-e618-43c7-a30d-83f5e430563e-part4.xml",
+        "impl--b36f3d1f-e618-43c7-a30d-83f5e430563e-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 10,
+      "raw_size_kb": 418,
+      "xml_size_kb": 111,
+      "git_branch": "plnd/allow-learn-prefix-03-20-1707"
+    }
+  ]
+}
