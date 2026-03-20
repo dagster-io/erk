@@ -240,7 +240,7 @@ def get_pr_number(git_root: str) -> int | None:
     if data is None:
         return None
 
-    pr_id = data.get("pr_id") or data.get("plan_id")
+    pr_id = data.get("pr_id")
     if isinstance(pr_id, str) and pr_id.isdigit():
         return int(pr_id)
     return None

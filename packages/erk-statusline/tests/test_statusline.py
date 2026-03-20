@@ -671,19 +671,6 @@ class TestGetPrNumber:
             result = get_pr_number(tmpdir)
             assert result is None
 
-    def test_plan_ref_json_legacy_plan_id_fallback(self) -> None:
-        """plan-ref.json with legacy plan_id key should still work via fallback."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            impl_dir = Path(tmpdir) / ".impl"
-            impl_dir.mkdir()
-            plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text(
-                '{"provider": "github", "plan_id": "99", "url": "https://example.com"}'
-            )
-
-            result = get_pr_number(tmpdir)
-            assert result == 99
-
 
 class TestGetObjectiveIssue:
     """Test objective issue loading from .impl/plan-ref.json."""
