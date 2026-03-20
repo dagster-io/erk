@@ -338,7 +338,7 @@ def _save_as_planned_pr(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_pr_next_steps_plain(pr_number, url=result.url))
+        click.echo(format_pr_next_steps_plain(pr_number, url=result.url, branch_name=branch_name))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,

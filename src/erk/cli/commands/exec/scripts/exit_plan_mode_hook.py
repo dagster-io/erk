@@ -63,6 +63,7 @@ from erk_shared.output.next_steps import format_pr_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 from erk_shared.scratch.session_markers import (
+    get_existing_saved_branch,
     read_objective_context_marker,
     read_plan_saved_marker,
 )
@@ -135,6 +136,7 @@ class HookInput:
     implement_now_marker_exists: bool
     plan_saved_marker_exists: bool
     plan_saved_pr_number: int | None  # Plan number read from plan-saved marker
+    plan_saved_branch_name: str | None  # Branch name read from plan-saved-branch marker
     incremental_plan_marker_exists: bool
     objective_context_marker_exists: bool
     objective_id: int | None  # Objective issue number if marker exists
@@ -156,6 +158,7 @@ class HookInput:
         implement_now_marker_exists: bool = False,
         plan_saved_marker_exists: bool = False,
         plan_saved_pr_number: int | None = None,
+        plan_saved_branch_name: str | None = None,
         incremental_plan_marker_exists: bool = False,
         objective_context_marker_exists: bool = False,
         objective_id: int | None = None,
@@ -175,6 +178,7 @@ class HookInput:
         - github_planning_enabled: True
         - All marker exists flags: False
         - plan_saved_pr_number: None
+        - plan_saved_branch_name: None
         - objective_issue: None
         - plan_file_path: None
         - pr_title: None
@@ -191,6 +195,7 @@ class HookInput:
             implement_now_marker_exists=implement_now_marker_exists,
             plan_saved_marker_exists=plan_saved_marker_exists,
             plan_saved_pr_number=plan_saved_pr_number,
+            plan_saved_branch_name=plan_saved_branch_name,
             incremental_plan_marker_exists=incremental_plan_marker_exists,
             objective_context_marker_exists=objective_context_marker_exists,
             objective_id=objective_id,
@@ -260,6 +265,7 @@ def build_step2_message(
     *,
     pr_number: int,
     url: str,
+    branch_name: str,
 ) -> str:
     """Build the Step 2 blocking message after plan is saved.
 
@@ -271,8 +277,9 @@ def build_step2_message(
     Args:
         pr_number: The plan PR number that was just saved.
         url: The URL of the saved plan PR.
+        branch_name: The branch name of the saved plan PR.
     """
-    next_steps = format_pr_next_steps_plain(pr_number, url=url)
+    next_steps = format_pr_next_steps_plain(pr_number, url=url, branch_name=branch_name)
 
     lines = [
         f"PR #{pr_number} saved successfully.",
@@ -509,10 +516,12 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     # Plan-saved marker present — show Step 2 "what next?" prompt
     if hook_input.plan_saved_marker_exists:
         pr_num = hook_input.plan_saved_pr_number
-        if pr_num is not None:
+        branch_name = hook_input.plan_saved_branch_name
+        if pr_num is not None and branch_name is not None:
             saved_msg = build_step2_message(
                 pr_number=pr_num,
                 url="",
+                branch_name=branch_name,
             )
         else:
             # Fallback for markers without a plan number (migration safety)
@@ -725,6 +734,7 @@ def _gather_inputs(
     implement_now_marker_exists = False
     plan_saved_marker_exists = False
     plan_saved_pr_number: int | None = None
+    plan_saved_branch_name: str | None = None
     incremental_plan_marker_exists = False
     objective_context_marker_exists = False
     objective_id: int | None = None
@@ -733,6 +743,7 @@ def _gather_inputs(
         plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
         if plan_saved_marker_exists:
             plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)
+            plan_saved_branch_name = get_existing_saved_branch(session_id, repo_root)
         marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
         incremental_plan_marker_exists = marker_path.exists()
         objective_context_marker_exists = _get_objective_context_marker_path(
@@ -793,6 +804,7 @@ def _gather_inputs(
         implement_now_marker_exists=implement_now_marker_exists,
         plan_saved_marker_exists=plan_saved_marker_exists,
         plan_saved_pr_number=plan_saved_pr_number,
+        plan_saved_branch_name=plan_saved_branch_name,
         incremental_plan_marker_exists=incremental_plan_marker_exists,
         objective_context_marker_exists=objective_context_marker_exists,
         objective_id=objective_id,

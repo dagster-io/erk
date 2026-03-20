@@ -132,12 +132,13 @@ class TestDetermineExitAction:
             HookInput.for_test(
                 plan_saved_marker_exists=True,
                 plan_saved_pr_number=42,
+                plan_saved_branch_name="plnd/my-feature",
                 plan_file_path=Path("/some/plan.md"),
             )
         )
         assert result.action == ExitAction.BLOCK
         assert "PR #42 saved" in result.message
-        assert "erk br co --for-plan 42" in result.message
+        assert "erk slot co plnd/my-feature" in result.message
         assert "erk pr dispatch 42" in result.message
         assert "Session complete" in result.message
         assert result.delete_plan_saved_marker is True
@@ -984,50 +985,50 @@ class TestBuildStep2Message:
 
     def test_contains_pr_number(self) -> None:
         """Step 2 message includes the PR number."""
-        message = build_step2_message(pr_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "PR #42 saved" in message
 
     def test_contains_implement_current_wt_command(self) -> None:
         """Step 2 shows implement-in-current-worktree command."""
-        message = build_step2_message(pr_number=42, url="")
-        assert "erk br co --for-plan 42 && erk implement" in message
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "erk slot co plnd/my-feature && erk implement" in message
 
     def test_contains_implement_new_wt_command(self) -> None:
         """Step 2 shows implement-in-new-worktree command."""
-        message = build_step2_message(pr_number=42, url="")
-        assert "--new-slot --for-plan 42" in message
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "erk slot co plnd/my-feature --new-slot" in message
 
     def test_contains_checkout_commands(self) -> None:
         """Step 2 shows checkout commands."""
-        message = build_step2_message(pr_number=42, url="")
-        assert "erk br co --for-plan 42" in message
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "erk slot co plnd/my-feature" in message
 
     def test_contains_dispatch_command(self) -> None:
         """Step 2 shows dispatch commands (CLI and slash command)."""
-        message = build_step2_message(pr_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "erk pr dispatch 42" in message
         assert "/erk:pr-dispatch" in message
         assert "Dispatch PR #42:" in message
 
     def test_session_complete_no_exit_plan_mode(self) -> None:
         """Step 2 tells Claude not to call ExitPlanMode again."""
-        message = build_step2_message(pr_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "Session complete. Do NOT call ExitPlanMode again." in message
 
     def test_no_ask_user_question(self) -> None:
         """Step 2 does NOT use AskUserQuestion."""
-        message = build_step2_message(pr_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "do NOT use AskUserQuestion" in message
 
     def test_no_implement_now_marker(self) -> None:
         """Step 2 does NOT reference implement-now marker creation."""
-        message = build_step2_message(pr_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "implement-now" not in message
         assert "marker create" not in message
 
     def test_no_plan_implement_slash_command(self) -> None:
         """Step 2 does NOT reference /erk:plan-implement."""
-        message = build_step2_message(pr_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "/erk:plan-implement" not in message
 
 
@@ -1080,6 +1081,9 @@ class TestHookIntegration:
         marker_dir.mkdir(parents=True)
         plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
         plan_saved_marker.write_text("42\nCreated by test", encoding="utf-8")
+        # Create plan-saved-branch marker
+        branch_marker = marker_dir / "plan-saved-branch.marker"
+        branch_marker.write_text("plnd/my-feature", encoding="utf-8")
 
         # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
@@ -1182,6 +1186,9 @@ class TestHookIntegration:
         marker_dir.mkdir(parents=True)
         plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
         plan_saved_marker.write_text("42\nCreated by test", encoding="utf-8")
+        # Create plan-saved-branch marker
+        branch_marker = marker_dir / "plan-saved-branch.marker"
+        branch_marker.write_text("plnd/my-feature", encoding="utf-8")
         objective_context_marker = marker_dir / "objective-context.marker"
         objective_context_marker.write_text("3679", encoding="utf-8")
 

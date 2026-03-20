@@ -134,4 +134,8 @@ def pr_create(
         and result.branch_name is not None
         and result.pr_url is not None
     ):
-        user_output(format_pr_next_steps_plain(result.pr_number, url=result.pr_url))
+        user_output(
+            format_pr_next_steps_plain(
+                result.pr_number, url=result.pr_url, branch_name=result.branch_name
+            )
+        )
