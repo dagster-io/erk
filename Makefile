@@ -1,10 +1,10 @@
 .PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve exec-reference-check mcp mcp-dev test-erk-mcp pre-push-check install-hooks
 
 prettier:
-	prettier --write '**/*.md' --ignore-path .gitignore
+	prettier --write '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore
 
 prettier-check:
-	prettier --check '**/*.md' --ignore-path .gitignore
+	prettier --check '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore
 
 format-check:
 	uv run ruff format --check
@@ -15,7 +15,7 @@ lint:
 fix:
 	uv run ruff check --fix --unsafe-fixes
 	uv run ruff format
-	prettier --write '**/*.md' --ignore-path .gitignore
+	prettier --write '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore
 
 ty:
 	uv run ty check
@@ -98,7 +98,7 @@ fast-ci:
 	exit_code=0; \
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
+	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
 	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
@@ -114,7 +114,7 @@ all-ci:
 	exit_code=0; \
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
+	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
 	echo "\n--- Docs Check ---" && uv run erk docs check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
