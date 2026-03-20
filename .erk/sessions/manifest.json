@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9297,
+  "sessions": [
+    {
+      "session_id": "d44cd52f-1995-4070-9a07-2031fe467b17",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-20T18:04:26.702916+00:00",
+      "files": [
+        "planning-d44cd52f-1995-4070-9a07-2031fe467b17-a53f0c72-3c9f-492a-b368-8234912e0935-part1.xml",
+        "planning-d44cd52f-1995-4070-9a07-2031fe467b17-a53f0c72-3c9f-492a-b368-8234912e0935-part2.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 10,
+      "raw_size_kb": 569,
+      "xml_size_kb": 100,
+      "git_branch": "plnd/add-slot-checkout-nav-03-20-1715"
+    }
+  ]
+}
