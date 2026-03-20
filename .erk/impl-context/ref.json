@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Simplify `erk slot checkout` UX \u2014 Remove `--new-slot`, Add `erk slot goto`"
+}
