@@ -21,22 +21,9 @@ tripwires:
 
 ### In-Place Teleport (`_teleport_in_place`)
 
-After force-resetting the branch to match remote, the command updates the slot assignment:
+After force-resetting the branch to match remote, the command updates the slot assignment.
 
-```python
-# Slot awareness: update assignment if in a managed slot (matches erk br co)
-state = load_pool_state(repo.pool_json_path)
-if state is not None:
-    current_assignment = find_assignment_by_worktree(state, ctx.git, cwd)
-    if current_assignment is not None:
-        update_slot_assignment_tip(
-            repo.pool_json_path,
-            state,
-            current_assignment,
-            branch_name=branch_name,
-            now=ctx.time.now().isoformat(),
-        )
-```
+**Source**: `src/erk/cli/commands/pr/teleport_cmd.py:203-214` — checks if in a managed slot via `load_pool_state()`, then calls `update_slot_assignment_tip()` to record the new branch name.
 
 The slot assignment records which branch is checked out in each slot. After teleporting in-place to a new branch, the assignment must be updated so the pool knows the current branch.
 

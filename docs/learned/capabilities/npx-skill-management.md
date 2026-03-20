@@ -59,15 +59,9 @@ From `.agents/skills/` (as of writing):
 
 **Source**: `src/erk/capabilities/skills/bundled.py` (lines 17-38)
 
-Skills managed by npx are listed in `_UNBUNDLED_SKILLS`:
+Skills managed by npx are listed in `_UNBUNDLED_SKILLS`.
 
-```python
-_UNBUNDLED_SKILLS: frozenset[str] = frozenset({
-    "dignified-python",  # npx-managed
-    "fake-driven-testing",  # npx-managed
-    ...
-})
-```
+**Source**: `src/erk/capabilities/skills/bundled.py:17-38` — a `frozenset[str]` of skill names that erk skips during its own bundling process. Includes `dignified-python`, `fake-driven-testing`, `skill-creator`, and other npx-distributed skills.
 
 This registry tells erk's capability system to skip these skills during its own bundling process. Without this registration, erk would try to install them from its own bundle (where they're absent).
 
