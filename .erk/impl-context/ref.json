@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Delete `get-pr-for-plan` exec command and migrate to `get-plan-info`"
+}
