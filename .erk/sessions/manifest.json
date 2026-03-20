@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9307,
+  "sessions": [
+    {
+      "session_id": "55383e51-17fc-41b3-ac7b-e8b4faa24483",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T19:57:58.646744+00:00",
+      "files": [
+        "impl-55383e51-17fc-41b3-ac7b-e8b4faa24483-55383e51-17fc-41b3-ac7b-e8b4faa24483-part1.xml",
+        "impl-55383e51-17fc-41b3-ac7b-e8b4faa24483-55383e51-17fc-41b3-ac7b-e8b4faa24483-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 11,
+      "raw_size_kb": 829,
+      "xml_size_kb": 104,
+      "git_branch": "plnd/objective-insight-delta-03-20-1943"
+    }
+  ]
+}
