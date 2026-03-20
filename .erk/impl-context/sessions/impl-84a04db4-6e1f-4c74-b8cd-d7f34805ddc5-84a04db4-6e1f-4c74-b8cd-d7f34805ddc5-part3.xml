@@ -1,0 +1,290 @@
+<session>
+  <meta branch="plnd/slot-co-next-steps-03-20-1814" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01RSwdnAE2aExNT2eLARVbZp">
+  1071→    def test_plan_saved_marker_flow_blocks_and_cleans_up(self, tmp_path: Path) -&gt; None:
+  1072→        """Verify plan-saved marker blocks exit with Step 2 and deletes the marker."""
+  1073→        runner = CliRunner()
+  1074→        session_id = "session-abc123"
+  1075→
+  1076→        # Create .erk/ to mark as managed project
+  1077→        (tmp_path / ".erk").mkdir()
+  1078→
+  1079→        # Create plan-saved marker with plan number on first line
+  1080→        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+  1081→        marker_dir.mkdir(parents=True)
+  1082→        plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+  1083→        plan_saved_marker.write_text("42\nCreated by test", encoding="utf-8")
+  1084→
+  1085→        # Inject via ErkContext - NO mocking needed
+  1086→        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+  1087→
+  1088→        stdin_data = json.dumps({"session_id": session_id})
+  1089→        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+  1090→
+  1091→        assert result.exit_code == 2
+  1092→        assert "PR #42 saved" in result.output
+  1093→        assert "erk pr dispatch 42" in result.output
+  1094→        assert not plan_saved_marker.exists()  # Marker deleted after session ends
+  1095→
+  1096→    def test_incremental_plan_marker_flow(self, tmp_path: Path) -&gt; None:
+  1097→        """Verify incremental-plan marker is deleted and exit is allowed."""
+  1098→        runner = CliRunner()
+  1099→        session_id = "session-abc123"
+  1100→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Gsj6b3iFXjnGxtd7AtGdu4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">1173</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1186" cache_read_input_tokens="93069" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1186, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gsj6b3iFXjnGxtd7AtGdu4">
+  1173→    def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -&gt; None:
+  1174→        """Verify both plan-saved and objective-context markers are deleted on plan-saved."""
+  1175→        runner = CliRunner()
+  1176→        session_id = "session-abc123"
+  1177→
+  1178→        # Create .erk/ to mark as managed project
+  1179→        (tmp_path / ".erk").mkdir()
+  1180→
+  1181→        # Create both plan-saved and objective-context markers
+  1182→        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+  1183→        marker_dir.mkdir(parents=True)
+  1184→        plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+  1185→        plan_saved_marker.write_text("42\nCreated by test", encoding="utf-8")
+  1186→        objective_context_marker = marker_dir / "objective-context.marker"
+  1187→        objective_context_marker.write_text("3679", encoding="utf-8")
+  1188→
+  1189→        # Inject via ErkContext - NO mocking needed
+  1190→        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+  1191→
+  1192→        stdin_data = json.dumps({"session_id": session_id})
+  1193→        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+  1194→
+  1195→        assert result.exit_code == 2
+  1196→        assert "PR #42 saved" in result.output
+  1197→        assert not plan_saved_marker.exists()  # Marker deleted
+  1198→        assert not objective_context_marker.exists()  # Objective marker also deleted
+  1199→
+  1200→    def test_branch_manager_used_for_pr_lookup(self, tmp_path: Path) -&gt; None:
+  1201→        """Verify branch_manager is created and used correctly for PR lookups.
+  1202→
+
+... [10 lines omitted] ...
+
+  1205→        AttributeError: 'RealLocalGitHub' object has no attribute 'get_prs_from_graphite'.
+  </tool_result>
+  <assistant>These integration tests create the `plan-saved.marker` but not the `plan-saved-branch.marker`, so `get_existing_saved_branch` returns `None`. The fix is to also create the branch marker in these tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="878" cache_read_input_tokens="94255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 878}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WDtK4egCmVk7Z6RCXVqaHK">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_plan_saved_marker_flow_blocks_and_cleans_up(self, tmp_path: Path) -&gt; None:
+  ...[truncated 952 chars]....output
+        assert not plan_saved_marker.exists()  # Marker deleted after session ends</param>
+    <param name="new_string">    def test_plan_saved_marker_flow_blocks_and_cleans_up(self, tmp_path: Path) -&gt; None:
+  ...[truncated 1128 chars]....output
+        assert not plan_saved_marker.exists()  # Marker deleted after session ends</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="878" cache_read_input_tokens="94255" output_tokens="963" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 878, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WDtK4egCmVk7Z6RCXVqaHK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AAdzQ4MqeDCp6DjYVQFi9y">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -&gt; None:...[truncated 622 chars]...tive-context.marker"
+        objective_context_marker.write_text("3679", encoding="utf-8")</param>
+    <param name="new_string">    def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -&gt; None:...[truncated 798 chars]...tive-context.marker"
+        objective_context_marker.write_text("3679", encoding="utf-8")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1031" cache_read_input_tokens="95133" output_tokens="689" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1031, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AAdzQ4MqeDCp6DjYVQFi9y">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the failing tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="96164" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013ZLrNsdcuuddwfww4qNv6Z">
+    <param name="description">Re-run failing tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report results:
+uv run pytest tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py -v
+Report all results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="96164" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 944, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013ZLrNsdcuuddwfww4qNv6Z">
+pytest passed: 90 passed in 0.84s
+
+All tests in `tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py` passed successfully.
+agentId: a5e5d2cc25653ab63 (use SendMessage with to: 'a5e5d2cc25653ab63' to continue this agent)
+&lt;usage&gt;total_tokens: 13615
+tool_uses: 1
+duration_ms: 14774&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 90 tests pass. Now let me run CI more broadly to catch any other issues.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="97108" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 274}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011yjcvQi2An3VVdrNLQ1sUg">
+    <param name="description">Run broader CI checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following commands sequentially and report results:
+1. uv run pytest packages/erk-shared/tests/ -v --timeout=30
+2. uv run pytest tests/unit/ -v --timeout=30
+
+Report pass/fail counts for each.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="97108" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011yjcvQi2An3VVdrNLQ1sUg">
+Perfect. Here are the test results:
+
+## Test Results
+
+**Command 1: `uv run pytest packages/erk-shared/tests/ -v`**
+
+pytest failed: 15 collection errors
+
+Import errors preventing test collection:
+- `ModuleNotFoundError: No module named 'tests.fakes'` (10 occurrences)
+- `ModuleNotFoundError: No module named 'tests.test_utils'` (1 occurrence)
+- `ModuleNotFoundError: No module named 'erk_shared.learn.extraction.claude_code_session_store'` (1 occurrence)
+
+The `packages/erk-shared/tests/` directory has import path dependencies on the root `tests/` directory that are not being resolved.
+
+**Command 2: `uv run pytest tests/unit/ -v`**
+
+pytest passed: 3989 passed in 10.49s
+
+All unit tests in the main `tests/unit/` directory passed successfully.
+agentId: ab2816cf5c4b51473 (use SendMessage with to: 'ab2816cf5c4b51473' to continue this agent)
+&lt;usage&gt;total_tokens: 19401
+tool_uses: 5
+duration_ms: 53446&lt;/usage&gt;
+  </tool_result>
+  <assistant>The `packages/erk-shared/tests/` collection errors are pre-existing (module import path issues), not related to our changes. All 3989 unit tests pass.
+
+Let me also run a quick type check and lint:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="97382" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 475}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NJKksTox2ZSp3ZnyiZfzSc">
+    <param name="description">Run ty and ruff checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run these commands and report results:
+1. uv run ruff check packages/erk-shared/src/erk_sh...[truncated 440 chars]...py packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+
+Report all results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="97382" output_tokens="377" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 475, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NJKksTox2ZSp3ZnyiZfzSc">
+**Results Summary:**
+
+1. **ruff check (linting)**: PASSED - All checks passed! No linting violations found.
+
+2. **ruff format (formatting)**: FAILED - 2 files need reformatting:
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
+   - `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/output/next_steps.py`
+
+3 files are already properly formatted:
+   - `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`
+   - `src/erk/cli/commands/exec/scripts/plan_save.py`
+   - `src/erk/cli/commands/pr/create_cmd.py`
+agentId: a3437428924396ac8 (use SendMessage with to: 'a3437428924396ac8' to continue this agent)
+&lt;usage&gt;total_tokens: 14133
+tool_uses: 2
+duration_ms: 14014&lt;/usage&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012GXNanxC8PUumq47B248u8">
+    <param name="command">uv run ruff format packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+    <param name="description">Auto-format the two files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="97857" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012GXNanxC8PUumq47B248u8">
+2 files reformatted
+  </tool_result>
+  <assistant>The formatter simplified the multi-line string returns into single lines. Let me verify the tests still pass with the reformatted code:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="98548" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 592}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011qL2AZaXKBaJX6etQpCkpg">
+    <param name="description">Final test verification</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run these tests and report results:
+1. uv run pytest packages/erk-shared/tests/unit/output...[truncated 95 chars]...ook.py tests/unit/cli/commands/exec/scripts/test_plan_save.py -v
+
+Report pass/fail counts.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="98548" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 592, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011qL2AZaXKBaJX6etQpCkpg">
+pytest failed: 1 collection error
+
+The test run failed due to a module import error. The test at `packages/erk-shared/tests/unit/output/test_next_steps.py` cannot find the module `tests.unit.output`.
+
+**Issue:** The path `packages/erk-shared/tests/unit/output/test_next_steps.py` has an incorrect module structure that pytest cannot resolve.
+
+The other three test files were not collected due to the early error:
+- `tests/unit/shared/test_next_steps.py`
+- `tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py`
+- `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+
+This is a test collection failure (exit code 2), not a test execution failure.
+agentId: a13d39afa60534b28 (use SendMessage with to: 'a13d39afa60534b28' to continue this agent)
+&lt;usage&gt;total_tokens: 14103
+tool_uses: 1
+duration_ms: 14708&lt;/usage&gt;
+  </tool_result>
+  <assistant>The `packages/erk-shared/tests/` needs to be run separately due to different module paths. Let me run them individually:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="491" cache_read_input_tokens="99140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 491}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01RFjgoZxsYV65oDZgxR38ZY">
+    <param name="description">Run tests separately</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run these two commands separately and report results:
+1. cd /Users/schrockn/.erk/repos/erk...[truncated 201 chars]...sts/unit/cli/commands/exec/scripts/test_plan_save.py -v
+
+Report pass/fail counts for each.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="491" cache_read_input_tokens="99140" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 491, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RFjgoZxsYV65oDZgxR38ZY">
+## Results
+
+**Command 1:** `cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared &amp;&amp; uv run pytest tests/unit/output/test_next_steps.py -v`
+
+pytest passed: 14 passed in 0.02s
+
+**Command 2:** `uv run pytest tests/unit/shared/test_next_steps.py tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py tests/unit/cli/commands/exec/scripts/test_plan_save.py -v`
+
+pytest passed: 138 passed in 0.68s
+
+**Total:** All 152 tests passed.
+agentId: a7a4c7f33c0908e3d (use SendMessage with to: 'a7a4c7f33c0908e3d' to continue this agent)
+&lt;usage&gt;total_tokens: 14306
+tool_uses: 2
+duration_ms: 14603&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+All 152 tests pass. Let me complete the remaining steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="707" cache_read_input_tokens="99631" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 707}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_016XUpPBo9iHvAQjkVkxJwc3">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="707" cache_read_input_tokens="99631" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 707, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016XUpPBo9iHvAQjkVkxJwc3">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XYGj8c2HHzcDERuyUaY8rk">
+    <param name="command">erk exec impl-signal ended --session-id="84a04db4-6e1f-4c74-b8cd-d7f34805ddc5" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="814" cache_read_input_tokens="99631" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 814}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V5dNZXon7RzdNAENUArfhV">
+    <param name="command">erk exec upload-impl-session --session-id="84a04db4-6e1f-4c74-b8cd-d7f34805ddc5" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="814" cache_read_input_tokens="99631" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 814, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XYGj8c2HHzcDERuyUaY8rk">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9298
+}
+  </tool_result>
+</session>

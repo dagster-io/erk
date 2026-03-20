@@ -1,0 +1,803 @@
+<session>
+  <meta branch="plnd/slot-co-next-steps-03-20-1814" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Update the `return cls(...)` in `for_test`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="66766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 284}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TbUZpkB73PLgGG8Q3skrBW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">            plan_saved_pr_number=plan_saved_pr_number,
+            incremental_plan_marker_exists=incremental_plan_marker_exists,</param>
+    <param name="new_string">            plan_saved_pr_number=plan_saved_pr_number,
+            plan_saved_branch_name=plan_saved_branch_name,
+            incremental_plan_marker_exists=incremental_plan_marker_exists,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="66766" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TbUZpkB73PLgGG8Q3skrBW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `build_step2_message` to accept `branch_name`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="67050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 330}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Jce2AKGMF6DBKwJ9roBBKX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">def build_step2_message(
+    *,
+    pr_number: int,
+    url: str,
+) -&gt; str:
+    """Build t...[truncated 331 chars]...the saved plan PR.
+    """
+    next_steps = format_pr_next_steps_plain(pr_number, url=url)</param>
+    <param name="new_string">def build_step2_message(
+    *,
+    pr_number: int,
+    url: str,
+    branch_name: str,
+) ...[truncated 437 chars]..."
+    next_steps = format_pr_next_steps_plain(pr_number, url=url, branch_name=branch_name)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="67050" output_tokens="509" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 330, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jce2AKGMF6DBKwJ9roBBKX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the call to `build_step2_message` in `determine_exit_action`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="67380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 576}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AjTS3XrAEc8Wh12o2DyG4C">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    # Plan-saved marker present — show Step 2 "what next?" prompt
+    if hook_input.plan_s...[truncated 106 chars]...ild_step2_message(
+                pr_number=pr_num,
+                url="",
+            )</param>
+    <param name="new_string">    # Plan-saved marker present — show Step 2 "what next?" prompt
+    if hook_input.plan_s...[truncated 231 chars]...ber=pr_num,
+                url="",
+                branch_name=branch_name,
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="67380" output_tokens="394" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AjTS3XrAEc8Wh12o2DyG4C">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_gather_inputs` to read the branch name when `plan_saved_marker_exists`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="67956" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 461}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01X69gpSTE8JrCSvekqpjXH2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    plan_saved_pr_number: int | None = None
+    if session_id is not None:
+        impleme...[truncated 188 chars]...r_exists:
+            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)</param>
+    <param name="new_string">    plan_saved_pr_number: int | None = None
+    plan_saved_branch_name: str | None = None
+...[truncated 320 chars]...oot)
+            plan_saved_branch_name = get_existing_saved_branch(session_id, repo_root)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="67956" output_tokens="465" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X69gpSTE8JrCSvekqpjXH2">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:     plan_saved_pr_number: int | None = None
+    if session_id is not None:
+        implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
+        plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
+        if plan_saved_marker_exists:
+            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ENrjtDhvCE2h6Z4tjR2RrM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="offset">720</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="817" cache_read_input_tokens="68417" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 817, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ENrjtDhvCE2h6Z4tjR2RrM">
+   720→    """Gather all inputs from environment. All I/O happens here.
+   721→
+   722→    Args:
+   723→        session_id: Claude session ID from hook_ctx, or None if not available.
+   724→        repo_root: Path to the git repository root.
+   725→        github_planning_enabled: Whether github_planning is enabled in config.
+   726→        claude_installation: Gateway to Claude installation data.
+   727→        git: Git gateway for worktree operations.
+   728→        branch_manager: BranchManager for PR lookups.
+   729→
+   730→    Returns:
+   731→        HookInput with all gathered state.
+   732→    """
+   733→    # Determine marker existence
+   734→    implement_now_marker_exists = False
+   735→    plan_saved_marker_exists = False
+   736→    plan_saved_pr_number: int | None = None
+   737→    incremental_plan_marker_exists = False
+   738→    objective_context_marker_exists = False
+   739→    objective_id: int | None = None
+   740→    if session_id is not None:
+   741→        implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
+   742→        plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
+   743→        if plan_saved_marker_exists:
+   744→            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)
+   745→        marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
+   746→        incremental_plan_marker_exists = marker_path.exists()
+   747→        objective_context_marker_exists = _get_objective_context_marker_path(
+   748→            session_id, repo_root
+   749→        ).exists()
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019nom6SBCY3hEbQxk92XrVi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    # Determine marker existence
+    implement_now_marker_exists = False
+    plan_saved_ma...[truncated 421 chars]...r_exists:
+            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)</param>
+    <param name="new_string">    # Determine marker existence
+    implement_now_marker_exists = False
+    plan_saved_ma...[truncated 553 chars]...oot)
+            plan_saved_branch_name = get_existing_saved_branch(session_id, repo_root)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="69234" output_tokens="567" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 630, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019nom6SBCY3hEbQxk92XrVi">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `HookInput(...)` construction in `_gather_inputs` to pass `plan_saved_branch_name`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="634" cache_read_input_tokens="69864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 634}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015PwwZajDFJeLsuRNnBEbqb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">        plan_saved_pr_number=plan_saved_pr_number,
+        incremental_plan_marker_exists=incremental_plan_marker_exists,</param>
+    <param name="new_string">        plan_saved_pr_number=plan_saved_pr_number,
+        plan_saved_branch_name=plan_saved_branch_name,
+        incremental_plan_marker_exists=incremental_plan_marker_exists,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="634" cache_read_input_tokens="69864" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 634, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015PwwZajDFJeLsuRNnBEbqb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `format_execution_commands` and `format_plan_issue_body` in metadata/core.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="70498" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 345}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01L7ZCzQUqy9gzvTfk2wsiwB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="old_string">def format_execution_commands(pr_number: int, *, url: str) -&gt; str:
+    """Format execution...[truncated 143 chars]... copy-pasteable commands
+    """
+    return format_next_steps_markdown(pr_number, url=url)</param>
+    <param name="new_string">def format_execution_commands(pr_number: int, *, url: str, branch_name: str) -&gt; str:
+    "...[truncated 241 chars]...    """
+    return format_next_steps_markdown(pr_number, url=url, branch_name=branch_name)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="70498" output_tokens="390" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 345, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L7ZCzQUqy9gzvTfk2wsiwB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VVnHB5uYQt2tVFbjiyTa3A">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="old_string">def format_plan_issue_body(plan_content: str, pr_number: int, *, url: str) -&gt; str:
+    """...[truncated 497 chars]...ody_block(plan_block)
+    commands_section = format_execution_commands(pr_number, url=url)</param>
+    <param name="new_string">def format_plan_issue_body(
+    plan_content: str, pr_number: int, *, url: str, branch_nam...[truncated 601 chars]... commands_section = format_execution_commands(pr_number, url=url, branch_name=branch_name)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="70843" output_tokens="557" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 458, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VVnHB5uYQt2tVFbjiyTa3A">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017EvkPG9f1Lzv11ByhdtCEi">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="71301" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 625}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017EvkPG9f1Lzv11ByhdtCEi">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XmAE4TWvc43Ai4DZTDDbr9">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="71301" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 625, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XmAE4TWvc43Ai4DZTDDbr9">
+Updated task #3 status
+  </tool_result>
+  <assistant>Phase 3: Updating tests. Let me update the package test file first.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="71926" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ASgaNNLukkmAztjcYpHvpd">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")</param>
+    <param name="new_string">PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42", branch_name="plnd/my-feature")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="71926" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ASgaNNLukkmAztjcYpHvpd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <assistant>Now update the assertions in the package test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="72124" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N8zRQCFTSkPcgzU7S6AYZC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_plan_next_steps_checkout_uses_plan_number() -&gt; None:
+    """checkout uses --for-p...[truncated 73 chars]...ull/42", branch_name="plnd/my-feature")
+    assert s.checkout == "erk br co --for-plan 42"</param>
+    <param name="new_string">def test_plan_next_steps_checkout_uses_branch_name() -&gt; None:
+    """checkout uses erk slo...[truncated 78 chars]...42", branch_name="plnd/my-feature")
+    assert s.checkout == "erk slot co plnd/my-feature"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="72124" output_tokens="357" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N8zRQCFTSkPcgzU7S6AYZC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015GeVS5BhmXMrkv86rmPioX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_plan_next_steps_checkout_new_slot() -&gt; None:
+    """checkout_new_slot uses --new-...[truncated 88 chars]...="plnd/my-feature")
+    assert s.checkout_new_slot == "erk br co --new-slot --for-plan 42"</param>
+    <param name="new_string">def test_plan_next_steps_checkout_new_slot() -&gt; None:
+    """checkout_new_slot uses erk sl...[truncated 98 chars]...nd/my-feature")
+    assert s.checkout_new_slot == "erk slot co plnd/my-feature --new-slot"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="72435" output_tokens="367" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015GeVS5BhmXMrkv86rmPioX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011rzM7p61RRGe7Dpvxpi7bu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_plan_next_steps_implement_current_wt() -&gt; None:
+    """implement_current_wt uses ...[truncated 127 chars]...-feature")
+    assert s.implement_current_wt == "erk br co --for-plan 42 &amp;&amp; erk implement"</param>
+    <param name="new_string">def test_plan_next_steps_implement_current_wt() -&gt; None:
+    """implement_current_wt uses ...[truncated 116 chars]...ture")
+    assert s.implement_current_wt == "erk slot co plnd/my-feature &amp;&amp; erk implement"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="72857" output_tokens="378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011rzM7p61RRGe7Dpvxpi7bu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0193wTA1fdbyqgFLzzivw5Sp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_plan_next_steps_implement_current_wt_dangerous() -&gt; None:
+    """implement_curren...[truncated 122 chars]...  assert s.implement_current_wt_dangerous == "erk br co --for-plan 42 &amp;&amp; erk implement -d"</param>
+    <param name="new_string">def test_plan_next_steps_implement_current_wt_dangerous() -&gt; None:
+    """implement_curren...[truncated 126 chars]...sert s.implement_current_wt_dangerous == "erk slot co plnd/my-feature &amp;&amp; erk implement -d"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="73289" output_tokens="379" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 443, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0193wTA1fdbyqgFLzzivw5Sp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CdR54JpQDfnoHLNQkDQqfc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_plan_next_steps_implement_new_wt() -&gt; None:
+    """implement_new_wt uses --new-sl...[truncated 163 chars]...(
+        'source "$(erk br co --new-slot --for-plan 42 --script)" &amp;&amp; erk implement'
+    )</param>
+    <param name="new_string">def test_plan_next_steps_implement_new_wt() -&gt; None:
+    """implement_new_wt uses erk slot...[truncated 163 chars]...      'source "$(erk slot co plnd/my-feature --new-slot --script)" &amp;&amp; erk implement'
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="73732" output_tokens="414" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 444, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CdR54JpQDfnoHLNQkDQqfc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ELpMuJ6Tg9PkrtHntyVpke">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_plan_next_steps_implement_new_wt_dangerous() -&gt; None:
+    """implement_new_wt_dan...[truncated 174 chars]...       'source "$(erk br co --new-slot --for-plan 42 --script)" &amp;&amp; erk implement -d'
+    )</param>
+    <param name="new_string">def test_plan_next_steps_implement_new_wt_dangerous() -&gt; None:
+    """implement_new_wt_dan...[truncated 178 chars]...   'source "$(erk slot co plnd/my-feature --new-slot --script)" &amp;&amp; erk implement -d'
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="74176" output_tokens="421" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ELpMuJ6Tg9PkrtHntyVpke">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `format_pr_next_steps_plain` calls in the package test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="74655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 486}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0165MuomvEjQJ2TwTZfd3Eob">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">format_pr_next_steps_plain(42, url="https://github.com/org/repo/pull/42")</param>
+    <param name="new_string">format_pr_next_steps_plain(42, url="https://github.com/org/repo/pull/42", branch_name="plnd/my-feature")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="74655" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 486, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0165MuomvEjQJ2TwTZfd3Eob">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <assistant>Now update the assertions that still reference `erk br co`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="75141" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 502}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AaJ7uiw18126MmiqwC9YSa">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+    <param name="old_string">def test_format_pr_next_steps_plain_contains_for_plan_command() -&gt; None:
+    """format_pr_...[truncated 428 chars]..., branch_name="plnd/my-feature")
+    assert "erk br co --new-slot --for-plan 42" in output</param>
+    <param name="new_string">def test_format_pr_next_steps_plain_contains_slot_co_command() -&gt; None:
+    """format_pr_n...[truncated 436 chars]...anch_name="plnd/my-feature")
+    assert "erk slot co plnd/my-feature --new-slot" in output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="75141" output_tokens="588" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 502, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AaJ7uiw18126MmiqwC9YSa">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/output/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `tests/unit/shared/test_next_steps.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="75643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 653}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01A7TWrnHrUcd8o62eTc2gm2">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py</param>
+    <param name="old_string">PrNextSteps(
+            pr_number=42,
+            url="https://github.com/org/repo/pull/42",
+        )</param>
+    <param name="new_string">PrNextSteps(
+            pr_number=42,
+            url="https://github.com/org/repo/pull/42",
+            branch_name="plnd/my-feature",
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="75643" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 653, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A7TWrnHrUcd8o62eTc2gm2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <assistant>Now update the assertions in shared test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="76296" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 313}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GCykThivcFJwCoRgJMoMyW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="76296" output_tokens="102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 313, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GCykThivcFJwCoRgJMoMyW">
+     1→"""Tests for next_steps formatting functions."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PrNextSteps,
+     5→    format_pr_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→class TestPrNextSteps:
+    10→    def test_construction(self) -&gt; None:
+    11→        steps = PrNextSteps(
+    12→            pr_number=42,
+    13→            url="https://github.com/org/repo/pull/42",
+    14→            branch_name="plnd/my-feature",
+    15→        )
+    16→        assert steps.pr_number == 42
+    17→
+    18→    def test_view_returns_url(self) -&gt; None:
+    19→        steps = PrNextSteps(
+    20→            pr_number=42,
+    21→            url="https://github.com/org/repo/pull/42",
+    22→            branch_name="plnd/my-feature",
+    23→        )
+    24→        assert steps.view == "https://github.com/org/repo/pull/42"
+    25→
+    26→    def test_dispatch_uses_pr_number(self) -&gt; None:
+    27→        steps = PrNextSteps(
+    28→            pr_number=42,
+    29→            url="https://github.com/org/repo/pull/42",
+    30→            branch_name="plnd/my-feature",
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014XZhuJ3RqGRhNToXWZzG23">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py</param>
+    <param name="old_string">    def test_checkout_uses_pr_number(self) -&gt; None:
+        steps = PrNextSteps(
+         ...[truncated 1708 chars]...   'source "$(erk br co --new-slot --for-plan 42 --script)" &amp;&amp; erk implement -d'
+        )</param>
+    <param name="new_string">    def test_checkout_uses_branch_name(self) -&gt; None:
+        steps = PrNextSteps(
+       ...[truncated 1734 chars]...source "$(erk slot co plnd/my-feature --new-slot --script)" &amp;&amp; erk implement -d'
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2114" cache_read_input_tokens="76609" output_tokens="1381" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2114, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014XZhuJ3RqGRhNToXWZzG23">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `TestFormatPrNextStepsPlain` class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1439" cache_read_input_tokens="78723" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1439}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HnCdwr7GSSijTWG2rkxnqM">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py</param>
+    <param name="old_string">class TestFormatPrNextStepsPlain:
+    def test_contains_for_plan_command(self) -&gt; None:
+  ...[truncated 1007 chars]...ithub.com/org/repo/pull/42")
+        assert "erk br co --new-slot --for-plan 42" in output</param>
+    <param name="new_string">class TestFormatPrNextStepsPlain:
+    def test_contains_slot_co_command(self) -&gt; None:
+   ...[truncated 1169 chars]..._name="plnd/my-feature")
+        assert "erk slot co plnd/my-feature --new-slot" in output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1439" cache_read_input_tokens="78723" output_tokens="990" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1439, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HnCdwr7GSSijTWG2rkxnqM">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/shared/test_next_steps.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the exit_plan_mode_hook tests for `build_step2_message`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1048" cache_read_input_tokens="80162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1048}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W6MdAfVnuey2R2juFCndqR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">975</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1048" cache_read_input_tokens="80162" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1048, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W6MdAfVnuey2R2juFCndqR">
+   975→
+   976→
+   977→# ============================================================================
+   978→# Pure Logic Tests for build_step2_message() - NO MOCKING REQUIRED
+   979→# ============================================================================
+   980→
+   981→
+   982→class TestBuildStep2Message:
+   983→    """Tests for the pure build_step2_message() function (Step 2: plain text next-steps)."""
+   984→
+   985→    def test_contains_pr_number(self) -&gt; None:
+   986→        """Step 2 message includes the PR number."""
+   987→        message = build_step2_message(pr_number=42, url="")
+   988→        assert "PR #42 saved" in message
+   989→
+   990→    def test_contains_implement_current_wt_command(self) -&gt; None:
+   991→        """Step 2 shows implement-in-current-worktree command."""
+   992→        message = build_step2_message(pr_number=42, url="")
+   993→        assert "erk br co --for-plan 42 &amp;&amp; erk implement" in message
+   994→
+   995→    def test_contains_implement_new_wt_command(self) -&gt; None:
+   996→        """Step 2 shows implement-in-new-worktree command."""
+   997→        message = build_step2_message(pr_number=42, url="")
+   998→        assert "--new-slot --for-plan 42" in message
+   999→
+  1000→    def test_contains_checkout_commands(self) -&gt; None:
+  1001→        """Step 2 shows checkout commands."""
+  1002→        message = build_step2_message(pr_number=42, url="")
+  1003→        assert "erk br co --for-plan 42" in message
+  1004→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01363rFGygfwXaXydn4JucLz">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">build_step2_message(pr_number=42, url="")</param>
+    <param name="new_string">build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1375" cache_read_input_tokens="81210" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1375, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01363rFGygfwXaXydn4JucLz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <assistant>Now update the assertions in the step2 tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="82585" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 274}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01T2UGSy2hGoAiQE1XmNsZXd">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_contains_implement_current_wt_command(self) -&gt; None:
+        """Step 2 shows ...[truncated 605 chars]...url="", branch_name="plnd/my-feature")
+        assert "erk br co --for-plan 42" in message</param>
+    <param name="new_string">    def test_contains_implement_current_wt_command(self) -&gt; None:
+        """Step 2 shows ...[truncated 627 chars]..."", branch_name="plnd/my-feature")
+        assert "erk slot co plnd/my-feature" in message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="82585" output_tokens="681" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T2UGSy2hGoAiQE1XmNsZXd">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to check if there are tests in the exit_plan_mode_hook test file that test `determine_exit_action` with `plan_saved_marker_exists=True` — those will need `plan_saved_branch_name` too.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="82859" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 749}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RKKdbM1ikCi7tfr4Hc4sEn">
+    <param name="pattern">plan_saved_marker_exists=True</param>
+    <param name="path">tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="82859" output_tokens="193" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RKKdbM1ikCi7tfr4Hc4sEn">
+45:                plan_saved_marker_exists=True,
+80:                plan_saved_marker_exists=True,
+120:                plan_saved_marker_exists=True,
+133:                plan_saved_marker_exists=True,
+150:                plan_saved_marker_exists=True,
+194:                plan_saved_marker_exists=True,
+  </tool_result>
+  <tool_use name="Read" id="toolu_018qEUBvYaVuNSvuA9XJJ2Yk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">35</param>
+    <param name="limit">175</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="288" cache_read_input_tokens="83608" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 288, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018qEUBvYaVuNSvuA9XJJ2Yk">
+    35→
+    36→class TestDetermineExitAction:
+    37→    """Tests for the pure determine_exit_action() function."""
+    38→
+    39→    def test_github_planning_disabled_allows_exit(self) -&gt; None:
+    40→        """When github_planning is disabled, always allow exit."""
+    41→        result = determine_exit_action(
+    42→            HookInput.for_test(
+    43→                github_planning_enabled=False,
+    44→                implement_now_marker_exists=True,  # Even with markers
+    45→                plan_saved_marker_exists=True,
+    46→                incremental_plan_marker_exists=True,
+    47→                objective_context_marker_exists=True,
+    48→                objective_id=3679,
+    49→                plan_file_path=Path("/some/plan.md"),
+    50→                current_branch="main",
+    51→            )
+    52→        )
+    53→        assert result.action == ExitAction.ALLOW
+    54→        assert result.message == ""
+    55→
+    56→    def test_no_session_id_allows_exit(self) -&gt; None:
+    57→        """When no session ID provided, allow exit."""
+    58→        result = determine_exit_action(HookInput.for_test(session_id=None))
+    59→        assert result.action == ExitAction.ALLOW
+    60→        assert "No session context" in result.message
+    61→
+    62→    def test_implement_now_marker_allows_exit_and_deletes(self) -&gt; None:
+    63→        """Implement-now marker allows exit and markers deletion."""
+    64→        result = determine_exit_action(
+
+... [145 lines omitted] ...
+  </tool_result>
+  <assistant>I need to update the test at line 129 that asserts `erk br co --for-plan 42`. The test constructs `HookInput.for_test` with `plan_saved_pr_number=42` but no `plan_saved_branch_name`. Since the logic now requires both `pr_num is not None and branch_name is not None` to call `build_step2_message`, I need to add `plan_saved_branch_name` to the test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2769" cache_read_input_tokens="83896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2769}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QVBbwY2odhVrF8PudK1Nmw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_plan_saved_marker_blocks_with_step2(self) -&gt; None:
+        """Plan-saved mark...[truncated 564 chars]...elete_plan_saved_marker is True
+        assert result.delete_implement_now_marker is False</param>
+    <param name="new_string">    def test_plan_saved_marker_blocks_with_step2(self) -&gt; None:
+        """Plan-saved mark...[truncated 626 chars]...elete_plan_saved_marker is True
+        assert result.delete_implement_now_marker is False</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2769" cache_read_input_tokens="83896" output_tokens="703" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2769, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QVBbwY2odhVrF8PudK1Nmw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check the `test_plan_saved_marker_without_pr_number_fallback` test — this tests the case where pr_number is None, which now also covers the case where branch_name is None. That test should still pass since the fallback condition was `pr_num is not None` and now it's `pr_num is not None and branch_name is not None`.
+
+Let me also check all the other `plan_saved_marker_exists=True` usages to see if they need `plan_saved_branch_name`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="771" cache_read_input_tokens="86665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 771}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fam3SqLkVj8Rg9CjMYGnCV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">39</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="771" cache_read_input_tokens="86665" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 771, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fam3SqLkVj8Rg9CjMYGnCV">
+    39→    def test_github_planning_disabled_allows_exit(self) -&gt; None:
+    40→        """When github_planning is disabled, always allow exit."""
+    41→        result = determine_exit_action(
+    42→            HookInput.for_test(
+    43→                github_planning_enabled=False,
+    44→                implement_now_marker_exists=True,  # Even with markers
+    45→                plan_saved_marker_exists=True,
+    46→                incremental_plan_marker_exists=True,
+    47→                objective_context_marker_exists=True,
+    48→                objective_id=3679,
+  </tool_result>
+  <assistant>The `github_planning_disabled` test (line 39) — this is fine because it returns early before reaching the plan_saved logic. The `implement_now_takes_precedence` (line 75) and `incremental_plan_takes_precedence_over_plan_saved` (line 116) tests also return early before reaching the plan_saved logic. The `plan_saved_deletes_objective_context_marker` test (line 190) uses `plan_saved_marker_exists=True` without `plan_saved_pr_number` — this will hit the fallback, which is correct.
+
+Now let me check if there are any other tests that reference `erk br co` in the exit_plan_mode_hook test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="87436" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 613}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GPvjiPM4ubKsuQLeN6iffD">
+    <param name="pattern">erk br co</param>
+    <param name="path">tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="87436" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 613, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GPvjiPM4ubKsuQLeN6iffD">
+No matches found
+  </tool_result>
+  <assistant>Good. Now let me also check for any other references to `erk br co` across the test and source files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="88049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KMK7W2KU9Xz648LKUqmYRD">
+    <param name="pattern">erk br co</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="88049" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KMK7W2KU9Xz648LKUqmYRD">
+src/erk/tui/screens/plan_detail_screen.py:348:        cmd = f"erk br co {self._row.worktree_branch}"
+src/erk/tui/screens/plan_detail_screen.py:362:        cmd = f"erk br co --for-plan {self._row.pr_number}"
+src/erk/tui/screens/plan_detail_screen.py:368:            f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'
+src/erk/tui/screens/plan_detail_screen.py:661:            cmd = f"erk br co {row.worktree_branch}"
+src/erk/tui/screens/plan_detail_screen.py:680:            cmd = f"erk br co --for-plan {row.pr_number}"
+src/erk/tui/screens/plan_detail_screen.py:686:                f'source "$(erk br co --for-plan {row.pr_number} --script)"'
+src/erk/tui/screens/plan_detail_screen.py:993:            prepare_cmd = f"erk br co --for-plan {self._row.pr_number}"
+src/erk/cli/commands/wt/checkout_cmd.py:82:                "Use 'erk br co' to switch by branch name."
+src/erk/tui/commands/types.py:64:            (e.g., "erk br co --for-plan 123").
+src/erk/cli/commands/wt/create_cmd.py:127:        f"  erk br co root",
+src/erk/cli/commands/wt/create_cmd.py:277:            f"  • Switch to that worktree: erk br co {branch}",
+src/erk/cli/commands/wt/create_cmd.py:733:        f"  erk br co root",
+src/erk/cli/commands/wt/create_cmd.py:824:            f"  erk br co root",
+src/erk/tui/commands/registry.py:92:        return f"erk br co {ctx.row.worktree_branch}"
+src/erk/tui/commands/registry.py:95:    return "erk br co &lt;branch&gt;"
+src/erk/tui/commands/registry.py:418:            name="erk br co &lt;branch&gt;",
+src/erk/tui/actions/navigation.py:342:            cmd = f"erk br co {row.worktree_branch}"
+src/erk/cli/commands/implement_shared.py:579:        user_output(f"  1. Change to worktree:  erk br co {branch}")
+src/erk/cli/commands/branch/checkout_cmd.py:447:        erk br co feature/user-auth      # Checkout existing worktree
+src/erk/cli/commands/branch/checkout_cmd.py:449:        erk br co unchecked-branch       # Auto-create worktree
+src/erk/cli/commands/branch/checkout_cmd.py:451:        erk br co --for-plan 123         # Checkout PR branch with .erk/impl-context/ setup
+src/erk/cli/commands/stack/consolidate_cmd.py:289:            user_output("  3. Switch to existing: erk br co &lt;branch&gt;")
+packages/erk-shared/src/erk_shared/impl_folder.py:494: erk br co {branch_name}
+tests/commands/test_create.py:112:        assert "erk br co root" in result.stderr
+tests/tui/commands/test_execute_command.py:85:        assert executor.copied_texts == ["erk br co feature-123"]
+tests/tui/commands/test_execute_command.py:86:        assert "Copied: erk br co feature-123" in executor.notifications
+tests/tui/commands/test_execute_command.py:146:        assert executor.copied_texts == ["erk br co --for-plan 123"]
+tests/tui/commands/test_execute_command.py:147:        assert "Copied: erk br co --for-plan 123" in executor.notifications
+packages/erk-shared/src/erk_shared/core/script_error.py:20:    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+packages/erk-shared/src/erk_shared/core/script_error.py:38:    file on stdout. Without this, ``source "$(erk br co --script)"`` receives
+
+... [13 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1740" cache_read_input_tokens="88363" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1740}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the remaining reference in metadata/core.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1740" cache_read_input_tokens="88363" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1740}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WLXUJ42yABhtro7T1rT4VQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="offset">419</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1740" cache_read_input_tokens="88363" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1740, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WLXUJ42yABhtro7T1rT4VQ">
+   419→
+   420→def format_plan_commands_section(pr_number: int) -&gt; str:
+   421→    """Format copy-pasteable commands section for plan issues.
+   422→
+   423→    Args:
+   424→        pr_number: GitHub PR issue number
+   425→
+   426→    Returns:
+   427→        Formatted markdown with copy-pasteable commands for the issue body
+   428→    """
+   429→    return f"""## Commands
+   430→
+   431→```bash
+   432→erk br co --for-plan {pr_number}
+   433→```
+   434→
+   435→```bash
+   436→erk pr dispatch {pr_number}
+   437→```"""
+   438→
+  </tool_result>
+  <assistant>That's `format_plan_commands_section` — a separate function not using `PrNextSteps`. It's not part of this plan's scope (it doesn't have branch_name available). The plan specifically scopes to `PrNextSteps` and its formatting functions.
+
+Also, let me check `test_plan_save.py` which asserts `erk br co`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="90103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 502}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FngeSnPMdkmtmLy7CLMdrZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">70</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="502" cache_read_input_tokens="90103" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 502, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FngeSnPMdkmtmLy7CLMdrZ">
+    70→def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    71→    """Display format: output contains 'Plan saved as planned PR'."""
+    72→    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    73→    runner = CliRunner()
+    74→
+    75→    result = runner.invoke(
+    76→        plan_save, ["--format", "display", "--branch-slug", "test-slug"], obj=ctx
+    77→    )
+    78→
+    79→    assert result.exit_code == 0, f"Failed: {result.output}"
+    80→    assert "PR saved as planned PR" in result.output
+    81→    assert "Title: [erk-pr] Feature Plan" in result.output
+    82→    assert "Branch: plnd/" in result.output
+    83→    assert "erk br co" in result.output
+    84→    assert "plnd/" in result.output  # branch name appears in checkout command
+    85→
+    86→
+    87→def test_planned_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    88→    """Empty claude_installation: exit code 1."""
+    89→    ctx = _planned_pr_context(
+    90→        tmp_path=tmp_path,
+    91→        fake_claude=FakeClaudeInstallation.for_test(),
+    92→        monkeypatch=monkeypatch,
+    93→    )
+    94→    runner = CliRunner()
+  </tool_result>
+  <assistant>This test asserts `erk br co` in the output. Now that we changed the output to use `erk slot co`, it will need updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="90605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 644}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Atnse2RoAgwKmjtDzhTV7n">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert "erk br co" in result.output
+    assert "plnd/" in result.output  # branch name appears in checkout command</param>
+    <param name="new_string">    assert "erk slot co" in result.output
+    assert "plnd/" in result.output  # branch name appears in checkout command</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="90605" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 644, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Atnse2RoAgwKmjtDzhTV7n">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TFHzCkn2tGCwP2L1Jfw3oe">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="91249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 500}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TFHzCkn2tGCwP2L1Jfw3oe">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JrAc97P7tHypmMEsTS742t">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="91249" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 500, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JrAc97P7tHypmMEsTS742t">
+Updated task #4 status
+  </tool_result>
+  <assistant>Phase 4: Running tests and verification. Let me grep for remaining `erk br co` in next_steps.py to confirm full replacement, and run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="91749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014VoxvFg13aYRLdm5fwSxnD">
+    <param name="pattern">erk br co</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="91749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014VoxvFg13aYRLdm5fwSxnD">
+No matches found
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01XbGBMF3UpMrHupAKji4a4T">
+    <param name="description">Run next_steps tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest commands and report results:
+1. uv run pytest packages/erk-shared...[truncated 168 chars]... run pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py -v
+
+Report all results.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="91749" output_tokens="375" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XbGBMF3UpMrHupAKji4a4T">
+## Summary
+
+**Test Results:**
+
+1. **packages/erk-shared/tests/unit/output/test_next_steps.py**: 14 passed in 0.05s ✓
+
+2. **tests/unit/shared/test_next_steps.py**: 15 passed in 0.02s ✓
+
+3. **tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py**: 88 passed, 2 failed in 0.91s ✗
+
+   **Failures:**
+   - `TestHookIntegration.test_plan_saved_marker_flow_blocks_and_cleans_up` — Expected "PR #42 saved" in output but got "PR saved. Planning session complete..."
+   - `TestHookIntegration.test_objective_context_marker_deleted_on_plan_saved` — Same assertion failure
+
+4. **tests/unit/cli/commands/exec/scripts/test_plan_save.py**: 33 passed in 0.74s ✓
+
+**Total: 150 passed, 2 failed**
+
+The two failing tests expect the plan number (PR #42) to be included in the output message, but the current implementation only outputs "PR saved" without the number reference.
+agentId: a561b8b11dd6a6418 (use SendMessage with to: 'a561b8b11dd6a6418' to continue this agent)
+&lt;usage&gt;total_tokens: 16462
+tool_uses: 5
+duration_ms: 22536&lt;/usage&gt;
+  </tool_result>
+  <assistant>Good — `next_steps.py` has no `erk br co` references. 2 integration tests failing. These tests create marker files but don't write a branch marker file, so `plan_saved_branch_name` is `None`, which now hits the fallback message. Let me look at those tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="812" cache_read_input_tokens="91947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 812}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AzqBNYXM1rKQ4NcJFk7TF8">
+    <param name="pattern">test_plan_saved_marker_flow_blocks_and_cleans_up|test_objective_context_marker_deleted_on_plan_saved</param>
+    <param name="path">tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="812" cache_read_input_tokens="91947" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 812, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AzqBNYXM1rKQ4NcJFk7TF8">
+1071:    def test_plan_saved_marker_flow_blocks_and_cleans_up(self, tmp_path: Path) -&gt; None:
+1173:    def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RSwdnAE2aExNT2eLARVbZp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">1071</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="310" cache_read_input_tokens="92759" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
