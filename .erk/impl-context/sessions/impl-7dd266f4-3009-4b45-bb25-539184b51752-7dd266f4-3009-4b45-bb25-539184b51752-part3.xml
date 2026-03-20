@@ -1,0 +1,1009 @@
+<session>
+  <meta branch="plnd/O9109-rename-gateway-plan-03-13-1705" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_016Ycre4Sjc8VnXKXYqwvwmM">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `objective_save_to_issue.py` with the `result.plan_number` references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="93370" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HcVNrsNnB4KMzd6tYCDd14">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="93370" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HcVNrsNnB4KMzd6tYCDd14">
+     1→"""Save plan as objective GitHub issue.
+     2→
+     3→Usage:
+     4→    erk exec objective-save-to-issue [OPTIONS]
+     5→
+     6→This command extracts a plan and creates a GitHub issue with:
+     7→- erk-objective label only (NOT erk-pr - objectives are not plans)
+     8→- No title suffix
+     9→- Plan content directly in body (no metadata block)
+    10→- No commands section
+    11→
+    12→Options:
+    13→    --session-id ID: Session ID for scoped plan lookup
+    14→    --format: json (default) or display
+    15→    --validate: Run objective validation after creation
+    16→
+    17→Exit Codes:
+    18→    0: Success - objective issue created
+    19→    1: Error - no plan found, gh failure, etc.
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→from typing import Any, cast
+    25→
+    26→import click
+    27→
+    28→from erk.cli.commands.objective.check.validation import (
+    29→    ObjectiveValidationError,
+    30→    ObjectiveValidationSuccess,
+
+... [245 lines omitted] ...
+
+   177→            click.echo("Error: No PR found in ~/.claude/plans/", err=True)
+   183→            click.echo(json.dumps({"success": False, "error": "No PR found in ~/.claude/plans/"}))
+   199→            click.echo(f"Error: {result.error}", err=True)
+   201→            click.echo(json.dumps({"success": False, "error": result.error}))
+   206→        raise RuntimeError("Unexpected: pr_number is None after success")
+   228→        if isinstance(validation_result, ObjectiveValidationError):
+   231→                "error": validation_result.error,
+   241→                "errors": validation_result.validation_errors,
+   252→                click.echo("Validation: FAILED")
+  </tool_result>
+  <assistant>I see the file uses `result.plan_number` in 5 places. Let me update them all:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3855" cache_read_input_tokens="93582" cache_creation="{'ephemeral_5m_input_tokens': 3855, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018qzby4xKx4nRwR4sJ3iEzD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    # Guard for type narrowing
+    if result.plan_number is None:
+        raise RuntimeErr...[truncated 693 chars]...=owner,
+            repo=repo_name,
+            issue_number=result.plan_number,
+        )</param>
+    <param name="new_string">    # Guard for type narrowing
+    if result.pr_number is None:
+        raise RuntimeError...[truncated 687 chars]...er=owner,
+            repo=repo_name,
+            issue_number=result.pr_number,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3855" cache_read_input_tokens="93582" cache_creation="{'ephemeral_5m_input_tokens': 3855, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018qzby4xKx4nRwR4sJ3iEzD">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Qy7DpWEj7H1bekE8NVQSQo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    if output_format == "display":
+        click.echo(f"Objective saved to GitHub issue #{...[truncated 755 chars]...str, object] = {
+            "success": True,
+            "pr_number": result.plan_number,</param>
+    <param name="new_string">    if output_format == "display":
+        click.echo(f"Objective saved to GitHub issue #{...[truncated 751 chars]...t[str, object] = {
+            "success": True,
+            "pr_number": result.pr_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="97437" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qy7DpWEj7H1bekE8NVQSQo">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `list_cmd.py` and `real_provider.py` and `navigation.py`. Let me read them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="935" cache_read_input_tokens="98154" cache_creation="{'ephemeral_5m_input_tokens': 935, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XABv8Pxpd2CBbFWrKj793W">
+    <param name="pattern">plan_numbers</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="935" cache_read_input_tokens="98154" cache_creation="{'ephemeral_5m_input_tokens': 935, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XABv8Pxpd2CBbFWrKj793W">
+70:    plan_numbers: list[int] = []
+79:                plan_numbers.append(plan_num)
+100:    if plan_numbers and location is not None:
+101:        pr_linkages = ctx.github.get_prs_linked_to_issues(location, plan_numbers)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018hdbkfMwi7iySg585EpCfC">
+    <param name="pattern">plan_numbers|close_plan_fn</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="99089" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018hdbkfMwi7iySg585EpCfC">
+src/erk/tui/data/real_provider.py:229:        plan_numbers: list[int] = []
+src/erk/tui/data/real_provider.py:238:                    plan_numbers.append(plan_num)
+src/erk/tui/data/real_provider.py:254:            if not plan_numbers:
+src/erk/tui/data/real_provider.py:256:            return self._ctx.github.get_prs_linked_to_issues(self._location, plan_numbers)
+src/erk/tui/data/real_provider.py:424:            plan_numbers=list(pr_ids),
+src/erk/tui/actions/navigation.py:121:            close_plan_fn=self._service.close_pr,
+  </tool_result>
+  <assistant>Let me read these files around those lines:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="607" cache_read_input_tokens="99336" cache_creation="{'ephemeral_5m_input_tokens': 607, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UmiK14xK7bmsehQ9C43578">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+    <param name="offset">65</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="607" cache_read_input_tokens="99336" cache_creation="{'ephemeral_5m_input_tokens': 607, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UmiK14xK7bmsehQ9C43578">
+    65→        user_output("No workflow runs found")
+    66→        return
+    67→
+    68→    # 2. Extract PR numbers (direct) and plan numbers (fallback) from display_titles
+    69→    run_pr_numbers: dict[str, int] = {}  # run_id → pr_number
+    70→    plan_numbers: list[int] = []
+    71→
+    72→    for run, _workflow_name in tagged_runs:
+    73→        pr_num = extract_pr_number(run.display_title)
+    74→        if pr_num is not None:
+    75→            run_pr_numbers[run.run_id] = pr_num
+    76→        else:
+    77→            plan_num = extract_plan_number(run.display_title)
+    78→            if plan_num is not None:
+    79→                plan_numbers.append(plan_num)
+    80→
+    81→    # 3. Fetch issues (needed for GitHubRepoLocation and plan→PR linkage)
+    82→    issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr"])
+    83→
+    84→    # Extract location from first issue URL (needed for API calls and links)
+    85→    location = None
+    86→    if issues:
+    87→        location = github_repo_location_from_url(repo.root, issues[0].url)
+    88→
+    89→    # 4. Batch fetch PRs linked to plan issues (for old-format plan-implement runs)
+    90→    #    Pre-build plan→run_ids lookup for efficient mapping
+    91→    plan_to_run_ids: dict[int, list[str]] = {}
+    92→    for run, _wf in tagged_runs:
+    93→        if run.run_id in run_pr_numbers:
+    94→            continue
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>The `plan_numbers` local variable in `list_cmd.py` is passed by position to `get_prs_linked_to_issues`, so no keyword rename is needed. But the plan says to rename kwarg `plan_numbers` → `pr_numbers`. Let me check: the call is `ctx.github.get_prs_linked_to_issues(location, plan_numbers)` — this is positional, not keyword-based. The ABC signature is now `pr_numbers`, so as long as the positional call is fine, we don't need to change it.
+
+Wait, the plan says "Update callers ... `src/erk/cli/commands/run/list_cmd.py` — kwarg `plan_numbers` → `pr_numbers`". Let me check if it's passed as a keyword argument:
+
+Looking at the code: `ctx.github.get_prs_linked_to_issues(location, plan_numbers)` — this is positional. The ABC signature changed to `pr_numbers` but the positional call still works. However, the local variable is still named `plan_numbers`. The plan says to rename kwarg — so this may be a case where it's passed positionally but the local variable has the old name. Let me check other callers too.
+
+The plan says:
+- `list_cmd.py` — kwarg `plan_numbers` → `pr_numbers`
+- `real_provider.py` — kwarg `plan_numbers` → `pr_numbers` (2 calls)
+
+So these are using keyword arguments. Let me read more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="968" cache_read_input_tokens="99943" cache_creation="{'ephemeral_5m_input_tokens': 968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FgECRZbZFzhUoLyDjbaB5D">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">420</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="968" cache_read_input_tokens="99943" cache_creation="{'ephemeral_5m_input_tokens': 968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FgECRZbZFzhUoLyDjbaB5D">
+   420→            return []
+   421→
+   422→        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+   423→            location=self._location,
+   424→            plan_numbers=list(pr_ids),
+   425→        )
+   426→
+   427→        plans = [github_issue_to_plan(issue) for issue in issues]
+   428→        worktree_by_pr_number = self._build_worktree_mapping()
+   429→
+   430→        global_config = self._ctx.global_config
+   431→        use_graphite = global_config.use_graphite if global_config is not None else False
+   432→        rows: list[PrRowData] = []
+   433→        for plan in plans:
+   434→            pr_number = int(plan.pr_identifier)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good - `real_provider.py` at line 424 uses `plan_numbers=list(pr_ids)` as a keyword argument. Let me also read lines 229-256:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1048" cache_read_input_tokens="100911" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AxRQa9xrETh4A1h4hnFW1M">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">225</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1048" cache_read_input_tokens="100911" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AxRQa9xrETh4A1h4hnFW1M">
+   225→            return []
+   226→
+   227→        # 2. Extract PR numbers and plan numbers from display_titles
+   228→        run_pr_numbers: dict[str, int] = {}
+   229→        plan_numbers: list[int] = []
+   230→
+   231→        for run, _workflow_name in tagged_runs:
+   232→            pr_num = extract_pr_number(run.display_title)
+   233→            if pr_num is not None:
+   234→                run_pr_numbers[run.run_id] = pr_num
+   235→            else:
+   236→                plan_num = extract_plan_number(run.display_title)
+   237→                if plan_num is not None:
+   238→                    plan_numbers.append(plan_num)
+   239→
+   240→        # 3. Build plan→run_ids lookup for batch PR linkage
+   241→        plan_to_run_ids: dict[int, list[str]] = {}
+   242→        for run, _wf in tagged_runs:
+   243→            if run.run_id in run_pr_numbers:
+   244→                continue
+   245→            run_plan = extract_plan_number(run.display_title)
+   246→            if run_plan is not None:
+   247→                plan_to_run_ids.setdefault(run_plan, []).append(run.run_id)
+   248→
+   249→        # 4. Fetch PR linkages and direct PR info in parallel
+   250→        #    These two calls are independent of each other.
+   251→        pr_info_map: dict[int, PullRequestInfo] = {}
+   252→
+   253→        def _fetch_plan_linkages() -&gt; dict[int, list[PullRequestInfo]]:
+   254→            if not plan_numbers:
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Both `list_cmd.py` and `real_provider.py` lines 253-256 pass `plan_numbers` positionally (not as keyword argument). The `real_provider.py` line 424 passes it as keyword (`plan_numbers=list(pr_ids)`). Let me now update the keyword arg at line 424 first, then check list_cmd.py more carefully.
+
+Let me check the `get_issues_by_numbers_with_pr_linkages` ABC signature — it now uses `*` (keyword-only), so the kwarg rename IS needed there:
+
+The updated ABC now is:
+```python
+def get_issues_by_numbers_with_pr_linkages(self, *, location, pr_numbers)
+```
+
+So the `plan_numbers=list(pr_ids)` at line 424 must become `pr_numbers=list(pr_ids)`.
+
+For `get_prs_linked_to_issues`, the signature is positional:
+```python
+def get_prs_linked_to_issues(self, location, pr_numbers)
+```
+
+So positional calls still work fine. The local variable names (`plan_numbers`) don't need to change per the plan.
+
+Let me now read the navigation.py section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="101959" cache_creation="{'ephemeral_5m_input_tokens': 772, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BoRJZoeT4EyVkvXzXSA8Uc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">115</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="101959" cache_creation="{'ephemeral_5m_input_tokens': 772, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BoRJZoeT4EyVkvXzXSA8Uc">
+   115→            return
+   116→
+   117→        # Create executor with injected dependencies
+   118→        executor = RealCommandExecutor(
+   119→            browser_launch=self._service.browser.launch,
+   120→            clipboard_copy=self._service.clipboard.copy,
+   121→            close_plan_fn=self._service.close_pr,
+   122→            notify_fn=self._notify_with_severity,
+   123→            refresh_fn=self.action_refresh,
+   124→            dispatch_to_queue_fn=self._service.dispatch_to_queue,
+   125→        )
+   126→
+   127→        self.push_screen(
+   128→            PlanDetailScreen(
+   129→                row=row,
+   130→                clipboard=self._service.clipboard,
+   131→                browser=self._service.browser,
+   132→                executor=executor,
+   133→                repo_root=self._service.repo_root,
+   134→                view_mode=self._view_mode,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good. The `close_plan_fn` → `close_pr_fn` change is needed in `navigation.py`. Let me update the three files now. First let me read them to allow editing:
+
+**Update `real_provider.py`** - keyword arg at line 424:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1009" cache_read_input_tokens="102731" cache_creation="{'ephemeral_5m_input_tokens': 1009, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Nx5jELk9Le4ZkjGKVvggq3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">1</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1009" cache_read_input_tokens="102731" cache_creation="{'ephemeral_5m_input_tokens': 1009, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nx5jELk9Le4ZkjGKVvggq3">
+     1→"""Real implementation of PrDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BwRZtdm45hCVgqRfzf12U2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="old_string">        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+            location=self._location,
+            plan_numbers=list(pr_ids),
+        )</param>
+    <param name="new_string">        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+            location=self._location,
+            pr_numbers=list(pr_ids),
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="103740" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BwRZtdm45hCVgqRfzf12U2">
+The file /home/runner/work/erk/erk/src/erk/tui/data/real_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>**Update `navigation.py`** - `close_plan_fn` → `close_pr_fn`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="104051" cache_creation="{'ephemeral_5m_input_tokens': 535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jdam76SsQZ262d5SKCKCvP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">1</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="104051" cache_creation="{'ephemeral_5m_input_tokens': 535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jdam76SsQZ262d5SKCKCvP">
+     1→"""Navigation action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0167H5pjwaNTmnUMJJ14Eqcb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">            close_plan_fn=self._service.close_pr,</param>
+    <param name="new_string">            close_pr_fn=self._service.close_pr,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="104586" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0167H5pjwaNTmnUMJJ14Eqcb">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check `list_cmd.py` more carefully - the plan says `plan_numbers` → `pr_numbers`. The call at line 101 is positional, not keyword. Let me check if any `get_issues_by_numbers_with_pr_linkages` calls exist in list_cmd.py:
+
+The only call in `list_cmd.py` is `ctx.github.get_prs_linked_to_issues(location, plan_numbers)` which is positional — no keyword arg to rename. Good.
+
+Now let me also verify there are no other remaining references to the old function name `parse_plan_number_from_url` or `plan_number`/`plan_id` in the gateway directory that shouldn't be there:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="457" cache_read_input_tokens="104856" cache_creation="{'ephemeral_5m_input_tokens': 457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TYQfx3R53oYcE1w4L78wEq">
+    <param name="command">grep -rn "parse_plan_number_from_url" /home/runner/work/erk/erk/src/ /home/runner/work/erk/erk/packages/ 2&gt;/dev/null | grep -v "test_"</param>
+    <param name="description">Check for remaining parse_plan_number_from_url references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="457" cache_read_input_tokens="104856" cache_creation="{'ephemeral_5m_input_tokens': 457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TYQfx3R53oYcE1w4L78wEq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A3kiaz4cGXT6H7eYsdo5Xa">
+    <param name="command">grep -rn "plan_number\|plan_id" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shar...[truncated 62 chars]...acy.*plan_number\|migrate.*plan\|plan.*migrate\|\"plan_number\"\|'plan_number'" | head -30</param>
+    <param name="description">Check remaining plan_number/plan_id in gateway directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="105313" cache_creation="{'ephemeral_5m_input_tokens': 337, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A3kiaz4cGXT6H7eYsdo5Xa">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:13:    Several metadata schemas originally used ``issue_number`` or ``plan_number``.
+  </tool_result>
+  <assistant>Good. The only remaining reference in the gateway directory is in the docstring of `schemas.py`, which is part of the migration description and intentionally explains the legacy `plan_number` key. This is fine.
+
+Let me do a broader verification grep (including the full content of schemas.py to understand the migration helper):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="105650" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018ushGzTixs1qV1W7j1V8ce">
+    <param name="command">grep -rn "plan_number\|plan_id" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/ 2&gt;/dev/null</param>
+    <param name="description">Full check of remaining plan_number/plan_id in gateway</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="105650" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018ushGzTixs1qV1W7j1V8ce">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:11:    """Migrate legacy issue_number or plan_number to pr_number in-place.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:13:    Several metadata schemas originally used ``issue_number`` or ``plan_number``.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:19:    if "plan_number" in data and "pr_number" not in data:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:20:        data["pr_number"] = data.pop("plan_number")
+  </tool_result>
+  <assistant>All of these are in the migration helper that handles legacy `plan_number` YAML keys. This is correct and expected — as noted in the plan, `_migrate_to_pr_number` intentionally handles legacy `plan_number` keys.
+
+Now let me also check any callers of `create_worktree_creation_block`, `create_plan_block`, `create_submission_queued_block`, `create_workflow_started_block` in the codebase for the renamed params:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="106168" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LyiP5VKK6uTEC2PwoELoZj">
+    <param name="command">grep -rn "plan_number=" /home/runner/work/erk/erk/src/ /home/runner/work/erk/erk/packages/erk-shared/src/ 2&gt;/dev/null | grep -v "test_" | grep -v "schemas.py"</param>
+    <param name="description">Check for remaining plan_number= keyword arg usages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="106168" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LyiP5VKK6uTEC2PwoELoZj">
+/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py:230:                plan_number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/implement.py:466:            plan_number=target_info.pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py:438:                plan_number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py:1098:        plan_number=int(pr_id) if pr_id is not None else None,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:344:            plan_number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:553:            plan_number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py:185:            plan_number=linked_pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:103:        plan_number=pr_number,
+/home/runner/work/erk/erk/src/erk/tui/actions/palette.py:218:                    plan_number=plan_number,
+/home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py:535:            plan_number=plan_number,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py:123:        plan_number=plan_number,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py:488:        plan_number=plan_number,
+  </tool_result>
+  <assistant>There are more callers of the renamed functions. These are callers passing `plan_number=` to functions that we've renamed to `pr_number=`. Let me check which functions they're calling:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1071" cache_read_input_tokens="106609" cache_creation="{'ephemeral_5m_input_tokens': 1071, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019eR8GzkN3fMZg7sE9fqXCE">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py | head -10</param>
+    <param name="description">Check consolidate_learn_plans_dispatch usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1071" cache_read_input_tokens="106609" cache_creation="{'ephemeral_5m_input_tokens': 1071, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019eR8GzkN3fMZg7sE9fqXCE">
+230:                plan_number=pr_number,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MWF2yzSDkvS6kPmptbNAde">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py</param>
+    <param name="offset">220</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="107680" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MWF2yzSDkvS6kPmptbNAde">
+   220→
+   221→        # Post queued comment (best-effort)
+   222→        run_url = construct_workflow_run_url(owner, repo, run_id)
+   223→        queued_at = time_gateway.now().replace(tzinfo=UTC).isoformat()
+   224→
+   225→        current_step = "Posting queued event comment"
+   226→        try:
+   227→            metadata_block = create_submission_queued_block(
+   228→                queued_at=queued_at,
+   229→                submitted_by=submitted_by,
+   230→                plan_number=pr_number,
+   231→                validation_results={"pr_is_open": True, "has_erk_pr_title": True},
+   232→                expected_workflow="consolidate-learn-plans",
+   233→            )
+   234→            comment_body = render_erk_issue_event(
+   235→                title="\U0001f504 Consolidate Learn Plans Dispatched",
+   236→                metadata=metadata_block,
+   237→                description=(
+   238→                    f"Consolidation submitted by **{submitted_by}** at {queued_at}.\n\n"
+   239→                    f"**Workflow run:** {run_url}"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>These are all callers of `create_submission_queued_block`, `create_workflow_started_block`, `create_worktree_creation_block`, `create_plan_block` etc. - functions whose signatures we renamed from `plan_number=` to `pr_number=`. I need to update all these callers too. Let me look at each file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="816" cache_read_input_tokens="107846" cache_creation="{'ephemeral_5m_input_tokens': 816, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XcwbkYXCQQUA2RPmkSQPMP">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/src/erk/cli/commands/implement.py | head -10</param>
+    <param name="description">Check implement.py usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="816" cache_read_input_tokens="107846" cache_creation="{'ephemeral_5m_input_tokens': 816, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XcwbkYXCQQUA2RPmkSQPMP">
+466:            plan_number=target_info.pr_number,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XCCcuzQodJk1m4munEEUco">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py | head -10</param>
+    <param name="description">Check one_shot_remote_dispatch.py usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="219" cache_read_input_tokens="108662" cache_creation="{'ephemeral_5m_input_tokens': 219, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XCCcuzQodJk1m4munEEUco">
+438:                plan_number=pr_number,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TP3kAfbZrk3mRppRYn4VrT">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py | head -...[truncated 426 chars]...umber=" /home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py | head -10</param>
+    <param name="description">Check plan_number= usage across remaining files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="108881" cache_creation="{'ephemeral_5m_input_tokens': 412, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TP3kAfbZrk3mRppRYn4VrT">
+head: head: invalid number of lines: ‘plan_number=’
+invalid number of lines: ‘plan_number=’
+head: invalid number of lines: ‘plan_number=’
+head: invalid number of lines: ‘plan_number=’
+head: invalid number of lines: ‘plan_number=’
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01V9rbLL2TyJPtP3So4nUrU6">
+    <param name="command">grep -n "plan_number=" /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py &amp;&amp; grep ...[truncated 375 chars]... -n "plan_number=" /home/runner/work/erk/erk/src/erk/tui/screens/objective_nodes_screen.py</param>
+    <param name="description">Check plan_number= keyword arg usage across remaining files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="109293" cache_creation="{'ephemeral_5m_input_tokens': 412, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V9rbLL2TyJPtP3So4nUrU6">
+1098:        plan_number=int(pr_id) if pr_id is not None else None,
+344:            plan_number=pr_number,
+553:            plan_number=pr_number,
+185:            plan_number=linked_pr_number,
+103:        plan_number=pr_number,
+218:                    plan_number=plan_number,
+535:            plan_number=plan_number,
+  </tool_result>
+  <assistant>Let me read the context around each of these calls to understand which function they're calling:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="109705" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SL5HXV1bYukdPSjhWJuBDT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1090</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="109705" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SL5HXV1bYukdPSjhWJuBDT">
+  1090→    # Determine worktree_path: use target's worktree if available, else current cwd
+  1091→    worktree_path = target.worktree_path if target.worktree_path else ctx.cwd
+  1092→    script_content = render_land_execution_script(
+  1093→        pr_number=pr_number,
+  1094→        branch=branch,
+  1095→        worktree_path=worktree_path,
+  1096→        is_current_branch=target.is_current_branch,
+  1097→        objective_number=objective_number,
+  1098→        plan_number=int(pr_id) if pr_id is not None else None,
+  1099→        use_graphite=target.use_graphite,
+  1100→        skip_learn=skip_learn,
+  1101→        cleanup_confirmed=cleanup_confirmed,
+  1102→        target_path=target_path,
+  1103→    )
+  1104→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>This is calling `render_land_execution_script` - not a function we renamed. Let me check which function each is calling. Let me grep for the function definitions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="742" cache_read_input_tokens="110125" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0199R9wcEqpsYGev8V6A3CJN">
+    <param name="command">grep -n "def render_land_execution_script\|def create_submission_queued_block\|def create_...[truncated 138 chars]...py /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py 2&gt;/dev/null</param>
+    <param name="description">Find function definitions in plan_workflow and impl_folder</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="742" cache_read_input_tokens="110125" cache_creation="{'ephemeral_5m_input_tokens': 742, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0199R9wcEqpsYGev8V6A3CJN">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013oWhDWd2omFcPQ6kEhRHa6">
+    <param name="command">grep -n "plan_number" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py | head -20</param>
+    <param name="description">Check plan_workflow.py plan_number usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="110867" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013oWhDWd2omFcPQ6kEhRHa6">
+28:        plan_number: Plan number
+38:    plan_number: int
+92:    plan_number = int(plan.pr_identifier)
+123:        plan_number=plan_number,
+  </tool_result>
+  <tool_use name="Read" id="toolu_0179K7ApgPXonN5z8eDnyNri">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="offset">115</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="111107" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0179K7ApgPXonN5z8eDnyNri">
+   115→            f"Generated worktree name failed validation.\n{wt_validation.format_message()}"
+   116→        )
+   117→    worktree_name = wt_validation.name
+   118→
+   119→    return PlanBranchSetup(
+   120→        branch_name=branch_name,
+   121→        worktree_name=worktree_name,
+   122→        plan_content=plan.body,
+   123→        plan_number=plan_number,
+   124→        issue_url=plan.url,
+   125→        issue_title=plan.title,
+   126→        objective_issue=plan.objective_id,
+   127→        warnings=tuple(warnings),
+   128→    )
+   129→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UZ3vTeVVjvFRqPZTNMhJcp">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="offset">20</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="395" cache_read_input_tokens="111579" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UZ3vTeVVjvFRqPZTNMhJcp">
+    20→@dataclass(frozen=True)
+    21→class PlanBranchSetup:
+    22→    """Result of successfully preparing a plan for worktree creation.
+    23→
+    24→    Attributes:
+    25→        branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
+    26→        worktree_name: Sanitized directory name for the worktree
+    27→        plan_content: Plan body to use as plan.md content
+    28→        plan_number: Plan number
+    29→        issue_url: Full GitHub issue URL
+    30→        issue_title: Issue title for reference
+    31→        objective_issue: Linked objective issue number, or None if not linked
+    32→        warnings: List of warning messages (e.g., non-OPEN plan)
+    33→    """
+    34→
+    35→    branch_name: str
+    36→    worktree_name: str
+    37→    plan_content: str
+    38→    plan_number: int
+    39→    issue_url: str
+    40→    issue_title: str
+    41→    objective_issue: int | None
+    42→    warnings: tuple[str, ...] = ()
+    43→
+    44→
+    45→@dataclass(frozen=True)
+    46→class PlanValidationFailed:
+    47→    """Result when plan validation fails.
+    48→
+    49→    Attributes:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>These are in `plan_workflow.py` which is a different module - `PlanBranchSetup.plan_number` is a field on a dataclass. This is OUT OF SCOPE per the plan (it's not in the gateway layer, and it's not listed in the "Callers to Update" section). Similarly, `impl_folder.py` also has `plan_number`. Let me verify which calls from our target files call gateways we renamed:
+
+Let me specifically check what function is being called at each location:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="963" cache_read_input_tokens="111579" cache_creation="{'ephemeral_5m_input_tokens': 963, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rh79pdzk484ECYN9Fwpx7C">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">337</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="963" cache_read_input_tokens="111579" cache_creation="{'ephemeral_5m_input_tokens': 963, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rh79pdzk484ECYN9Fwpx7C">
+   337→            "pr_is_open": True,
+   338→            "has_erk_pr_title": True,
+   339→        }
+   340→
+   341→        metadata_block = create_submission_queued_block(
+   342→            queued_at=queued_at,
+   343→            submitted_by=submitted_by,
+   344→            plan_number=pr_number,
+   345→            validation_results=validation_results,
+   346→            expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
+   347→        )
+   348→
+   349→        comment_body = render_erk_issue_event(
+   350→            title="Plan Queued for Implementation",
+   351→            metadata=metadata_block,
+   352→            description=(
+   353→                f"Plan submitted by **{submitted_by}** at {queued_at}.\n\n"
+   354→                f"The `{DISPATCH_WORKFLOW_METADATA_NAME}` workflow has been "
+   355→                f"dispatched via direct dispatch.\n\n"
+   356→                f"**Workflow run:** {workflow_url}"
+   357→            ),
+   358→        )
+   359→
+   360→        user_output("Posting queued event comment...")
+   361→        ctx.plan_backend.add_comment(repo.root, str(pr_number), comment_body)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>This calls `create_submission_queued_block` which we renamed from `plan_number=` to `pr_number=`. I need to update this. Let me check all the remaining calls that use the renamed gateway functions. Let me read the specific contexts for each file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="112542" cache_creation="{'ephemeral_5m_input_tokens': 933, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H2rCxv51x7rdu4qN9bKSYC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">545</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="112542" cache_creation="{'ephemeral_5m_input_tokens': 933, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H2rCxv51x7rdu4qN9bKSYC">
+   545→    except Exception as e:
+   546→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   547→
+   548→    # Post queued event comment (best-effort)
+   549→    try:
+   550→        metadata_block = create_submission_queued_block(
+   551→            queued_at=queued_at,
+   552→            submitted_by=submitted_by,
+   553→            plan_number=pr_number,
+   554→            validation_results={
+   555→                "pr_is_open": True,
+   556→                "has_erk_pr_title": True,
+   557→            },
+   558→            expected_workflow=DISPATCH_WORKFLOW_METADATA_NAME,
+   559→        )
+   560→        comment_body = render_erk_issue_event(
+   561→            title="Plan Queued for Implementation",
+   562→            metadata=metadata_block,
+   563→            description=(
+   564→                f"Plan submitted by **{submitted_by}** at {queued_at}.\n\n"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RdbJiG6J6shevLrTw2kVtt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+    <param name="offset">178</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="537" cache_read_input_tokens="113475" cache_creation="{'ephemeral_5m_input_tokens': 537, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RdbJiG6J6shevLrTw2kVtt">
+   178→            is_current_branch=is_current_branch,
+   179→            target_child_branch=resolved_target_child,
+   180→            use_graphite=use_graphite,
+   181→            pull_flag=pull_flag,
+   182→            no_delete=no_delete,
+   183→            no_cleanup=no_cleanup,
+   184→            script=script,
+   185→            plan_number=linked_pr_number,
+   186→            skip_learn=skip_learn,
+   187→        )
+   188→    except SystemExit as exc:
+   189→        if exc.code != 0:
+   190→            raise
+   191→        exit_after = exc
+   192→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YMN75mHg5di78Mqd4MDt4G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py</param>
+    <param name="offset">95</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="114012" cache_creation="{'ephemeral_5m_input_tokens': 650, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YMN75mHg5di78Mqd4MDt4G">
+    95→        Formatted markdown comment body
+    96→    """
+    97→    started_at = now_iso
+    98→
+    99→    block = create_workflow_started_block(
+   100→        started_at=started_at,
+   101→        workflow_run_id=run_id,
+   102→        workflow_run_url=run_url,
+   103→        plan_number=pr_number,
+   104→        branch_name=branch_name,
+   105→    )
+   106→
+   107→    description = (
+   108→        f"Setup completed successfully.\n"
+   109→        f"\n"
+   110→        f"**Branch:** `{branch_name}`\n"
+   111→        f"**PR:** [#{impl_pr_number}](https://github.com/{repository}/pull/{impl_pr_number})\n"
+   112→        f"**Status:** Ready for implementation\n"
+   113→        f"\n"
+   114→        f"[View workflow run]({run_url})"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>This calls `create_workflow_started_block` which we renamed. Let me check the palette.py and objective_nodes_screen.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="114662" cache_creation="{'ephemeral_5m_input_tokens': 468, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NWgVyESjcuo2roatGsJg1K">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+    <param name="offset">210</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="114662" cache_creation="{'ephemeral_5m_input_tokens': 468, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NWgVyESjcuo2roatGsJg1K">
+   210→                op_id = f"land-pr-{row.pr_number}"
+   211→                self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
+   212→                plan_number = row.pr_number if not row.is_learn_plan else None
+   213→                self._land_pr_async(
+   214→                    op_id=op_id,
+   215→                    pr_number=row.pr_number,
+   216→                    branch=row.pr_head_branch,
+   217→                    objective_issue=row.objective_issue,
+   218→                    plan_number=plan_number,
+   219→                )
+   220→
+   221→        elif command_id == "incremental_dispatch":
+   222→            if row.pr_number:
+   223→                self._pending_dispatch_pr = row.pr_number
+   224→                self.push_screen(
+   225→                    PlanInputScreen(pr_number=row.pr_number),
+   226→                    self._on_incremental_dispatch_result,
+   227→                )
+   228→
+   229→        elif command_id == "copy_replan":
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The `plan_number` in `palette.py` line 218 is passed to `self._land_pr_async` - not to a gateway function we renamed. Let me check what `_land_pr_async` looks like:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="115130" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WXvkEYTB5tMD1wtZfuNfEz">
+    <param name="command">grep -n "def _land_pr_async" /home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+    <param name="description">Find _land_pr_async definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="115130" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WXvkEYTB5tMD1wtZfuNfEz">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0146dPhNqKs9nqPShMFqUXb1">
+    <param name="command">grep -rn "def _land_pr_async" /home/runner/work/erk/erk/src/erk/ 2&gt;/dev/null</param>
+    <param name="description">Find _land_pr_async definition in src/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="192" cache_read_input_tokens="115931" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0146dPhNqKs9nqPShMFqUXb1">
+/home/runner/work/erk/erk/src/erk/tui/operations/workers.py:252:    def _land_pr_async(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DLSDoYLmBT4gShq5efMBU5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="offset">252</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="434" cache_read_input_tokens="116123" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DLSDoYLmBT4gShq5efMBU5">
+   252→    def _land_pr_async(
+   253→        self: ErkDashApp,
+   254→        *,
+   255→        op_id: str,
+   256→        pr_number: int,
+   257→        branch: str,
+   258→        objective_issue: int | None,
+   259→        plan_number: int | None,
+   260→    ) -&gt; None:
+   261→        """Land PR in background thread with toast."""
+   262→        command = [
+   263→            "erk",
+   264→            "exec",
+   265→            "land-execute",
+   266→            f"--pr-number={pr_number}",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>OK, `_land_pr_async` has its own `plan_number` parameter - that's not a gateway function. This is TUI-internal and is out of scope per the plan (deferred to node 6.1). Similarly `render_land_execution_script` in land_cmd.py.
+
+Let me check which callers truly need updating (those calling the gateway functions we renamed):
+
+The functions we renamed params for:
+1. `create_worktree_creation_block` - `plan_number=` → `pr_number=`  
+2. `create_plan_block` - `plan_number=` → `pr_number=` (first positional arg, not keyword)
+3. `create_submission_queued_block` - `plan_number=` → `pr_number=`
+4. `create_workflow_started_block` - `plan_number=` → `pr_number=`
+5. `format_execution_commands` - `plan_number=` → `pr_number=` (1st positional)
+6. `format_plan_commands_section` - `plan_number=` → `pr_number=` (1st positional)
+7. `format_plan_issue_body` - `plan_number=` → `pr_number=` (2nd positional)
+
+Let me check which files call each of these:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="116557" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DDQv6uVV3sYmtoGsXfSHhq">
+    <param name="command">grep -rn "create_submission_queued_block\|create_workflow_started_block\|create_worktree_c...[truncated 95 chars].../home/runner/work/erk/erk/src/ 2&gt;/dev/null | grep -v "import\|test_" | grep "plan_number="</param>
+    <param name="description">Find all callers passing plan_number= to gateway functions we renamed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="116557" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DDQv6uVV3sYmtoGsXfSHhq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017kKDigvMP2jLXLaQoPgovC">
+    <param name="command">grep -rn "create_submission_queued_block\|create_workflow_started_block\|create_worktree_creation_block" /home/runner/work/erk/erk/src/ 2&gt;/dev/null | grep -v "import\|test_"</param>
+    <param name="description">Find all callers of renamed metadata functions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="780" cache_read_input_tokens="116925" cache_creation="{'ephemeral_5m_input_tokens': 780, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017kKDigvMP2jLXLaQoPgovC">
+/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py:14:    create_submission_queued_block,
+/home/runner/work/erk/erk/src/erk/cli/commands/consolidate_learn_plans_dispatch.py:227:            metadata_block = create_submission_queued_block(
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py:18:    create_submission_queued_block,
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py:435:            metadata_block = create_submission_queued_block(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:29:    create_submission_queued_block,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:341:        metadata_block = create_submission_queued_block(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:550:        metadata_block = create_submission_queued_block(
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:48:    create_workflow_started_block,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py:99:    block = create_workflow_started_block(
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EFF4JNf6ZaAma97XEEHsdD">
+    <param name="command">grep -rn "create_worktree_creation_block\|create_plan_block\b" /home/runner/work/erk/erk/src/ 2&gt;/dev/null | grep -v "import\|test_\|create_plan_body_block\|create_plan_issue_block"</param>
+    <param name="description">Find callers of create_worktree_creation_block and create_plan_block</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="117705" cache_creation="{'ephemeral_5m_input_tokens': 576, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EFF4JNf6ZaAma97XEEHsdD">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Dij7SKYLq6c3QsXyLU58MP">
+    <param name="command">grep -rn "create_worktree_creation_block\|create_plan_block\b" /home/runner/work/erk/erk/s...[truncated 16 chars]...es/ 2&gt;/dev/null | grep -v "import\|test_\|create_plan_body_block\|create_plan_issue_block"</param>
+    <param name="description">Find callers of create_worktree_creation_block and create_plan_block across all packages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="118281" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dij7SKYLq6c3QsXyLU58MP">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:198:def create_worktree_creation_block(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:238:def create_plan_block(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py:22:    create_worktree_creation_block,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py:484:    block = create_worktree_creation_block(
+  </tool_result>
+  <tool_use name="Read" id="toolu_014BrtRpmzVTddGv1D5SJG7B">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="offset">480</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="118467" cache_creation="{'ephemeral_5m_input_tokens': 650, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014BrtRpmzVTddGv1D5SJG7B">
+   480→    """
+   481→    timestamp = datetime.now(UTC).isoformat()
+   482→
+   483→    # Create metadata block with plan number
+   484→    block = create_worktree_creation_block(
+   485→        worktree_name=worktree_name,
+   486→        branch_name=branch_name,
+   487→        timestamp=timestamp,
+   488→        plan_number=plan_number,
+   489→    )
+   490→
+   491→    # Format instructions for implementation
+   492→    instructions = f"""The worktree is ready for implementation. You can navigate to it using:
+   493→```bash
+   494→ erk br co {branch_name}
+   495→```
+   496→
+   497→To implement the plan:
+   498→```bash
+   499→claude --permission-mode acceptEdits "/erk:plan-implement"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>`impl_folder.py` calls `create_worktree_creation_block` with `plan_number=`. I need to update this caller too. It's not listed in the plan's "Callers to Update" section (which focuses on `src/erk/`), but it's in `packages/erk-shared/` and will cause a type error. Let me update it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="119117" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YJEv3Eguxigt9j6FEzcvBX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="offset">460</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="119117" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJEv3Eguxigt9j6FEzcvBX">
+   460→    if run_id is None or not isinstance(run_id, str):
+   461→        return None
+   462→
+   463→    return run_id
+   464→
+   465→
+   466→def add_worktree_creation_comment(
+   467→    *, github_issues, repo_root: Path, plan_number: int, worktree_name: str, branch_name: str
+   468→) -&gt; None:
+   469→    """Add a comment to the GitHub issue documenting worktree creation.
+   470→
+   471→    Args:
+   472→        github_issues: GitHubIssues interface for posting comments
+   473→        repo_root: Repository root directory
+   474→        plan_number: Plan number to comment on
+   475→        worktree_name: Name of the created worktree
+   476→        branch_name: Git branch name for the worktree
+   477→
+   478→    Raises:
+   479→        RuntimeError: If gh CLI fails or issue not found
+   480→    """
+   481→    timestamp = datetime.now(UTC).isoformat()
+   482→
+   483→    # Create metadata block with plan number
+   484→    block = create_worktree_creation_block(
+   485→        worktree_name=worktree_name,
+   486→        branch_name=branch_name,
+   487→        timestamp=timestamp,
+   488→        plan_number=plan_number,
+   489→    )
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>I see `add_worktree_creation_comment` itself has a `plan_number` parameter and passes it to `create_worktree_creation_block`. I need to update the whole function. But the plan says callers are deferred outside gateway - however, this is in `erk_shared` package which IS the gateway layer context. The plan says "All files are in `packages/erk-shared/src/erk_shared/gateway/`" for the gateway layer renaming. `impl_folder.py` is not in the gateway directory, but it's calling a gateway function.
+
+To avoid breaking things, let me just update the keyword argument in the call to `create_worktree_creation_block` while keeping the outer function's parameter name for now (consistent with "no backwards compat" but also avoiding cascading changes to callers of `add_worktree_creation_comment`):
+
+Actually, given the plan says to rename immediately with no backwards-compatibility shims, let me run CI to see what errors arise and fix them comprehensively. First let me update the direct callers of the renamed functions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="924" cache_read_input_tokens="119543" cache_creation="{'ephemeral_5m_input_tokens': 924, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WNmtk71UZZ5heWB6rtcK3r">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="old_string">    # Create metadata block with plan number
+    block = create_worktree_creation_block(
+ ...[truncated 26 chars]...anch_name=branch_name,
+        timestamp=timestamp,
+        plan_number=plan_number,
+    )</param>
+    <param name="new_string">    # Create metadata block with plan number
+    block = create_worktree_creation_block(
+ ...[truncated 24 chars]...branch_name=branch_name,
+        timestamp=timestamp,
+        pr_number=plan_number,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="924" cache_read_input_tokens="119543" cache_creation="{'ephemeral_5m_input_tokens': 924, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WNmtk71UZZ5heWB6rtcK3r">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py has been updated successfully.
+  </tool_result>
+</session>
