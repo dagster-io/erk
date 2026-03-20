@@ -10,7 +10,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def _plan_to_issue_info(plan: Plan) -> IssueInfo:
@@ -62,7 +62,7 @@ def test_view_plan_displays_issue() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -100,7 +100,7 @@ def test_view_plan_infers_from_branch() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_github = create_plan_store_with_plans({"123": plan_issue})
+        store, fake_github = create_pr_backend_with_plans({"123": plan_issue})
         # Also register the PR under the real branch name so ManagedGitHubPrBackend
         # can resolve it via get_pr_for_branch during branch inference.
         real_branch = "P123-foo-bar-feature"
@@ -127,7 +127,7 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
     """Test error message when on non-plan branch without identifier."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         # Set current branch to master (not a plan branch)
         ctx = build_workspace_test_context(
             env, plan_store=store, current_branch="master", remote_github=_make_fake_remote()
@@ -162,7 +162,7 @@ def test_view_plan_with_full_flag() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -197,7 +197,7 @@ def test_view_plan_with_short_full_flag() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -216,7 +216,7 @@ def test_view_plan_not_found() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
 
         # Act
@@ -247,7 +247,7 @@ def test_view_plan_minimal_fields() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"1": plan_issue})
+        store, _ = create_pr_backend_with_plans({"1": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -280,7 +280,7 @@ def test_view_plan_with_github_url() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_pr_backend_with_plans({"123": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -300,7 +300,7 @@ def test_view_plan_invalid_url() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
 
         # Act - use invalid identifier
@@ -357,7 +357,7 @@ Some other content here.
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -414,7 +414,7 @@ last_local_impl_user: testuser
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -454,7 +454,7 @@ def test_view_plan_without_header_info() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -504,7 +504,7 @@ created_from_session: abc123-session-id
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -559,7 +559,7 @@ last_learn_session: def456-learn-session
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -609,7 +609,7 @@ learn_status: pending
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -654,7 +654,7 @@ learn_plan_issue: 456
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -699,7 +699,7 @@ learn_plan_pr: 789
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -744,7 +744,7 @@ learn_run_id: "12345678"
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )
@@ -790,7 +790,7 @@ learn_status: pending
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
             env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
         )

@@ -11,7 +11,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:
@@ -199,7 +199,7 @@ def test_top_level_close_command_works() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_github = create_plan_store_with_plans({"456": issue1})
+        store, fake_github = create_pr_backend_with_plans({"456": issue1})
         ctx = build_workspace_test_context(env, plan_store=store, issues=fake_github.issues)
 
         # Act - Use pr close command

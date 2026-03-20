@@ -14,7 +14,7 @@ from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def _make_plan(
@@ -62,7 +62,7 @@ def test_no_duplicates_found() -> None:
     existing = _make_plan(
         pr_identifier="100", title="[erk-pr] Refactor auth", body="Restructure auth flow"
     )
-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+    plan_store, _ = create_pr_backend_with_plans({"100": existing})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -94,7 +94,7 @@ def test_duplicate_detected() -> None:
     existing = _make_plan(
         pr_identifier="100", title="[erk-pr] Dark mode support", body="Add dark mode to app"
     )
-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+    plan_store, _ = create_pr_backend_with_plans({"100": existing})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -122,7 +122,7 @@ def test_duplicate_detected() -> None:
 def test_no_existing_plans() -> None:
     """No existing open PRs returns exit code 0 with message."""
     executor = FakePromptExecutor()
-    plan_store, _ = create_plan_store_with_plans({})
+    plan_store, _ = create_pr_backend_with_plans({})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -153,7 +153,7 @@ def test_llm_error_graceful_degradation() -> None:
         simulated_prompt_error="LLM unavailable",
     )
     existing = _make_plan(pr_identifier="100", title="[erk-pr] Existing plan", body="body")
-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+    plan_store, _ = create_pr_backend_with_plans({"100": existing})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -200,7 +200,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
     )
     plan_100 = _make_plan(pr_identifier="100", title="[erk-pr] Plan A", body="body A")
     plan_200 = _make_plan(pr_identifier="200", title="[erk-pr] Plan B", body="body B for checking")
-    plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
+    plan_store, _ = create_pr_backend_with_plans({"100": plan_100, "200": plan_200})
 
     issue_200 = IssueInfo(
         number=200,
@@ -261,7 +261,7 @@ def test_progress_reporting_lists_plans() -> None:
     )
     plan_100 = _make_plan(pr_identifier="100", title="[erk-pr] Refactor auth", body="body A")
     plan_200 = _make_plan(pr_identifier="200", title="[erk-pr] Add dark mode", body="body B")
-    plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
+    plan_store, _ = create_pr_backend_with_plans({"100": plan_100, "200": plan_200})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -289,7 +289,7 @@ def test_progress_reporting_lists_plans() -> None:
 
 def test_plan_flag_not_found() -> None:
     """--plan with nonexistent plan ID returns exit code 1 with error."""
-    plan_store, _ = create_plan_store_with_plans({})
+    plan_store, _ = create_pr_backend_with_plans({})
     fake_remote = FakeRemoteGitHub(
         authenticated_user="test-user",
         default_branch_name="main",

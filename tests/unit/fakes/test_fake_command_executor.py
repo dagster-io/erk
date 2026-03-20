@@ -19,12 +19,12 @@ def test_tracks_copied_texts() -> None:
     assert executor.copied_texts == ["erk implement 123", "erk pr dispatch 456"]
 
 
-def test_tracks_closed_plans() -> None:
-    """Fake executor tracks plans that were closed."""
+def test_tracks_closed_prs() -> None:
+    """Fake executor tracks PRs that were closed."""
     executor = FakeCommandExecutor()
     executor.close_plan(123, "https://github.com/test/repo/issues/123")
     executor.close_plan(456, "https://github.com/test/repo/issues/456")
-    assert executor.closed_plans == [
+    assert executor.closed_prs == [
         (123, "https://github.com/test/repo/issues/123"),
         (456, "https://github.com/test/repo/issues/456"),
     ]
