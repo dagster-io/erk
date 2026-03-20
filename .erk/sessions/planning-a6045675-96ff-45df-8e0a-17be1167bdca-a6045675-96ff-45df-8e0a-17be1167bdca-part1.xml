@@ -1,0 +1,938 @@
+<session>
+  <meta branch="plnd/O9272-move-slot-cmds-check-03-20-1504" />
+  <meta model="claude-opus-4-6" />
+  <user>⏺ Plan "Objective #9272 Node 1.4 — Move Branch Checkout into Slot Checkout" saved as draft PR #9286
+  URL: https://github.com/dagster-io/erk/pull/9286
+  Verified objective link: #9272
+  Updated objective #9272 roadmap: node 1.4 → PR #9286
+
+⏺ Plan saved and session complete.
+
+  Next steps for PR #9286:
+
+  Implement PR #9286:
+    In current wt:    erk br co --for-plan 9286 &amp;&amp; erk implement
+      (dangerously):  erk br co --for-plan 9286 &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 9286 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 9286 --script)" &amp;&amp; erk implement -d
+
+  Checkout PR #9286:
+    In current wt:  erk br co --for-plan 9286
+    In new wt:      erk br co --new-slot --for-plan 9286
+
+  Dispatch PR #9286:
+    CLI command:    erk pr dispatch 9286
+    Slash command:  /erk:pr-dispatch
+
+✻ Cogitated for 13m 38s
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ /exit
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /exit                                           Exit the REPL
+  /extra-usage                                    Configure extra usage to keep working when limits are hit
+  /context                                        Visualize current context usage as a colored grid
+  /session-inspector                              This skill should be used when inspecting, analyzing, or querying Claude Code session logs. Use when users ask about session…
+  /skill-creator                                  Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill …
+  /local:analyze-context                          Analyze context window usage for all sessions in the current worktree (project)
+
+Resume this session with:
+claude --resume 157bafef-00db-4abb-9d6e-c9a1f9cf51a2
+➜  erk-slot-04 git:(plnd/O9272-move-slot-cmds-check-03-20-1504) ✗ source "$(erk br co --new-slot --for-plan 9286 --script)" &amp;&amp; erk implement -d
+Usage: erk br co [OPTIONS] BRANCH
+Try 'erk br co -h' for help.
+
+Error: No such option: --new-slot
+source: no such file or directory:
+➜  erk-slot-04 git:(plnd/O9272-move-slot-cmds-check-03-20-1504) ✗ erk slot
+Usage: erk slot [OPTIONS] COMMAND [ARGS]...
+
+  Manage worktree pool slots.
+
+Options:
+  -h, --help  Show this message and exit.
+
+Commands:
+  assign     Assign an EXISTING branch to an available pool slot.
+  checkout   Checkout BRANCH into a pool slot.
+  init-pool  Initialize pool slots with worktrees and placeholder branches.
+  list (ls)  List all pool slots with unified status view.
+  repair     Remove stale assignments from pool state.
+  unassign   Remove a branch assignment from a pool slot.
+➜  erk-slot-04 git:(plnd/O9272-move-slot-cmds-check-03-20-1504) ✗ erk slot checkout -h
+Usage: erk slot checkout [OPTIONS] BRANCH
+
+  Checkout BRANCH into a pool slot.
+
+  By default, if running inside an assigned slot, updates the slot's
+  assignment to the new branch (stack-in-place). Use --new-slot to allocate a
+  fresh slot instead.
+
+  The branch must already exist. Use `erk branch create` to create a new
+  branch.
+
+  Examples:
+
+      erk slot checkout feature/auth        # Stack in current slot     erk
+      slot checkout feature/auth --new-slot  # Allocate new slot     erk slot
+      checkout feature/auth --force     # Auto-evict if full
+
+Options:
+  --new-slot   Allocate a new slot instead of stacking in place
+  -f, --force  Auto-unassign oldest branch if pool is full
+  -h, --help   Show this message and exit.
+➜  erk-slot-04 git:(plnd/O9272-move-slot-cmds-check-03-20-1504) ✗
+
+we need to make this user experience better.
+
+* --new-slot is redundant erk slot checkout. instead we should have require either
+   * -s/--slot
+   * -s/--branch
+
+* the text getting printed should be accurate and work, of course</user>
+  <usage input_tokens="3" cache_creation_input_tokens="18492" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18492}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the current implementation and the plan-save output text.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18492" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18492}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UCsAkTeF1bdDMsYWkrxsXn">
+    <param name="description">Explore slot checkout command</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 416 chars]...slot checkout command and related slot infrastructure. Read the full implementation files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18492" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18492}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014BJiXctEVQ4AeCNVEc6TNF">
+    <param name="description">Explore plan-save output text</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 948 chars]..."In current wt", "--new-slot --for-plan", "--for-plan" etc. Read the full file once found.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18492" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18492}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01HPQsG7VV2ZTCWBoMuaXoJq">
+    <param name="description">Explore br co command</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 350 chars]...check if there's a `--for-plan` option and how branch checkout differs from slot checkout.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18492" cache_read_input_tokens="9015" output_tokens="1854" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18492, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014BJiXctEVQ4AeCNVEc6TNF">
+Now I have all the information I need. Let me create a comprehensive summary document:
+
+## Summary
+
+I found where the "Next steps" output text is generated after a plan is saved. The text you showed references a non-existent `--new-slot` flag in `erk br co --new-slot`.
+
+### Location of the Problem
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/output/next_steps.py`
+
+This file contains the `PrNextSteps` class with properties that generate the command strings, specifically:
+
+- Line 26-27: `checkout_new_slot` property generates `erk br co --new-slot --for-plan {pr_number}`
+- Line 42-46: `implement_new_wt` property generates the source command with `--new-slot --for-plan`
+- Line 49-53: `implement_new_wt_dangerous` property generates the same with `-d` flag
+
+### Output Functions
+
+The text is formatted by two functions:
+1. **`format_pr_next_steps_plain()`** (lines 61-76) — Used in CLI output showing next steps after plan save
+2. **`format_next_steps_markdown()`** (lines 79-96) — Used in PR body
+
+The `format_pr_next_steps_plain()` function generates the exact text you showed, with sections:
+- "Implement PR #N:"
+- "In current wt:" 
+- "In new wt:"
+- "(dangerously):" variants
+- "Checkout PR #N:" section
+- "Dispatch PR #N:" section
+
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UCsAkTeF1bdDMsYWkrxsXn">
+Excellent! Now I have a comprehensive understanding. Let me create a summary document:
+
+## Comprehensive Summary: `erk slot checkout` Command Implementation
+
+### 1. **Command Definition** (`checkout_cmd.py`)
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/src/erk_slots/checkout_cmd.py`
+
+The `erk slot checkout` command is a Click command that checks out a branch into a pool slot:
+
+```python
+@click.command("checkout")
+@click.argument("branch", metavar="BRANCH")
+@click.option(
+    "--new-slot",
+    is_flag=True,
+    help="Allocate a new slot instead of stacking in place",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Auto-unassign oldest branch if pool is full",
+)
+@click.pass_obj
+def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool) -&gt; None:
+```
+
+**Key behavior:**
+- **Default behavior (no `--new-slot`)**: If running inside an assigned slot, performs *stack-in-place* (updates the slot's assignment to track the new branch without consuming a new slot)
+- **With `--new-slot`**: Forces allocation of a fresh slot, even if inside another slot
+
+... [149 lines omitted] ...
+
+- Errors if branch is already assigned
+- Statuses: "available", "assigned", "error"
+   - Non-TTY mode: error
+  </tool_result>
+  <tool_result tool="toolu_01HPQsG7VV2ZTCWBoMuaXoJq">
+Perfect! Now I have a complete picture. Let me create a comprehensive summary document:
+
+## Summary
+
+Based on my exploration of the codebase, here's a comprehensive understanding of the `erk br co` command and its relationship to `erk slot checkout`:
+
+### 1. **Click Command Definition for `erk br co`**
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/branch/checkout_cmd.py`
+
+The command is defined at lines 416-463:
+
+```python
+@alias("co")
+@click.command("checkout", cls=CommandWithHiddenOptions)
+@click.argument("branch", metavar="BRANCH", required=False, shell_complete=complete_branch_names)
+@click.option(
+    "--for-plan",
+    "for_plan",
+    type=str,
+    default=None,
+    help="PR number or URL with erk-pr label",
+)
+@script_option
+@click.pass_obj
+def branch_checkout(
+    ctx: ErkContext,
+    branch: str | None,
+    for_plan: str | None,
+    script: bool,
+
+... [99 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have a clear picture of the codebase. Let me read the key files before asking a clarification question.</assistant>
+  <tool_use name="Read" id="toolu_01AJmb9PRqygTcfaxjmtFMzW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/src/erk_slots/checkout_cmd.py</param>
+  </tool_use>
+  <tool_use name="Read" id="toolu_01QkgRu749ERHMaEf1beTHqv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="0" cache_read_input_tokens="34533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 0}" output_tokens="1638" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AJmb9PRqygTcfaxjmtFMzW">
+     1→"""Slot checkout command - checkout a branch into a pool slot."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.core import discover_repo_context
+     6→from erk.core.context import ErkContext
+     7→from erk.core.repo_discovery import ensure_erk_metadata_dir
+     8→from erk.core.worktree_pool import load_pool_state
+     9→from erk_shared.output.output import user_output
+    10→from erk_slots.common import (
+    11→    allocate_slot_for_branch,
+    12→    find_current_slot_assignment,
+    13→    update_slot_assignment_tip,
+    14→)
+    15→
+    16→
+    17→@click.command("checkout")
+    18→@click.argument("branch", metavar="BRANCH")
+    19→@click.option(
+    20→    "--new-slot",
+    21→    is_flag=True,
+    22→    help="Allocate a new slot instead of stacking in place",
+    23→)
+    24→@click.option(
+    25→    "-f",
+    26→    "--force",
+    27→    is_flag=True,
+    28→    help="Auto-unassign oldest branch if pool is full",
+    29→)
+    30→@click.pass_obj
+
+... [80 lines omitted] ...
+
+    62→                f"Error: Branch '{branch}' does not exist.\n"
+  </tool_result>
+  <tool_result tool="toolu_01QkgRu749ERHMaEf1beTHqv">
+     1→"""Plan next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class PrNextSteps:
+     8→    """Canonical commands for plan operations."""
+     9→
+    10→    pr_number: int
+    11→    url: str
+    12→
+    13→    @property
+    14→    def view(self) -&gt; str:
+    15→        return self.url
+    16→
+    17→    @property
+    18→    def dispatch(self) -&gt; str:
+    19→        return f"erk pr dispatch {self.pr_number}"
+    20→
+    21→    @property
+    22→    def checkout(self) -&gt; str:
+    23→        return f"erk br co --for-plan {self.pr_number}"
+    24→
+    25→    @property
+    26→    def checkout_new_slot(self) -&gt; str:
+    27→        return f"erk br co --new-slot --for-plan {self.pr_number}"
+    28→
+    29→    @property
+    30→    def dispatch_slash_command(self) -&gt; str:
+
+... [67 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4364" cache_read_input_tokens="34533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4364}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a clear picture of the three components:
+1. **`erk slot checkout`** in `packages/erk-slots/src/erk_slots/checkout_cmd.py` — the command to change
+2. **`PrNextSteps`** in `packages/erk-shared/src/erk_shared/output/next_steps.py` — generates the broken `erk br co --new-slot` commands
+3. **`erk br co`** in `src/erk/cli/commands/branch/checkout_cmd.py` — doesn't have `--new-slot`
+
+Before I design the plan, I need to clarify the new API. You wrote:
+
+&gt; require either `-s/--slot` or `-s/--branch`
+
+Both show `-s` as the short flag — is that a typo? I'm guessing you mean something like:
+
+- `-s/--slot SLOT_NAME` — target a specific slot
+- `-b/--branch BRANCH` — specify the branch
+
+Could you clarify:
+1. What the exact new signature should be (short flags, which are required/optional, positional args)?
+2. Does `BRANCH` stay as a positional arg, or become `--branch`?
+3. What's the intended behavior for each option? For example, does `--slot` mean "stack into this specific slot" and without `--slot` it auto-allocates a new one?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4364" cache_read_input_tokens="34533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4364}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_016PnmU8bsnQyP17t3VjRTs1">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4364" cache_read_input_tokens="34533" output_tokens="1010" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4364, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016PnmU8bsnQyP17t3VjRTs1">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01UEUxy9gWbijhyHx8XzzyAt">
+    <param name="questions">[{'question': 'What should the new `erk slot checkout` API look like? Both bullets in your...[truncated 1145 chars]...t -s erk-slot-03         # stack in slot (branch from context?)'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2254" cache_read_input_tokens="38897" output_tokens="449" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UEUxy9gWbijhyHx8XzzyAt">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said:
+The user wants to clarify these questions.
+    This means they may have additional information, context or questions for you.
+    Take their response into account and then reformulate the questions if appropriate.
+    Start by asking them what they would like to clarify.
+
+    Questions asked:
+- "What should the new `erk slot checkout` API look like? Both bullets in your message show `-s/` as the short flag — I want to make sure I get the intended signature right."
+  (No answer provided)
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>no checkout should just target branches. we can add "goto" or "jump" to goto a slot</user>
+  <usage input_tokens="3" cache_creation_input_tokens="31" cache_read_input_tokens="41786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — much clearer. So the model is:
+
+- **`erk slot checkout BRANCH`** — branch-centric, always allocates a slot (no `--new-slot` needed)
+- **`erk slot goto`/`jump` SLOT** — slot-centric, navigate to an existing slot
+
+Two quick questions before I plan:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="31" cache_read_input_tokens="41786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QRpWhFRpgh1XRgS7GGbmAt">
+    <param name="questions">[{'question': 'What should the slot navigation command be named?', 'header': 'Command name...[truncated 701 chars]... slot. (Same as current default, just remove `--new-slot` flag)'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31" cache_read_input_tokens="41786" output_tokens="1423" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QRpWhFRpgh1XRgS7GGbmAt">
+User has answered your questions: "What should the slot navigation command be named?"="erk slot goto", "What about the stack-in-place behavior (currently the default when running `erk slot checkout` inside an assigned slot)? Should checkout always allocate a new slot, or still reuse the current slot when run from inside one?"="Always new slot". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1714" cache_read_input_tokens="41817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1714}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear — `erk slot goto` and always-new-slot. Let me read the branch checkout implementation to understand how the "Next steps" commands should be fixed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1714" cache_read_input_tokens="41817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1714}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0197y4yfbw6QUfEysRTMdPzD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1714" cache_read_input_tokens="41817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1714}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197y4yfbw6QUfEysRTMdPzD">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CN75GF1A3Rr8XmXfTRBhWk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1714" cache_read_input_tokens="41817" output_tokens="3843" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1714, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CN75GF1A3Rr8XmXfTRBhWk">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.core import worktree_path_for
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.output.output import user_output
+    26→
+    27→logger = logging.getLogger(__name__)
+    28→
+    29→
+    30→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+
+... [300 lines omitted] ...
+
+    31→    """Write a minimal error script and output its path, then exit 1.
+    33→    Used by ``script_error_handler`` to ensure ``source "$(erk slot co --script)"``
+    34→    always receives a valid file path — even on failure — so the shell never
+    38→        render_error_script(),
+    40→        comment="checkout error",
+    47→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    48→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    50→    Wraps the checkout body so that any error path produces a valid script
+    53→    ``source: no such file or directory:`` error.
+    55→    Exception handling:
+    57→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    58→      write error script and exit 1.
+    59→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    60→      won't run since we catch first), write error script, exit 1.
+    61→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    68→        _write_error_script_and_exit(ctx)
+    69→    except click.ClickException as exc:
+    70→        user_output(f"Error: {exc.format_message()}")
+    71→        _write_error_script_and_exit(ctx)
+    72→    except RuntimeError as exc:
+    73→        user_output(f"Error: {exc}")
+    74→        _write_error_script_and_exit(ctx)
+   115→    - Diverged: Warning with instructions
+   128→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   131→    except RuntimeError:
+   132→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   142→        # Diverged - most important case, needs warning
+   143→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   145→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8212" cache_read_input_tokens="43531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8212}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UNAckUoEPAyGd6AWRwrZgL">
+    <param name="pattern">**/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8212" cache_read_input_tokens="43531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8212}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UNAckUoEPAyGd6AWRwrZgL">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ami3XqYEEkB2qZXfRFu9Sm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8212" cache_read_input_tokens="43531" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ami3XqYEEkB2qZXfRFu9Sm">
+     1→"""Tests for next_steps formatting."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PrNextSteps,
+     5→    format_pr_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→def test_plan_next_steps_constructs_with_all_params() -&gt; None:
+    10→    """PrNextSteps constructs correctly with plan_number and url."""
+    11→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+    12→    assert s.pr_number == 42
+    13→    assert s.url == "https://github.com/org/repo/pull/42"
+    14→
+    15→
+    16→def test_plan_next_steps_view_returns_url() -&gt; None:
+    17→    """view returns the URL directly."""
+    18→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+    19→    assert s.view == "https://github.com/org/repo/pull/42"
+    20→
+    21→
+    22→def test_plan_next_steps_checkout_uses_plan_number() -&gt; None:
+    23→    """checkout uses --for-plan with plan_number."""
+    24→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+    25→    assert s.checkout == "erk slot co --for-plan 42"
+    26→
+    27→
+    28→def test_plan_next_steps_dispatch_uses_plan_number() -&gt; None:
+    29→    """dispatch uses plan_number."""
+    30→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+
+... [72 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2113" cache_read_input_tokens="51743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2113}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what's already changed on this branch — the tests seem to already reference `erk slot co` instead of `erk br co`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2113" cache_read_input_tokens="51743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2113}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U98BMuHiJnxTHm7PcBmFAc">
+    <param name="command">git diff master --stat</param>
+    <param name="description">Show files changed on this branch vs master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2113" cache_read_input_tokens="51743" output_tokens="3149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2113, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U98BMuHiJnxTHm7PcBmFAc">
+ .erk/impl-context/plan.md                          |  147 ++
+ .erk/impl-context/ref.json                         |    8 +
+ .../erk-shared/src/erk_shared/cli_alias.py         |    0
+ packages/erk-shared/src/erk_shared/cli_group.py    |  274 ++++
+ .../src/erk_shared/gateway/github/metadata/core.py |    2 +-
+ packages/erk-shared/src/erk_shared/impl_folder.py  |    2 +-
+ .../erk-shared/src/erk_shared/output/next_steps.py |   12 +-
+ .../tests/unit/github/test_objective_issues.py     |    2 +-
+ .../tests/unit/output/test_next_steps.py           |   16 +-
+ packages/erk-slots/pyproject.toml                  |    1 +
+ packages/erk-slots/src/erk_slots/__init__.py       |   25 +-
+ .../erk-slots/src/erk_slots}/assign_cmd.py         |    2 +-
+ packages/erk-slots/src/erk_slots/checkout_cmd.py   |  687 +++++++++
+ .../erk-slots/src/erk_slots}/common.py             |   23 +
+ .../erk-slots/src/erk_slots}/diagnostics.py        |    2 +-
+ .../erk-slots/src/erk_slots}/init_pool_cmd.py      |   12 +-
+ .../erk-slots/src/erk_slots}/list_cmd.py           |   10 +-
+ .../erk-slots/src/erk_slots}/repair_cmd.py         |   10 +-
+ .../erk-slots/src/erk_slots}/unassign_cmd.py       |    2 +-
+ packages/erk-slots/tests/__init__.py               |    0
+ packages/erk-slots/tests/unit/__init__.py          |    0
+ .../erk-slots/tests/unit}/test_assign_cmd.py       |    2 +-
+ packages/erk-slots/tests/unit/test_checkout_cmd.py | 1033 +++++++++++++
+ .../erk-slots/tests/unit}/test_common.py           |   20 +-
+ .../erk-slots/tests/unit}/test_init_pool_cmd.py    |    0
+ .../erk-slots/tests/unit}/test_list_cmd.py         |    0
+ .../erk-slots/tests/unit}/test_repair_cmd.py       |    0
+ .../erk-slots/tests/unit}/test_unassign_cmd.py     |    0
+ pyproject.toml                                     |    1 +
+ src/erk/cli/cli.py                                 |    6 +-
+
+... [63 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5301" cache_read_input_tokens="53856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5301}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>This is a big branch already — the branch checkout has been moved into erk-slots. Let me read the current state of the expanded checkout_cmd.py.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5301" cache_read_input_tokens="53856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5301}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0169oze8veyZ4jtmccYjjvPo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/src/erk_slots/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5301" cache_read_input_tokens="53856" output_tokens="261" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0169oze8veyZ4jtmccYjjvPo">
+     1→"""Unified checkout command - find, switch to, or allocate a slot for a branch.
+     2→
+     3→This is the primary checkout command for erk. It handles:
+     4→- Finding existing worktrees containing a branch and navigating to them
+     5→- Root worktree takeover for trunk branches
+     6→- Stack-in-place for branches checked out within an assigned slot
+     7→- Slot allocation for branches not found in any worktree
+     8→- Plan setup via --for-plan
+     9→"""
+    10→
+    11→import contextlib
+    12→import sys
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    activation_config_activate_only,
+    19→    ensure_worktree_activate_script,
+    20→    print_activation_instructions,
+    21→    render_activation_script,
+    22→    render_error_script,
+    23→)
+    24→from erk.cli.commands.checkout_helpers import (
+    25→    display_sync_status,
+    26→    navigate_to_worktree,
+    27→    script_error_handler,
+    28→)
+    29→from erk.cli.commands.completions import complete_branch_names
+    30→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+
+... [658 lines omitted] ...
+
+    46→    PlanValidationFailed,
+   316→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   377→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   398→    """Implementation body for slot_checkout -- separated for error wrapping."""
+   402→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   408→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   426→            raise click.ClickException(f"PR #{pr_number} not found")
+   430→        if isinstance(plan_result, PlanValidationFailed):
+   431→            user_output(f"Error: {plan_result.message}")
+   437→        for warning in setup.warnings:
+   438→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   449→            user_output("Error: Could not detect trunk branch.")
+   479→                    f"Error: Branch '{branch}' does not exist.\n"
+   566→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9321" cache_read_input_tokens="59157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9321}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the complete picture. Let me read the slot package init and tests to finalize the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9321" cache_read_input_tokens="59157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9321}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YRi9K75DTKDkReGRnZA2VF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/src/erk_slots/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9321" cache_read_input_tokens="59157" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9321}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YRi9K75DTKDkReGRnZA2VF">
+     1→"""Worktree pool slot management plugin for erk."""
+     2→
+     3→import click
+     4→
+     5→from erk_shared.cli_alias import register_with_aliases
+     6→from erk_shared.cli_group import ErkCommandGroup
+     7→from erk_slots.assign_cmd import slot_assign
+     8→from erk_slots.checkout_cmd import slot_checkout
+     9→from erk_slots.init_pool_cmd import slot_init_pool
+    10→from erk_slots.list_cmd import slot_list
+    11→from erk_slots.repair_cmd import slot_repair
+    12→from erk_slots.unassign_cmd import slot_unassign
+    13→
+    14→
+    15→@click.group("slot", cls=ErkCommandGroup, grouped=False)
+    16→def slot_group() -&gt; None:
+    17→    """Manage worktree pool slots."""
+    18→    pass
+    19→
+    20→
+    21→slot_group.add_command(slot_assign)
+    22→register_with_aliases(slot_group, slot_checkout)
+    23→slot_group.add_command(slot_init_pool)
+    24→slot_group.add_command(slot_repair)
+    25→slot_group.add_command(slot_unassign)
+    26→register_with_aliases(slot_group, slot_list)
+    27→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AsnFk5ycaMZs9UZyDnyxDw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/tests/unit/test_checkout_cmd.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9321" cache_read_input_tokens="59157" output_tokens="474" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9321, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AsnFk5ycaMZs9UZyDnyxDw">
+     1→"""Unit tests for slot checkout command (unified checkout)."""
+     2→
+     3→import os
+     4→from datetime import UTC, datetime
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.core.repo_discovery import RepoContext
+    11→from erk.core.worktree_pool import (
+    12→    PoolState,
+    13→    SlotAssignment,
+    14→    load_pool_state,
+    15→    save_pool_state,
+    16→)
+    17→from erk_shared.gateway.git.abc import WorktreeInfo
+    18→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    19→from erk_shared.plan_store.types import Plan, PlanState
+    20→from tests.fakes.gateway.git import FakeGit
+    21→from tests.fakes.gateway.graphite import FakeGraphite
+    22→from tests.test_utils.context_builders import build_workspace_test_context
+    23→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    24→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    25→
+    26→# Fixed timestamp for test Plan objects
+    27→TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    28→
+    29→
+    30→# --- Slot allocation tests (original slot checkout tests) ---
+
+... [70 lines omitted] ...
+
+    58→            cli, ["slot", "checkout", "feature-test"], obj=test_ctx, catch_exceptions=False
+    96→            cli, ["slot", "checkout", "nonexistent"], obj=test_ctx, catch_exceptions=False
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2472" cache_read_input_tokens="68478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2472}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PKZAsM6pKGD33xKFjrQAMc">
+    <param name="pattern">new.slot|stack.in.place|update_slot_assignment_tip</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/tests/unit/test_checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2472" cache_read_input_tokens="68478" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2472}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PKZAsM6pKGD33xKFjrQAMc">
+33:def test_slot_checkout_allocates_new_slot() -&gt; None:
+34:    """Test that slot checkout allocates a new slot for an existing branch."""
+103:def test_slot_checkout_stack_in_place() -&gt; None:
+155:def test_slot_checkout_new_slot_forces_allocation() -&gt; None:
+156:    """Test that --new-slot forces new slot allocation even inside a slot."""
+195:            ["slot", "checkout", "--new-slot", "feature-b"],
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018ms8v9V3mWUM3roKbXLn67">
+    <param name="pattern">slot goto|slot jump|slot_goto|slot_jump</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2472" cache_read_input_tokens="68478" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2472, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ms8v9V3mWUM3roKbXLn67">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WuBvsLw54qfZGNVgtRJYGY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/tests/unit/test_checkout_cmd.py</param>
+    <param name="offset">103</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="70950" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WuBvsLw54qfZGNVgtRJYGY">
+   103→def test_slot_checkout_stack_in_place() -&gt; None:
+   104→    """Test that slot checkout updates assignment tip when running inside a slot."""
+   105→    runner = CliRunner()
+   106→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   107→        repo_dir = env.setup_repo_structure()
+   108→
+   109→        git_ops = FakeGit(
+   110→            worktrees=env.build_worktrees("main"),
+   111→            current_branches={env.cwd: "main"},
+   112→            git_common_dirs={env.cwd: env.git_dir},
+   113→            default_branches={env.cwd: "main"},
+   114→            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+   115→        )
+   116→
+   117→        repo = RepoContext(
+   118→            root=env.cwd,
+   119→            repo_name=env.cwd.name,
+   120→            repo_dir=repo_dir,
+   121→            worktrees_dir=repo_dir / "worktrees",
+   122→            pool_json_path=repo_dir / "pool.json",
+   123→        )
+   124→
+   125→        # Pre-create a pool state with cwd assigned as a slot
+   126→        initial_state = PoolState.test(
+   127→            pool_size=4,
+   128→            assignments=(
+   129→                SlotAssignment(
+   130→                    slot_name="erk-slot-01",
+   131→                    branch_name="feature-a",
+   132→                    assigned_at="2024-01-01T10:00:00+00:00",
+
+... [90 lines omitted] ...
+
+   142→            cli, ["slot", "checkout", "feature-b"], obj=test_ctx, catch_exceptions=False
+   197→            catch_exceptions=False,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1810" cache_read_input_tokens="71404" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1810}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Wma1UJ7C94BgW6MSXn4ErF">
+    <param name="command">git diff master -- packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+    <param name="description">Show next_steps.py changes on this branch vs master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1810" cache_read_input_tokens="71404" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1810, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wma1UJ7C94BgW6MSXn4ErF">
+packages/erk-shared/src/erk_shared/output/next_steps.py
+  @@ -20,11 +20,11 @@
+  -        return f"erk br co --for-plan {self.pr_number}"
+  +        return f"erk slot co --for-plan {self.pr_number}"
+   
+       @property
+       def checkout_new_slot(self) -&gt; str:
+  -        return f"erk br co --new-slot --for-plan {self.pr_number}"
+  +        return f"erk slot co --new-slot --for-plan {self.pr_number}"
+   
+       @property
+       def dispatch_slash_command(self) -&gt; str:
+  @@ -32,23 +32,23 @@
+  -        return f"erk br co --for-plan {self.pr_number} &amp;&amp; erk implement"
+  +        return f"erk slot co --for-plan {self.pr_number} &amp;&amp; erk implement"
+   
+       @property
+       def implement_current_wt_dangerous(self) -&gt; str:
+  -        return f"erk br co --for-plan {self.pr_number} &amp;&amp; erk implement -d"
+  +        return f"erk slot co --for-plan {self.pr_number} &amp;&amp; erk implement -d"
+   
+       @property
+       def implement_new_wt(self) -&gt; str:
+  ... (truncated)
+  +6 -6
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="73214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 530}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DbWsE9VX795p7gddgjUd28">
+    <param name="command">git diff master -- packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+    <param name="description">Full diff of next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="73214" output_tokens="2585" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 530, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DbWsE9VX795p7gddgjUd28">
+packages/erk-shared/src/erk_shared/output/next_steps.py
+  @@ -20,11 +20,11 @@
+  -        return f"erk br co --for-plan {self.pr_number}"
+  +        return f"erk slot co --for-plan {self.pr_number}"
+   
+       @property
+       def checkout_new_slot(self) -&gt; str:
+  -        return f"erk br co --new-slot --for-plan {self.pr_number}"
+  +        return f"erk slot co --new-slot --for-plan {self.pr_number}"
+   
+       @property
+       def dispatch_slash_command(self) -&gt; str:
+  @@ -32,23 +32,23 @@
+  -        return f"erk br co --for-plan {self.pr_number} &amp;&amp; erk implement"
+  +        return f"erk slot co --for-plan {self.pr_number} &amp;&amp; erk implement"
+   
+       @property
+       def implement_current_wt_dangerous(self) -&gt; str:
+  -        return f"erk br co --for-plan {self.pr_number} &amp;&amp; erk implement -d"
+  +        return f"erk slot co --for-plan {self.pr_number} &amp;&amp; erk implement -d"
+   
+       @property
+       def implement_new_wt(self) -&gt; str:
+  ... (truncated)
+  +6 -6
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4096" cache_read_input_tokens="73744" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4096}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me also check if `update_slot_assignment_tip` is used anywhere else (to know if we can leave it or if we need to clean up imports).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4096" cache_read_input_tokens="73744" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4096}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VGMHmxWJaAjXCWsDc3Kzqh">
+    <param name="pattern">update_slot_assignment_tip</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4096" cache_read_input_tokens="73744" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4096, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VGMHmxWJaAjXCWsDc3Kzqh">
+packages/erk-slots/src/erk_slots/checkout_cmd.py:52:    update_slot_assignment_tip,
+packages/erk-slots/src/erk_slots/checkout_cmd.py:605:                slot_result = update_slot_assignment_tip(
+packages/erk-slots/src/erk_slots/common.py:515:def update_slot_assignment_tip(
+src/erk/cli/commands/branch/create_cmd.py:30:from erk_slots.common import allocate_slot_for_branch, update_slot_assignment_tip
+src/erk/cli/commands/branch/create_cmd.py:220:        slot_result = update_slot_assignment_tip(
+src/erk/cli/commands/pr/teleport_cmd.py:34:from erk_slots.common import find_assignment_by_worktree, update_slot_assignment_tip
+src/erk/cli/commands/pr/teleport_cmd.py:208:            update_slot_assignment_tip(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="77840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 433}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="77840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 433}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01HeuUCuXWafFZxvBwKAUBpR">
+    <param name="file_path">/Users/schrockn/.claude/plans/zippy-wibbling-fog.md</param>
+    <param name="content"># Plan: Simplify `erk slot checkout` UX — Remove `--new-slot`, Add `erk slot goto`
+
+## Con...[truncated 4391 chars]...hen inside a slot
+5. Manual: `erk slot goto &lt;slot-name&gt;` navigates to the slot's worktree
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="77840" output_tokens="3272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HeuUCuXWafFZxvBwKAUBpR">
+File created successfully at: /Users/schrockn/.claude/plans/zippy-wibbling-fog.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_014H1SWYMcdikmY6KRhgULYg">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3275" cache_read_input_tokens="78273" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3275, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014H1SWYMcdikmY6KRhgULYg">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_019Gm7eeC5WhWy3JtAjUs3PN">
+    <param name="plan"># Plan: Simplify `erk slot checkout` UX — Remove `--new-slot`, Add `erk slot goto`
+
+## Con...[truncated 4391 chars]...hen inside a slot
+5. Manual: `erk slot goto &lt;slot-name&gt;` navigates to the slot's worktree
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/zippy-wibbling-fog.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4218" cache_read_input_tokens="78273" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4218, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Gm7eeC5WhWy3JtAjUs3PN">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/zippy-wibbling-fog.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Simplify `erk slot checkout` UX — Remove `--new-slot`, Add `erk slot goto`
+Current context: (wt:erk-slot-04) (br:plnd/O9272-move-branch-to-slot-03-20-1607) (pr:#9286) (plan:#9286)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/O927"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id a6045675-96ff-45df-8e0a-17be1167bdca \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/zippy-wibbling-fog.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011xfwcxXEzokSLqXcrpuadR">
+    <param name="file_path">/Users/schrockn/.claude/plans/zippy-wibbling-fog.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1641" cache_read_input_tokens="81548" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1641, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011xfwcxXEzokSLqXcrpuadR">
+     1→# Plan: Simplify `erk slot checkout` UX — Remove `--new-slot`, Add `erk slot goto`
+     2→
+     3→## Context
+     4→
+     5→The user ran the "Next steps" commands output by plan-save and hit two problems:
+     6→1. `erk br co --new-slot --for-plan 9286` failed because `--new-slot` doesn't exist on `erk br co` (already partially fixed on this branch by changing to `erk slot co`, but `--new-slot` is still referenced)
+     7→2. The `--new-slot` flag on `erk slot checkout` is redundant — checkout should always allocate a new slot
+     8→
+     9→The goal is to simplify the command model:
+    10→- **`erk slot checkout BRANCH`** — always allocates a new slot (no stack-in-place)
+    11→- **`erk slot goto SLOT`** — navigate to an existing slot by name/number
+    12→
+    13→## Changes
+    14→
+    15→### 1. Remove `--new-slot` and stack-in-place from `erk slot checkout`
+    16→
+    17→**File:** `packages/erk-slots/src/erk_slots/checkout_cmd.py`
+    18→
+    19→- Remove the `--new-slot` Click option (lines 333-336) and `new_slot` parameter from `slot_checkout` and `_slot_checkout_impl`
+    20→- Remove the entire stack-in-place block (lines 599-644) — the `if not new_slot:` guard and its `update_slot_assignment_tip()` call
+    21→- Remove `update_slot_assignment_tip` from the imports (line 52) — still used by `create_cmd.py` and `teleport_cmd.py` so keep it in `common.py`
+    22→- Remove `find_current_slot_assignment` import (line 51) if no longer used
+    23→- Update docstring and examples to remove `--new-slot` references
+    24→
+    25→After this change, when a branch isn't found in any worktree and isn't trunk, the code falls straight through to `allocate_slot_for_branch()`.
+    26→
+    27→### 2. Add `erk slot goto` command
+    28→
+    29→**New file:** `packages/erk-slots/src/erk_slots/goto_cmd.py`
+    30→
+
+... [62 lines omitted] ...
+
+    38→- Errors if slot not found or not assigned
+    43→- `script_error_handler()` from `erk.cli.commands.checkout_helpers`
+    74→- Test: goto non-existent slot errors
+    75→- Test: goto unassigned slot errors
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01HUimq5EQx2pFrpe2uVVd9G">
+    <param name="questions">[{'question': '📋 Plan: Simplify `erk slot checkout` UX — Remove `--new-slot`, Add `erk slo...[truncated 478 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1864" cache_read_input_tokens="83189" output_tokens="275" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1864, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HUimq5EQx2pFrpe2uVVd9G">
+User has answered your questions: "📋 Plan: Simplify `erk slot checkout` UX — Remove `--new-slot`, Add `erk slot goto`
+Current context: (wt:erk-slot-04) (br:plnd/O9272-move-branch-to-slot-03-20-1607) (pr:#9286) (plan:#9286)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_019JxQFh86ctzEdrzmR3oRtS">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="407" cache_read_input_tokens="85053" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 407, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019JxQFh86ctzEdrzmR3oRtS">
+Launching skill: erk:plan-save
+  </tool_result>
+</session>

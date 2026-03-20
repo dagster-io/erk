@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9288,
+  "sessions": [
+    {
+      "session_id": "a6045675-96ff-45df-8e0a-17be1167bdca",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-20T16:45:54.847346+00:00",
+      "files": [
+        "planning-a6045675-96ff-45df-8e0a-17be1167bdca-a6045675-96ff-45df-8e0a-17be1167bdca-part1.xml",
+        "planning-a6045675-96ff-45df-8e0a-17be1167bdca-a6045675-96ff-45df-8e0a-17be1167bdca-part2.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 29,
+      "raw_size_kb": 861,
+      "xml_size_kb": 69,
+      "git_branch": "plnd/O9272-move-branch-to-slot-03-20-1607"
+    }
+  ]
+}
