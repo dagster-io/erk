@@ -1,12 +1,12 @@
 ---
-description: Rebase the current branch, resolve any merge conflicts, and continue the git rebase
+description: Resolve merge conflicts from an in-progress rebase
 ---
 
-# Rebase with Conflict Resolution
+# Resolve Rebase Conflicts
 
-Rebase the current branch and resolve any merge conflicts.
+Resolve merge conflicts from a rebase already in progress.
 
-This command works both to **start a fresh rebase** and to **resume a rebase already in progress**. If a `git rebase` is underway with unresolved conflicts, skip straight to step 1 to assess the current state and resolve them.
+This command resolves conflicts from a rebase already in progress. It does NOT initiate a rebase. The rebase was started externally (via `git rebase`, `gt restack`, etc.) and hit conflicts. Your job is to resolve those conflicts and continue the rebase to completion.
 
 ## Steps
 
