@@ -32,12 +32,12 @@ The trade-off: the launcher uses a flat option namespace shared across all workf
 
 ### Local vs Remote Duality
 
-Two operations have both local and remote variants — `pr rebase` and `pr address`. The local commands live under `erk pr` and invoke Claude CLI directly (requiring `--dangerous` flag). The remote commands are accessed via `erk launch` and trigger GitHub Actions workflows instead.
+Two operations have both local and remote variants — `pr resolve-conflicts` and `pr address`. The local commands live under `erk pr` and invoke Claude CLI directly (requiring `--dangerous` flag). The remote commands are accessed via `erk launch` and trigger GitHub Actions workflows instead.
 
-<!-- Source: src/erk/cli/commands/pr/rebase_cmd.py, rebase -->
+<!-- Source: src/erk/cli/commands/pr/resolve_conflicts_cmd.py, resolve_conflicts -->
 <!-- Source: src/erk/cli/commands/pr/address_cmd.py, address -->
 
-The local variants reference the remote alternatives in their help text, creating discoverability in both directions. See `rebase()` in `src/erk/cli/commands/pr/rebase_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.
+The local variants reference the remote alternatives in their help text, creating discoverability in both directions. See `resolve_conflicts()` in `src/erk/cli/commands/pr/resolve_conflicts_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.
 
 ### Why plan-implement Is Blocked
 
@@ -59,7 +59,7 @@ The handler functions follow a consistent pattern: validate inputs → fetch con
 
 ## Plan Dispatch Metadata Side Effect
 
-PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.
+PR-related workflows (`pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.
 
 <!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata -->
 
@@ -69,7 +69,7 @@ This is a cross-cutting concern — the launch command doesn't know about plans,
 
 **DON'T trigger plan-implement via `erk launch`** — always use `erk pr submit`, which handles the full branch + PR + metadata setup sequence.
 
-**DON'T add workflow-specific subcommands under noun groups** — use `erk launch <name>` for all remote workflow triggers. The old pattern (`erk pr rebase-remote`) was migrated away from intentionally.
+**DON'T add workflow-specific subcommands under noun groups** — use `erk launch <name>` for all remote workflow triggers. The old pattern was migrated away from intentionally.
 
 **DON'T hardcode workflow filenames in handler functions** — always resolve through `WORKFLOW_COMMAND_MAP` via `_get_workflow_file()`, even inside the handler that "knows" its own workflow name. This keeps the mapping authoritative.
 

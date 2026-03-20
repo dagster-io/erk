@@ -48,7 +48,7 @@ Team-shared settings for the repository. Checked into git.
 - `[post_create]` - Commands to run after worktree creation
 - `[pool]` - Worktree pool settings (max_slots)
 - `[pool.checkout]` - Commands to run on pool checkout
-- `[plans]` - Plan repository settings
+- `[github]` - Plan repository settings
 
 ### Local Config (`.erk/config.local.toml`)
 
@@ -72,7 +72,7 @@ When a repo has both `.erk/config.toml` and `.erk/config.local.toml`, they are m
 | `pool.max_slots`         | Override (local wins if set)           |
 | `pool.checkout.commands` | Concatenation (repo first, then local) |
 | `pool.checkout.shell`    | Override (local wins if set)           |
-| `plans.repo`             | Override (local wins if set)           |
+| `github.repo`            | Override (local wins if set)           |
 
 ### Example
 

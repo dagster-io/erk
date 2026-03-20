@@ -122,7 +122,7 @@ Rules triggered by matching actions in code.
 
 **calling gh CLI for GitHub API operations in remote mode** → Read [RemoteGitHub Gateway](remote-github-gateway.md) first. use RemoteGitHub gateway instead. Remote mode has no local git/gh CLI.
 
-**calling gh api directly in an exec script for plan metadata updates** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
+**calling gh api directly in an exec script for plan metadata updates** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
 
 **calling graphite.track_branch() with a remote ref like origin/main** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch().
 
@@ -156,7 +156,7 @@ Rules triggered by matching actions in code.
 
 **choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
-**choosing between post_event and update_metadata** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
+**choosing between post_event and update_metadata** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
 
 **committing files to a branch that may be checked out in a worktree** → Read [Checked-Out Branch Handling Pattern](checked-out-branch-handling.md) first. git branch -f fails on checked-out branches. Use is_branch_checked_out() to detect, then update_local_ref() instead of create_branch(). Sync working tree with 'git checkout HEAD --'. See checked-out-branch-handling.md.
 
@@ -174,7 +174,7 @@ Rules triggered by matching actions in code.
 
 **creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction.
 
-**creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support.
+**creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support. Note: the plan backend ABC is ManagedPrBackend (not PlanBackend — that name was retired).
 
 **creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
 
@@ -397,6 +397,8 @@ Rules triggered by matching actions in code.
 **writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
 
 **writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+
+**writing manual JSON serialization/deserialization for exec scripts** → Read [JSON/Dataclass Utilities in erk-shared](json-dataclass-utilities.md) first. Use @json_command or the utilities in erk_shared.agentclick.dataclass_json instead. They handle schema generation, type coercion, and error formatting automatically.
 
 **writing multi-phase commands without testing in --print mode** → Read [Claude CLI Execution Modes](claude-cli-execution-modes.md) first. context: fork creates true isolation in interactive mode but loads inline in --print mode. Use Task tool for guaranteed isolation in all modes.
 

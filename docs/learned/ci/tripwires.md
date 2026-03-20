@@ -80,6 +80,8 @@ Rules triggered by matching actions in code.
 
 **matching check names from summaries to GitHub check runs** → Read [CI Failure Summarization](ci-failure-summarization.md) first. GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix.
 
+**modifying failure summarization prompt or model selection** → Read [Implementation Failure Summarization](impl-failure-summarization.md) first. The prompt template lives at .github/prompts/impl-failure-summarize.md. Changing the model from Haiku requires justifying cost vs. accuracy trade-off. Haiku was chosen for speed and cost on high-volume failure cases.
+
 **parsing ERK-CI-SUMMARY markers without re.DOTALL** → Read [CI Failure Summarization](ci-failure-summarization.md) first. Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured.
 
 **placing test files outside both tests/ and packages/\*/tests/ directories** → Read [Test Coverage Detection](test-coverage-detection.md) first. The test-coverage-review bot only searches tests/**/ and packages/\*/tests/**/ for corresponding test files. Tests placed elsewhere will not be detected and will cause false 'no tests' flags.

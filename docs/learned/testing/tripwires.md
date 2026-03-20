@@ -56,6 +56,8 @@ Rules triggered by matching actions in code.
 
 **creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeLocalGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers.
 
+**creating a fake class in src/** → Read [Fakes Directory Structure](fakes-directory-structure.md) first. Fakes belong in tests/fakes/, not in production code. Production code should not contain test doubles. Move the fake to tests/fakes/gateway/ or tests/fakes/tests/ depending on whether it's a gateway fake or a test-specific double.
+
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
 **creating a fake that uses **init** when frozen dataclass would work** → Read [Frozen Dataclass Test Doubles](frozen-dataclass-test-doubles.md) first. FakeBranchManager uses frozen dataclass because its state is simple and declarative. FakeGitHub uses **init** because it has 30+ constructor params. Choose based on complexity.

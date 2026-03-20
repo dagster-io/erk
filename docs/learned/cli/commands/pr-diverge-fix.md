@@ -75,7 +75,7 @@ The command uses streaming output to show Claude's progress in real-time:
 
 ## Relationship to Other Commands
 
-- `erk pr rebase` - Fix conflicts in merge state (not divergence)
+- `erk pr resolve-conflicts` - Fix conflicts in an in-progress rebase (not divergence)
 - `gt submit` - What you retry after diverge-fix succeeds
 - `/erk:diverge-fix` - The slash command this wraps
 

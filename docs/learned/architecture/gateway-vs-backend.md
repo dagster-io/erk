@@ -3,11 +3,11 @@ title: Gateway vs Backend ABC Pattern
 read_when:
   - "creating a new ABC interface"
   - "deciding between gateway and backend patterns"
-  - "understanding PlanBackend vs Git gateway architecture"
+  - "understanding ManagedPrBackend vs Git gateway architecture"
   - "choosing the right abstraction pattern for a new service"
 tripwires:
   - action: "creating a new ABC without deciding gateway vs backend pattern"
-    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."
+    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support. Note: the plan backend ABC is ManagedPrBackend (not PlanBackend — that name was retired)."
   - action: "constructing PlannedPRBackend with positional arguments or wrong parameter order"
     warning: "PlannedPRBackend constructor takes keyword-only gateway dependencies. Check the current __init__ signature — it evolves as gateways are added. Use keyword arguments explicitly."
 last_audited: "2026-02-17 00:00 PT"
@@ -57,7 +57,7 @@ Backends abstract over business logic that may have multiple storage or provider
 - To test code that uses a backend, inject fake **gateways** into the **real** backend
 - Fake backends exist only to validate the ABC contract works across different providers
 
-**Example:** `PlanBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.
+**Example:** `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.
 
 **Testing pattern:** See [Backend Testing Composition](../testing/backend-testing-composition.md) for the full pattern (real backend + fake gateways).
 

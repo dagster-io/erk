@@ -1,56 +1,65 @@
 ---
-title: Rebase Confirmation Workflow
+title: Resolve Conflicts Workflow
 read_when:
-  - "modifying the erk pr rebase command"
+  - "modifying the erk pr resolve-conflicts command"
   - "adding conflict confirmation UI to CLI commands"
-  - "understanding rebase convergence paths"
+  - "understanding how erk handles merge conflict resolution"
 tripwires:
   - action: "launching Claude for conflict resolution without showing conflicted files first"
     warning: "Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md."
+  - action: "initiating a rebase inside erk pr resolve-conflicts"
+    warning: "erk pr resolve-conflicts does NOT initiate rebases. It requires an active rebase already in progress. Users start the rebase themselves (git rebase, gt restack), then call this command."
 ---
 
-# Rebase Confirmation Workflow
+# Resolve Conflicts Workflow
 
-The `erk pr rebase` command shows conflicted files and gets user confirmation before launching Claude for conflict resolution. This prevents users from being dropped into a Claude session without knowing what needs resolving.
+The `erk pr resolve-conflicts` command resolves merge conflicts from an **already in-progress rebase**. It does not initiate a rebase.
 
-## Three Convergence Paths
+## Source
 
-<!-- Source: src/erk/cli/commands/pr/rebase_cmd.py -->
+`src/erk/cli/commands/pr/resolve_conflicts_cmd.py`
 
-All three entry paths converge at the same confirmation point:
+## Scope
 
-### 1. Graphite Restack Path
+This command requires a rebase already in progress. If no rebase is detected, it exits with an error:
 
-When Graphite is enabled, uses `gt restack --no-interactive`. If restack succeeds (no conflicts), returns immediately. If conflicts remain, falls through to confirmation.
+```
+No rebase in progress. Start a rebase first with 'git rebase <branch>',
+'gt restack', etc., then run this command when conflicts arise.
+```
 
-### 2. Git Rebase Path
+Users initiate the rebase themselves using standard tools:
 
-When Graphite is not enabled and no rebase is in progress, requires `--target` flag. Runs `git rebase` onto target. If rebase succeeds, returns. If conflicts remain, falls through to confirmation.
+```bash
+git rebase main        # hits conflicts
+erk pr resolve-conflicts
 
-### 3. In-Progress Rebase Path
+gt restack --no-interactive   # hits conflicts
+erk pr resolve-conflicts
+```
 
-Detects an existing rebase in progress via `is_rebase_in_progress()`. Displays "Rebase in progress" message and falls through to confirmation.
+The command is deliberately scoped to conflict resolution only — it does not call `gt restack` or `git rebase` internally.
 
 ## Confirmation Pattern
 
-After any path produces conflicts, the command:
+After detecting a rebase in progress, the command:
 
-1. Retrieves conflicted files via `ctx.git.status.get_conflicted_files(cwd)`
-2. Displays each file with red bold styling
-3. Prompts: `click.confirm("Launch Claude to resolve conflicts?", default=True)`
-4. On decline, exits gracefully
-5. On confirm, launches Claude via `executor.execute_interactive()` with `/erk:rebase` command
+1. Checks `ctx.git.rebase.is_rebase_in_progress(cwd)`
+2. Retrieves conflicted files via `ctx.git.status.get_conflicted_files(cwd)`
+3. Displays each conflicted file with red bold styling
+4. Prompts: `click.confirm("Launch Claude to resolve conflicts?", default=True)`
+5. On decline, exits with message to run the command again when ready
+6. On confirm, launches Claude via `executor.execute_interactive()` with `/erk:pr-resolve-conflicts` command
 
 The `execute_interactive()` call uses `os.execvp()` — code after it never executes.
 
-## Test Patterns
+## Options
 
-Four test cases cover the confirmation workflow:
+- `--dangerous` / `--safe`: Override the `live_dangerously` config setting for Claude permission mode
 
-- User confirms launch → Claude is invoked
-- User declines launch → graceful exit
-- No conflicted files → skips confirmation
-- Graphite restack success → returns without confirmation
+## Slash Command
+
+Claude is launched with `/erk:pr-resolve-conflicts` (not `/erk:rebase` — that was the old command).
 
 ## Related Documentation
 

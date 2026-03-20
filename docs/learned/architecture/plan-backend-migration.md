@@ -1,10 +1,10 @@
 ---
-title: PlanBackend Migration Pattern
+title: ManagedPrBackend Migration Pattern
 read_when:
-  - "migrating exec scripts to use PlanBackend"
+  - "migrating exec scripts to use ManagedPrBackend"
   - "working with require_plan_backend"
   - "understanding post_event vs update_metadata"
-  - "Phase 3 PlanBackend consolidation"
+  - "Phase 3 ManagedPrBackend consolidation"
 tripwires:
   - action: "calling gh api directly in an exec script for plan metadata updates"
     warning: "Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers."
@@ -12,13 +12,13 @@ tripwires:
     warning: "post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline."
 ---
 
-# PlanBackend Migration Pattern
+# ManagedPrBackend Migration Pattern
 
-Pattern for migrating exec scripts from direct GitHub CLI calls to the `PlanBackend` abstraction. Part of Objective #6864 "Consolidate Plan Operations Behind PlanBackend".
+Pattern for migrating exec scripts from direct GitHub CLI calls to the `ManagedPrBackend` abstraction (formerly `PlanBackend`). Part of Objective #6864 "Consolidate Plan Operations Behind ManagedPrBackend".
 
 ## Context
 
-Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The `ManagedPrBackend` abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
 
 ## Migration Pattern
 
@@ -87,6 +87,6 @@ See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-sha
 
 - [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (4-place)
 - [Backend Testing Composition](../testing/backend-testing-composition.md) - Testing pattern
-- [`PlanBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
+- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
 - [PR Body Assembly](pr-body-assembly.md) - How `assemble_pr_body()` handles existing_pr_body for dual-backend PR body construction
 - [Draft PR Lifecycle](../planning/draft-pr-lifecycle.md) - Lifecycle stages and body format for draft-PR-backed plans

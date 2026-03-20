@@ -22,22 +22,27 @@ Frozen dataclass representing one workflow run row.
 
 **Source**: `src/erk/tui/data/types.py`
 
-| Field               | Type               | Description                                             |
-| ------------------- | ------------------ | ------------------------------------------------------- |
-| `run_id`            | `str`              | GitHub Actions workflow run ID                          |
-| `run_url`           | `str \| None`      | URL to the GitHub Actions run page                      |
-| `status`            | `str`              | Raw status: "queued", "in_progress", "completed"        |
-| `conclusion`        | `str \| None`      | Raw conclusion: "success", "failure", "cancelled", None |
-| `workflow_name`     | `str`              | Workflow command name (e.g., "plan-implement")          |
-| `pr_number`         | `int \| None`      | Associated PR number                                    |
-| `pr_url`            | `str \| None`      | PR URL (Graphite URL if configured)                     |
-| `pr_display`        | `str`              | Formatted PR display string                             |
-| `branch`            | `str`              | Source branch from workflow run                         |
-| `branch_display`    | `str`              | Truncated branch name (max 40 chars)                    |
-| `submitted_display` | `str`              | Formatted time (e.g., "03-09 14:30")                    |
-| `status_display`    | `str`              | Formatted status with conclusion                        |
-| `checks_display`    | `str`              | CI checks summary                                       |
-| `created_at`        | `datetime \| None` | UTC creation time                                       |
+| Field               | Type               | Description                                                                  |
+| ------------------- | ------------------ | ---------------------------------------------------------------------------- |
+| `run_id`            | `str`              | GitHub Actions workflow run ID                                               |
+| `run_url`           | `str \| None`      | URL to the GitHub Actions run page                                           |
+| `status`            | `str`              | Raw status: "queued", "in_progress", "completed"                             |
+| `conclusion`        | `str \| None`      | Raw conclusion: "success", "failure", "cancelled", None                      |
+| `workflow_name`     | `str`              | Workflow command name (e.g., "plan-implement")                               |
+| `pr_number`         | `int \| None`      | Associated PR number                                                         |
+| `pr_url`            | `str \| None`      | PR URL (Graphite URL if configured)                                          |
+| `pr_display`        | `str`              | Formatted PR display string                                                  |
+| `pr_state`          | `str \| None`      | PR state ("OPEN", "MERGED", "CLOSED"). None if no PR.                        |
+| `pr_title`          | `str \| None`      | PR title. None if no PR.                                                     |
+| `pr_status_display` | `str`              | Pre-formatted PR status emoji (e.g., "👀", "🚧", "🎉", "⛔", or "-")        |
+| `branch`            | `str`              | Source branch from workflow run                                              |
+| `branch_display`    | `str`              | Truncated branch name (max 40 chars)                                         |
+| `submitted_display` | `str`              | Formatted time (e.g., "03-09 14:30")                                         |
+| `status_display`    | `str`              | Formatted status with conclusion                                             |
+| `checks_display`    | `str`              | CI checks summary                                                            |
+| `created_at`        | `datetime \| None` | UTC creation time                                                            |
+| `run_id_display`    | `str`              | Formatted run ID for display                                                 |
+| `title_display`     | `str`              | Truncated title for table display                                            |
 
 ## RunDataTable Widget
 
@@ -52,8 +57,11 @@ Column configuration in `_setup_columns`:
 | submitted | submitted | 12    |
 | workflow  | workflow  | 16    |
 | pr        | pr        | 8     |
+| pr-st     | pr_st     | 6     |
 | branch    | branch    | 40    |
 | chks      | chks      | 8     |
+
+The `pr-st` column (key `pr_st`) shows `RunRowData.pr_status_display` — a PR state emoji indicating the PR's current status (open/draft/merged/closed). It appears between the `pr` and `branch` columns.
 
 Features:
 

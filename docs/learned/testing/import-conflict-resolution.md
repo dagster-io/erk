@@ -34,10 +34,10 @@ Conflict markers typically look like:
 
 ```python
 <<<<<<< HEAD
-from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
+from erk_shared.gateway.github.parsing import parse_pr_number_from_url, parse_repo_from_url
 =======
-from .github_helpers import parse_pr_number
-from .plan_helpers import parse_plan_number
+from .github_helpers import parse_pr_number_from_url
+from .plan_helpers import parse_repo_from_url
 >>>>>>> feature-branch
 ```
 
@@ -46,7 +46,7 @@ from .plan_helpers import parse_plan_number
 Before resolving, confirm the shared module has the functions:
 
 ```bash
-grep -n "def parse_pr_number" src/erk_shared/github/parsing.py
+grep -n "def parse_pr_number" packages/erk-shared/src/erk_shared/gateway/github/parsing.py
 ```
 
 ### Step 3: Prefer HEAD's Shared Imports
@@ -55,7 +55,7 @@ If the shared module exists and has the functions, use HEAD's version:
 
 ```python
 # Resolution: use the consolidated import
-from erk_shared.gateway.github.parsing import parse_pr_number, parse_plan_number
+from erk_shared.gateway.github.parsing import parse_pr_number_from_url, parse_repo_from_url
 ```
 
 ### Step 4: Remove Obsolete Local Helpers
@@ -90,13 +90,12 @@ Starting conflict:
 ```python
 <<<<<<< HEAD
 from erk_shared.gateway.github.parsing import (
-    parse_pr_number,
-    parse_plan_number,
+    parse_pr_number_from_url,
     parse_repo_from_url,
 )
 =======
-from .github_url_parser import parse_pr_number
-from .plan_parser import parse_plan_number
+from .github_url_parser import parse_pr_number_from_url
+from .plan_helpers import parse_repo_from_url
 >>>>>>> add-repo-parsing
 ```
 
@@ -104,8 +103,7 @@ Resolution:
 
 ```python
 from erk_shared.gateway.github.parsing import (
-    parse_pr_number,
-    parse_plan_number,
+    parse_pr_number_from_url,
     parse_repo_from_url,
 )
 ```
@@ -114,7 +112,7 @@ Then verify no references to deleted modules remain:
 
 ```bash
 grep -r "from .github_url_parser" src/
-grep -r "from .plan_parser" src/
+grep -r "from .plan_helpers" src/
 ```
 
 ## Common Pitfalls
