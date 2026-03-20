@@ -1,0 +1,1040 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-20-2014" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9287&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9287` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9287. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28827" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28827, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0112ENhYL7WpkpLndbuHiKSg">
+    <param name="command">erk exec setup-impl --issue 9287 2&gt;&amp;1</param>
+    <param name="description">Set up implementation environment for plan #9287</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28827" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28827, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0112ENhYL7WpkpLndbuHiKSg">
+Already on PR branch 'plnd/consolidate-learn-docs-03-20-2014', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-20-2014", "pr_number": 9287, "pr_url": "https://github.com/dagster-io/erk/pull/9287", "branch": "plnd/consolidate-learn-docs-03-20-2014", "pr_title": "[erk-pr] Plan: Consolidated Documentation Updates from 35 Learn Sessions", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9287, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FMhNXA6fVQK7S9AdBhKTGG">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-20-2014/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="28827" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FMhNXA6fVQK7S9AdBhKTGG">
+     1→# Plan: Consolidated Documentation Updates from 35 Learn Sessions
+     2→
+     3→&gt; **Consolidates:** #9281, #9279, #9278, #9275, #9270, #9266, #9264, #9256, #9252, #9246, #9245, #9244, #9243, #9236, #9235, #9230, #9225, #9222, #9211, #9207, #9205, #9203, #9197, #9195, #9194, #9192, #9191, #9190, #9188, #9187, #9180, #9173, #9170, #9168, #9167
+     4→
+     5→## Source Plans
+     6→
+     7→| # | Title | Items Merged |
+     8→| --- | --- | --- |
+     9→| #9167 | Update documentation for plan→PR rename and new features | 16 items (mega-plan) |
+    10→| #9278, #9275, #9197, #9195, #9190, #9187, #9170, #9168, #9236, #9173, #9252 | Plan→PR rename wave (11 plans) | Overlap with #9167 |
+    11→| #9281 | Replace `erk pr rebase` with `erk pr resolve-conflicts` | 1 item |
+    12→| #9180 | Add PR status emoji column to Runs tab | 1 item |
+    13→| #9205 | Add implementation failure summary to remote CI | 1 item |
+    14→| #9203 | Pass claude CLI prompts via stdin to avoid ARG_MAX | 1 item |
+    15→| #9266, #9264 | NPX skills management + npx-skills skill creation | 2 items |
+    16→| #9235, #9230 | erk-planning skill deletion + tombstone | 1 item (overlap) |
+    17→| #9225 | Teleport slot awareness | 1 item |
+    18→| #9222 | UV workspace explicit members | 1 item |
+    19→| #9246, #9279, #9270, #9256, #9188, #9194, #9245, #9244, #9243, #9211, #9207, #9192, #9191 | 13 plans with complete/no docs needed | 0 items |
+    20→
+    21→## What Changed Since Original Plans
+    22→
+    23→- All 35 source PRs are **merged to master** — documentation captures completed work
+    24→- Plan→PR rename is fully complete across codebase
+    25→- `erk pr rebase` replaced by `erk pr resolve-conflicts`
+    26→- NPX skills ecosystem adopted (skill-creator migrated, npx-skills skill created)
+    27→- erk-planning skill deleted with tombstone pattern
+    28→
+    29→## Investigation Findings
+    30→
+
+... [259 lines omitted] ...
+
+    83→5. Add error message for "no rebase in progress"
+   122→### Step 7: Create impl-failure-summarization.md _(from #9205)_
+   124→**File:** `docs/learned/ci/impl-failure-summarization.md`
+   127→1. Flow: implementation failure → session JSONL capture → tail extraction → Haiku analysis → PR comment + job summary
+   128→2. Exec script: `summarize-impl-failure` using `generate_compressed_xml()`
+   129→3. Prompt template: `.github/prompts/impl-failure-summarize.md`
+   132→6. Tripwire: modifying failure summarization without updating prompt template
+   134→**Source:** `src/erk/cli/commands/exec/scripts/summarize_impl_failure.py`, `.github/workflows/plan-implement.yml`
+   210→2. Impact of stray directories on `uv sync` (error: missing pyproject.toml)
+   248→- `docs/learned/ci/index.md` — add impl-failure-summarization.md entry
+  </tool_result>
+  <assistant>Now let me set up todos and signal GitHub started:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5280" cache_read_input_tokens="29161" cache_creation="{'ephemeral_5m_input_tokens': 5280, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01L456tbPUS2uGTBSAA7sCmx">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'pending'...[truncated 1969 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5280" cache_read_input_tokens="29161" cache_creation="{'ephemeral_5m_input_tokens': 5280, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L456tbPUS2uGTBSAA7sCmx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FDixwJHrHc8wMeepLpSdHG">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="34441" cache_creation="{'ephemeral_5m_input_tokens': 760, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FDixwJHrHc8wMeepLpSdHG">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01WCLRgTr2SStLhRE8vxGKzQ">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'in_progr...[truncated 1973 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="35201" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WCLRgTr2SStLhRE8vxGKzQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read all the files I need to modify for Steps 1-6 in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="750" cache_read_input_tokens="35375" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014EpKkFHFxgWUmQFHZgSsjv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="750" cache_read_input_tokens="35375" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014EpKkFHFxgWUmQFHZgSsjv">
+     1→---
+     2→title: Configuration Layers
+     3→last_audited: "2026-02-17 09:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding the configuration system"
+     7→  - "deciding where to put a configuration setting"
+     8→  - "debugging why a config value isn't taking effect"
+     9→  - "working with LoadedConfig or merge_configs"
+    10→---
+    11→
+    12→# Configuration Layers
+    13→
+    14→Erk uses a layered configuration system where settings are merged from multiple sources.
+    15→
+    16→## Overview
+    17→
+    18→| Layer  | Location                 | Scope       | Versioned | Merge Order |
+    19→| ------ | ------------------------ | ----------- | --------- | ----------- |
+    20→| Global | `~/.erk/config.toml`     | All repos   | No        | N/A         |
+    21→| Repo   | `.erk/config.toml`       | All users   | Yes       | 1st         |
+    22→| Local  | `.erk/config.local.toml` | Single user | No        | 2nd         |
+    23→
+    24→## Layer Details
+    25→
+    26→### Global Config (`~/.erk/config.toml`)
+    27→
+    28→User-wide settings that apply across all repositories.
+    29→
+    30→**Contains:**
+
+... [112 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R8Zy4iNjMm9c9DekWQnViG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1853" cache_read_input_tokens="36125" cache_creation="{'ephemeral_5m_input_tokens': 1853, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GL65WpBuzZPc2855GayEVz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1853" cache_read_input_tokens="36125" cache_creation="{'ephemeral_5m_input_tokens': 1853, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TjyJqZUJfyxsQ3dbQS77Sp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="offset">330</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1853" cache_read_input_tokens="36125" cache_creation="{'ephemeral_5m_input_tokens': 1853, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R8Zy4iNjMm9c9DekWQnViG">
+     1→---
+     2→title: External Plans Repository Configuration
+     3→last_audited: "2026-02-17 09:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "configuring plans to be stored in a separate repository"
+     7→  - "setting up plans.repo in config.toml"
+     8→---
+     9→
+    10→# External Plans Repository Configuration
+    11→
+    12→Configure erk to store plans in a separate repository from your working repository.
+    13→
+    14→## Configuration
+    15→
+    16→In `.erk/config.toml`:
+    17→
+    18→```toml
+    19→[plans]
+    20→repo = "owner/repo"
+    21→```
+    22→
+    23→**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
+    24→
+    25→**Example:**
+    26→
+    27→```toml
+    28→[plans]
+    29→repo = "myorg/engineering-plans"
+    30→```
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GL65WpBuzZPc2855GayEVz">
+     1→---
+     2→title: Cross-Repo Plans
+     3→read_when:
+     4→  - "setting up plans in a separate repository"
+     5→  - "configuring [plans] repo in config.toml"
+     6→  - "understanding cross-repo plan closing syntax"
+     7→---
+     8→
+     9→# Cross-Repo Plans
+    10→
+    11→Store plans in a dedicated repository while implementing in another.
+    12→
+    13→## When to Use
+    14→
+    15→- **Private plans**: Keep plans in a private repo while implementing in a public repo
+    16→- **Centralized planning**: Consolidate all plans across multiple implementation repos
+    17→- **Separation of concerns**: Keep implementation repos focused on code, not planning
+    18→
+    19→## Configuration
+    20→
+    21→Add to `{erks_dir}/config.toml`:
+    22→
+    23→```toml
+    24→[plans]
+    25→repo = "owner/plans-repo"
+    26→```
+    27→
+    28→Where `owner/plans-repo` is the GitHub repository that will hold plans.
+    29→
+    30→## Behavior
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01TjyJqZUJfyxsQ3dbQS77Sp">
+   330→
+   331→```toml
+   332→[env]
+   333→DATABASE_URL = "postgresql://localhost/dev_db"
+   334→
+   335→[post_create]
+   336→shell = "bash"
+   337→commands = ["uv sync"]
+   338→
+   339→[pool]
+   340→max_slots = 6
+   341→
+   342→[pool.checkout]
+   343→commands = ["git fetch origin"]
+   344→
+   345→[plans]
+   346→repo = "owner/plans-repo"  # Store plans in separate repo
+   347→```
+   348→
+   349→When `[plans] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
+   350→
+   351→**Access**: Via `load_config(repo_root)` function.
+   352→
+   353→### Local Config
+   354→
+   355→Per-user configuration that overrides repo config.
+   356→
+   357→**Scope**: Personal settings for this user in this repository.
+   358→
+   359→**Location**: `&lt;repo-root&gt;/.erk/config.local.toml` (gitignored)
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the actual config file to understand the current structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2998" cache_read_input_tokens="37978" cache_creation="{'ephemeral_5m_input_tokens': 2998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TXZFXfSeqJXVYzDY3LWsEg">
+    <param name="command">grep -n '\[plans\]' /home/runner/work/erk/erk/docs/learned/configuration/config-layers.md ...[truncated 30 chars]...on/issues-repo.md /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md 2&gt;&amp;1</param>
+    <param name="description">Find all [plans] references in docs files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2998" cache_read_input_tokens="37978" cache_creation="{'ephemeral_5m_input_tokens': 2998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BV9hqBK4cRERfkHrZqhnVj">
+    <param name="command">grep -n '\[plans\]' /home/runner/work/erk/erk/docs/learned/glossary.md 2&gt;&amp;1</param>
+    <param name="description">Find [plans] references in glossary</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2998" cache_read_input_tokens="37978" cache_creation="{'ephemeral_5m_input_tokens': 2998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BV9hqBK4cRERfkHrZqhnVj">
+345:[plans]
+349:When `[plans] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
+  </tool_result>
+  <tool_result tool="toolu_01TXZFXfSeqJXVYzDY3LWsEg">
+/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md:51:- `[plans]` - Plan repository settings
+/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md:19:[plans]
+/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md:28:[plans]
+/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md:5:  - "configuring [plans] repo in config.toml"
+/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md:24:[plans]
+/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md:34:When `[plans] repo` is configured:
+  </tool_result>
+  <assistant>Now let me verify what the actual config uses currently:</assistant>
+  <usage input_tokens="81" cache_creation_input_tokens="930" cache_read_input_tokens="40976" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017NhSsNmVwSyJxdeW9r9KFz">
+    <param name="command">grep -n 'github\|plans' /home/runner/work/erk/erk/.erk/config.toml 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check actual config.toml for current section name</param>
+  </tool_use>
+  <usage input_tokens="81" cache_creation_input_tokens="930" cache_read_input_tokens="40976" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MZBmPuLrRu3AxuXn6whH3E">
+    <param name="command">grep -rn '\[github\]' /home/runner/work/erk/erk/src/erk/ 2&gt;&amp;1 | head -10</param>
+    <param name="description">Check source for [github] section references</param>
+  </tool_use>
+  <usage input_tokens="81" cache_creation_input_tokens="930" cache_read_input_tokens="40976" cache_creation="{'ephemeral_5m_input_tokens': 930, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017NhSsNmVwSyJxdeW9r9KFz">
+
+  </tool_result>
+  <tool_result tool="toolu_01MZBmPuLrRu3AxuXn6whH3E">
+/home/runner/work/erk/erk/src/erk/cli/config.py:60:    # Parse [github] section (with [plans] fallback for backwards compat)
+  </tool_result>
+  <assistant>Good - the config now uses `[github]` (with `[plans]` as a fallback for backwards compat). Let me now make all the `[plans]` → `[github]` changes. I need to be careful to update the config section names but not things like `plans.repo` field references or text that describes "plans":</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="41906" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VezxLEnUR9qvGWMq2CGAtw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+    <param name="old_string">- `[plans]` - Plan repository settings</param>
+    <param name="new_string">- `[github]` - Plan repository settings</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="41906" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VezxLEnUR9qvGWMq2CGAtw">
+The file /home/runner/work/erk/erk/docs/learned/configuration/config-layers.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the merge semantics table in config-layers.md - `plans.repo` → `github.repo`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="42736" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CJCGfHZvC2m8dXR9Ja9Fvg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/config-layers.md</param>
+    <param name="old_string">| `plans.repo`             | Override (local wins if set)           |</param>
+    <param name="new_string">| `github.repo`            | Override (local wins if set)           |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="42736" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CJCGfHZvC2m8dXR9Ja9Fvg">
+The file /home/runner/work/erk/erk/docs/learned/configuration/config-layers.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update issues-repo.md - the toml code blocks use `[plans]`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="42986" cache_creation="{'ephemeral_5m_input_tokens': 631, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PiBmHRmRXoqRb9JGLesa99">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+    <param name="old_string">```toml
+[plans]
+repo = "owner/repo"
+```
+
+**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
+
+**Example:**
+
+```toml
+[plans]
+repo = "myorg/engineering-plans"
+```</param>
+    <param name="new_string">```toml
+[github]
+repo = "owner/repo"
+```
+
+**Format:** `"owner/repo"` - the GitHub repository where plans will be created.
+
+**Example:**
+
+```toml
+[github]
+repo = "myorg/engineering-plans"
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="42986" cache_creation="{'ephemeral_5m_input_tokens': 631, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PiBmHRmRXoqRb9JGLesa99">
+The file /home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the title to reflect it's about GitHub config, and the frontmatter read_when:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="43617" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N5m7NyGdFvut1ou4t9vLC6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md</param>
+    <param name="old_string">read_when:
+  - "configuring plans to be stored in a separate repository"
+  - "setting up plans.repo in config.toml"</param>
+    <param name="new_string">read_when:
+  - "configuring plans to be stored in a separate repository"
+  - "setting up github.repo in config.toml"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="43617" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N5m7NyGdFvut1ou4t9vLC6">
+The file /home/runner/work/erk/erk/docs/learned/configuration/issues-repo.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update cross-repo-plans.md:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="43917" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016o6a33YBYURczDEu7A3PDg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+    <param name="old_string">  - "configuring [plans] repo in config.toml"</param>
+    <param name="new_string">  - "configuring [github] repo in config.toml"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="43917" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016o6a33YBYURczDEu7A3PDg">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011v3REeuPRGbBB2mqiGZpxg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+    <param name="old_string">```toml
+[plans]
+repo = "owner/plans-repo"
+```</param>
+    <param name="new_string">```toml
+[github]
+repo = "owner/plans-repo"
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="44578" cache_creation="{'ephemeral_5m_input_tokens': 199, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011v3REeuPRGbBB2mqiGZpxg">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014H9CWLm59vPuMs6is7jft7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md</param>
+    <param name="old_string">When `[plans] repo` is configured:</param>
+    <param name="new_string">When `[github] repo` is configured:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="44777" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014H9CWLm59vPuMs6is7jft7">
+The file /home/runner/work/erk/erk/docs/learned/planning/cross-repo-plans.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update glossary.md:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="45390" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016Ndaj2FkdqjPzKUC7UVase">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="offset">328</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="45390" cache_creation="{'ephemeral_5m_input_tokens': 176, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Ndaj2FkdqjPzKUC7UVase">
+   328→
+   329→**Contents**:
+   330→
+   331→```toml
+   332→[env]
+   333→DATABASE_URL = "postgresql://localhost/dev_db"
+   334→
+   335→[post_create]
+   336→shell = "bash"
+   337→commands = ["uv sync"]
+   338→
+   339→[pool]
+   340→max_slots = 6
+   341→
+   342→[pool.checkout]
+   343→commands = ["git fetch origin"]
+   344→
+   345→[plans]
+   346→repo = "owner/plans-repo"  # Store plans in separate repo
+   347→```
+   348→
+   349→When `[plans] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
+   350→
+   351→**Access**: Via `load_config(repo_root)` function.
+   352→
+   353→### Local Config
+   354→
+   355→Per-user configuration that overrides repo config.
+   356→
+   357→**Scope**: Personal settings for this user in this repository.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01C1RxTDEEz6zVwDVG8S7h1D">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">[plans]
+repo = "owner/plans-repo"  # Store plans in separate repo
+```
+
+When `[plans] repo`...[truncated 60 chars]...rent repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.</param>
+    <param name="new_string">[github]
+repo = "owner/plans-repo"  # Store plans in separate repo
+```
+
+When `[github] rep...[truncated 62 chars]...rent repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="907" cache_read_input_tokens="45566" cache_creation="{'ephemeral_5m_input_tokens': 907, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C1RxTDEEz6zVwDVG8S7h1D">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Now check the Local Config section in glossary.md for `plans.repo`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="46473" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JLH9BqpZ6JGVfYEHhcyCPv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="offset">380</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="46473" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JLH9BqpZ6JGVfYEHhcyCPv">
+   380→
+   381→**Merge Semantics** (local overrides repo):
+   382→
+   383→- `env`: Dict merge (local values override repo values)
+   384→- `post_create.commands`: Concatenation (repo commands run first, then local)
+   385→- `post_create.shell`: Override (local wins if set)
+   386→- `pool.max_slots`: Override (local wins if set)
+   387→- `plans.repo`: Override (local wins if set)
+   388→
+   389→**Access**: Via `load_local_config(repo_root)` + `merge_configs_with_local()`.
+   390→
+   391→**Creation**: `erk init` creates a template `.erk/config.local.toml` with commented examples.
+   392→
+   393→---
+   394→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017gFLQ6ENvR8tvueTVAuK3C">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="old_string">- `plans.repo`: Override (local wins if set)</param>
+    <param name="new_string">- `github.repo`: Override (local wins if set)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="833" cache_read_input_tokens="46753" cache_creation="{'ephemeral_5m_input_tokens': 833, 'ephemeral_1h_input_tokens': 0}" output_tokens="133" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017gFLQ6ENvR8tvueTVAuK3C">
+The file /home/runner/work/erk/erk/docs/learned/glossary.md has been updated successfully.
+  </tool_result>
+  <assistant>Now verify no more `[plans]` references remain in docs/learned:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="47586" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Ge6ZGJhgR9jD9WRoGkbqos">
+    <param name="command">grep -rn '\[plans\]' /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Verify no [plans] references remain in docs/learned</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="47586" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ge6ZGJhgR9jD9WRoGkbqos">
+/home/runner/work/erk/erk/docs/learned/planning/index.md:19:- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo plan closing syntax
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GN9yx4E8T6R7fspmqsvZcp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="offset">17</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="47758" cache_creation="{'ephemeral_5m_input_tokens': 627, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GN9yx4E8T6R7fspmqsvZcp">
+    17→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    18→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+    19→- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo plan closing syntax
+    20→- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
+    21→- **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SXZ1KnvwRNeWa9CwaN5Uh1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="old_string">- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo plan closing syntax</param>
+    <param name="new_string">- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [github] repo in config.toml, understanding cross-repo plan closing syntax</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="48385" cache_creation="{'ephemeral_5m_input_tokens': 459, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SXZ1KnvwRNeWa9CwaN5Uh1">
+The file /home/runner/work/erk/erk/docs/learned/planning/index.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017VubPFXmXXcUsVzghmuC3d">
+    <param name="command">grep -rn '\[plans\]' /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Final check for [plans] references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="48844" cache_creation="{'ephemeral_5m_input_tokens': 246, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017VubPFXmXXcUsVzghmuC3d">
+
+  </tool_result>
+  <assistant>Step 1 complete. Now Step 2 - update PlanBackend → ManagedPrBackend references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="531" cache_read_input_tokens="49090" cache_creation="{'ephemeral_5m_input_tokens': 531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01QeAdDrY1mCqUfATWXesTmP">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'complete...[truncated 1975 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="531" cache_read_input_tokens="49090" cache_creation="{'ephemeral_5m_input_tokens': 531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QeAdDrY1mCqUfATWXesTmP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01H1F7aZ8QWi8FFWfXdVpSxx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="778" cache_read_input_tokens="49621" cache_creation="{'ephemeral_5m_input_tokens': 778, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XEN8htCEgLhPfTxcdovbLi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="778" cache_read_input_tokens="49621" cache_creation="{'ephemeral_5m_input_tokens': 778, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H1F7aZ8QWi8FFWfXdVpSxx">
+     1→---
+     2→title: PlanBackend Migration Pattern
+     3→read_when:
+     4→  - "migrating exec scripts to use PlanBackend"
+     5→  - "working with require_plan_backend"
+     6→  - "understanding post_event vs update_metadata"
+     7→  - "Phase 3 PlanBackend consolidation"
+     8→tripwires:
+     9→  - action: "calling gh api directly in an exec script for plan metadata updates"
+    10→    warning: "Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers."
+    11→  - action: "choosing between post_event and update_metadata"
+    12→    warning: "post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline."
+    13→---
+    14→
+    15→# PlanBackend Migration Pattern
+    16→
+    17→Pattern for migrating exec scripts from direct GitHub CLI calls to the `PlanBackend` abstraction. Part of Objective #6864 "Consolidate Plan Operations Behind PlanBackend".
+    18→
+    19→## Context
+    20→
+    21→Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+    22→
+    23→## Migration Pattern
+    24→
+    25→### Before: Direct `gh` Calls
+    26→
+    27→```python
+    28→# Old pattern: direct subprocess calls
+    29→subprocess.run(["gh", "api", f"repos/{owner}/{repo}/issues/{issue_number}", ...])
+    30→subprocess.run(["gh", "issue", "comment", str(issue_number), "--body", comment])
+
+... [68 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XEN8htCEgLhPfTxcdovbLi">
+     1→---
+     2→title: Gateway vs Backend ABC Pattern
+     3→read_when:
+     4→  - "creating a new ABC interface"
+     5→  - "deciding between gateway and backend patterns"
+     6→  - "understanding PlanBackend vs Git gateway architecture"
+     7→  - "choosing the right abstraction pattern for a new service"
+     8→tripwires:
+     9→  - action: "creating a new ABC without deciding gateway vs backend pattern"
+    10→    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."
+    11→  - action: "constructing PlannedPRBackend with positional arguments or wrong parameter order"
+    12→    warning: "PlannedPRBackend constructor takes keyword-only gateway dependencies. Check the current __init__ signature — it evolves as gateways are added. Use keyword arguments explicitly."
+    13→last_audited: "2026-02-17 00:00 PT"
+    14→audit_result: clean
+    15→---
+    16→
+    17→# Gateway vs Backend ABC Pattern
+    18→
+    19→Erk uses two distinct ABC patterns for dependency injection. Choosing the wrong one creates unnecessary boilerplate (gateway for business logic) or missing dry-run support (backend for external tools).
+    20→
+    21→## Gateway ABCs: External System Wrappers
+    22→
+    23→Gateways wrap external tools and system calls (subprocess, CLI, HTTP). They follow a **4-place implementation pattern**:
+    24→
+    25→| Place        | Purpose                                 | Example File             |
+    26→| ------------ | --------------------------------------- | ------------------------ |
+    27→| `abc.py`     | Abstract interface definition           | `gateway/git/abc.py`     |
+    28→| `real.py`    | Production implementation (subprocess)  | `gateway/git/real.py`    |
+    29→| `fake.py`    | In-memory test double with shared state | `gateway/git/fake.py`    |
+    30→| `dry_run.py` | Records operations without side effects | `gateway/git/dry_run.py` |
+
+... [56 lines omitted] ...
+
+    37→- Error handling uses discriminated unions (not exceptions) in the ABC
+  </tool_result>
+  <assistant>Now let me check the actual source to find the current name of the ABC class:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3542" cache_read_input_tokens="50399" cache_creation="{'ephemeral_5m_input_tokens': 3542, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013YyjhHHrdF23KbJ9By7wPg">
+    <param name="command">grep -n 'class.*Backend\|class.*PlanBackend\|class.*ManagedPr' /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py 2&gt;&amp;1 | head -10</param>
+    <param name="description">Check actual backend ABC class name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3542" cache_read_input_tokens="50399" cache_creation="{'ephemeral_5m_input_tokens': 3542, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013YyjhHHrdF23KbJ9By7wPg">
+51:class ManagedPrBackend(ABC):
+  </tool_result>
+  <assistant>The ABC class is now `ManagedPrBackend`. The plan says to update the two architecture docs. The `plan-backend-migration.md` file uses `PlanBackend` throughout as the conceptual name, while the `gateway-vs-backend.md` uses it in a few places. Let me check what needs updating:
+
+For `plan-backend-migration.md`: The doc title and most references use "PlanBackend" - the plan says to update ABC class name but preserve `PlannedPRBackend` implementation class name. I'll update references to the ABC.
+
+For `gateway-vs-backend.md`: Lines 6, 9-10, 60 reference `PlanBackend`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="53941" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Hg5nxTngbeoDRFQHmk3Ji9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="old_string">  - "understanding PlanBackend vs Git gateway architecture"</param>
+    <param name="new_string">  - "understanding ManagedPrBackend vs Git gateway architecture"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="53941" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hg5nxTngbeoDRFQHmk3Ji9">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017phNbNckiZurpaBYtXvFCM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="old_string">  - action: "creating a new ABC without deciding gateway vs backend pattern"
+    warning: ...[truncated 122 chars]...: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support."</param>
+    <param name="new_string">  - action: "creating a new ABC without deciding gateway vs backend pattern"
+    warning: ...[truncated 212 chars]...Note: the plan backend ABC is ManagedPrBackend (not PlanBackend — that name was retired)."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="765" cache_read_input_tokens="54126" cache_creation="{'ephemeral_5m_input_tokens': 765, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017phNbNckiZurpaBYtXvFCM">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DoPxRVxu5N1EmeP8D2P7mP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="old_string">**Example:** `PlanBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.</param>
+    <param name="new_string">**Example:** `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="347" cache_read_input_tokens="54891" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="229" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DoPxRVxu5N1EmeP8D2P7mP">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update `plan-backend-migration.md`. The doc title says "PlanBackend Migration Pattern" — I should keep this as historical context but update the ABC reference. Looking at the doc content, the references to `PlanBackend` as a concept are mostly describing migration from the old ABC. Let me update the ABC class references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="55238" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015B71Aiypui5YtiMxcx1h2H">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string">title: PlanBackend Migration Pattern
+read_when:
+  - "migrating exec scripts to use PlanBac...[truncated 255 chars]...+ backend methods instead. Direct gh calls bypass the abstraction and testability layers."</param>
+    <param name="new_string">title: ManagedPrBackend Migration Pattern
+read_when:
+  - "migrating exec scripts to use Ma...[truncated 270 chars]...+ backend methods instead. Direct gh calls bypass the abstraction and testability layers."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="55238" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015B71Aiypui5YtiMxcx1h2H">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017xfyq4zJWm7FgNUX95LDpY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string"># PlanBackend Migration Pattern
+
+Pattern for migrating exec scripts from direct GitHub CLI...[truncated 4 chars]...nd` abstraction. Part of Objective #6864 "Consolidate Plan Operations Behind PlanBackend".</param>
+    <param name="new_string"># ManagedPrBackend Migration Pattern
+
+Pattern for migrating exec scripts from direct GitHu...[truncated 44 chars]...nBackend`). Part of Objective #6864 "Consolidate Plan Operations Behind ManagedPrBackend".</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="907" cache_read_input_tokens="55511" cache_creation="{'ephemeral_5m_input_tokens': 907, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017xfyq4zJWm7FgNUX95LDpY">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XAK9bZcTXXmWGMF1ZVajoA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string">The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.</param>
+    <param name="new_string">The `ManagedPrBackend` abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="56418" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XAK9bZcTXXmWGMF1ZVajoA">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PEjN7NQnmCv64bXYC5LZV9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string">- [`PlanBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference</param>
+    <param name="new_string">- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="56693" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PEjN7NQnmCv64bXYC5LZV9">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <assistant>Now verify no `PlanBackend` references remain (except migration history):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="652" cache_read_input_tokens="56916" cache_creation="{'ephemeral_5m_input_tokens': 652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CZydFmvn9Qfz3xqtU3Miv8">
+    <param name="command">grep -rn 'PlanBackend' /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Check for remaining PlanBackend references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="652" cache_read_input_tokens="56916" cache_creation="{'ephemeral_5m_input_tokens': 652, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CZydFmvn9Qfz3xqtU3Miv8">
+/home/runner/work/erk/erk/docs/learned/planning/tripwires.md:77:**calling update_metadata() on PlanBackend** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. Always check isinstance(result, PlanNotFound) before calling update_metadata()
+/home/runner/work/erk/erk/docs/learned/planning/tripwires.md:83:**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+/home/runner/work/erk/erk/docs/learned/planning/tripwires.md:151:**importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:2:title: PlanBackend Migration Guide
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:4:  - "migrating exec scripts from direct GitHubIssues to PlanBackend"
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:8:  - action: "calling update_metadata() on PlanBackend"
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:16:# PlanBackend Migration Guide
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:18:When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:30:**After (PlanBackend):**
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:127:        github_issues=fake_gh,  # auto-wires PlanBackend
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:131:`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_plan_backend(ctx)` returns a working implementation.
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:141:## PlanBackend Methods
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:143:Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:161:`PlanBackend.get_metadata_field()` returns `object | PlanNotFound`. The `object` return type requires type narrowing at the call site — use LBYL to check for `PlanNotFound` first, then cast or assert the expected type.
+/home/runner/work/erk/erk/docs/learned/planning/index.md:43:- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
+/home/runner/work/erk/erk/docs/learned/planning/index.md:46:- **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
+/home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md:20:These methods live on `PlannedPRBackend` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`, accessed via the `PlanBackend` interface.
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md:29:The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md:42:- **Provider name**: `"github-draft-pr"` (preserved from pre-rename `DraftPRPlanBackend` for backward compatibility — existing plan metadata in GitHub PR bodies uses this string, so changing it would break metadata deserialization)
+/home/runner/work/erk/erk/docs/learned/planning/refactoring-decomposition.md:29:Objective #7911 nodes 1.1-1.3 used this pattern to eliminate the `get_plan_backend()` / `PlanBackendType` dual-backend system. Node 1.1 (PR #7971) deleted definitions and replaced 24 files. Node 1.2 removes dead branches. Node 1.3 removes `plan_backend` parameters from TUI.
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:6:  - "working with PlanBackend metadata operations"
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:9:    warning: "plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations."
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:14:The `plan_header.py` module contains low-level functions for reading/writing plan metadata blocks. These are being gradually privatized behind the `PlanBackend` abstraction.
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:18:### Phase 1: PlanBackend Wrapper Methods (Complete)
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:20:PlanBackend now provides typed methods for common metadata operations:
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:28:External callers of `plan_header.py` functions should migrate to PlanBackend:
+/home/runner/work/erk/erk/docs/learned/planning/plan-header-privatization.md:49:- [PlanBackend Migration Guide](plan-backend-migration.md) — Migration patterns and error handling
+/home/runner/work/erk/erk/docs/learned/refactoring/systematic-rename-checklist.md:55:- [ ] Provider name strings (e.g., `"github-draft-pr"` was preserved when `DraftPRPlanBackend` was renamed to `PlannedPRBackend`)
+/home/runner/work/erk/erk/docs/learned/refactoring/systematic-rename-checklist.md:60:## Real Example: DraftPRPlanBackend to PlannedPRBackend
+/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md:125:**calling gh api directly in an exec script for plan metadata updates** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
+
+... [11 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md:10:    warning: "Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support. Note: the plan backend ABC is ManagedPrBackend (not PlanBackend — that name was retired)."
+  </tool_result>
+  <assistant>There are many files referencing `PlanBackend`. The plan says the two key files are `plan-backend-migration.md` (architecture) and `gateway-vs-backend.md`. The ones in the `planning/` directory appear to be a separate migration guide doc (`docs/learned/planning/plan-backend-migration.md`) which is a different file. Let me also update `erk-architecture.md` since it references `PlanBackend` in the context field:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2946" cache_read_input_tokens="57568" cache_creation="{'ephemeral_5m_input_tokens': 2946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014wUUdbLwNQcNUfLzEX7ZiB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="offset">365</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2946" cache_read_input_tokens="57568" cache_creation="{'ephemeral_5m_input_tokens': 2946, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014wUUdbLwNQcNUfLzEX7ZiB">
+   365→
+   366→## ctx.plan_backend
+   367→
+   368→- `ctx.plan_backend` — The PlanBackend ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
+   369→
+   370→After PR #8210, the `PlanStore` ABC was consolidated into `PlanBackend`. There is no separate read-side interface.
+   371→
+   372→&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend --&gt;
+   373→
+   374→**Source:** See `PlanBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+   375→
+   376→## TUI Exit-with-Command Pattern
+   377→
+   378→_Note: This pattern has been deprecated. The `exit_command` attribute no longer exists in `ErkDashApp`. See `src/erk/tui/app.py` for current TUI architecture._
+   379→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Kzerwt4jdvUiBcRTu6Q2Ko">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">- `ctx.plan_backend` — The PlanBackend ABC interface. Use for all plan operations includin...[truncated 272 chars]...Source:** See `PlanBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.</param>
+    <param name="new_string">- `ctx.plan_backend` — The `ManagedPrBackend` ABC interface. Use for all plan operations i...[truncated 319 chars]...e:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="993" cache_read_input_tokens="60514" cache_creation="{'ephemeral_5m_input_tokens': 993, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kzerwt4jdvUiBcRTu6Q2Ko">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>Also update the architecture/index.md entries:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="61507" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

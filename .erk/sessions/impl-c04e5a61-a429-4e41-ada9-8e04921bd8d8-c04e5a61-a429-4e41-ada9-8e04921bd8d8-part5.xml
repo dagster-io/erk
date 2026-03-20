@@ -1,0 +1,971 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-20-2014" />
+  <meta model="claude-sonnet-4-6" />
+  <assistant>These are auto-generated files. I need to use `erk docs sync` to regenerate them. Let me check if that's available and also update the frontmatter of the new doc files so that they'll be picked up properly by the auto-generation tool.
+
+Let me first check the format of the `erk docs sync` command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="19047" cache_read_input_tokens="58767" cache_creation="{'ephemeral_5m_input_tokens': 19047, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T5tTb8gTarzso4RMyaYRd8">
+    <param name="command">uv run erk docs --help 2&gt;&amp;1 | head -30</param>
+    <param name="description">Check erk docs command help</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19047" cache_read_input_tokens="58767" cache_creation="{'ephemeral_5m_input_tokens': 19047, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T5tTb8gTarzso4RMyaYRd8">
+Downloading cpython-3.13.12-linux-x86_64-gnu (download) (33.4MiB)
+ Downloaded cpython-3.13.12-linux-x86_64-gnu (download)
+Using CPython 3.13.12
+Creating virtual environment at: .venv
+   Building erk-mcp @ file:///home/runner/work/erk/erk/packages/erk-mcp
+   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+   Building erk-slots @ file:///home/runner/work/erk/erk/packages/erk-slots
+Downloading pydantic-core (2.0MiB)
+Downloading aiohttp (1.7MiB)
+Downloading beartype (1.3MiB)
+Downloading cryptography (4.3MiB)
+Downloading ruff (10.7MiB)
+Downloading ty (10.3MiB)
+Downloading libcst (2.2MiB)
+Downloading pygments (1.2MiB)
+ Downloaded pydantic-core
+ Downloaded aiohttp
+ Downloaded ty
+ Downloaded ruff
+ Downloaded cryptography
+ Downloaded libcst
+ Downloaded pygments
+ Downloaded beartype
+      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+      Built erk-mcp @ file:///home/runner/work/erk/erk/packages/erk-mcp
+      Built erk-slots @ file:///home/runner/work/erk/erk/packages/erk-slots
+Installed 112 packages in 84ms
+Usage: erk docs [OPTIONS] COMMAND [ARGS]...
+
+  Manage and validate agent documentation.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01B6tFRcfSPgPeuXh4dTCiyz">
+    <param name="command">uv run erk docs sync --help 2&gt;&amp;1</param>
+    <param name="description">Check erk docs sync command help</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="77814" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B6tFRcfSPgPeuXh4dTCiyz">
+Usage: erk docs sync [OPTIONS]
+
+  Regenerate index files from frontmatter.
+
+  Generates index.md files for: - docs/learned/index.md (root index with
+  categories and uncategorized docs) - docs/learned/&lt;category&gt;/index.md (for
+  categories with 2+ docs)
+
+  Index files are auto-generated and should not be manually edited.
+
+  Exit codes: - 0: Sync completed successfully (or --check passes) - 1: Error
+  during sync (or --check finds files out of sync)
+
+Options:
+  --dry-run   Show what would be done without writing files.
+  --check     Check if files are in sync without writing. Exit 1 if changes
+              needed.
+  -h, --help  Show this message and exit.
+  </tool_result>
+  <assistant>`erk docs sync` regenerates from frontmatter. Let me run it to update all the index files automatically:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="78427" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Nrarwsb6TcgHBq5vdrUCN8">
+    <param name="command">uv run erk docs sync 2&gt;&amp;1</param>
+    <param name="description">Run erk docs sync to regenerate index files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="78427" cache_creation="{'ephemeral_5m_input_tokens': 717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nrarwsb6TcgHBq5vdrUCN8">
+Scanning docs...
+Generating root index...
+Generating category indexes...
+Collecting tripwires...
+Generating tripwire files...
+Generating tripwires index...
+Updated 17 file(s):
+  ~ architecture/index.md
+  ~ capabilities/index.md
+  ~ ci/index.md
+  ~ cli/index.md
+  ~ config/index.md
+  ~ configuration/index.md
+  ~ erk/index.md
+  ~ testing/index.md
+  ~ tui/index.md
+  ~ architecture/tripwires.md
+  ~ capabilities/tripwires.md
+  ~ ci/tripwires.md
+  ~ cli/tripwires.md
+  ~ config/tripwires.md
+  ~ erk/tripwires.md
+  ~ testing/tripwires.md
+  ~ tripwires-index.md
+
+Unchanged: 40 file(s)
+
+Tripwires: 882 collected
+  architecture: 196 (26 with patterns)
+  capabilities: 16
+
+... [29 lines omitted] ...
+  </tool_result>
+  <assistant>`erk docs sync` updated 17 files including all the index.md and tripwires.md files. Let me mark Step 14 as complete and move on to CI and PR submission.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="79144" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01JxnUEWRLzVCCpL1eD61vyd">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'complete...[truncated 2084 chars]...CI and submit PR', 'status': 'in_progress', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="79144" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JxnUEWRLzVCCpL1eD61vyd">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal implementation ended and run CI before submitting:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="79710" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017Rd9SiM5SoLzpSmTN4LWSp">
+    <param name="command">uv run erk exec impl-signal ended --issue 9287 2&gt;&amp;1</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="813" cache_read_input_tokens="79710" cache_creation="{'ephemeral_5m_input_tokens': 813, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017Rd9SiM5SoLzpSmTN4LWSp">
+Exit code 2
+Usage: erk exec impl-signal [OPTIONS] {started|ended|submitted}
+Try 'erk exec impl-signal -h' for help.
+
+Error: No such option: --issue
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019vis7sWQT4zDkA78QM2PoJ">
+    <param name="command">uv run erk exec impl-signal --help 2&gt;&amp;1</param>
+    <param name="description">Check impl-signal help</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="80523" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019vis7sWQT4zDkA78QM2PoJ">
+Usage: erk exec impl-signal [OPTIONS] {started|ended|submitted}
+
+  Signal implementation events to GitHub.
+
+  EVENT can be 'started', 'ended', or 'submitted'.
+
+  'started' posts a start comment and updates plan metadata. 'ended' updates
+  plan metadata with ended event. 'submitted' sets lifecycle_stage to "impl"
+  after PR submission.
+
+  When --session-id is provided on 'started', also deletes the Claude plan
+  file (the content has been saved to GitHub and snapshotted).
+
+  Always exits with code 0 for graceful degradation (|| true pattern).
+
+Options:
+  --session-id TEXT  Session ID for PR file deletion on 'started' event
+  -h, --help         Show this message and exit.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0184VnzSPDjpfTQ4J9AUNvcL">
+    <param name="command">uv run erk exec impl-signal ended 2&gt;&amp;1</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="80694" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0184VnzSPDjpfTQ4J9AUNvcL">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9287
+}
+  </tool_result>
+  <tool_use name="Task" id="toolu_01YXXJ6eThXpn2aAb5uPNufm">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run fast CI checks on the current branch. Execute: `uv run make lint 2&gt;&amp;1 | tail -40` and ...[truncated 61 chars]...er/work/erk/erk. Report any failures. Do NOT fix any issues - just run and report results.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="122" cache_read_input_tokens="80974" cache_creation="{'ephemeral_5m_input_tokens': 122, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YXXJ6eThXpn2aAb5uPNufm">
+## CI Check Results
+
+**Lint Status: PASSED**
+- `uv run ruff check` returned: All checks passed!
+
+**Test Status: FAILED**
+
+Test execution stopped at the first error:
+
+**Import Error in `tests/tui/app/test_run_command_palette.py:8`**
+
+```
+ImportError: cannot import name 'PlanFilters' from 'erk.tui.data.types'
+```
+
+**Location:** `/home/runner/work/erk/erk/tests/tui/app/test_run_command_palette.py:8`
+
+**Issue:** The test file is trying to import `PlanFilters` from `erk.tui.data.types`, but this class is not available in that module. This appears to be a type reference issue, likely related to the recent plan terminology updates mentioned in the git history (PR #9277: "Rename plan variables and types to PR terminology").
+
+The test suite cannot proceed beyond this import error.
+agentId: a266263 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>There's a pre-existing test import error unrelated to my changes. Let me check if this was already broken before my changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="81096" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BGikLSd5QWgjgodWQBZcTf">
+    <param name="command">git stash &amp;&amp; uv run pytest tests/tui/app/test_run_command_palette.py -x -q --tb=short 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Check if test was already broken before my changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="81096" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BGikLSd5QWgjgodWQBZcTf">
+Saved working directory and index state WIP on plnd/consolidate-learn-docs-03-20-2014: d1ee8d072 Remove plan staging dirs before implementation
+
+==================================== ERRORS ====================================
+__________ ERROR collecting tests/tui/app/test_run_command_palette.py __________
+ImportError while importing test module '/home/runner/work/erk/erk/tests/tui/app/test_run_command_palette.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+../../_temp/uv-python-dir/cpython-3.13.12-linux-x86_64-gnu/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/tui/app/test_run_command_palette.py:8: in &lt;module&gt;
+    from erk.tui.data.types import PlanFilters
+E   ImportError: cannot import name 'PlanFilters' from 'erk.tui.data.types' (/home/runner/work/erk/erk/src/erk/tui/data/types.py)
+=========================== short test summary info ============================
+ERROR tests/tui/app/test_run_command_palette.py
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <assistant>The test was already broken before my changes. Let me restore my changes and proceed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="980" cache_read_input_tokens="81533" cache_creation="{'ephemeral_5m_input_tokens': 980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016P7ajrdyDXkHqQn9d9BG3T">
+    <param name="command">git stash pop 2&gt;&amp;1</param>
+    <param name="description">Restore stashed changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="980" cache_read_input_tokens="81533" cache_creation="{'ephemeral_5m_input_tokens': 980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016P7ajrdyDXkHqQn9d9BG3T">
+On branch plnd/consolidate-learn-docs-03-20-2014
+Your branch is up to date with 'origin/plnd/consolidate-learn-docs-03-20-2014'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   docs/learned/architecture/erk-architecture.md
+	modified:   docs/learned/architecture/gateway-vs-backend.md
+	modified:   docs/learned/architecture/index.md
+	modified:   docs/learned/architecture/plan-backend-migration.md
+	modified:   docs/learned/architecture/rebase-conflict-patterns.md
+	modified:   docs/learned/architecture/subprocess-wrappers.md
+	modified:   docs/learned/architecture/tripwires.md
+	modified:   docs/learned/capabilities/index.md
+	modified:   docs/learned/capabilities/tripwires.md
+	modified:   docs/learned/ci/index.md
+	modified:   docs/learned/ci/tripwires.md
+	modified:   docs/learned/cli/commands/pr-diverge-fix.md
+	modified:   docs/learned/cli/index.md
+	modified:   docs/learned/cli/rebase-confirmation-workflow.md
+	modified:   docs/learned/cli/tripwires.md
+	modified:   docs/learned/cli/workflow-commands.md
+	modified:   docs/learned/config/index.md
+	modified:   docs/learned/config/tripwires.md
+	modified:   docs/learned/configuration/config-layers.md
+	modified:   docs/learned/configuration/index.md
+	modified:   docs/learned/configuration/issues-repo.md
+	modified:   docs/learned/erk/index.md
+	modified:   docs/learned/erk/tripwires.md
+	modified:   docs/learned/glossary.md
+
+... [25 lines omitted] ...
+
+	docs/learned/ci/impl-failure-summarization.md
+  </tool_result>
+  <assistant>The test failure is pre-existing (not caused by my changes). My changes are documentation only (`.md` files), so they wouldn't cause test failures. Let me also run the docs check to make sure the docs are valid:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="979" cache_read_input_tokens="82513" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013fFEaeKjVD5vdf2oKUjLpz">
+    <param name="command">uv run erk docs check 2&gt;&amp;1 | tail -30</param>
+    <param name="description">Run erk docs check to validate documentation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="979" cache_read_input_tokens="82513" cache_creation="{'ephemeral_5m_input_tokens': 979, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013fFEaeKjVD5vdf2oKUjLpz">
+Validating frontmatter...
+
+Frontmatter validation passed (578 files)
+
+Checking generated files...
+
+Generated files in sync
+
+============================================================
+Agent docs health check: PASSED
+
+Files validated: 578
+Generated files: 57
+  </tool_result>
+  <assistant>Docs check passes. Now let me commit and submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="640" cache_read_input_tokens="83492" cache_creation="{'ephemeral_5m_input_tokens': 640, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="SlashCommand" id="toolu_01SbhSe3Jswi2Nce4FKaU2U2">
+    <param name="command">/erk:git-pr-push Consolidated documentation updates from 35 learn sessions - fix stale references, create new docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="640" cache_read_input_tokens="83492" cache_creation="{'ephemeral_5m_input_tokens': 640, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SbhSe3Jswi2Nce4FKaU2U2">
+Launching command: /erk:git-pr-push
+  </tool_result>
+  <user>&lt;command-message&gt;erk:git-pr-push is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:git-pr-push&lt;/command-name&gt;
+&lt;command-args&gt;Consolidated documentation updates from 35 learn sessions - fix stale references, create new docs&lt;/command-args&gt;</user>
+  <user># Push PR (Git Only)
+
+Automatically create a git commit with a helpful summary message and push the current branch as a pull request using standard git + GitHub CLI (no Graphite required).
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:git-pr-push "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:git-pr-push
+```
+
+## What This Command Does
+
+Handles the complete git-only push-pr workflow:
+
+1. Check for uncommitted changes and stage/commit them if needed
+2. Analyze git diff to generate meaningful commit message
+3. Create commit with AI-generated message
+4. Push to origin with upstream tracking
+5. Create GitHub PR (or find existing one)
+6. Report results with PR URL
+
+## Key Differences from /gt:submit-branch
+
+- Uses standard `git push` instead of `gt submit`
+- Uses `gh pr create` instead of Graphite's PR submission
+- No stack operations (no restack, no stack metadata updates)
+- Simpler workflow: git -&gt; push -&gt; PR (no Graphite layer)
+- Works in any git repository (not just Graphite-enabled repos)
+
+## Prerequisites
+
+- Git repository with remote configured
+- GitHub CLI (`gh`) installed and authenticated
+- Run `gh auth status` to verify authentication
+- Run `gh auth login` if not authenticated
+
+## Implementation
+
+Execute the git-only push-pr workflow with the following steps:
+
+### Step 1: Verify Prerequisites
+
+Check GitHub CLI authentication and get current git state:
+
+```bash
+# Check GitHub CLI authentication (show status for verification)
+gh auth status
+
+# Get current branch name
+current_branch=$(git branch --show-current)
+
+# Check for uncommitted changes
+has_changes=$(git status --porcelain)
+```
+
+If `gh auth status` fails, report error and tell user to run `gh auth login`.
+
+### Step 2: Stage Changes (if needed)
+
+If `has_changes` is non-empty, stage all changes:
+
+```bash
+git add .
+```
+
+### Step 3: Analyze Staged Diff
+
+Get the staged diff and analyze it to generate a commit message:
+
+```bash
+# Get repository root for relative paths
+repo_root=$(git rev-parse --show-toplevel)
+
+# Get staged diff for analysis
+git diff --staged
+```
+
+Load the `erk-diff-analysis` skill for commit message generation guidance.
+
+### Step 4: Add Planned Prefix (if from plan)
+
+If this worktree was created from a plan (an `.erk/impl-context/` subdirectory containing `ref.json` exists), prepend `plnd/` to the PR title:
+
+```bash
+if ls .erk/impl-context/*/ref.json 1&gt;/dev/null 2&gt;&amp;1; then
+    # Extract the title before creating the commit
+    # (we'll apply the prefix when creating the commit message below)
+    has_impl_dir=true
+else
+    has_impl_dir=false
+fi
+```
+
+When generating the commit message in Step 5, if `has_impl_dir` is true, prepend `plnd/` to the title:
+
+```bash
+if [ "$has_impl_dir" = true ]; then
+    pr_title="plnd/${pr_title}"
+fi
+```
+
+### Step 5: Create Commit
+
+Create the commit with your AI-generated message using heredoc:
+
+```bash
+git commit -m "$(cat &lt;&lt;'COMMIT_MSG'
+[Your generated commit message here]
+COMMIT_MSG
+)"
+```
+
+### Step 6: Push to Remote
+
+Push the branch to origin with upstream tracking:
+
+```bash
+git push -u origin "$(git branch --show-current)"
+```
+
+### Step 7: Check for Existing PR
+
+Before creating a new PR, check if one already exists for the current branch:
+
+```bash
+existing_pr=$(gh pr list --head "$(git branch --show-current)" --state open --json number,url,isDraft --jq '.[0]')
+```
+
+**Decision logic:**
+
+- If `existing_pr` is empty or null: No existing PR, proceed to Step 8
+- If `existing_pr` has data: PR exists, skip Step 8 and go directly to Step 9 (Add Checkout Footer)
+
+&gt; **CRITICAL: When an existing PR is found, do NOT run `gh pr edit --body` or `gh pr edit --title`.**
+&gt; The PR body may contain plan-header metadata blocks (`&lt;!-- erk:metadata-block:plan-header --&gt;`)
+&gt; that must be preserved. The body will be updated by a later workflow step (`ci-update-pr-body`).
+&gt; Only push code (Step 6) and add the checkout footer (Step 9).
+
+If an existing PR was found, extract its details for reporting:
+
+```bash
+pr_url=$(echo "$existing_pr" | jq -r '.url')
+pr_number=$(echo "$existing_pr" | jq -r '.number')
+is_draft=$(echo "$existing_pr" | jq -r '.isDraft')
+```
+
+### Step 8: Create GitHub PR (if no existing PR)
+
+**Skip this step if an existing PR was found in Step 7.** The push in Step 6 already updated the existing PR with new commits.
+
+Extract PR title (first line) and body (remaining lines) from commit message:
+
+```bash
+# Get the commit message
+commit_msg=$(git log -1 --pretty=%B)
+
+# Extract first line as title
+pr_title=$(echo "$commit_msg" | head -n 1)
+
+# Extract remaining lines as body (skip empty first line after title)
+pr_body=$(echo "$commit_msg" | tail -n +2)
+
+# Create PR using GitHub CLI
+pr_output=$(gh pr create --title "$pr_title" --body "$pr_body")
+
+# Extract PR number from the output URL (last path segment)
+pr_number=$(echo "$pr_output" | grep -oE '[0-9]+$')
+pr_url="$pr_output"
+```
+
+### Step 9: Add Checkout Footer
+
+Extract the PR number (from Step 8 if PR was created, or from Step 7 if existing PR was found), then generate and append the checkout footer:
+
+**Determining PR number:**
+
+- If Step 8 was executed: Use `pr_number` extracted from `gh pr create` output
+- If Step 8 was skipped: Use `pr_number` extracted from `existing_pr` in Step 7
+
+**Generate and append footer:**
+
+&gt; **Note:** When appending the footer, always read the current body first and append.
+&gt; Never replace the entire body — only append the footer to the existing content.
+
+```bash
+# Generate footer
+footer=$(erk exec get-pr-body-footer --pr-number "$pr_number")
+
+# Get current PR body using REST API (avoids GraphQL rate limits) and append footer
+current_body=$(erk exec get-pr-view "$pr_number" | jq -r '.body')
+gh pr edit "$pr_number" --body "${current_body}${footer}"
+```
+
+**Note:** The footer includes the checkout command. This ensures `erk pr check` passes.
+
+### Step 10: Link PR to Objective (if applicable)
+
+If `ref.json` exists in the resolved impl directory (`.erk/impl-context/&lt;branch&gt;/ref.json`):
+
+```bash
+erk exec objective-link-pr --pr-number "$pr_number"
+```
+
+If this fails, warn but continue -- PR creation succeeded.
+
+### Step 11: Validate PR Rules
+
+Run the PR check command to validate the PR was created correctly:
+
+```bash
+erk pr check
+```
+
+This validates:
+
+- PR body contains the standard checkout footer
+
+If any checks fail, display the output and warn the user, but continue to Step 12.
+
+### Step 12: Report Results
+
+Display a clear summary based on whether a PR was created or found:
+
+**If a NEW PR was created (Step 8 was executed):**
+
+```
+## Branch Submission Complete
+
+### What Was Done
+
+✓ Staged all uncommitted changes
+✓ Created commit with AI-generated message
+✓ Pushed branch to origin with upstream tracking
+✓ Created GitHub PR
+
+### View PR
+
+[PR URL from gh pr create output]
+```
+
+**If an EXISTING PR was found (Step 8 was skipped):**
+
+```
+## Branch Submission Complete
+
+### What Was Done
+
+✓ Staged all uncommitted changes
+✓ Created commit with AI-generated message
+✓ Pushed branch to origin with upstream tracking
+✓ Found existing PR #N for this branch (skipped PR creation)
+
+### Note
+
+[If is_draft is true]: This is a draft PR. When ready for review, run: `gh pr ready`
+
+### View PR
+
+[PR URL extracted from existing_pr]
+```
+
+**Conditional lines:**
+
+- The "Note" section with draft guidance should only appear if `is_draft` is true
+
+**CRITICAL**: The PR URL MUST be the absolute last line of your output. Do not add any text after it.
+
+## Error Handling
+
+When errors occur, provide clear guidance:
+
+**GitHub CLI not authenticated:**
+
+```
+❌ GitHub CLI is not authenticated
+
+To use this command, authenticate with GitHub:
+    gh auth login
+```
+
+**Nothing to commit:**
+
+```
+❌ No changes to commit
+
+Your working directory is clean. Make some changes first.
+```
+
+**Push failed (diverged branches):**
+
+```
+❌ Push failed: branch has diverged
+
+Option 1: Pull and merge
+    git pull origin [branch]
+
+Option 2: Force push (⚠️ overwrites remote)
+    git push -f origin [branch]
+```
+
+Note: The "PR already exists" case is now handled automatically in Step 7. If a PR exists for the current branch, the command will skip PR creation and report the existing PR URL instead.
+
+## Best Practices
+
+### Never Change Directory
+
+**NEVER use `cd` during execution.** Always use absolute paths or git's `-C` flag.
+
+```bash
+# ❌ WRONG
+cd /path/to/repo &amp;&amp; git status
+
+# ✅ CORRECT
+git -C /path/to/repo status
+```
+
+**Rationale:** Changing directories pollutes the execution context and makes it harder to reason about state. The working directory should remain stable throughout the entire workflow.
+
+### Never Write to Temporary Files
+
+**NEVER write commit messages or other content to temporary files.** Always use in-context manipulation and shell built-ins.
+
+```bash
+# ❌ WRONG - Triggers permission prompts
+echo "$message" &gt; "${TMPDIR:-/tmp}/commit_msg.txt"
+git commit -F "${TMPDIR:-/tmp}/commit_msg.txt"
+
+# ✅ CORRECT - In-memory heredoc
+git commit -m "$(cat &lt;&lt;'EOF'
+$message
+EOF
+)"
+```
+
+**Rationale:** Temporary files require filesystem permissions and create unnecessary I/O. Since agents operate in isolated contexts, there's no risk of context pollution from in-memory manipulation.
+
+## Quality Standards
+
+### Always
+
+- Be concise and strategic in analysis
+- Use component-level descriptions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+- Provide clear error guidance
+- Use standard git + GitHub CLI commands (no Graphite dependencies)
+
+### Never
+
+- Add Claude attribution or footer to commit messages
+- Speculate about intentions without code evidence
+- Provide exhaustive lists of every function touched
+- Include implementation details (specific variable names, line numbers)
+- Provide time estimates
+- Use vague language like "various changes"
+- Retry failed operations automatically
+- Write to temporary files (use in-context quoting and shell built-ins instead)
+- Use Graphite-specific commands (`gt submit`, `gt restack`, etc.)
+
+## Self-Verification
+
+Before completing, verify:
+
+- [ ] GitHub CLI authentication checked
+- [ ] Git status verified
+- [ ] Uncommitted changes staged (if any existed)
+- [ ] Staged diff analyzed
+- [ ] Diff analysis is concise and strategic (3-5 key changes max)
+- [ ] Commit message has no Claude footer
+- [ ] File paths are relative to repository root
+- [ ] Commit created successfully
+- [ ] Branch pushed to origin with upstream tracking
+- [ ] GitHub PR created successfully (or existing PR found)
+- [ ] PR URL extracted from output
+- [ ] Results displayed with "What Was Done" section listing actions
+- [ ] PR URL placed at end under "View PR" section
+- [ ] Any errors handled with helpful guidance
+
+
+ARGUMENTS: Consolidated documentation updates from 35 learn sessions - fix stale references, create new docs</user>
+  <assistant>I'll execute the git-only push-PR workflow now.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3141" cache_read_input_tokens="84132" cache_creation="{'ephemeral_5m_input_tokens': 3141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SouSPoYHkY6uxJnbZrHGzQ">
+    <param name="command">gh auth status 2&gt;&amp;1 | head -5</param>
+    <param name="description">Check GitHub CLI authentication status</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3141" cache_read_input_tokens="84132" cache_creation="{'ephemeral_5m_input_tokens': 3141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UBtMzpkyDYTi5YKmwB1KuM">
+    <param name="command">git branch --show-current &amp;&amp; git status --porcelain | head -5</param>
+    <param name="description">Get current branch and check for changes</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3141" cache_read_input_tokens="84132" cache_creation="{'ephemeral_5m_input_tokens': 3141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SouSPoYHkY6uxJnbZrHGzQ">
+github.com
+  ✓ Logged in to github.com account github-actions[bot] (GH_TOKEN)
+  - Active account: true
+  - Git operations protocol: https
+  - Token: ghs_************************************
+  </tool_result>
+  <tool_result tool="toolu_01UBtMzpkyDYTi5YKmwB1KuM">
+plnd/consolidate-learn-docs-03-20-2014
+ M docs/learned/architecture/erk-architecture.md
+ M docs/learned/architecture/gateway-vs-backend.md
+ M docs/learned/architecture/index.md
+ M docs/learned/architecture/plan-backend-migration.md
+ M docs/learned/architecture/rebase-conflict-patterns.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012euVqF6T6ZHMXpYP9nkYre">
+    <param name="command">git add . &amp;&amp; git diff --staged --stat</param>
+    <param name="description">Stage all changes and get summary</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="816" cache_read_input_tokens="87273" cache_creation="{'ephemeral_5m_input_tokens': 816, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012euVqF6T6ZHMXpYP9nkYre">
+ docs/learned/architecture/erk-architecture.md      |  8 +-
+ docs/learned/architecture/gateway-vs-backend.md    |  6 +-
+ docs/learned/architecture/index.md                 |  5 +-
+ .../architecture/json-dataclass-utilities.md       | 91 ++++++++++++++++++++
+ .../learned/architecture/plan-backend-migration.md | 14 +--
+ .../architecture/rebase-conflict-patterns.md       | 21 ++---
+ docs/learned/architecture/subprocess-wrappers.md   | 43 ++++++++++
+ docs/learned/architecture/tripwires.md             |  8 +-
+ docs/learned/capabilities/index.md                 |  2 +
+ docs/learned/capabilities/npx-skill-management.md  | 95 +++++++++++++++++++++
+ .../capabilities/skill-deletion-patterns.md        | 99 ++++++++++++++++++++++
+ docs/learned/capabilities/tripwires.md             |  6 ++
+ docs/learned/ci/impl-failure-summarization.md      | 92 ++++++++++++++++++++
+ docs/learned/ci/index.md                           |  1 +
+ docs/learned/ci/tripwires.md                       |  2 +
+ docs/learned/cli/commands/pr-diverge-fix.md        |  2 +-
+ docs/learned/cli/exec-review-activity-log.md       | 86 +++++++++++++++++++
+ docs/learned/cli/index.md                          |  5 +-
+ docs/learned/cli/rebase-confirmation-workflow.md   | 61 +++++++------
+ docs/learned/cli/teleport-slot-awareness.md        | 73 ++++++++++++++++
+ docs/learned/cli/tripwires.md                      |  8 +-
+ docs/learned/cli/workflow-commands.md              | 10 +--
+ docs/learned/cli/workflow-run-management.md        | 54 ++++++++++++
+ docs/learned/config/index.md                       |  1 +
+ docs/learned/config/tripwires.md                   |  2 +
+ docs/learned/config/uv-workspace-configuration.md  | 69 +++++++++++++++
+ docs/learned/configuration/config-layers.md        |  4 +-
+ docs/learned/configuration/index.md                |  2 +-
+ docs/learned/configuration/issues-repo.md          |  6 +-
+ docs/learned/erk/index.md                          |  1 +
+
+... [14 lines omitted] ...
+  </tool_result>
+  <tool_use name="Skill" id="toolu_015hTovMqLA17D2N75Rhoyxb">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1062" cache_read_input_tokens="88089" cache_creation="{'ephemeral_5m_input_tokens': 1062, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015hTovMqLA17D2N75Rhoyxb">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <assistant>Analyzing the staged diff to generate a commit message.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="261" cache_read_input_tokens="89151" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NsBHEY94HdiK1czTVKd3ti">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="261" cache_read_input_tokens="89151" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NsBHEY94HdiK1czTVKd3ti">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Key Changes
+    28→
+    29→- [3-5 high-level component/architectural changes]
+    30→- Strategic change description focusing on purpose and impact
+
+... [57 lines omitted] ...
+
+    67→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <assistant>Now I'll check if there's an existing PR for this branch, then create the commit and push:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1506" cache_read_input_tokens="89412" cache_creation="{'ephemeral_5m_input_tokens': 1506, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012DhSaXojUoupaPyfSpMZDe">
+    <param name="command">existing_pr=$(gh pr list --head "plnd/consolidate-learn-docs-03-20-2014" --state open --js...[truncated 66 chars]...-context/*/ref.json 2&gt;/dev/null &amp;&amp; echo "has_impl_dir: true" || echo "has_impl_dir: false"</param>
+    <param name="description">Check for existing PR and impl dir</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1506" cache_read_input_tokens="89412" cache_creation="{'ephemeral_5m_input_tokens': 1506, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012DhSaXojUoupaPyfSpMZDe">
+existing_pr: {"isDraft":true,"number":9287,"url":"https://github.com/dagster-io/erk/pull/9287"}
+.erk/impl-context/plnd--consolidate-learn-docs-03-20-2014/ref.json
+has_impl_dir: true
+  </tool_result>
+  <assistant>An existing PR (#9287) is already there. I'll create the commit, push, and then add/update the footer.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="90918" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LmYKr81NSfJvANfdMhpAUD">
+    <param name="command">git commit -m "$(cat &lt;&lt;'COMMIT_MSG'
+plnd/Consolidated documentation updates from 35 learn ...[truncated 2230 chars]...ned/*/index.md`, `tripwires.md` - Regenerated by `erk docs sync`
+
+&lt;/details&gt;
+COMMIT_MSG
+)"</param>
+    <param name="description">Create commit with documentation changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="90918" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LmYKr81NSfJvANfdMhpAUD">
+[plnd/consolidate-learn-docs-03-20-2014 7f8ddc738] plnd/Consolidated documentation updates from 35 learn sessions
+ 43 files changed, 1014 insertions(+), 128 deletions(-)
+ create mode 100644 docs/learned/architecture/json-dataclass-utilities.md
+ create mode 100644 docs/learned/capabilities/npx-skill-management.md
+ create mode 100644 docs/learned/capabilities/skill-deletion-patterns.md
+ create mode 100644 docs/learned/ci/impl-failure-summarization.md
+ create mode 100644 docs/learned/cli/exec-review-activity-log.md
+ create mode 100644 docs/learned/cli/teleport-slot-awareness.md
+ create mode 100644 docs/learned/cli/workflow-run-management.md
+ create mode 100644 docs/learned/config/uv-workspace-configuration.md
+ create mode 100644 docs/learned/erk/stack-sync.md
+ create mode 100644 docs/learned/testing/fakes-directory-structure.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KUkjahyQ3PXsnhqdgBBEry">
+    <param name="command">git push -u origin "$(git branch --show-current)" 2&gt;&amp;1</param>
+    <param name="description">Push branch to origin</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1543" cache_read_input_tokens="91204" cache_creation="{'ephemeral_5m_input_tokens': 1543, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KUkjahyQ3PXsnhqdgBBEry">
+remote: 
+remote: GitHub found 16 vulnerabilities on dagster-io/erk's default branch (12 high, 2 moderate, 2 low). To find out more, visit:        
+remote:      https://github.com/dagster-io/erk/security/dependabot        
+remote: 
+To https://github.com/dagster-io/erk
+   d1ee8d072..7f8ddc738  plnd/consolidate-learn-docs-03-20-2014 -&gt; plnd/consolidate-learn-docs-03-20-2014
+branch 'plnd/consolidate-learn-docs-03-20-2014' set up to track 'origin/plnd/consolidate-learn-docs-03-20-2014'.
+  </tool_result>
+  <assistant>Pushed successfully. Now add the checkout footer to the existing PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="92747" cache_creation="{'ephemeral_5m_input_tokens': 287, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VV3M3ALWz4bqk3zqdEgMtd">
+    <param name="command">footer=$(uv run erk exec get-pr-body-footer --pr-number 9287 2&gt;&amp;1)
+echo "Footer result: $footer"</param>
+    <param name="description">Get PR body footer</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="92747" cache_creation="{'ephemeral_5m_input_tokens': 287, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VV3M3ALWz4bqk3zqdEgMtd">
+Footer result: 
+---
+
+
+To replicate this PR locally, run:
+
+```
+erk pr teleport 9287
+```
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FjqZB35PYa15186W8FCHap">
+    <param name="command">current_body=$(uv run erk exec get-pr-view 9287 2&gt;&amp;1 | python3 -c "import json,sys; data=j...[truncated 46 chars]...o "Body length: ${#current_body}"
+echo "---LAST 200 chars---"
+echo "${current_body: -200}"</param>
+    <param name="description">Get current PR body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="598" cache_read_input_tokens="93034" cache_creation="{'ephemeral_5m_input_tokens': 598, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FjqZB35PYa15186W8FCHap">
+Exit code 2
+/bin/bash: eval: line 1: syntax error near unexpected token `('
+/bin/bash: eval: line 1: `current_body=\$ ( uv run erk exec get-pr-view 9287 2&gt;&amp;1 &lt; /dev/null | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('body', ''))" 2&gt;/dev/null ) echo 'Body length: ' echo '---LAST 200 chars---' echo '''
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WrYD1sqWnQQpMh6Cg4Aguw">
+    <param name="command">uv run erk exec get-pr-view 9287 2&gt;&amp;1 | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('body','')[-200:])"</param>
+    <param name="description">Get last 200 chars of PR body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="93632" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WrYD1sqWnQQpMh6Cg4Aguw">
+r teleport 9287
+```
+
+
+**Workflow run:** https://github.com/dagster-io/erk/actions/runs/23361070362
+**Remotely executed:** [Run #23361070362](https://github.com/dagster-io/erk/actions/runs/23361070362)
+  </tool_result>
+  <assistant>The PR already has the checkout footer. Let me verify the PR check passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="93945" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cok7trJAixA43VeZXtvPMP">
+    <param name="command">uv run erk pr check 2&gt;&amp;1</param>
+    <param name="description">Validate PR rules pass</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="93945" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cok7trJAixA43VeZXtvPMP">
+Checking PR #9287 for branch plnd/consolidate-learn-docs-03-20-2014...
+
+[PASS] Plan reference found (#9287)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks passed. Now let me signal submitted and upload the session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="94160" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017DkABdG43reYvs3wxj36GG">
+    <param name="command">uv run erk exec impl-signal submitted 2&gt;&amp;1</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="94160" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017DkABdG43reYvs3wxj36GG">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9287
+}
+  </tool_result>
+  <assistant>## Branch Submission Complete
+
+### What Was Done
+
+✓ Staged all uncommitted changes (43 files: 33 modified, 10 created)
+✓ Created commit: `plnd/Consolidated documentation updates from 35 learn sessions`
+✓ Pushed branch to origin with upstream tracking
+✓ Found existing PR #9287 for this branch (skipped PR creation)
+✓ `erk pr check` passed — all PR rules validated
+
+### Note
+
+This is a draft PR. When ready for review, run: `gh pr ready`
+
+### View PR
+
+https://github.com/dagster-io/erk/pull/9287</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="137" cache_read_input_tokens="94759" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

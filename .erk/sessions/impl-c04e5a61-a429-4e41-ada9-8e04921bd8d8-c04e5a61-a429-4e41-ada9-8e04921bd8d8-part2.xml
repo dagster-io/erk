@@ -1,0 +1,928 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-20-2014" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Read" id="toolu_01LbhHrigDNWYjMfWxhyh32Y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/index.md</param>
+    <param name="offset">50</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="61507" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LbhHrigDNWYjMfWxhyh32Y">
+    50→- **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway
+    51→- **[gateway-removal-pattern.md](gateway-removal-pattern.md)** — Consolidating two gateways into one, Removing deprecated gateway implementations, Refactoring gateway hierarchies
+    52→- **[gateway-signature-migration.md](gateway-signature-migration.md)** — changing gateway method signatures, migrating callers after gateway API changes, updating discriminated union return types across call sites
+    53→- **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — considering mixing discriminated unions with exceptions in gateway methods, designing operations with both expected failures and cleanup steps, reviewing historical gateway error handling experiments
+    54→- **[gateway-vs-backend.md](gateway-vs-backend.md)** — creating a new ABC interface, deciding between gateway and backend patterns, understanding PlanBackend vs Git gateway architecture, choosing the right abstraction pattern for a new service
+    55→- **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
+    56→- **[git-graphite-quirks.md](git-graphite-quirks.md)** — debugging unexpected git/gt behavior, handling rebase/restack edge cases, writing conflict detection logic, troubleshooting detached HEAD states, handling concurrent worktree operations, understanding worktree lock files
+    57→- **[git-operation-patterns.md](git-operation-patterns.md)** — implementing git operations in gateways, checking if git branches or refs exist, deciding between LBYL and EAFP for git commands
+    58→- **[git-plumbing-patterns.md](git-plumbing-patterns.md)** — modifying plan_save.py branch commit behavior, understanding git plumbing patterns in erk, working with commit_files_to_branch, eliminating git checkouts, dispatch without checkout
+    59→- **[github-admin-gateway.md](github-admin-gateway.md)** — working with GitHub repository secrets or admin operations, adding methods to the GitHubAdmin gateway, understanding the 4-place gateway pattern with security-sensitive operations
+    60→- **[github-api-diagnostics.md](github-api-diagnostics.md)** — debugging GitHub API failures, investigating repository-specific API issues, GitHub CLI commands returning unexpected errors
+    61→- **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
+    62→- **[github-api-retry-mechanism.md](github-api-retry-mechanism.md)** — implementing GitHub API calls with retry logic, handling transient network errors, using execute_gh_command_with_retry(), injecting Time for testable retry delays
+    63→- **[github-cli-limits.md](github-cli-limits.md)** — using gh pr diff in production code, working with large pull requests (300+ files), encountering HTTP 406 errors from gh CLI, implementing PR file discovery, working with GitHub codespaces in code, implementing codespace operations
+    64→- **[github-cli-quirks.md](github-cli-quirks.md)** — using gh gist create with --filename flag, debugging unexpected gh CLI behavior, working with gh gist commands
+    65→- **[github-gist-api.md](github-gist-api.md)** — constructing gist raw URLs, downloading gist content programmatically, working with single-file gists
+    66→- **[github-graphql-label-semantics.md](github-graphql-label-semantics.md)** — querying GitHub issues or PRs with multiple label filters, debugging unexpected empty results from GitHub GraphQL label queries, implementing label-based filtering for plan or issue views
+    67→- **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
+    68→- **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
+    69→- **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan closure strategy
+    70→- **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
+    71→- **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
+    72→- **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
+    73→- **[health-check-runner-gateway.md](health-check-runner-gateway.md)** — working with health check infrastructure, modifying doctor command, adding new health checks, working with artifact allowlist
+    74→- **[hook-marker-detection.md](hook-marker-detection.md)** — Adding a new hook managed by erk, Implementing version detection for artifacts, Understanding how hook updates work
+    75→- **[http-accelerated-plan-refresh.md](http-accelerated-plan-refresh.md)** — understanding HTTP-only architecture for plan data fetching, working with HttpClient ABC extensions, optimizing plan list performance, adding CLI commands that need http_client
+    76→- **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
+    77→- **[impl-folder-discovery.md](impl-folder-discovery.md)** — working with .erk/impl-context/ directory resolution, debugging why a plan wasn't found during implementation setup, writing tests that use branch-scoped impl-context paths, understanding the difference between impl_folder.py and impl_context.py
+    78→- **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
+    79→- **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_branch_slug, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts, working with plan summary generation or --summary flags
+
+... [30 lines omitted] ...
+
+    91→- **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
+    93→- **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
+    96→- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RGtzeptnwKpuuFEN4349TS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/index.md</param>
+    <param name="old_string">- **[gateway-vs-backend.md](gateway-vs-backend.md)** — creating a new ABC interface, decid...[truncated 43 chars]...kend vs Git gateway architecture, choosing the right abstraction pattern for a new service</param>
+    <param name="new_string">- **[gateway-vs-backend.md](gateway-vs-backend.md)** — creating a new ABC interface, decid...[truncated 48 chars]...kend vs Git gateway architecture, choosing the right abstraction pattern for a new service</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3580" cache_read_input_tokens="61988" cache_creation="{'ephemeral_5m_input_tokens': 3580, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RGtzeptnwKpuuFEN4349TS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/index.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01H2q7db7UifjyduciGVcce5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/index.md</param>
+    <param name="old_string">- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to u...[truncated 19 chars]...an_backend, understanding post_event vs update_metadata, Phase 3 PlanBackend consolidation</param>
+    <param name="new_string">- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to u...[truncated 29 chars]...ckend, understanding post_event vs update_metadata, Phase 3 ManagedPrBackend consolidation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="65568" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H2q7db7UifjyduciGVcce5">
+The file /home/runner/work/erk/erk/docs/learned/architecture/index.md has been updated successfully.
+  </tool_result>
+  <assistant>Step 2 complete. Now Step 3 - rewrite the rebase-confirmation-workflow.md:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="65829" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01RapbQxJbPhgWvQ5k8gABPQ">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'complete...[truncated 1977 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="65829" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RapbQxJbPhgWvQ5k8gABPQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BDTMkcpezCTtRvPezFM1Lt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/rebase-confirmation-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="66103" cache_creation="{'ephemeral_5m_input_tokens': 775, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RrPssf2ZPvrCS19xBghn8z">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/resolve_conflicts_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="775" cache_read_input_tokens="66103" cache_creation="{'ephemeral_5m_input_tokens': 775, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BDTMkcpezCTtRvPezFM1Lt">
+     1→---
+     2→title: Rebase Confirmation Workflow
+     3→read_when:
+     4→  - "modifying the erk pr rebase command"
+     5→  - "adding conflict confirmation UI to CLI commands"
+     6→  - "understanding rebase convergence paths"
+     7→tripwires:
+     8→  - action: "launching Claude for conflict resolution without showing conflicted files first"
+     9→    warning: "Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md."
+    10→---
+    11→
+    12→# Rebase Confirmation Workflow
+    13→
+    14→The `erk pr rebase` command shows conflicted files and gets user confirmation before launching Claude for conflict resolution. This prevents users from being dropped into a Claude session without knowing what needs resolving.
+    15→
+    16→## Three Convergence Paths
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/pr/rebase_cmd.py --&gt;
+    19→
+    20→All three entry paths converge at the same confirmation point:
+    21→
+    22→### 1. Graphite Restack Path
+    23→
+    24→When Graphite is enabled, uses `gt restack --no-interactive`. If restack succeeds (no conflicts), returns immediately. If conflicts remain, falls through to confirmation.
+    25→
+    26→### 2. Git Rebase Path
+    27→
+    28→When Graphite is not enabled and no rebase is in progress, requires `--target` flag. Runs `git rebase` onto target. If rebase succeeds, returns. If conflicts remain, falls through to confirmation.
+    29→
+    30→### 3. In-Progress Rebase Path
+
+... [34 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RrPssf2ZPvrCS19xBghn8z">
+     1→"""Resolve conflicts from an in-progress rebase using Claude TUI."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.ensure import Ensure
+     6→from erk.core.context import ErkContext
+     7→
+     8→
+     9→@click.command("resolve-conflicts")
+    10→@click.option(
+    11→    "-d",
+    12→    "--dangerous",
+    13→    is_flag=True,
+    14→    help="Force dangerous mode (skip permission prompts).",
+    15→)
+    16→@click.option(
+    17→    "--safe",
+    18→    is_flag=True,
+    19→    help="Disable dangerous mode (permission prompts enabled).",
+    20→)
+    21→@click.pass_obj
+    22→def resolve_conflicts(ctx: ErkContext, *, dangerous: bool, safe: bool) -&gt; None:
+    23→    """Resolve merge conflicts from an in-progress rebase using Claude TUI.
+    24→
+    25→    This command resolves conflicts from a rebase already in progress. It does NOT
+    26→    initiate a rebase. Start the rebase yourself with 'git rebase &lt;branch&gt;',
+    27→    'gt restack', etc., then run this command when conflicts arise.
+    28→
+    29→    Examples:
+    30→
+
+... [64 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll rewrite the documentation to document the new `erk pr resolve-conflicts` command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2246" cache_read_input_tokens="66878" cache_creation="{'ephemeral_5m_input_tokens': 2246, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01YG6pByc7X3oP7XvadFLHjx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/rebase-confirmation-workflow.md</param>
+    <param name="content">---
+title: Resolve Conflicts Workflow
+read_when:
+  - "modifying the erk pr resolve-conflic...[truncated 2426 chars]...t
+- [Git and Graphite Quirks](../architecture/git-graphite-quirks.md) — Rebase edge cases
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2246" cache_read_input_tokens="66878" cache_creation="{'ephemeral_5m_input_tokens': 2246, 'ephemeral_1h_input_tokens': 0}" output_tokens="817" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YG6pByc7X3oP7XvadFLHjx">
+The file /home/runner/work/erk/erk/docs/learned/cli/rebase-confirmation-workflow.md has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→---
+     2→title: Resolve Conflicts Workflow
+     3→read_when:
+     4→  - "modifying the erk pr resolve-conflicts command"
+     5→  - "adding conflict confirmation UI to CLI commands"
+     6→  - "understanding how erk handles merge conflict resolution"
+     7→tripwires:
+     8→  - action: "launching Claude for conflict resolution without showing conflicted files first"
+     9→    warning: "Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md."
+    10→  - action: "initiating a rebase inside erk pr resolve-conflicts"
+    11→    warning: "erk pr resolve-conflicts does NOT initiate rebases. It requires an active rebase already in progress. Users start the rebase themselves (git rebase, gt restack), then call this command."
+    12→---
+    13→
+    14→# Resolve Conflicts Workflow
+    15→
+    16→The `erk pr resolve-conflicts` command resolves merge conflicts from an **already in-progress rebase**. It does not initiate a rebase.
+    17→
+    18→## Source
+    19→
+    20→`src/erk/cli/commands/pr/resolve_conflicts_cmd.py`
+    21→
+    22→## Scope
+    23→
+    24→This command requires a rebase already in progress. If no rebase is detected, it exits with an error:
+    25→
+    26→```
+    27→No rebase in progress. Start a rebase first with 'git rebase &lt;branch&gt;',
+    28→'gt restack', etc., then run this command when conflicts arise.
+    29→```
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>Now update `workflow-commands.md` line 17:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1807" cache_read_input_tokens="69124" cache_creation="{'ephemeral_5m_input_tokens': 1807, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018CwRT11GJXhXx4Rb94WNxS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="offset">12</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1807" cache_read_input_tokens="69124" cache_creation="{'ephemeral_5m_input_tokens': 1807, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018CwRT11GJXhXx4Rb94WNxS">
+    12→      → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
+    13→      constant)
+    14→  - action:
+    15→      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
+    16→      always raises UsageError
+    17→    warning: use erk pr submit instead
+    18→  - action: using this pattern
+    19→    warning: PR workflows automatically update plan dispatch metadata when the
+    20→      branch follows the plnd/ prefix naming pattern
+    21→---
+    22→
+    23→# Workflow Commands
+    24→
+    25→## Design Decisions
+    26→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BMwGLVqQofg1PvxKX63Ayd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="796" cache_read_input_tokens="70931" cache_creation="{'ephemeral_5m_input_tokens': 796, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BMwGLVqQofg1PvxKX63Ayd">
+     1→---
+     2→audit_result: clean
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→read_when:
+     5→  - triggering GitHub Actions workflows from CLI
+     6→  - adding a new workflow to erk launch
+     7→  - understanding local vs remote command duality
+     8→title: Workflow Commands
+     9→tripwires:
+    10→  - action: WORKFLOW_COMMAND_MAP maps command names to .yml filenames
+    11→    warning: command names intentionally diverge from filenames (e.g., pr-rebase
+    12→      → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
+    13→      constant)
+    14→  - action:
+    15→      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
+    16→      always raises UsageError
+    17→    warning: use erk pr submit instead
+    18→  - action: using this pattern
+    19→    warning: PR workflows automatically update plan dispatch metadata when the
+    20→      branch follows the plnd/ prefix naming pattern
+    21→---
+    22→
+    23→# Workflow Commands
+    24→
+    25→## Design Decisions
+    26→
+    27→### Why a Unified Launcher
+    28→
+    29→`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr rebase-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
+    30→
+
+... [56 lines omitted] ...
+
+    44→`plan-implement` exists in `WORKFLOW_COMMAND_MAP` but `erk launch plan-implement` always raises `UsageError` directing users to `erk pr submit`. The plan-implement workflow requires branch creation, PR setup, and metadata initialization that `erk pr submit` handles as a coordinated sequence. Triggering the workflow directly would skip these prerequisites and produce orphaned workflow runs.
+  </tool_result>
+  <assistant>The `workflow-commands.md` file mentions `pr rebase` as a local command (line 35-40). Let me check if `pr rebase` was replaced:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="71727" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Pb4UPF6d9Rs3cMFKQeKWWS">
+    <param name="command">ls /home/runner/work/erk/erk/src/erk/cli/commands/pr/ | grep -i rebase 2&gt;&amp;1</param>
+    <param name="description">Check if rebase command file still exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1792" cache_read_input_tokens="71727" cache_creation="{'ephemeral_5m_input_tokens': 1792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pb4UPF6d9Rs3cMFKQeKWWS">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EDxUzqL1yQjymjZKLg3cCx">
+    <param name="command">ls /home/runner/work/erk/erk/src/erk/cli/commands/pr/ 2&gt;&amp;1</param>
+    <param name="description">List PR command files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="73519" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EDxUzqL1yQjymjZKLg3cCx">
+__init__.py
+__pycache__
+address_cmd.py
+check_cmd.py
+checkout_cmd.py
+close_cmd.py
+create_cmd.py
+dispatch_cmd.py
+dispatch_helpers.py
+diverge_fix_cmd.py
+duplicate_check_cmd.py
+list
+log_cmd.py
+metadata_helpers.py
+parse_pr_reference.py
+prepare_cmd.py
+replan_cmd.py
+resolve_conflicts_cmd.py
+rewrite_cmd.py
+shared.py
+submit_cmd.py
+submit_pipeline.py
+teleport_cmd.py
+view
+  </tool_result>
+  <assistant>Good - `rebase_cmd.py` is gone, replaced by `resolve_conflicts_cmd.py`. I need to update `workflow-commands.md` which still references `pr rebase` and `rebase_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="74094" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JxM7kZ9pDyq1zDcepubSQb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">Two operations have both local and remote variants — `pr rebase` and `pr address`. The loc...[truncated 447 chars]...li/commands/pr/rebase_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.</param>
+    <param name="new_string">Two operations have both local and remote variants — `pr resolve-conflicts` and `pr addres...[truncated 502 chars].../pr/resolve_conflicts_cmd.py` and `address()` in `src/erk/cli/commands/pr/address_cmd.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="74094" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JxM7kZ9pDyq1zDcepubSQb">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <assistant>Also update the anti-patterns section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="987" cache_read_input_tokens="74350" cache_creation="{'ephemeral_5m_input_tokens': 987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NshWeVib5YAqGYZWWekw13">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">**DON'T add workflow-specific subcommands under noun groups** — use `erk launch &lt;name&gt;` for all remote workflow triggers. The old pattern (`erk pr rebase-remote`) was migrated away from intentionally.</param>
+    <param name="new_string">**DON'T add workflow-specific subcommands under noun groups** — use `erk launch &lt;name&gt;` for all remote workflow triggers. The old pattern was migrated away from intentionally.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="987" cache_read_input_tokens="74350" cache_creation="{'ephemeral_5m_input_tokens': 987, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NshWeVib5YAqGYZWWekw13">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <assistant>Also update the plan dispatch section that mentions `pr-rebase`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="75337" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01H4wvD8F8qX9SiNfBKenWDt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">PR-related workflows (`pr-rebase`, `pr-address`) have an automatic side effect:</param>
+    <param name="new_string">PR-related workflows (`pr-address`) have an automatic side effect:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="75337" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H4wvD8F8qX9SiNfBKenWDt">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated successfully.
+  </tool_result>
+  <assistant>Now verify no `erk pr rebase` references remain:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="75593" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011fE8RhaL6QGBRjZ3YhiQTv">
+    <param name="command">grep -rn 'erk pr rebase' /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Check for remaining erk pr rebase references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="75593" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011fE8RhaL6QGBRjZ3YhiQTv">
+/home/runner/work/erk/erk/docs/learned/cli/index.md:68:- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr rebase command, adding conflict confirmation UI to CLI commands, understanding rebase convergence paths
+/home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md:78:- `erk pr rebase` - Fix conflicts in merge state (not divergence)
+/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md:29:`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr rebase-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
+/home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md:55:`erk pr rebase` uses a two-phase approach:
+  </tool_result>
+  <assistant>Let me fix these remaining references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="76213" cache_creation="{'ephemeral_5m_input_tokens': 401, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YZB8vmBmzWSbRzkHTCwyP3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+    <param name="offset">65</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="76213" cache_creation="{'ephemeral_5m_input_tokens': 401, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Hdb4ZFo7uDZpfL6YVqxyb7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md</param>
+    <param name="offset">74</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="76213" cache_creation="{'ephemeral_5m_input_tokens': 401, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014xLLUwXT5rCGumA8s75EBV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md</param>
+    <param name="offset">50</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="401" cache_read_input_tokens="76213" cache_creation="{'ephemeral_5m_input_tokens': 401, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YZB8vmBmzWSbRzkHTCwyP3">
+    65→- **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git
+    66→- **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
+    67→- **[prompt-consolidation-pattern.md](prompt-consolidation-pattern.md)** — implementing interactive prompts, consolidating multiple yes/no prompts, working with ctx.console.confirm, testing commands with user prompts
+    68→- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr rebase command, adding conflict confirmation UI to CLI commands, understanding rebase convergence paths
+    69→- **[rich-table-output.md](rich-table-output.md)** — building CLI tables with color or formatting, adding Rich output to a Click command, creating sparklines or colored status indicators in CLI
+    70→- **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
+    71→- **[shell-activation-pattern.md](shell-activation-pattern.md)** — generating commands that switch to a different worktree, debugging why erk br co doesn't change directory, building CLI commands that need shell-level directory changes, understanding why plan checkout commands use source
+    72→- **[slash-command-exec-migration.md](slash-command-exec-migration.md)** — adding business logic to a slash command, deciding whether to call gh/git directly from a slash command or extract to exec, creating a new slash command that needs to interact with GitHub or git
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Hdb4ZFo7uDZpfL6YVqxyb7">
+    74→| "Claude CLI is required"          | Install Claude from claude.com/download |
+    75→
+    76→## Relationship to Other Commands
+    77→
+    78→- `erk pr rebase` - Fix conflicts in merge state (not divergence)
+    79→- `gt submit` - What you retry after diverge-fix succeeds
+    80→- `/erk:diverge-fix` - The slash command this wraps
+    81→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014xLLUwXT5rCGumA8s75EBV">
+    50→   ```
+    51→3. The regenerated file will be correct based on current frontmatter state
+    52→
+    53→## Two-Phase Rebase Pattern
+    54→
+    55→`erk pr rebase` uses a two-phase approach:
+    56→
+    57→**Phase 1: Mechanical rebase** — Attempts an automated rebase without human intervention:
+    58→
+    59→- If Graphite is enabled and the branch is tracked: runs `gt restack --no-interactive`
+    60→- If Graphite is disabled: runs `git rebase &lt;target&gt;` (requires `--target` option)
+    61→
+    62→**Phase 2: Claude TUI fallback** — If Phase 1 hits conflicts, launches Claude Code interactively with `/erk:pr-rebase` for AI-assisted conflict resolution via `execute_interactive()`.
+    63→
+    64→The Phase 1 strategy selection checks whether Graphite is enabled by inspecting the graphite context object. See the Phase 1 dispatch logic in `src/erk/cli/commands/pr/rebase_cmd.py`.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Y93MYFUCmCgNx3kMekzXKg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+    <param name="old_string">- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr rebase command, adding conflict confirmation UI to CLI commands, understanding rebase convergence paths</param>
+    <param name="new_string">- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the e...[truncated 27 chars]...t confirmation UI to CLI commands, understanding how erk handles merge conflict resolution</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1878" cache_read_input_tokens="76614" cache_creation="{'ephemeral_5m_input_tokens': 1878, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y93MYFUCmCgNx3kMekzXKg">
+The file /home/runner/work/erk/erk/docs/learned/cli/index.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WwNb2qPLkyY1Prtqp2honK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md</param>
+    <param name="old_string">- `erk pr rebase` - Fix conflicts in merge state (not divergence)</param>
+    <param name="new_string">- `erk pr resolve-conflicts` - Fix conflicts in an in-progress rebase (not divergence)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="78492" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WwNb2qPLkyY1Prtqp2honK">
+The file /home/runner/work/erk/erk/docs/learned/cli/commands/pr-diverge-fix.md has been updated successfully.
+  </tool_result>
+  <assistant>Now for the rebase-conflict-patterns.md, the "Two-Phase Rebase Pattern" documents the old behavior. The command is now replaced:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="78739" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014dT9wtnNYznFHF6Uam6Por">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="78739" cache_creation="{'ephemeral_5m_input_tokens': 205, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014dT9wtnNYznFHF6Uam6Por">
+     1→---
+     2→title: Rebase Conflict Patterns
+     3→read_when:
+     4→  - "resolving merge conflicts after rebase"
+     5→  - "debugging test failures after rebase"
+     6→  - "handling auto-generated file conflicts"
+     7→  - "resuming a rebase with conflicts"
+     8→tripwires:
+     9→  - action: "running tests immediately after rebase without checking for old symbols"
+    10→    warning: "Hidden regressions can exist in non-conflicted files. Grep for old symbols that should have been renamed before running tests."
+    11→---
+    12→
+    13→# Rebase Conflict Patterns
+    14→
+    15→Rebase operations can introduce subtle regressions in files that don't show as conflicts. This document covers patterns for preventing and detecting these issues.
+    16→
+    17→## Hidden Regressions in Non-Conflicted Files
+    18→
+    19→After a rebase, git marks files with textual conflicts for manual resolution. However, **semantic** conflicts in non-conflicted files go undetected:
+    20→
+    21→- A function was renamed in the base branch, but call sites in your branch still use the old name
+    22→- A type signature changed, but your branch's callers pass the old argument types
+    23→- A module was moved, but your branch imports from the old location
+    24→
+    25→These don't produce merge markers — git considers the files cleanly merged because the changes don't overlap textually.
+    26→
+    27→## Prevention: Grep Before Running Tests
+    28→
+    29→After resolving all textual conflicts:
+    30→
+
+... [49 lines omitted] ...
+  </tool_result>
+  <assistant>Update the "Two-Phase Rebase Pattern" section to reflect the new command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1656" cache_read_input_tokens="78944" cache_creation="{'ephemeral_5m_input_tokens': 1656, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UN7JgfdxbVHMmWXQrLTAP6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md</param>
+    <param name="old_string">## Two-Phase Rebase Pattern
+
+`erk pr rebase` uses a two-phase approach:
+
+**Phase 1: Mechan...[truncated 758 chars]...to resolve the existing conflicts.
+
+&lt;!-- Source: src/erk/cli/commands/pr/rebase_cmd.py --&gt;</param>
+    <param name="new_string">## Resolve-Conflicts Command
+
+`erk pr resolve-conflicts` handles the Claude TUI phase of c...[truncated 412 chars]... AI-assisted resolution
+
+&lt;!-- Source: src/erk/cli/commands/pr/resolve_conflicts_cmd.py --&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1656" cache_read_input_tokens="78944" cache_creation="{'ephemeral_5m_input_tokens': 1656, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UN7JgfdxbVHMmWXQrLTAP6">
+The file /home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now verify no more `erk pr rebase` references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="80600" cache_creation="{'ephemeral_5m_input_tokens': 619, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WuSanbdnso9EciB5g1Pq6V">
+    <param name="command">grep -rn 'erk pr rebase\|pr rebase\b' /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Check for remaining pr rebase references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="80600" cache_creation="{'ephemeral_5m_input_tokens': 619, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WuSanbdnso9EciB5g1Pq6V">
+/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md:29:`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr rebase-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
+  </tool_result>
+  <assistant>That remaining reference is about `erk pr rebase-remote` (the old remote command name), which is just an example of the migration pattern. That's fine to leave as historical context.
+
+Step 3 complete. Now Steps 4 and 5 in parallel - let me read the source files to verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="81219" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01Ho2YUWrGF5nLg2rE2ihhbQ">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'complete...[truncated 1983 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="81219" cache_creation="{'ephemeral_5m_input_tokens': 654, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ho2YUWrGF5nLg2rE2ihhbQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_012tyzVLAYhE86mj1drszyhr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/import-conflict-resolution.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="821" cache_read_input_tokens="81873" cache_creation="{'ephemeral_5m_input_tokens': 821, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AymGaqhJVHYq2sLsM7R1WG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="821" cache_read_input_tokens="81873" cache_creation="{'ephemeral_5m_input_tokens': 821, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EkBn63iAACLwcU7zjePnLZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="821" cache_read_input_tokens="81873" cache_creation="{'ephemeral_5m_input_tokens': 821, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012tyzVLAYhE86mj1drszyhr">
+     1→---
+     2→title: Merge Conflict Resolution for Import Consolidation
+     3→last_audited: "2026-02-16 14:30 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "resolving merge conflicts during rebase"
+     7→  - "fixing import conflicts after consolidation"
+     8→  - "rebasing after shared module changes"
+     9→---
+    10→
+    11→# Merge Conflict Resolution for Import Consolidation
+    12→
+    13→When import paths are consolidated into shared modules, rebasing other branches can cause merge conflicts. This guide covers the resolution strategy.
+    14→
+    15→## Common Scenario
+    16→
+    17→You consolidated imports in one branch:
+    18→
+    19→```python
+    20→# Before: multiple local helpers
+    21→from .local_helpers import parse_url
+    22→
+    23→# After: shared module
+    24→from erk_shared.gateway.github.parsing import parse_url
+    25→```
+    26→
+    27→When rebasing other branches that still use the old imports, conflicts appear.
+    28→
+    29→## Resolution Strategy
+    30→
+
+... [105 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AymGaqhJVHYq2sLsM7R1WG">
+     1→---
+     2→title: Workflow Run List
+     3→read_when:
+     4→  - "modifying workflow run list display"
+     5→  - "working with erk workflow run list"
+     6→  - "understanding run-name format parsing"
+     7→  - "modifying workflow run display"
+     8→---
+     9→
+    10→# Workflow Run List
+    11→
+    12→The `erk workflow run list` command displays GitHub Actions workflow runs in a PR-centric table view.
+    13→
+    14→## Command Hierarchy
+    15→
+    16→Moved from top-level `erk run` to `erk workflow run list` and `erk workflow run logs` in PR #8549.
+    17→
+    18→## Source Files
+    19→
+    20→- `src/erk/cli/commands/run/list_cmd.py` -- Main list command (192 lines)
+    21→- `src/erk/cli/commands/run/shared.py` -- Shared utilities (42 lines)
+    22→- `src/erk/cli/commands/doctor_workflow.py:253` -- Registration point
+    23→
+    24→## PR-Centric Display
+    25→
+    26→Runs are displayed with PR numbers extracted from run-name format. The table columns are: run-id, status, submitted, workflow, pr, title, chks.
+    27→
+    28→## Run-Name Format Parsing
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/run/shared.py:6-23 --&gt;
+
+... [50 lines omitted] ...
+
+    68→## learn.yml Exception
+  </tool_result>
+  <tool_result tool="toolu_01EkBn63iAACLwcU7zjePnLZ">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# PlanRowData Field Reference
+    12→
+    13→Quick reference for writing command availability predicates and understanding
+    14→`PlanRowData` usage patterns.
+    15→
+    16→## Overview
+    17→
+    18→`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+    19→
+    20→**Location:** `src/erk/tui/data/types.py`
+    21→
+    22→## Field Categories
+    23→
+    24→### Plan Info
+    25→
+    26→| Field        | Type          | Description                   | Nullable?                     |
+    27→| ------------ | ------------- | ----------------------------- | ----------------------------- |
+    28→| `plan_id`    | `int`         | Plan identifier               | Never                         |
+    29→| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+    30→| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
+
+... [196 lines omitted] ...
+
+    80→| `run_conclusion`    | `str \| None` | Run conclusion: "success", "failure", "cancelled" | Yes                   |
+  </tool_result>
+  <assistant>Now let me verify the actual field names in the dataclass:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7011" cache_read_input_tokens="82694" cache_creation="{'ephemeral_5m_input_tokens': 7011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MW3jZpv2D29Hk1sgEUeChB">
+    <param name="command">grep -n 'plan_id\|pr_id\|plan_url\|pr_url\|plan_body\|pr_body' /home/runner/work/erk/erk/src/erk/tui/data/types.py 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check PlanRowData field names in types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7011" cache_read_input_tokens="82694" cache_creation="{'ephemeral_5m_input_tokens': 7011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CeBewbEadCfQz3yqPW6nqy">
+    <param name="command">grep -n 'parse_plan_number\|parse_pr_number\|extract_plan_number\|extract_pr_number' /home/runner/work/erk/erk/src/erk/ -r 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check function names in source code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7011" cache_read_input_tokens="82694" cache_creation="{'ephemeral_5m_input_tokens': 7011, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MW3jZpv2D29Hk1sgEUeChB">
+29:        pr_url: URL to PR (GitHub or Graphite), None if unavailable.
+31:        pr_body: Raw issue body text (markdown). Empty string possible.
+95:    pr_url: str | None
+109:    pr_body: str
+166:        pr_url: URL to the linked PR. None if no PR.
+187:    pr_url: str | None
+  </tool_result>
+  <tool_result tool="toolu_01CeBewbEadCfQz3yqPW6nqy">
+grep: /home/runner/work/erk/erk/src/erk/cli/__pycache__/github_parsing.cpython-312.pyc: binary file matches
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/learn/__pycache__/learn_cmd.cpython-312.pyc: binary file matches
+/home/runner/work/erk/erk/src/erk/cli/commands/learn/learn_cmd.py:40:def _extract_pr_number(identifier: str) -&gt; int | None:
+/home/runner/work/erk/erk/src/erk/cli/commands/learn/learn_cmd.py:111:        pr_number = _extract_pr_number(plan)
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/pr/__pycache__/checkout_cmd.cpython-312.pyc: binary file matches
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py:30:    parse_pr_number_from_url,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py:78:    pr_number = parse_pr_number_from_url(reference)
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/track_learn_evaluation.cpython-312.pyc: binary file matches
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/get_learn_sessions.cpython-312.pyc: binary file matches
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py:61:def _extract_pr_number(identifier: str) -&gt; int | None:
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py:267:        pr_number = _extract_pr_number(issue)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:60:def _extract_pr_number(identifier: str) -&gt; int | None:
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:169:        pr_number = _extract_pr_number(issue)
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/run/__pycache__/shared.cpython-312.pyc: binary file matches
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/run/__pycache__/list_cmd.cpython-312.pyc: binary file matches
+/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py:11:from erk.cli.commands.run.shared import extract_pr_number
+/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py:71:        pr_num = extract_pr_number(run.display_title)
+/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py:6:def extract_pr_number(display_title: str | None) -&gt; int | None:
+/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py:26:def extract_plan_number(display_title: str | None) -&gt; int | None:
+/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py:32:      (handled by extract_pr_number instead, since plan_id == pr_number)
+  </tool_result>
+  <assistant>Good findings:
+- `import-conflict-resolution.md` references `parse_plan_number` - let me check if it exists in the shared parsing module
+- `workflow-run-list.md` references `extract_plan_number()` which still exists in `shared.py:26` - but also `extract_pr_number()` is the primary one
+- `plan-row-data.md` references `plan_id`, `plan_url`, `plan_body` - but the actual source has `pr_url`, `pr_body` - let me verify the actual PlanRowData fields:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1832" cache_read_input_tokens="89705" cache_creation="{'ephemeral_5m_input_tokens': 1832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UfPMDEhhb42Tfq36aqKHyZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="offset">1</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1832" cache_read_input_tokens="89705" cache_creation="{'ephemeral_5m_input_tokens': 1832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UfPMDEhhb42Tfq36aqKHyZ">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PrRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        pr_number: GitHub issue/PR number (e.g., 123). Never None.
+    29→        pr_url: URL to PR (GitHub or Graphite), None if unavailable.
+    30→        full_title: Complete untruncated title. Empty string possible.
+
+... [105 lines omitted] ...
+
+    55→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+  </tool_result>
+  <assistant>The dataclass is now called `PrRowData` (not `PlanRowData`), and fields use `pr_number`, `pr_url`, `pr_body` etc. The doc `plan-row-data.md` uses the old names. Let me read more of the file and then update the doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2476" cache_read_input_tokens="91537" cache_creation="{'ephemeral_5m_input_tokens': 2476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jw6DSuo9vBxzh9awnuC8fV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="offset">130</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2476" cache_read_input_tokens="91537" cache_creation="{'ephemeral_5m_input_tokens': 2476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jw6DSuo9vBxzh9awnuC8fV">
+   130→    objective_issue: int | None
+   131→    objective_url: str | None
+   132→    objective_display: str
+   133→    objective_done_nodes: int
+   134→    objective_total_nodes: int
+   135→    objective_progress_display: str
+   136→    objective_slug_display: str
+   137→    objective_state_display: str
+   138→    objective_deps_display: str
+   139→    objective_deps_plans: tuple[tuple[str, str], ...]
+   140→    objective_next_node_display: str
+   141→    updated_at: datetime
+   142→    updated_display: str
+   143→    created_at: datetime
+   144→    created_display: str
+   145→    author: str
+   146→    is_learn_plan: bool
+   147→    lifecycle_display: str
+   148→    status_display: str
+   149→
+   150→
+   151→@dataclass(frozen=True)
+   152→class RunRowData:
+   153→    """Row data for displaying a workflow run in the TUI Runs tab.
+   154→
+   155→    Contains pre-formatted display strings and raw data needed for actions.
+   156→    Immutable to ensure table state consistency.
+   157→
+   158→    Attributes:
+   159→        run_id: GitHub Actions workflow run ID string.
+
+... [55 lines omitted] ...
+
+   162→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+  </tool_result>
+  <assistant>Key findings:
+- The dataclass is now `PrRowData` (not `PlanRowData`)
+- Field `plan_id` → no longer exists, the ID is `pr_number` 
+- Field `plan_url` → no longer exists, it's `pr_url`
+- Field `plan_body` → no longer exists, it's `pr_body`
+- No `plan_id` field; the PR number IS the plan identifier
+
+I need to update `plan-row-data.md` to reflect the current field names and the class rename. Also, the doc title says "PlanRowData" - this is significant. Let me update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1757" cache_read_input_tokens="94013" cache_creation="{'ephemeral_5m_input_tokens': 1757, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GXzABrubNBmKjkLLBHALHL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string">---
+title: PlanRowData Field Reference
+read_when:
+  - "writing command availability predic...[truncated 1068 chars]...n_body`  | `str`         | Raw plan body text (markdown) | Never (empty string possible) |</param>
+    <param name="new_string">---
+title: PrRowData Field Reference
+read_when:
+  - "writing command availability predicat...[truncated 1141 chars]...dy`    | `str`         | Raw PR body text (markdown)     | Never (empty string possible) |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1757" cache_read_input_tokens="94013" cache_creation="{'ephemeral_5m_input_tokens': 1757, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GXzABrubNBmKjkLLBHALHL">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>The file was already read. Let me try the edit again - the file is `plan-row-data.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="95770" cache_creation="{'ephemeral_5m_input_tokens': 978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013uExYnvcmsMrvxywhQ718s">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string">title: PlanRowData Field Reference
+read_when:
+  - "writing command availability predicates...[truncated 61 chars]... PlanRowData fields are nullable"
+last_audited: "2026-02-23 00:15 PT"
+audit_result: edited</param>
+    <param name="new_string">title: PrRowData Field Reference
+read_when:
+  - "writing command availability predicates"
+...[truncated 57 chars]...ch PrRowData fields are nullable"
+last_audited: "2026-03-20 00:00 PT"
+audit_result: edited</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="95770" cache_creation="{'ephemeral_5m_input_tokens': 978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013uExYnvcmsMrvxywhQ718s">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read it earlier in this conversation, but the tool is claiming it hasn't been read. Let me re-read to confirm:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="96748" cache_creation="{'ephemeral_5m_input_tokens': 760, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EtkTtWeREujMYftEC1cuye">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="offset">1</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="96748" cache_creation="{'ephemeral_5m_input_tokens': 760, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EtkTtWeREujMYftEC1cuye">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018V1uUJPeDb8N2PD6akbKt1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string">title: PlanRowData Field Reference
+read_when:
+  - "writing command availability predicates...[truncated 61 chars]... PlanRowData fields are nullable"
+last_audited: "2026-02-23 00:15 PT"
+audit_result: edited</param>
+    <param name="new_string">title: PrRowData Field Reference
+read_when:
+  - "writing command availability predicates"
+...[truncated 57 chars]...ch PrRowData fields are nullable"
+last_audited: "2026-03-20 00:00 PT"
+audit_result: edited</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="97508" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018V1uUJPeDb8N2PD6akbKt1">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011RQuWHMPmk8DYaJE9MebcB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string"># PlanRowData Field Reference
+
+Quick reference for writing command availability predicates...[truncated 797 chars]...n_body`  | `str`         | Raw plan body text (markdown) | Never (empty string possible) |</param>
+    <param name="new_string"># PrRowData Field Reference
+
+Quick reference for writing command availability predicates a...[truncated 850 chars]...r_body`    | `str`         | Raw PR body text (markdown) | Never (empty string possible) |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="733" cache_read_input_tokens="97854" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011RQuWHMPmk8DYaJE9MebcB">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update remaining `PlanRowData` references in the doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="98587" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GHRUKUfD79CZiGZYcWX67q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+    <param name="old_string">## Testing with make_plan_row()
+
+The test helper `make_plan_row()` in `tests/fakes/gateway...[truncated 4 chars]...creates `PlanRowData` instances with sensible defaults. Override only the fields you need:</param>
+    <param name="new_string">## Testing with make_plan_row()
+
+The test helper `make_plan_row()` in `tests/fakes/gateway...[truncated 2 chars]...` creates `PrRowData` instances with sensible defaults. Override only the fields you need:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="98587" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GHRUKUfD79CZiGZYcWX67q">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md has been updated successfully.
+  </tool_result>
+  <assistant>Now check for `parse_plan_number` in the import conflict doc - it references it in the example but the actual function is `extract_pr_number`. This is a conflict resolution example showing an import path - `parse_plan_number` is shown as a function being imported in `erk_shared.gateway.github.parsing`. Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="99248" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018gpeDH8vjmRo6ru9NHMFrY">
+    <param name="command">grep -rn 'parse_plan_number\|parse_pr_number' /home/runner/work/erk/erk/packages/erk-shared/src/ 2&gt;&amp;1 | grep -v '.pyc' | head -15</param>
+    <param name="description">Check for parse_plan_number and parse_pr_number in erk-shared</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="99248" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018gpeDH8vjmRo6ru9NHMFrY">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py:250:def parse_pr_number_from_url(url: str) -&gt; int | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py:262:        &gt;&gt;&gt; parse_pr_number_from_url("https://github.com/owner/repo/pull/123")
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py:264:        &gt;&gt;&gt; parse_pr_number_from_url("https://github.com/owner/repo/pull/789#issuecomment-123")
+  </tool_result>
+  <assistant>`parse_plan_number` doesn't exist in the current codebase. The `import-conflict-resolution.md` doc has examples showing it as a function that used to exist. The doc's conflict example shows `parse_plan_number` being imported from `erk_shared.gateway.github.parsing` - this is an example of a conflict scenario, not a description of a currently-existing function. The plan says to update if it was renamed to `parse_pr_number`.
+
+Looking at the doc more carefully: it's showing a sample conflict - the function name `parse_plan_number` appears in the _example conflict scenario_ (lines 37 and 58). The doc is teaching a conflict resolution strategy using that as an example. The actual resolution shown in the doc uses `parse_plan_number` in the final resolution - if this no longer exists, the example should be updated.
+
+However, looking at the actual source, there's `parse_pr_number_from_url` not `parse_plan_number` or `parse_pr_number`. The example should probably be updated to use a real function name:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="99956" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BpYFeh2qZvQVv1yuJhrYFH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/import-conflict-resolution.md</param>
+    <param name="old_string">### Step 2: Verify Shared Module Exists
+
+Before resolving, confirm the shared module has the functions:
+
+```bash
+grep -n "def parse_pr_number" src/erk_shared/github/parsing.py
+```</param>
+    <param name="new_string">### Step 2: Verify Shared Module Exists
+
+Before resolving, confirm the shared module has t...[truncated 7 chars]... -n "def parse_pr_number" packages/erk-shared/src/erk_shared/gateway/github/parsing.py
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="99956" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BpYFeh2qZvQVv1yuJhrYFH">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+</session>

@@ -1,0 +1,838 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-20-2014" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01K4Reh1dMDLMsqUUV7tovJZ">
+     1→"""Generic JSON &lt;-&gt; frozen-dataclass utilities.
+     2→
+     3→No Click dependency. Shared by both @json_command and @machine_command.
+     4→"""
+     5→
+     6→import dataclasses
+     7→import json
+     8→import sys
+     9→import types
+    10→from dataclasses import fields
+    11→from typing import Any, Literal, Union, get_args, get_origin
+    12→
+    13→import click
+    14→
+    15→# --- Constants ---
+    16→
+    17→ERROR_SCHEMA: dict[str, Any] = {
+    18→    "type": "object",
+    19→    "properties": {
+    20→        "success": {"type": "boolean", "const": False},
+    21→        "error_type": {"type": "string"},
+    22→        "message": {"type": "string"},
+    23→    },
+    24→    "required": ["error_type", "message", "success"],
+    25→}
+    26→
+    27→PYTHON_TYPE_MAP: dict[type, str] = {
+    28→    str: "string",
+    29→    int: "integer",
+    30→    float: "number",
+
+... [280 lines omitted] ...
+
+   142→            raise ValueError(f"Invalid value {value!r}, expected one of {args}")
+   174→        raise ValueError(f"Expected boolean, got {type(value).__name__}")
+   178→            raise ValueError("Expected integer, got boolean")
+   221→    raise TypeError(
+   235→        json.JSONDecodeError: If stdin contains invalid JSON
+   236→        ValueError: If stdin JSON is not an object
+   245→        raise ValueError("JSON input must be an object")
+   255→def emit_json_error(*, error_type: str, message: str) -&gt; None:
+   256→    """Emit a structured error to stdout."""
+   257→    data = {"success": False, "error_type": error_type, "message": message}
+   273→    raise TypeError(
+   291→            raise ValueError(f"Unknown field: {key}")
+   302→            raise ValueError(f"Missing required field: {name}")
+  </tool_result>
+  <assistant>Now I have all the context. Let me create all 5 new docs in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4672" cache_read_input_tokens="148706" cache_creation="{'ephemeral_5m_input_tokens': 4672, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_015L8RV9FEZ8HUcX9YwdRBQ3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/fakes-directory-structure.md</param>
+    <param name="content">---
+title: Fakes Directory Structure
+read_when:
+  - "creating a new fake for testing"
+  - ...[truncated 1531 chars]... Skill](../../../.claude/skills/fake-driven-testing/) — Comprehensive fake usage patterns
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4672" cache_read_input_tokens="148706" cache_creation="{'ephemeral_5m_input_tokens': 4672, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015L8RV9FEZ8HUcX9YwdRBQ3">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/testing/fakes-directory-structure.md
+  </tool_result>
+  <tool_use name="Write" id="toolu_01C5H6iKBKTMJA72sV8LPqYP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-management.md</param>
+    <param name="content">---
+title: Workflow Run Management
+read_when:
+  - "cancelling a GitHub Actions workflow ru...[truncated 1320 chars]...[Workflow Commands](workflow-commands.md) — Launching workflows remotely via `erk launch`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="153378" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="530" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C5H6iKBKTMJA72sV8LPqYP">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/cli/workflow-run-management.md
+  </tool_result>
+  <tool_use name="Write" id="toolu_016vXrytY3oxnY9HBLhL5rYq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/json-dataclass-utilities.md</param>
+    <param name="content">---
+title: JSON/Dataclass Utilities in erk-shared
+read_when:
+  - "adding a new exec script...[truncated 3007 chars]...ated Union Error Handling](discriminated-union-error-handling.md) — Error return patterns
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="989" cache_read_input_tokens="154035" cache_creation="{'ephemeral_5m_input_tokens': 989, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016vXrytY3oxnY9HBLhL5rYq">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/architecture/json-dataclass-utilities.md
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me carefully analyze this conversation to create a comprehensive summary.
+
+## What was requested
+
+The user invoked `/erk:plan-implement 9287` - a command that implements a documentation plan from GitHub. This is plan #9287 which is a "Consolidated Documentation Updates from 35 Learn Sessions" plan.
+
+## Setup Phase
+1. `erk exec setup-impl --issue 9287` was run - detected the branch `plnd/consolidate-learn-docs-03-20-2014` already checked out, set up the impl directory at `.erk/impl-context/plnd--consolidate-learn-docs-03-20-2014`
+2. The plan was read from `plan.md` - it has 14 implementation steps covering documentation updates
+
+## Implementation Steps Completed
+
+### Step 1: Fix stale `[plans]` → `[github]` config references
+Files updated:
+- `docs/learned/configuration/config-layers.md` - Changed `[plans]` to `[github]` in section list and `plans.repo` to `github.repo` in merge semantics
+- `docs/learned/configuration/issues-repo.md` - Updated TOML code blocks from `[plans]` to `[github]`, updated read_when
+- `docs/learned/planning/cross-repo-plans.md` - Updated read_when and TOML block
+- `docs/learned/glossary.md` - Updated TOML block and merge semantics
+- `docs/learned/planning/index.md` - Updated the cross-repo-plans entry
+
+### Step 2: Update PlanBackend → ManagedPrBackend references
+The actual ABC class is now `ManagedPrBackend` (confirmed in source at `packages/erk-shared/src/erk_shared/plan_store/backend.py:51`).
+
+Files updated:
+- `docs/learned/architecture/plan-backend-migration.md` - Updated title, read_when, body to use `ManagedPrBackend`
+- `docs/learned/architecture/gateway-vs-backend.md` - Updated read_when, tripwire, example
+- `docs/learned/architecture/erk-architecture.md` - Updated ctx.plan_backend description
+- `docs/learned/architecture/index.md` - Updated index entries
+
+### Step 3: Rewrite rebase-confirmation-workflow.md
+The command `erk pr rebase` was replaced by `erk pr resolve-conflicts` (confirmed in `src/erk/cli/commands/pr/resolve_conflicts_cmd.py`). The new command:
+- Requires a rebase already in progress
+- Does NOT initiate a rebase
+- Shows conflicted files, asks confirmation, launches Claude with `/erk:pr-resolve-conflicts`
+
+Files updated:
+- `docs/learned/cli/rebase-confirmation-workflow.md` - Complete rewrite
+- `docs/learned/cli/workflow-commands.md` - Updated pr rebase references
+- `docs/learned/cli/index.md` - Updated index entry
+- `docs/learned/cli/commands/pr-diverge-fix.md` - Updated reference
+- `docs/learned/architecture/rebase-conflict-patterns.md` - Updated Two-Phase section
+
+### Step 4: Verify and fix stale function references
+- `import-conflict-resolution.md` - Updated example code to use `parse_pr_number_from_url` instead of non-existent `parse_plan_number`
+- `workflow-run-list.md` - Verified `extract_plan_number()` and `extract_pr_number()` both still exist in source - no changes needed
+
+### Step 5: Verify TUI field names
+The dataclass is now `PrRowData` (not `PlanRowData`). Fields `plan_id`, `plan_url`, `plan_body` → `pr_number`, `pr_url`, `pr_body`.
+
+Files updated:
+- `docs/learned/tui/plan-row-data.md` - Updated title, frontmatter, class name, field names
+
+### Step 6: Update runs-tab-architecture.md with new column
+Added `pr_status_display: str` to RunRowData fields and `pr-st` column to column config.
+
+Files updated:
+- `docs/learned/tui/runs-tab-architecture.md` - Updated fields table and column config
+
+### Step 7: Create impl-failure-summarization.md
+Created new file documenting the failure summarization flow in plan-implement.yml.
+
+File created: `docs/learned/ci/impl-failure-summarization.md`
+
+### Step 8: Update prompt-executor docs for stdin/ARG_MAX
+Added new section to subprocess-wrappers.md about `input=prompt` pattern.
+
+Files updated:
+- `docs/learned/architecture/subprocess-wrappers.md` - Added "Prompt Delivery via stdin" section and updated Summary
+
+### Step 9: Create npx-skill-management.md
+File created: `docs/learned/capabilities/npx-skill-management.md`
+
+### Step 10: Create skill-deletion-patterns.md
+File created: `docs/learned/capabilities/skill-deletion-patterns.md`
+
+### Step 11: Create teleport-slot-awareness.md
+File created: `docs/learned/cli/teleport-slot-awareness.md`
+
+### Step 12: Create uv-workspace-configuration.md
+File created: `docs/learned/config/uv-workspace-configuration.md`
+
+### Step 13: Create new docs from mega-plan #9167 (IN PROGRESS)
+Creating 5 new docs:
+1. `docs/learned/testing/fakes-directory-structure.md` - CREATED
+2. `docs/learned/cli/workflow-run-management.md` - CREATED
+3. `docs/learned/architecture/json-dataclass-utilities.md` - CREATED (was just being created when summary was requested)
+4. `docs/learned/cli/exec-review-activity-log.md` - PENDING
+5. `docs/learned/erk/stack-sync.md` - PENDING
+
+### Step 14: Update index files and tripwires - PENDING
+
+### Run CI and submit PR - PENDING
+
+## Errors Encountered
+1. `Edit` tool sometimes requires a fresh `Read` call before editing - encountered this with `plan-row-data.md` and `subprocess-wrappers.md`, fixed by re-reading the file first.
+
+## Key Technical Details
+- Branch: `plnd/consolidate-learn-docs-03-20-2014`
+- PR: #9287
+- Plan title: "Consolidated Documentation Updates from 35 Learn Sessions"
+- Source plans: 35 merged PRs
+- `[github]` config section replaces old `[plans]` section (with backwards compat)
+- `ManagedPrBackend` replaced `PlanBackend` as ABC name
+- `erk pr resolve-conflicts` replaced `erk pr rebase`
+- `PrRowData` replaced `PlanRowData` as the TUI row dataclass name
+- Teleport command adds slot awareness (matching `erk br co` behavior)
+- UV workspace uses explicit member list (not globs) to handle stray directories
+
+&lt;summary&gt;
+1. Primary Request and Intent:
+   The user invoked `/erk:plan-implement 9287` to implement plan #9287 — "Consolidated Documentation Updates from 35 Learn Sessions." This plan consolidates documentation changes from 35 merged PRs into a single implementation. The intent is to update/create documentation files in `docs/learned/` to reflect completed code changes that were previously undocumented or had stale references.
+
+2. Key Technical Concepts:
+   - **erk plan implementation workflow**: `erk exec setup-impl --issue &lt;N&gt;` sets up a branch and impl directory; signals are sent to GitHub to track progress
+   - **`[github]` config section**: The TOML config section was renamed from `[plans]` to `[github]` (with backwards compat via `[plans]` fallback)
+   - **`ManagedPrBackend`**: The ABC class formerly known as `PlanBackend` was renamed; `PlannedPRBackend` is still the implementation class name
+   - **`erk pr resolve-conflicts`**: Replaced `erk pr rebase`; key difference is it only handles in-progress rebases, does NOT initiate them
+   - **`PrRowData`**: The TUI row dataclass renamed from `PlanRowData`; fields renamed from `plan_id/plan_url/plan_body` to `pr_number/pr_url/pr_body`
+   - **RunRowData `pr_status_display`**: New field and `pr-st` column added to the Runs tab
+   - **Impl failure summarization**: Uses Claude Haiku to analyze session JSONL on CI failures; output posted as PR comment and job summary
+   - **Prompt delivery via stdin**: `input=prompt` in `subprocess.run()` avoids ARG_MAX overflow for large prompts
+   - **NPX skills management**: Skills distributed from external GitHub repos via `skills@1.4.5`; tracked in `skills-lock.json`; `_UNBUNDLED_SKILLS` registry in `bundled.py`
+   - **Skill tombstone pattern**: Deleted skills need a minimal SKILL.md tombstone to overwrite stale installations in external repos
+   - **Teleport slot awareness**: `erk pr teleport` in-place now updates slot assignments (matching `erk br co` behavior)
+   - **UV workspace explicit members**: Root `pyproject.toml` uses explicit `members` list (not globs) to avoid stray directory issues
+   - **JSON/dataclass utilities**: `erk_shared.agentclick.dataclass_json` provides `parse_dataclass_from_json`, `serialize_to_json_dict`, `dataclass_result_schema` etc.
+
+3. Files and Code Sections:
+
+   **Modified Files:**
+
+   - **`docs/learned/configuration/config-layers.md`**
+     - Changed `[plans]` → `[github]` in section list; `plans.repo` → `github.repo` in merge semantics table
+
+   - **`docs/learned/configuration/issues-repo.md`**
+     - Changed TOML code blocks from `[plans]` to `[github]`; updated `read_when` entry from "plans.repo" to "github.repo"
+
+   - **`docs/learned/planning/cross-repo-plans.md`**
+     - Updated `read_when` and TOML code block; changed "When `[plans] repo` is configured" to "When `[github] repo` is configured"
+
+   - **`docs/learned/glossary.md`**
+     - Updated TOML code block (`[plans]` → `[github]`) and merge semantics bullet (`plans.repo` → `github.repo`)
+
+   - **`docs/learned/planning/index.md`**
+     - Updated cross-repo-plans entry to say `[github]` instead of `[plans]`
+
+   - **`docs/learned/architecture/plan-backend-migration.md`**
+     - Updated title to "ManagedPrBackend Migration Pattern"; updated `read_when`, `tripwires`, body references from `PlanBackend` to `ManagedPrBackend`
+
+   - **`docs/learned/architecture/gateway-vs-backend.md`**
+     - Updated `read_when` entry; added note to tripwire about `ManagedPrBackend` name; updated example from `PlanBackend` to `ManagedPrBackend`
+
+   - **`docs/learned/architecture/erk-architecture.md`**
+     - Updated `ctx.plan_backend` description to reference `ManagedPrBackend`; updated source comment and source reference
+
+   - **`docs/learned/architecture/index.md`**
+     - Updated two entries referencing `PlanBackend` → `ManagedPrBackend`
+
+   - **`docs/learned/cli/rebase-confirmation-workflow.md`** (complete rewrite)
+     - Completely rewritten to document `erk pr resolve-conflicts` instead of `erk pr rebase`
+     - New content describes: requires active rebase, scope, confirmation pattern, options, slash command `/erk:pr-resolve-conflicts`
+
+   - **`docs/learned/cli/workflow-commands.md`**
+     - Updated "Local vs Remote Duality" section: `pr rebase` → `pr resolve-conflicts`, `rebase_cmd.py` → `resolve_conflicts_cmd.py`
+     - Updated Plan Dispatch section: removed `pr-rebase` from workflow list
+     - Updated anti-patterns section (removed `erk pr rebase-remote` example reference)
+
+   - **`docs/learned/cli/index.md`**
+     - Updated rebase-confirmation-workflow.md entry to reference `erk pr resolve-conflicts`
+
+   - **`docs/learned/cli/commands/pr-diverge-fix.md`**
+     - Updated: "`erk pr rebase`" → "`erk pr resolve-conflicts` - Fix conflicts in an in-progress rebase (not divergence)"
+
+   - **`docs/learned/architecture/rebase-conflict-patterns.md`**
+     - Replaced "Two-Phase Rebase Pattern" section with "Resolve-Conflicts Command" documenting new behavior
+
+   - **`docs/learned/testing/import-conflict-resolution.md`**
+     - Updated example code to use `parse_pr_number_from_url` instead of non-existent `parse_plan_number`; also fixed the grep path from `src/erk_shared/github/parsing.py` to `packages/erk-shared/src/erk_shared/gateway/github/parsing.py`
+
+   - **`docs/learned/tui/plan-row-data.md`**
+     - Updated title/frontmatter: `PlanRowData` → `PrRowData`
+     - Updated field section: removed `plan_id`, `plan_url`, `plan_body`; added `pr_number`, `pr_url`, `pr_body`
+     - Updated body references from `PlanRowData` to `PrRowData`
+
+   - **`docs/learned/tui/runs-tab-architecture.md`**
+     - Added fields to RunRowData table: `pr_state`, `pr_title`, `pr_status_display`, `run_id_display`, `title_display`
+     - Added `pr-st` (key `pr_st`, width 6) column to column config; added explanatory note
+
+   - **`docs/learned/architecture/subprocess-wrappers.md`**
+     - Added new section "Prompt Delivery via stdin (ARG_MAX Prevention)" with pattern, when-to-use, and distinction from shell `--body-file` pattern
+     - Updated Summary section to include stdin bullet
+
+   **Created Files:**
+
+   - **`docs/learned/ci/impl-failure-summarization.md`** (NEW)
+     - Documents flow: session JSONL → tail extraction → `generate_compressed_xml()` → Haiku analysis → PR comment + job summary
+     - Covers: exec script location, options, session capture, prompt template, Haiku model selection rationale, integration point in `plan-implement.yml`
+
+   - **`docs/learned/capabilities/npx-skill-management.md`** (NEW)
+     - Documents `.agents/skills/` canonical directory, symlinks to `.claude/skills/`, `skills-lock.json`
+     - Lists current npx-managed skills (dignified-python, fake-driven-testing, fdt-refactor-mock-to-fake, graphite, skill-creator)
+     - Documents `_UNBUNDLED_SKILLS` registry, migration workflow, skill distribution type comparison
+
+   - **`docs/learned/capabilities/skill-deletion-patterns.md`** (NEW)
+     - Documents tombstone pattern, why tombstones are needed, complete 6-location deletion checklist
+     - Documents when tombstone vs complete removal, two-phase deletion pattern example (erk-planning)
+
+   - **`docs/learned/cli/teleport-slot-awareness.md`** (NEW)
+     - Documents in-place vs new-slot teleport slot update behavior
+     - Documents `_navigate_to_existing_worktree()` shared helper extraction
+     - Includes slot update code snippet from `_teleport_in_place()`
+
+   - **`docs/learned/config/uv-workspace-configuration.md`** (NEW)
+     - Documents explicit member list in `[tool.uv.workspace]`
+     - Explains why globs are not used (stray directories cause `uv sync` failure)
+     - Includes step-by-step guide for adding new workspace packages
+
+   - **`docs/learned/testing/fakes-directory-structure.md`** (NEW)
+     - Documents that fakes live in `tests/fakes/`, not `src/`
+     - Documents `tests/fakes/gateway/` vs `tests/fakes/tests/` distinction
+     - Includes tripwire for creating fakes in src/
+
+   - **`docs/learned/cli/workflow-run-management.md`** (NEW)
+     - Documents `erk workflow run cancel &lt;run_id&gt;` and `erk workflow run retry &lt;run_id&gt;` commands
+     - Covers `--failed` option for retry, gateway methods used
+
+   - **`docs/learned/architecture/json-dataclass-utilities.md`** (NEW — just created at summary point)
+     - Documents `erk_shared.agentclick.dataclass_json` module
+     - Covers `parse_dataclass_from_json`, `coerce_json_value`, `serialize_to_json_dict`, `dataclass_result_schema`, I/O helpers
+     - Documents error schema convention
+
+4. Errors and Fixes:
+   - **`Edit` tool "File has not been read yet"**: When trying to edit `docs/learned/tui/plan-row-data.md` and `docs/learned/architecture/subprocess-wrappers.md`, the tool rejected edits because the file reads were from earlier in the conversation session. Fixed by doing a small `Read` call at offset to "re-read" the file in the current tool context before applying the edit.
+
+5. Problem Solving:
+   - **Verification of actual source**: For each documentation update, the actual source code was checked (e.g., `grep -n 'class.*Backend'` to find the actual ABC class name, `ls pr/` to confirm `rebase_cmd.py` is gone, reading `types.py` to verify `PrRowData` field names). This avoided documenting incorrect information.
+   - **Stale reference cascade**: The `[plans]` → `[github]` change was more widespread than the 4 files listed in the plan — also found in `planning/index.md`. Fixed proactively.
+   - **`pr rebase` reference cascade**: Similar to above, found additional files referencing the old command beyond those listed in the plan.
+
+6. All User Messages:
+   - `/erk:plan-implement 9287` (the initial command invocation with the full slash command specification document)
+   - The summary request (current message)
+
+7. Pending Tasks:
+   - **Step 13 (partially done)**: Create new docs from mega-plan #9167 — remaining:
+     - `docs/learned/cli/exec-review-activity-log.md` (source read: `src/erk/cli/commands/exec/scripts/get_review_activity_log.py`)
+     - `docs/learned/erk/stack-sync.md` (source read: `src/erk/cli/commands/stack/sync_cmd.py`)
+   - **Step 14**: Update index files and tripwires for all newly created docs:
+     - `docs/learned/ci/index.md` — add impl-failure-summarization.md
+     - `docs/learned/capabilities/index.md` — add npx-skill-management.md, skill-deletion-patterns.md
+     - `docs/learned/cli/index.md` — add teleport-slot-awareness.md, workflow-run-management.md, exec-review-activity-log.md
+     - `docs/learned/config/index.md` — add uv-workspace-configuration.md
+     - `docs/learned/testing/index.md` — add fakes-directory-structure.md
+     - `docs/learned/erk/index.md` — add stack-sync.md
+     - `docs/learned/architecture/index.md` — add json-dataclass-utilities.md
+   - **Signal GitHub Ended** (`erk exec impl-signal ended`)
+   - **Upload session** (`erk exec upload-impl-session`)
+   - **Cleanup impl context** (`erk exec cleanup-impl-context`)
+   - **Run CI** (check CLAUDE.md/AGENTS.md for commands)
+   - **Submit PR** (`erk pr submit`)
+
+8. Current Work:
+   Immediately before the summary request, Step 13 was in progress — creating 5 new docs from mega-plan #9167. The following were just created:
+   - `docs/learned/testing/fakes-directory-structure.md` ✓
+   - `docs/learned/cli/workflow-run-management.md` ✓
+   - `docs/learned/architecture/json-dataclass-utilities.md` ✓ (the most recently created file)
+
+   Two more docs remain to be created (exec-review-activity-log.md and stack-sync.md), using source files already read:
+   - `src/erk/cli/commands/exec/scripts/get_review_activity_log.py` (already read)
+   - `src/erk/cli/commands/stack/sync_cmd.py` (already read)
+
+9. Optional Next Step:
+   Continue with Step 13 — create the remaining two docs:
+
+   From the plan: `"docs/learned/cli/exec-review-activity-log.md" — Document erk exec get-review-activity-log push-down command` and `"docs/learned/erk/stack-sync.md" — Document erk stack sync hidden command`.
+
+   The source for `exec-review-activity-log.md` was read from `src/erk/cli/commands/exec/scripts/get_review_activity_log.py` which showed a command that:
+   - Takes `--pr-number` and `--marker` options
+   - Finds a PR comment containing the HTML marker
+   - Extracts `### Activity Log` section
+   - Returns JSON: `{"success": true, "found": bool, "activity_log": "..."}` 
+   - Always exits 0
+
+   The source for `stack-sync.md` was read from `src/erk/cli/commands/stack/sync_cmd.py` which showed a hidden command (`hidden=True`) that:
+   - Requires Graphite (`cls=GraphiteCommand`)
+   - Fetches remote state for all stack branches
+   - Fast-forwards or rebases each branch
+   - Restacks after sync
+   - Reports: `BranchSyncAction` types (ALREADY_SYNCED, FAST_FORWARDED, REBASED, SKIPPED_NO_REMOTE, SKIPPED_OTHER_WORKTREE, CONFLICT, ERROR)
+   - On conflict, suggests `erk pr diverge-fix`.
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <tool_use name="TodoWrite" id="toolu_016cFHdeiZHDCtdVNguumZSV">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'complete...[truncated 2080 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="26815" cache_read_input_tokens="20581" cache_creation="{'ephemeral_5m_input_tokens': 26815, 'ephemeral_1h_input_tokens': 0}" output_tokens="624" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016cFHdeiZHDCtdVNguumZSV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Continuing with Step 13 — creating the two remaining docs. Let me read the source files to refresh context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="47396" cache_creation="{'ephemeral_5m_input_tokens': 772, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FzX3C2hhufrXxw7Dhr5d9y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_review_activity_log.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="47396" cache_creation="{'ephemeral_5m_input_tokens': 772, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qnk9CCo6fnggQPkyhPdvAL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/stack/sync_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="772" cache_read_input_tokens="47396" cache_creation="{'ephemeral_5m_input_tokens': 772, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FzX3C2hhufrXxw7Dhr5d9y">
+     1→"""Fetch the activity log from an existing review summary comment.
+     2→
+     3→This exec command finds the PR comment containing the given marker
+     4→and extracts the Activity Log section from it.
+     5→
+     6→Usage:
+     7→    erk exec get-review-activity-log --pr-number 123 \\
+     8→        --marker "&lt;!-- audit-pr-docs --&gt;"
+     9→
+    10→Output:
+    11→    JSON with found status and activity log text
+    12→
+    13→Exit Codes:
+    14→    0: Always (even on error, to support || true pattern)
+    15→
+    16→Examples:
+    17→    $ erk exec get-review-activity-log --pr-number 123 \\
+    18→        --marker "&lt;!-- audit-pr-docs --&gt;"
+    19→    {"success": true, "found": true, "activity_log": "- [2024-01-01] ..."}
+    20→
+    21→    $ erk exec get-review-activity-log --pr-number 123 \\
+    22→        --marker "&lt;!-- no-such-marker --&gt;"
+    23→    {"success": true, "found": false, "activity_log": ""}
+    24→"""
+    25→
+    26→import json
+    27→
+    28→import click
+    29→
+    30→from erk_shared.context.helpers import require_github, require_repo_root
+
+... [56 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Qnk9CCo6fnggQPkyhPdvAL">
+     1→"""Sync all stack branches with their remote tracking branches."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.core import discover_repo_context
+     6→from erk.cli.graphite_command import GraphiteCommand
+     7→from erk.core.context import ErkContext
+     8→from erk.core.stack_sync import BranchSyncAction, StackSyncResult, sync_stack
+     9→
+    10→
+    11→@click.command("sync", cls=GraphiteCommand, hidden=True)
+    12→@click.pass_obj
+    13→def sync_stack_cmd(ctx: ErkContext) -&gt; None:
+    14→    """Sync all stack branches with their remote tracking branches.
+    15→
+    16→    Fetches remote state and resolves divergences across the entire Graphite
+    17→    stack. For each non-trunk branch, checks if the remote has new commits
+    18→    and fast-forwards or rebases as needed. After syncing, restacks the
+    19→    entire stack.
+    20→
+    21→    If a rebase has conflicts, aborts the rebase and suggests using
+    22→    'erk pr diverge-fix' for that specific branch.
+    23→    """
+    24→    repo = discover_repo_context(ctx, ctx.cwd)
+    25→
+    26→    click.echo("Fetching remote state...")
+    27→    click.echo("")
+    28→
+    29→    result = sync_stack(ctx, repo_root=repo.root, cwd=ctx.cwd)
+    30→
+
+... [81 lines omitted] ...
+
+    31→    # Handle fatal errors (detached HEAD, not tracked)
+    32→    if not result.branch_results and result.restack_error is not None:
+    33→        click.echo(f"Error: {result.restack_error}", err=True)
+    65→        case BranchSyncAction.ERROR:
+    66→            return click.style(f"error: {detail}", fg="red")
+    75→    elif result.restack_error is not None:
+    76→        click.echo(f"Restacking... {click.style('failed', fg='red')}: {result.restack_error}")
+  </tool_result>
+  <assistant>Now let me also check the `sync_stack` core function for more details:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2925" cache_read_input_tokens="48168" cache_creation="{'ephemeral_5m_input_tokens': 2925, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RX4V8GkHWAU4bw1MA63yHU">
+    <param name="pattern">src/erk/core/stack_sync.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2925" cache_read_input_tokens="48168" cache_creation="{'ephemeral_5m_input_tokens': 2925, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RX4V8GkHWAU4bw1MA63yHU">
+/home/runner/work/erk/erk/src/erk/core/stack_sync.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ADJtV9KZDRe81WYsVxGzH9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/stack_sync.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="51093" cache_creation="{'ephemeral_5m_input_tokens': 145, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ADJtV9KZDRe81WYsVxGzH9">
+     1→"""Sync all stack branches with their remote tracking branches.
+     2→
+     3→Provides mechanical stack-wide divergence resolution:
+     4→1. Gets the full branch stack
+     5→2. Fetches all remote state in one call
+     6→3. For each non-trunk branch (bottom-to-top): checks divergence, fixes it
+     7→4. Re-tracks all fixed branches with Graphite
+     8→5. Restacks the entire stack
+     9→6. Returns to the original branch
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from dataclasses import dataclass
+    15→from enum import Enum
+    16→from pathlib import Path
+    17→
+    18→from erk_shared.context.context import ErkContext
+    19→from erk_shared.gateway.git.abc import BranchDivergence
+    20→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    21→
+    22→
+    23→class BranchSyncAction(Enum):
+    24→    ALREADY_SYNCED = "already_synced"
+    25→    FAST_FORWARDED = "fast_forwarded"
+    26→    REBASED = "rebased"
+    27→    SKIPPED_NO_REMOTE = "skipped_no_remote"
+    28→    SKIPPED_OTHER_WORKTREE = "skipped_other_worktree"
+    29→    CONFLICT = "conflict"
+    30→    ERROR = "error"
+
+... [269 lines omitted] ...
+
+    44→    restack_error: str | None
+    65→            restack_error="Not on a branch (detached HEAD state)",
+    74→            restack_error=f"Branch '{current_branch}' is not tracked by Graphite",
+    82→            restack_error=None,
+   110→    restack_success, restack_error = ctx.graphite.restack(cwd)
+   120→        restack_error=restack_error,
+   224→        if isinstance(pull_result, PullRebaseError):
+   227→                action=BranchSyncAction.ERROR,
+   239→                action=BranchSyncAction.ERROR,
+   288→    if isinstance(pull_result, PullRebaseError):
+  </tool_result>
+  <assistant>Now I have enough context to create both remaining docs. Let me create them in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4226" cache_read_input_tokens="51238" cache_creation="{'ephemeral_5m_input_tokens': 4226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01TG4AJyVwxszRU2uT1c8waM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/exec-review-activity-log.md</param>
+    <param name="content">---
+title: Exec get-review-activity-log
+read_when:
+  - "working with review activity logs ...[truncated 2522 chars]...taclass Utilities](../architecture/json-dataclass-utilities.md) — JSON output conventions
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4226" cache_read_input_tokens="51238" cache_creation="{'ephemeral_5m_input_tokens': 4226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01UnVGNqaKgcfwue2WuWEobu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/stack-sync.md</param>
+    <param name="content">---
+title: Stack Sync Command
+read_when:
+  - "working with erk stack sync"
+  - "syncing st...[truncated 3396 chars]...tion
+- [PR Diverge-Fix](../cli/commands/pr-diverge-fix.md) — Single-branch divergence fix
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4226" cache_read_input_tokens="51238" cache_creation="{'ephemeral_5m_input_tokens': 4226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TG4AJyVwxszRU2uT1c8waM">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/cli/exec-review-activity-log.md
+  </tool_result>
+  <tool_result tool="toolu_01UnVGNqaKgcfwue2WuWEobu">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/erk/stack-sync.md
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XisLW4UzKige7hkD4bxkFk">
+    <param name="todos">[{'content': 'Step 1: Fix stale [plans] → [github] config references', 'status': 'complete...[truncated 2082 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2534" cache_read_input_tokens="55464" cache_creation="{'ephemeral_5m_input_tokens': 2534, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XisLW4UzKige7hkD4bxkFk">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now I need to update all the index files. Let me read the relevant index files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lm5jxFS2wRK858SPU1dHvW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HpmNRKk5Vvb2XWZP7XkieP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/capabilities/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CuPbrKohs5P7kFt1GJ5MfC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VBMTVxNf2ngo2kqzoLTGjB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/config/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ENYZHPg2NVH9UZjvwmKETN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015a74rbXRAeeHMJk6KA7TQW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JutT6T9Jszdh3eVx9oA689">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="57998" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lm5jxFS2wRK858SPU1dHvW">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Ci Documentation
+     5→
+     6→- **[automated-review-system.md](automated-review-system.md)** — understanding what automated reviews run on PRs, debugging unexpected review comments on a PR, adding a new automated review bot, understanding re-review triggers
+     7→- **[check-state-classification.md](check-state-classification.md)** — modifying how CI check states are counted or displayed, understanding why planned PRs show 0/0 checks, working with PASSING_CHECK_RUN_STATES or SKIPPED_CHECK_RUN_STATES
+     8→- **[ci-failure-summarization.md](ci-failure-summarization.md)** — working with CI failure summaries or ERK-CI-SUMMARY markers, modifying the ci-summarize workflow job, understanding how TUI displays CI failure details, debugging CI summary parsing or matching
+     9→- **[ci-iteration.md](ci-iteration.md)** — running CI commands in workflows, delegating pytest, ty, ruff commands, understanding devrun agent restrictions
+    10→- **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
+    11→- **[claude-commands-prettier.md](claude-commands-prettier.md)** — Creating slash commands in .claude/commands/, Modifying existing .claude/ markdown files, Getting Prettier formatting errors in CI
+    12→- **[claude-kill-switch.md](claude-kill-switch.md)** — modifying CI workflows that invoke Claude, understanding how to emergency-disable Claude in CI, working with the CLAUDE_ENABLED variable
+    13→- **[commit-squash-divergence.md](commit-squash-divergence.md)** — encountering 'fetch first' after gt submit, dealing with divergent branches after Graphite operations, understanding expected vs unexpected branch divergence, working with Graphite PR submission workflow
+    14→- **[composite-action-patterns.md](composite-action-patterns.md)** — creating reusable GitHub Actions setup steps, using erk-remote-setup composite action, understanding GitHub Actions composite patterns
+    15→- **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches
+    16→- **[convention-based-reviews.md](convention-based-reviews.md)** — adding a new code review to CI, understanding how code reviews work, modifying code review behavior
+    17→- **[dual-secret-auth-model.md](dual-secret-auth-model.md)** — configuring GitHub Actions authentication for Claude Code, using erk admin gh-actions-api-key, debugging authentication failures in CI
+    18→- **[edit-tool-formatting.md](edit-tool-formatting.md)** — using the Edit tool to modify Python code, encountering formatting issues after edits, CI failing on formatting checks after using Edit tool
+    19→- **[exec-script-environment-requirements.md](exec-script-environment-requirements.md)** — adding or modifying exec scripts that call Claude, debugging missing API key errors in CI workflows, adding new workflow steps that run exec scripts
+    20→- **[formatter-tools.md](formatter-tools.md)** — formatting code, choosing a formatter, fixing format errors
+    21→- **[formatting-workflow.md](formatting-workflow.md)** — unsure whether to run make format or make prettier, encountering CI formatting failures, working with multiple file types in a PR, setting up CI iteration workflow
+    22→- **[git-force-push-decision-tree.md](git-force-push-decision-tree.md)** — encountering 'git push' rejected with 'fetch first' error, dealing with divergent branches after rebase or squash, deciding whether force push is safe, debugging PR update workflows
+    23→- **[github-actions-claude-integration.md](github-actions-claude-integration.md)** — running Claude in GitHub Actions workflows, configuring non-interactive Claude execution, capturing Claude output in CI
+    24→- **[github-actions-label-filtering.md](github-actions-label-filtering.md)** — debugging why label-based CI gating isn't working, implementing label-based workflow conditions, confused about .\*.name syntax vs array filtering
+    25→- **[github-actions-label-queries.md](github-actions-label-queries.md)** — checking PR labels in GitHub Actions workflows, working with push event workflows, implementing CI gating based on PR labels
+    26→- **[github-actions-output-patterns.md](github-actions-output-patterns.md)** — setting outputs in GitHub Actions workflows, passing data between workflow steps, handling multi-line content in GITHUB_OUTPUT, parsing JSON from workflow step outputs
+    27→- **[github-actions-security.md](github-actions-security.md)** — writing or modifying GitHub Actions workflow files, passing dynamic values to shell commands in workflows, using user-controlled input in GitHub Actions run blocks
+    28→- **[github-actions-workflow-patterns.md](github-actions-workflow-patterns.md)** — writing GitHub Actions workflows, debugging workflow conditions, composing step conditions
+    29→- **[github-cli-comment-patterns.md](github-cli-comment-patterns.md)** — Posting formatted PR comments from GitHub Actions workflows, Debugging escape sequences in `gh pr comment` commands, Encountering "Argument list too long" errors when passing content to CLI commands, Writing GitHub Actions steps that use `gh pr` commands with multi-line content
+    30→- **[github-commit-indexing-timing.md](github-commit-indexing-timing.md)** — working with GitHub commit status API, debugging 422 'No commit found for SHA' errors, implementing CI verification workflows
+
+... [24 lines omitted] ...
+
+    31→- **[github-token-scopes.md](github-token-scopes.md)** — deciding which token to use in GitHub Actions workflows, encountering permission errors with github.token, understanding why user API calls or git push fail in CI
+    37→- **[markdown-formatting.md](markdown-formatting.md)** — editing markdown files, handling Prettier CI failures, implementing documentation changes
+  </tool_result>
+  <tool_result tool="toolu_01HpmNRKk5Vvb2XWZP7XkieP">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Capabilities Documentation
+     5→
+     6→- **[adding-new-capabilities.md](adding-new-capabilities.md)** — adding reminder capabilities, creating new capability types, debugging capability registration, understanding why capabilities don't appear in hooks
+     7→- **[adding-reviews.md](adding-reviews.md)** — adding review capabilities, creating code review definitions, understanding ReviewCapability pattern
+     8→- **[adding-skills.md](adding-skills.md)** — adding skill capabilities, creating new skills for external projects, understanding SkillCapability pattern
+     9→- **[adding-workflows.md](adding-workflows.md)** — adding workflow capabilities, creating GitHub Actions workflow capabilities, understanding workflow capability pattern
+    10→- **[bundled-skills.md](bundled-skills.md)** — registering new bundled skills in the capability system, understanding how skills are discovered by erk init and erk artifact sync, debugging missing skill capabilities
+    11→- **[folder-structure.md](folder-structure.md)** — adding new capability implementations, deciding where to place capability files, understanding capability organization
+    12→- **[learned-docs-capability.md](learned-docs-capability.md)** — modifying the learned-docs capability install or uninstall logic, debugging partial learned-docs installation, understanding how learned-docs artifacts are bundled in the wheel, adding new artifacts to the learned-docs capability
+    13→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01CuPbrKohs5P7kFt1GJ5MfC">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Cli Documentation
+     5→
+     6→- **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+     7→- **[adding-json-to-commands.md](adding-json-to-commands.md)** — adding a new machine-readable JSON command, exposing a command via MCP, creating result dataclasses for JSON output, stacking @mcp_exposed and @machine_command decorators, adding a new CLI command with both human and machine output, creating a new command subpackage
+     8→- **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
+     9→- **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
+    10→- **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
+    11→- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
+    12→- **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
+    13→- **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
+    14→- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
+    15→- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
+    16→- **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
+    17→- **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
+    18→- **[click-framework-conventions.md](click-framework-conventions.md)** — adding Click options to erk CLI commands, understanding default=None convention in Click options, distinguishing 'not provided' from 'empty string' in CLI arguments
+    19→- **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
+    20→- **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
+    21→- **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
+    22→- **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
+    23→- **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
+    24→- **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+    25→- **[command-promotion.md](command-promotion.md)** — promoting a nested CLI command to top-level, moving a command from a group to the root CLI, reorganizing CLI command hierarchy
+    26→- **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
+    27→- **[commands/pr-diverge-fix.md](commands/pr-diverge-fix.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+    28→- **[commands/pr-prepare.md](commands/pr-prepare.md)** — setting up impl-context for an existing PR, preparing a worktree for plan implementation, working with erk pr prepare
+    29→- **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
+    30→- **[commands/reconcile.md](commands/reconcile.md)** — cleaning up branches whose PRs have been merged, reconciling branches merged outside erk land, working with erk reconcile
+
+... [58 lines omitted] ...
+
+    34→- **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
+    35→- **[erk-docs-check.md](erk-docs-check.md)** — validating documentation frontmatter and structure, debugging CI failures in documentation checks, understanding how erk docs check works
+    37→- **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
+    38→- **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
+    43→- **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
+    48→- **[json-command-decorator.md](json-command-decorator.md)** — adding @machine_command decorator to a CLI command, creating structured JSON CLI output, understanding the erk json command tree, implementing output_types validation, working with MachineCommandError error handling, adding @json_command decorator to a CLI command
+    58→- **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
+    61→- **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub, working with .erk/impl-context/ folders, debugging plan execution failures
+    66→- **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
+    70→- **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
+  </tool_result>
+  <tool_result tool="toolu_01VBMTVxNf2ngo2kqzoLTGjB">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Config Documentation
+     5→
+     6→- **[codespaces-toml.md](codespaces-toml.md)** — modifying codespace configuration or TOML schema, debugging codespace registration or lookup failures, adding fields to codespaces.toml
+     7→- **[external-docs-path.md](external-docs-path.md)** — configuring docs path in .erk/config.local.toml, adding new configurable paths to the config system
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01ENYZHPg2NVH9UZjvwmKETN">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Testing Documentation
+     5→
+     6→- **[admin-command-testing.md](admin-command-testing.md)** — writing tests for admin CLI commands, using FakeGitHubAdmin in tests, testing permission-related CLI commands
+     7→- **[alias-verification-pattern.md](alias-verification-pattern.md)** — enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
+     8→- **[artifact-distribution-sync.md](artifact-distribution-sync.md)** — adding portable skills to codex_portable_skills(), modifying pyproject.toml force-include entries, understanding bundled skill testing and distribution
+     9→- **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that uses ManagedPrBackend, deciding whether to fake a backend or gateway, writing tests for exec scripts with backend operations
+    10→- **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
+    11→- **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
+    12→- **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
+    13→- **[context-builder-signatures.md](context-builder-signatures.md)** — using context_for_test() in tests, choosing between erk-shared and src/erk test context, debugging TypeError from context_for_test()
+    14→- **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
+    15→- **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features, creating test helpers for plan store operations
+    16→- **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides
+    17→- **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PLAN_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
+    18→- **[erk-package-info-pattern.md](erk-package-info-pattern.md)** — working with ErkPackageInfo or bundled paths, understanding is_in_erk_repo detection, writing tests that need ErkPackageInfo
+    19→- **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, adding failure injection to a fake gateway for batch operations
+    20→- **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
+    21→- **[fake-api-migration-pattern.md](fake-api-migration-pattern.md)** — writing tests that use FakePromptExecutor, choosing between the two FakePromptExecutor implementations, encountering old-style output=/should_fail= patterns in test code
+    22→- **[fake-git-divergence.md](fake-git-divergence.md)** — testing branch divergence scenarios, configuring FakeGit for force-push tests, writing tests that involve ahead/behind commit counts
+    23→- **[fake-github-api-reference.md](fake-github-api-reference.md)** — writing tests that need fake GitHub PR or issue data, understanding FakeLocalGitHub.create_pr() auto-registration, using mutation tracking in LocalGitHub fake tests
+    24→- **[fake-github-mutation-tracking.md](fake-github-mutation-tracking.md)** — asserting against FakeLocalGitHub mutations in tests, adding a new mutation tracking list to FakeLocalGitHub or FakeGitHubIssues, understanding tuple formats in fake gateway tracking lists
+    25→- **[fake-github-testing.md](fake-github-testing.md)** — setting up FakeGitHubIssues in a test, test fails with empty comments from FakeGitHubIssues, choosing between comments and comments_with_urls parameters
+    26→- **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, choosing between frozen dataclass fakes and **init**-based fakes, writing tests that assert on method call parameters
+    27→- **[gateway-fake-testing-exemplar.md](gateway-fake-testing-exemplar.md)** — writing tests for gateway fakes that return discriminated unions, deciding whether mutation tracking should occur on error paths, implementing a new fake gateway method with error injection
+    28→- **[hook-testing.md](hook-testing.md)** — writing tests for any hook (PreToolUse, UserPromptSubmit, ExitPlanMode), creating a new hook implementation, testing hooks that read from stdin or check capabilities
+    29→- **[import-conflict-resolution.md](import-conflict-resolution.md)** — resolving merge conflicts during rebase, fixing import conflicts after consolidation, rebasing after shared module changes
+    30→- **[integration-test-speed.md](integration-test-speed.md)** — integration test is slow, test takes too long, pytest --durations shows slow test
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015a74rbXRAeeHMJk6KA7TQW">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Erk Documentation
+     5→
+     6→- **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
+     7→- **[branch-naming.md](branch-naming.md)** — creating or modifying branch name generation, extracting objective numbers from branch names, working with generate_planned_pr_branch_name(), or extract functions
+     8→- **[codespace-machine-types.md](codespace-machine-types.md)** — creating or configuring codespaces, choosing a machine type for codespace setup, debugging codespace creation failures
+     9→- **[codespace-remote-execution.md](codespace-remote-execution.md)** — modifying the codespace environment bootstrap sequence, debugging why a remote erk command fails before reaching the actual command, deciding whether a new remote command needs build_codespace_ssh_command
+    10→- **[dispatch-ref-config.md](dispatch-ref-config.md)** — configuring which branch workflow_dispatch targets, working with .erk/config.toml dispatch settings, debugging workflow dispatch targeting the wrong branch, using --ref CLI option to override dispatch branch per run, using --ref-current to dispatch against current branch
+    11→- **[four-path-cleanup.md](four-path-cleanup.md)** — modifying land_cmd.py cleanup logic, adding a new cleanup path for branch deletion, debugging branch deletion failures after landing
+    12→- **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
+    13→- **[graphite-divergence-detection.md](graphite-divergence-detection.md)** — debugging remote divergence errors during erk pr submit, understanding the Graphite-first submit flow's pre-checks, resolving 'branch is behind remote' errors, using --force flag with erk pr submit
+    14→- **[graphite-stack-troubleshooting.md](graphite-stack-troubleshooting.md)** — debugging Graphite stack operation failures, recovering from gt sync or gt submit errors, fixing stack ordering or parent tracking issues
+    15→- **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots or slot commands, understanding why placeholder branches bypass BranchManager, debugging slot cleanup during erk land
+    16→- **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk launch pr-address, understanding /erk:pr-address command
+    17→- **[pr-commands.md](pr-commands.md)** — generating or modifying PR body footers, debugging `erk pr check` footer validation failures
+    18→- **[pr-feedback-classifier-schema.md](pr-feedback-classifier-schema.md)** — working with PR feedback classification output, debugging classifier-to-dash alignment issues, understanding informational_count vs actionable_threads
+    19→- **[remote-workflow-template.md](remote-workflow-template.md)** — creating a new remote workflow command, triggering GitHub Actions from CLI, building commands like erk launch pr-address
+    20→- **[same-worktree-navigation.md](same-worktree-navigation.md)** — modifying navigation commands (up/down), activation instructions, worktree deletion in same-worktree scenarios
+    21→- **[slot-pool-architecture.md](slot-pool-architecture.md)** — understanding slot pool design, implementing slot-related features, debugging slot assignment issues
+    22→- **[stub-branch-lifecycle.md](stub-branch-lifecycle.md)** — working with slot pool or branch cleanup, debugging Graphite branch tracking
+    23→- **[workspace-activation.md](workspace-activation.md)** — modifying worktree activation scripts, debugging stale package versions in worktrees, understanding how workspace packages are refreshed, changing activation script generation
+    24→- **[worktree-branch-mismatch.md](worktree-branch-mismatch.md)** — debugging erk up/down navigation failures, understanding how erk handles manual git checkout in worktrees, working with find_worktree_for_branch_or_path()
+    25→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01JutT6T9Jszdh3eVx9oA689">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Architecture Documentation
+     5→
+     6→- **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
+     7→- **[agent-backpressure-gates.md](agent-backpressure-gates.md)** — designing validation for agent-generated output, choosing between silent transformation and rejection of invalid input, implementing retry loops for agent-produced values, adding validation to agent-facing APIs
+     8→- **[agent-schema-enforcement.md](agent-schema-enforcement.md)** — processing JSON output from AI agents, normalizing agent-produced data before validation, designing schemas for agent-to-tool communication, debugging tripwire candidate JSON drift
+     9→- **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
+    10→- **[bash-python-integration.md](bash-python-integration.md)** — generating bash commands with heredocs in Claude Code commands or skills, debugging escaping issues where bash mangles content passed to git, gh, or Python, writing Claude Code commands that produce multi-line text via bash
+    11→- **[branch-manager-abstraction.md](branch-manager-abstraction.md)** — working with branch operations (create, delete, checkout, submit), implementing commands that manipulate branches, understanding the Graphite vs Git mode difference, debugging branch-related operations
+    12→- **[branch-manager-decision-tree.md](branch-manager-decision-tree.md)** — deciding between ctx.branch_manager and ctx.git.branch for branch creation, implementing branch operations in erk code, working with placeholder branches or worktree pool slots
+    13→- **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with managed artifacts, debugging erk sync
+    14→- **[callback-progress-pattern.md](callback-progress-pattern.md)** — adding progress reporting to operations functions, choosing between callback and event-based progress, implementing synchronous progress feedback
+    15→- **[capability-system.md](capability-system.md)** — creating new erk init capabilities, understanding how erk init works, adding installable features, working with capability tracking in state.toml, understanding how erk doctor filters artifacts by installed capabilities, working with backend-aware capability filtering
+    16→- **[checked-out-branch-handling.md](checked-out-branch-handling.md)** — committing files to a branch that may be checked out in a worktree, using git plumbing to update branches without checkout, working with dispatch or incremental-dispatch branch operations
+    17→- **[circular-import-resolution.md](circular-import-resolution.md)** — encountering circular imports between erk and erk_shared, moving an ABC to erk_shared to break import cycles, using TYPE_CHECKING guards for type-only imports
+    18→- **[claude-cli-error-reporting.md](claude-cli-error-reporting.md)** — handling Claude CLI errors, interpreting PromptResult.error, working with ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
+    19→- **[claude-cli-execution-modes.md](claude-cli-execution-modes.md)** — writing multi-phase slash commands that use context: fork, understanding why Task tool is required instead of skill invocation, debugging commands that work interactively but break in --print mode
+    20→- **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
+    21→- **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
+    22→- **[claude-installation-gateway.md](claude-installation-gateway.md)** — working with Claude Code session logs, accessing ~/.claude/ directory, implementing session analysis features, working with plan files or settings operations
+    23→- **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
+    24→- **[cli-to-pipeline-boundary.md](cli-to-pipeline-boundary.md)** — refactoring complex CLI commands, separating business logic from Click layer, deciding when to extract pipeline from CLI command
+    25→- **[click-context-di-pattern.md](click-context-di-pattern.md)** — adding dependency injection to a Click command, using @click.pass*context with require*\*() helpers, testing Click commands with ErkContext
+    26→- **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
+    27→- **[command-composition.md](command-composition.md)** — creating an exec script that orchestrates other exec scripts, understanding setup-impl command architecture, adding CWD injection for testability
+    28→- **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
+    29→- **[composable-remote-commands.md](composable-remote-commands.md)** — adding a new remote command to run on codespaces, implementing erk codespace run subcommands, working with streaming remote execution
+    30→- **[context-efficiency.md](context-efficiency.md)** — orchestrating multi-agent workflows, parent agent reading large agent output via TaskOutput, designing agent output routing to minimize context usage
+
+... [111 lines omitted] ...
+
+    36→- **[discriminated-union-error-handling.md](discriminated-union-error-handling.md)** — designing return types for operations that may fail, implementing T | ErrorType patterns, handling errors without exceptions
+    40→- **[error-handling-patterns.md](error-handling-patterns.md)** — implementing error handling in exec scripts, deciding between fail-fast and best-effort patterns, handling GitHub API errors gracefully
+    42→- **[exception-logging-patterns.md](exception-logging-patterns.md)** — deciding between logger.debug and UserFacingCliError for error handling, implementing best-effort cleanup alongside primary operations, writing error handling for multi-step CLI operations
+    48→- **[gateway-error-boundaries.md](gateway-error-boundaries.md)** — implementing gateway error handling, converting gateway operations to discriminated unions, deciding where try/except blocks belong in gateways
+    53→- **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — considering mixing discriminated unions with exceptions in gateway methods, designing operations with both expected failures and cleanup steps, reviewing historical gateway error handling experiments
+    60→- **[github-api-diagnostics.md](github-api-diagnostics.md)** — debugging GitHub API failures, investigating repository-specific API issues, GitHub CLI commands returning unexpected errors
+    61→- **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
+    62→- **[github-api-retry-mechanism.md](github-api-retry-mechanism.md)** — implementing GitHub API calls with retry logic, handling transient network errors, using execute_gh_command_with_retry(), injecting Time for testable retry delays
+    63→- **[github-cli-limits.md](github-cli-limits.md)** — using gh pr diff in production code, working with large pull requests (300+ files), encountering HTTP 406 errors from gh CLI, implementing PR file discovery, working with GitHub codespaces in code, implementing codespace operations
+    91→- **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
+    93→- **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
+    96→- **[parameter-threading-pattern.md](parameter-threading-pattern.md)** — adding parameters to multi-layer commands (skill → command → exec), working with slash commands that call erk exec, debugging "No such option" errors in commands
+   107→- **[pr-footer-validation.md](pr-footer-validation.md)** — working with PR metadata footer format, modifying PR footer generation or parsing, debugging PR footer extraction errors
+   114→- **[rebase-conflict-patterns.md](rebase-conflict-patterns.md)** — resolving merge conflicts after rebase, debugging test failures after rebase, handling auto-generated file conflicts, resuming a rebase with conflicts
+   115→- **[ref-json-migration.md](ref-json-migration.md)** — working with plan-ref.json or ref.json, understanding plan reference file formats, debugging plan reference loading failures
+   119→- **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
+   130→- **[threading-patterns.md](threading-patterns.md)** — running blocking operations (subprocess, network) while yielding progress events, implementing daemon threads for long-running tasks, understanding the result holder + error holder pattern, testing code that uses background threads
+   132→- **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation
+  </tool_result>
+</session>

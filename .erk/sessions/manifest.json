@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "pr_number": 9287,
+  "sessions": [
+    {
+      "session_id": "c04e5a61-a429-4e41-ada9-8e04921bd8d8",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-20T20:46:57.154638+00:00",
+      "files": [
+        "impl-c04e5a61-a429-4e41-ada9-8e04921bd8d8-c04e5a61-a429-4e41-ada9-8e04921bd8d8-part1.xml",
+        "impl-c04e5a61-a429-4e41-ada9-8e04921bd8d8-c04e5a61-a429-4e41-ada9-8e04921bd8d8-part2.xml",
+        "impl-c04e5a61-a429-4e41-ada9-8e04921bd8d8-c04e5a61-a429-4e41-ada9-8e04921bd8d8-part3.xml",
+        "impl-c04e5a61-a429-4e41-ada9-8e04921bd8d8-c04e5a61-a429-4e41-ada9-8e04921bd8d8-part4.xml",
+        "impl-c04e5a61-a429-4e41-ada9-8e04921bd8d8-c04e5a61-a429-4e41-ada9-8e04921bd8d8-part5.xml",
+        "impl-c04e5a61-a429-4e41-ada9-8e04921bd8d8-c04e5a61-a429-4e41-ada9-8e04921bd8d8-part6.xml"
+      ],
+      "user_turns": 6,
+      "duration_minutes": 25,
+      "raw_size_kb": 1666,
+      "xml_size_kb": 336,
+      "git_branch": "plnd/consolidate-learn-docs-03-20-2014"
+    }
+  ]
+}
