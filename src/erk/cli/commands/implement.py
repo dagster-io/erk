@@ -221,7 +221,7 @@ def _implement_from_issue(
     save_plan_ref(
         impl_dir,
         provider=provider_name,
-        plan_id=str(plan_number),
+        pr_number=str(plan_number),
         url=plan.url,
         labels=(),
         objective_id=plan.objective_id,

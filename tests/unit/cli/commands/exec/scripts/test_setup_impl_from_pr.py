@@ -258,7 +258,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id=str(pr_number),
+        pr_number=str(pr_number),
         url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
         labels=("erk-pr",),
         objective_id=None,

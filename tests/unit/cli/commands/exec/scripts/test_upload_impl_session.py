@@ -33,7 +33,7 @@ def _setup_impl_with_plan_ref(tmp_path: Path, *, pr_id: str) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id=pr_id,
+        pr_number=pr_id,
         url=f"https://github.com/test/repo/issues/{pr_id}",
         labels=(),
         objective_id=None,

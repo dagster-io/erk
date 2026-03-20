@@ -234,7 +234,7 @@ def save_plan_ref(
     impl_dir: Path,
     *,
     provider: str,
-    plan_id: str,
+    pr_number: str,
     url: str,
     labels: tuple[str, ...],
     objective_id: int | None,
@@ -245,7 +245,7 @@ def save_plan_ref(
     Args:
         impl_dir: Path to impl directory
         provider: Plan provider name (e.g. "github", "github-draft-pr")
-        plan_id: Provider-specific ID as string ("42", "PROJ-123")
+        pr_number: Provider-specific ID as string ("42", "PROJ-123")
         url: Web URL to view the plan
         labels: Plan labels
         objective_id: Optional linked objective issue number
@@ -261,7 +261,7 @@ def save_plan_ref(
     ref_file = impl_dir / "ref.json"
     content = build_plan_ref_json(
         provider=provider,
-        pr_id=plan_id,
+        pr_id=pr_number,
         url=url,
         labels=labels,
         objective_id=objective_id,
@@ -345,7 +345,7 @@ def has_plan_ref(impl_dir: Path) -> bool:
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
-    """Return plan_id from plan-ref.json.
+    """Return pr_number from plan-ref.json.
 
     Plan-ref.json is the sole source of truth for plan-to-branch mapping.
     Branch names no longer encode issue numbers.
@@ -464,14 +464,14 @@ def read_last_dispatched_run_id(impl_dir: Path) -> str | None:
 
 
 def add_worktree_creation_comment(
-    *, github_issues, repo_root: Path, plan_number: int, worktree_name: str, branch_name: str
+    *, github_issues, repo_root: Path, pr_number: int, worktree_name: str, branch_name: str
 ) -> None:
     """Add a comment to the GitHub issue documenting worktree creation.
 
     Args:
         github_issues: GitHubIssues interface for posting comments
         repo_root: Repository root directory
-        plan_number: Plan number to comment on
+        pr_number: PR number to comment on
         worktree_name: Name of the created worktree
         branch_name: Git branch name for the worktree
 
@@ -480,12 +480,12 @@ def add_worktree_creation_comment(
     """
     timestamp = datetime.now(UTC).isoformat()
 
-    # Create metadata block with plan number
+    # Create metadata block with pr number
     block = create_worktree_creation_block(
         worktree_name=worktree_name,
         branch_name=branch_name,
         timestamp=timestamp,
-        pr_number=plan_number,
+        pr_number=pr_number,
     )
 
     # Format instructions for implementation
@@ -506,7 +506,7 @@ claude --permission-mode acceptEdits "/erk:plan-implement"
         description=instructions,
     )
 
-    github_issues.add_comment(repo_root, plan_number, comment_body)
+    github_issues.add_comment(repo_root, pr_number, comment_body)
 
 
 def read_local_run_state(impl_dir: Path) -> LocalRunState | None:

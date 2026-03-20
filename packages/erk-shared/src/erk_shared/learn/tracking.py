@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 def track_learn_invocation(
     plan_backend: ManagedPrBackend,
     repo_root: Path,
-    plan_id: str,
+    pr_number: str,
     *,
     session_id: str | None,
     readable_count: int,
@@ -37,7 +37,7 @@ def track_learn_invocation(
     Args:
         plan_backend: ManagedPrBackend for posting the comment
         repo_root: Repository root path
-        plan_id: Plan identifier (e.g., issue number as string)
+        pr_number: Plan identifier (e.g., issue number as string)
         session_id: Session ID invoking learn (passed via --session-id CLI flag)
         readable_count: Number of readable sessions found
         total_count: Total sessions discovered for the plan
@@ -71,4 +71,4 @@ def track_learn_invocation(
         description=description,
     )
 
-    plan_backend.add_comment(repo_root, plan_id, comment_body)
+    plan_backend.add_comment(repo_root, pr_number, comment_body)

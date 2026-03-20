@@ -925,7 +925,7 @@ def create_wt(
         save_plan_ref(
             impl_folder_destination,
             provider="github",
-            plan_id=str(setup.plan_number),
+            pr_number=str(setup.pr_number),
             url=setup.issue_url,
             labels=(),
             objective_id=setup.objective_issue,
@@ -933,7 +933,7 @@ def create_wt(
         )
 
         if not script and not output_json:
-            user_output(f"Created worktree from plan #{setup.plan_number}: {setup.issue_title}")
+            user_output(f"Created worktree from plan #{setup.pr_number}: {setup.issue_title}")
 
     # Copy implementation context directory if --copy-plan flag is set
     if copy_plan and impl_source is not None:

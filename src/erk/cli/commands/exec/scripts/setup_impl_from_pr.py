@@ -197,7 +197,7 @@ def create_impl_context_from_pr(
     save_plan_ref(
         impl_path,
         provider="github-draft-pr",
-        plan_id=str(pr_number),
+        pr_number=str(pr_number),
         url=pr_url,
         labels=(),
         objective_id=objective_id,

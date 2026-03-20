@@ -104,7 +104,7 @@ def _setup_impl(cwd: Path, *, objective_id: int, node_ids: tuple[str, ...]) -> N
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="100",
+        pr_number="100",
         url="https://github.com/owner/repo/issues/100",
         labels=(),
         objective_id=objective_id,

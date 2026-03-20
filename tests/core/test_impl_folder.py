@@ -175,7 +175,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     add_worktree_creation_comment(
         github_issues=issues,
         repo_root=tmp_path,
-        plan_number=42,
+        pr_number=42,
         worktree_name="feature-name",
         branch_name="feature-branch",
     )
@@ -218,7 +218,7 @@ def test_add_worktree_creation_comment_issue_not_found(tmp_path: Path) -> None:
         add_worktree_creation_comment(
             github_issues=issues,
             repo_root=tmp_path,
-            plan_number=999,
+            pr_number=999,
             worktree_name="feature-name",
             branch_name="feature-branch",
         )
@@ -495,7 +495,7 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-pr",),
         objective_id=99,
@@ -523,7 +523,7 @@ def test_save_plan_ref_dir_not_exists(tmp_path: Path) -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="42",
+            pr_number="42",
             url="http://url",
             labels=(),
             objective_id=None,
@@ -539,7 +539,7 @@ def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="http://url",
         labels=(),
         objective_id=None,
@@ -558,7 +558,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-pr", "erk-learn"),
         objective_id=99,
@@ -646,7 +646,7 @@ def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="http://url",
         labels=(),
         objective_id=None,
@@ -676,7 +676,7 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/org/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -698,7 +698,7 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="99",
+        pr_number="99",
         url="https://github.com/org/repo/issues/99",
         labels=(),
         objective_id=None,
@@ -729,7 +729,7 @@ def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="456",
+        pr_number="456",
         url="https://github.com/org/repo/issues/456",
         labels=(),
         objective_id=None,
@@ -755,7 +755,7 @@ def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github-draft-pr",
-        plan_id="789",
+        pr_number="789",
         url="https://github.com/org/repo/pull/789",
         labels=(),
         objective_id=None,

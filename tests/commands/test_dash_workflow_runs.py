@@ -54,7 +54,7 @@ def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="123",
+            pr_number="123",
             url="https://github.com/owner/repo/issues/123",
             labels=(),
             objective_id=None,
@@ -152,7 +152,7 @@ def test_plan_list_linkifies_workflow_run_id_with_owner_repo() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="456",
+            pr_number="456",
             url="https://github.com/testowner/testrepo/issues/456",
             labels=(),
             objective_id=None,
@@ -252,7 +252,7 @@ def test_plan_list_displays_plain_run_id_without_owner_repo() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="789",
+            pr_number="789",
             url="https://github.com/owner/repo/issues/789",
             labels=(),
             objective_id=None,
@@ -347,7 +347,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="111",
+            pr_number="111",
             url="https://github.com/owner/repo/issues/111",
             labels=(),
             objective_id=None,
@@ -423,7 +423,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="222",
+            pr_number="222",
             url="https://github.com/owner/repo/issues/222",
             labels=(),
             objective_id=None,
@@ -494,7 +494,7 @@ def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> Non
         save_plan_ref(
             impl1,
             provider="github",
-            plan_id="301",
+            pr_number="301",
             url="https://github.com/owner/repo/issues/301",
             labels=(),
             objective_id=None,
@@ -509,7 +509,7 @@ def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> Non
         save_plan_ref(
             impl2,
             provider="github",
-            plan_id="302",
+            pr_number="302",
             url="https://github.com/owner/repo/issues/302",
             labels=(),
             objective_id=None,

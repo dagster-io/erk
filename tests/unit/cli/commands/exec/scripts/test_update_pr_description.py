@@ -402,7 +402,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="123",
+            pr_number="123",
             url="https://github.com/test-owner/test-repo/issues/123",
             labels=("erk-pr",),
             objective_id=None,
