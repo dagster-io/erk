@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9276,
+  "sessions": [
+    {
+      "session_id": "6185c759-41ac-4294-8cfc-590ac3ba7457",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-20T15:04:59.211739+00:00",
+      "files": [
+        "planning-6185c759-41ac-4294-8cfc-590ac3ba7457-6185c759-41ac-4294-8cfc-590ac3ba7457-part1.xml",
+        "planning-6185c759-41ac-4294-8cfc-590ac3ba7457-6185c759-41ac-4294-8cfc-590ac3ba7457-part2.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 13,
+      "raw_size_kb": 751,
+      "xml_size_kb": 99,
+      "git_branch": "plnd/O9272-extract-slots-packag-03-20-1429"
+    }
+  ]
+}
