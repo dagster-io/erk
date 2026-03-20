@@ -1,0 +1,1030 @@
+<session>
+  <meta branch="plnd/add-slot-checkout-nav-03-20-1715" />
+  <meta model="claude-opus-4-6" />
+  <user>⏺ Plan saved as PR #9297. Here are your next steps:
+
+  Implement PR #9297:
+  In current wt:    erk br co --for-plan 9297 &amp;&amp; erk implement
+    (dangerously):  erk br co --for-plan 9297 &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 9297 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 9297 --script)" &amp;&amp; erk implement -d
+
+  Checkout PR #9297:
+  In current wt:  erk br co --for-plan 9297
+  In new wt:      erk br co --new-slot --for-plan 9297
+
+  Dispatch PR #9297:
+  CLI command:    erk pr dispatch 9297
+  Slash command:  /erk:pr-dispatch
+
+✻ Sautéed for 1m 36s
+
+we need new suggested commands given for the "slots" case. should be using erk slot co</user>
+  <usage input_tokens="3" cache_creation_input_tokens="17489" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17489}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01F2LC1tEVVofoB31yUtTFuN">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find plan-save next steps output</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 773 chars]...related code.
+
+Be thorough - check both Python source code and Claude skill/command files.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17489" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17489}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01ChqDjojHPbY1qN2bxATEpA">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find slot checkout command</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 353 chars]...)
+
+Also check if there's an existing `erk slot` command group and what subcommands it has.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17489" cache_read_input_tokens="9015" output_tokens="708" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17489, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F2LC1tEVVofoB31yUtTFuN">
+Perfect! Now I have all the information needed. Let me provide a comprehensive summary.
+
+## Summary: Next Steps / Suggested Commands Generation
+
+I found the source code that generates the "next steps" / suggested commands displayed after a plan is saved as a PR. Here's the complete breakdown:
+
+### Single Source of Truth
+
+**Primary Location:**
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/output/next_steps.py`
+
+This module contains:
+
+1. **`PrNextSteps` dataclass** (frozen) - Encapsulates all PR-related commands as properties
+   - `pr_number: int` - The PR/plan number
+   - `url: str` - The PR URL
+   
+2. **Property methods** that generate individual commands:
+   - `checkout` → `erk br co --for-plan {pr_number}`
+   - `checkout_new_slot` → `erk br co --new-slot --for-plan {pr_number}`
+   - `implement_current_wt` → `erk br co --for-plan {pr_number} &amp;&amp; erk implement`
+   - `implement_current_wt_dangerous` → `erk br co --for-plan {pr_number} &amp;&amp; erk implement -d`
+   - `implement_new_wt` → `source "$(erk br co --new-slot --for-plan {pr_number} --script)" &amp;&amp; erk implement`
+   - `implement_new_wt_dangerous` → `source "$(erk br co --new-slot --for-plan {pr_number} --script)" &amp;&amp; erk implement -d`
+   - `dispatch` → `erk pr dispatch {pr_number}`
+   - `dispatch_slash_command` → `/erk:pr-dispatch` (static)
+   - `view` → Returns the URL
+
+3. **Formatting functions**:
+   - `format_pr_next_steps_plain(pr_number, *, url)` - Text format with hierarchical display
+
+... [60 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01ChqDjojHPbY1qN2bxATEpA">
+Perfect! Now I have enough information. Let me create a comprehensive summary document:
+
+## Summary: `erk slot checkout` vs `erk branch checkout`
+
+Based on my exploration of the codebase, here are the findings for all your questions:
+
+### 1. **Where the slot checkout command is defined (CLI command definition)**
+
+**File:** `/Users/schrockn/code/erk/packages/erk-slots/src/erk_slots/checkout_cmd.py`
+
+The `slot_checkout` command is defined as a Click command at line 22-37:
+```python
+@click.command("checkout", cls=CommandWithHiddenOptions)
+@click.argument("branch", metavar="BRANCH")
+@click.option("--new-slot", is_flag=True, ...)
+@click.option("-f", "--force", is_flag=True, ...)
+@script_option
+@click.pass_obj
+def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool, script: bool) -&gt; None:
+```
+
+The command group is registered in `/Users/schrockn/code/erk/packages/erk-slots/src/erk_slots/__init__.py` as part of `slot_group`.
+
+---
+
+### 2. **Arguments and options it accepts**
+
+**Arguments:**
+- `BRANCH` (required) - The existing branch to checkout into a pool slot
+
+
+... [98 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3729" cache_read_input_tokens="26504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3729}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to plan the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3729" cache_read_input_tokens="26504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3729}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RpufXBxX6WLHy4Z9EMiVZ4">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3729" cache_read_input_tokens="26504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3729}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RpufXBxX6WLHy4Z9EMiVZ4">
+     1→"""Plan next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class PrNextSteps:
+     8→    """Canonical commands for plan operations."""
+     9→
+    10→    pr_number: int
+    11→    url: str
+    12→
+    13→    @property
+    14→    def view(self) -&gt; str:
+    15→        return self.url
+    16→
+    17→    @property
+    18→    def dispatch(self) -&gt; str:
+    19→        return f"erk pr dispatch {self.pr_number}"
+    20→
+    21→    @property
+    22→    def checkout(self) -&gt; str:
+    23→        return f"erk br co --for-plan {self.pr_number}"
+    24→
+    25→    @property
+    26→    def checkout_new_slot(self) -&gt; str:
+    27→        return f"erk br co --new-slot --for-plan {self.pr_number}"
+    28→
+    29→    @property
+    30→    def dispatch_slash_command(self) -&gt; str:
+
+... [67 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RJxqUogTixhaFsxU1Up18k">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3729" cache_read_input_tokens="26504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3729}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RJxqUogTixhaFsxU1Up18k">
+     1→"""Tests for next_steps formatting."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PrNextSteps,
+     5→    format_pr_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→def test_plan_next_steps_constructs_with_all_params() -&gt; None:
+    10→    """PrNextSteps constructs correctly with plan_number and url."""
+    11→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+    12→    assert s.pr_number == 42
+    13→    assert s.url == "https://github.com/org/repo/pull/42"
+    14→
+    15→
+    16→def test_plan_next_steps_view_returns_url() -&gt; None:
+    17→    """view returns the URL directly."""
+    18→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+    19→    assert s.view == "https://github.com/org/repo/pull/42"
+    20→
+    21→
+    22→def test_plan_next_steps_checkout_uses_plan_number() -&gt; None:
+    23→    """checkout uses --for-plan with plan_number."""
+    24→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+    25→    assert s.checkout == "erk br co --for-plan 42"
+    26→
+    27→
+    28→def test_plan_next_steps_dispatch_uses_plan_number() -&gt; None:
+    29→    """dispatch uses plan_number."""
+    30→    s = PrNextSteps(pr_number=42, url="https://github.com/org/repo/pull/42")
+
+... [72 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Y4u9UfpBRFmWorJsva7C81">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/shared/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3729" cache_read_input_tokens="26504" output_tokens="336" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3729, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y4u9UfpBRFmWorJsva7C81">
+     1→"""Tests for next_steps formatting functions."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    PrNextSteps,
+     5→    format_pr_next_steps_plain,
+     6→)
+     7→
+     8→
+     9→class TestPrNextSteps:
+    10→    def test_construction(self) -&gt; None:
+    11→        steps = PrNextSteps(
+    12→            pr_number=42,
+    13→            url="https://github.com/org/repo/pull/42",
+    14→        )
+    15→        assert steps.pr_number == 42
+    16→
+    17→    def test_view_returns_url(self) -&gt; None:
+    18→        steps = PrNextSteps(
+    19→            pr_number=42,
+    20→            url="https://github.com/org/repo/pull/42",
+    21→        )
+    22→        assert steps.view == "https://github.com/org/repo/pull/42"
+    23→
+    24→    def test_dispatch_uses_pr_number(self) -&gt; None:
+    25→        steps = PrNextSteps(
+    26→            pr_number=42,
+    27→            url="https://github.com/org/repo/pull/42",
+    28→        )
+    29→        assert steps.dispatch == "erk pr dispatch 42"
+    30→
+
+... [80 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9186" cache_read_input_tokens="30233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9186}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the slot checkout command's interface to understand how `--for-plan` would work.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9186" cache_read_input_tokens="30233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9186}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CZmvJhhJpM7DRKMDLXTTkS">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-slots/src/erk_slots/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9186" cache_read_input_tokens="30233" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9186, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CZmvJhhJpM7DRKMDLXTTkS">
+     1→"""Slot checkout command - checkout a branch into a pool slot."""
+     2→
+     3→from contextlib import nullcontext
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    12→from erk.core.worktree_pool import load_pool_state
+    13→from erk_shared.core.script_error import script_error_handler
+    14→from erk_shared.output.output import user_output
+    15→from erk_slots.common import (
+    16→    allocate_slot_for_branch,
+    17→    find_current_slot_assignment,
+    18→    update_slot_assignment_tip,
+    19→)
+    20→
+    21→
+    22→@click.command("checkout", cls=CommandWithHiddenOptions)
+    23→@click.argument("branch", metavar="BRANCH")
+    24→@click.option(
+    25→    "--new-slot",
+    26→    is_flag=True,
+    27→    help="Allocate a new slot instead of stacking in place",
+    28→)
+    29→@click.option(
+    30→    "-f",
+
+... [161 lines omitted] ...
+
+    56→    with (script_error_handler(ctx) if script else nullcontext()):
+   121→                f"Error: Branch '{branch}' does not exist.\n"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2723" cache_read_input_tokens="39419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to understand how `--for-plan` resolves to a branch name. Let me check.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2723" cache_read_input_tokens="39419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2723}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01W4A4kDAor1woCE64yKoFnq">
+    <param name="pattern">for.plan</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2723" cache_read_input_tokens="39419" output_tokens="350" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2723, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W4A4kDAor1woCE64yKoFnq">
+Found 31 files
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/objective/list_cmd.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/log_cmd.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/add_plan_label.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/setup_impl.py
+src/erk/cli/commands/exec/scripts/get_pr_for_plan.py
+src/erk/cli/commands/run/__init__.py
+src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+src/erk/cli/commands/pr/prepare_cmd.py
+src/erk/cli/commands/status.py
+src/erk/cli/commands/exec/scripts/preprocess_session.py
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_013Q9qQX3NTCaWx6phtZbHfQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1029" cache_read_input_tokens="42142" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1029, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Q9qQX3NTCaWx6phtZbHfQ">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.commands.checkout_helpers import (
+    16→    display_sync_status,
+    17→    navigate_to_worktree,
+    18→)
+    19→from erk.cli.commands.completions import complete_branch_names
+    20→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    21→from erk.cli.core import discover_repo_context
+    22→from erk.cli.github_parsing import parse_issue_identifier
+    23→from erk.cli.graphite import find_worktrees_containing_branch
+    24→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    25→from erk.core.context import ErkContext
+    26→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    27→from erk.core.worktree_utils import compute_relative_path_in_worktree
+    28→from erk_shared.cli_alias import alias
+    29→from erk_shared.core.script_error import script_error_handler
+    30→from erk_shared.gateway.git.abc import WorktreeInfo
+
+... [30 lines omitted] ...
+
+    36→    PlanValidationFailed,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Ak1dA9qjRp9cEZ1mFF6mGE">
+    <param name="pattern">--for-plan</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1021" cache_read_input_tokens="43171" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1021, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ak1dA9qjRp9cEZ1mFF6mGE">
+311:    """Create impl folder and save plan ref after checkout for --for-plan.
+346:            comment="erk branch checkout --for-plan activation script",
+351:            comment=f"branch checkout --for-plan {setup.pr_number}",
+420:    "--for-plan",
+443:    Use --for-plan to resolve a PR and set up .erk/impl-context/ after checkout.
+451:        erk br co --for-plan 123         # Checkout PR branch with .erk/impl-context/ setup
+476:            "Error: Cannot specify both BRANCH and --for-plan.\n"
+477:            "Use --for-plan to derive branch name from PR, or provide BRANCH directly."
+482:        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+492:    # Plan setup - fetches plan and derives branch name if --for-plan is used
+517:    # If --for-plan, handle branch creation/tracking before checkout
+562:            # Skip if --for-plan already handled branch creation
+624:        # Set up impl folder if --for-plan was used
+662:            # Set up impl folder if --for-plan was used
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1428" cache_read_input_tokens="43171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1428}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LEzopobFFsfxPy8CRebiSs">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/checkout_helpers.py</param>
+    <param name="offset">200</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1428" cache_read_input_tokens="43171" output_tokens="1078" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LEzopobFFsfxPy8CRebiSs">
+   200→    if no_slot:
+   201→        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
+   202→        ctx.git.worktree.add_worktree(
+   203→            repo.root,
+   204→            worktree_path,
+   205→            branch=branch_name,
+   206→            ref=None,
+   207→            create_branch=False,
+   208→        )
+   209→    else:
+   210→        from erk_slots.common import allocate_slot_for_branch
+   211→
+   212→        result = allocate_slot_for_branch(
+   213→            ctx,
+   214→            repo,
+   215→            branch_name,
+   216→            force=force,
+   217→            reuse_inactive_slots=True,
+   218→            cleanup_artifacts=True,
+   219→        )
+   220→        worktree_path = result.worktree_path
+   221→        if not result.already_assigned:
+   222→            user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
+   223→
+   224→    # Write activation script for newly created worktrees
+   225→    ensure_worktree_activate_script(
+   226→        worktree_path=worktree_path,
+   227→        post_create_commands=None,
+   228→    )
+   229→
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01LoP7GjFNTTP7TwBC7vfuzy">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1442" cache_read_input_tokens="44599" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LoP7GjFNTTP7TwBC7vfuzy">
+
+  </tool_result>
+  <assistant>
+
+`erk slot co` takes a `BRANCH` argument but doesn't have `--for-plan`. The current next steps all use `erk br co --for-plan {pr_number}` which resolves a plan PR to a branch name.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="46041" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01XezGcsJLcJUXArvUdjsWVX">
+    <param name="questions">[{'question': 'erk slot co takes a BRANCH name, not --for-plan. Should we add --for-plan s...[truncated 528 chars]...nds; erk br co --for-plan should delegate to slot co internally'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="46041" output_tokens="305" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XezGcsJLcJUXArvUdjsWVX">
+User has answered your questions: "erk slot co takes a BRANCH name, not --for-plan. Should we add --for-plan support to erk slot co, or do you have a different command pattern in mind for the slot-based next steps?"="can we just print our erk slot co &lt;&lt;BRANCH_NAME&gt;&gt; directly? I believe we should be able to have that information" user notes: can we just print our erk slot co &lt;&lt;BRANCH_NAME&gt;&gt; directly? I believe we should be able to have that information. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="47374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 543}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good idea. Let me check whether the branch name is available at the call sites.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="47374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 543}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BNskQh6nQ66Sct27ztqq52">
+    <param name="pattern">format_pr_next_steps_plain|format_next_steps_markdown</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="47374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 543}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BNskQh6nQ66Sct27ztqq52">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-46-from erk_shared.naming import (
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-47-    InvalidPlanTitle,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-48-    generate_planned_pr_branch_name,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-49-    validate_plan_title,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-50-)
+src/erk/cli/commands/exec/scripts/plan_save.py:51:from erk_shared.output.next_steps import format_pr_next_steps_plain
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-52-from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-53-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-54-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-55-from erk_shared.plan_utils import get_title_tag_from_labels
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-56-from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
+--
+src/erk/cli/commands/exec/scripts/plan_save.py-336-        click.echo(f"URL: {result.url}")
+src/erk/cli/commands/exec/scripts/plan_save.py-337-        click.echo(f"Branch: {branch_name}")
+src/erk/cli/commands/exec/scripts/plan_save.py-338-        if snapshot_result is not None:
+src/erk/cli/commands/exec/scripts/plan_save.py-339-            click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-340-        click.echo()
+src/erk/cli/commands/exec/scripts/plan_save.py:341:        click.echo(format_pr_next_steps_plain(pr_number, url=result.url))
+src/erk/cli/commands/exec/scripts/plan_save.py-342-    else:
+src/erk/cli/commands/exec/scripts/plan_save.py-343-        output_data: dict[str, str | int | bool | None] = {
+src/erk/cli/commands/exec/scripts/plan_save.py-344-            "success": True,
+src/erk/cli/commands/exec/scripts/plan_save.py-345-            "pr_number": pr_number,
+src/erk/cli/commands/exec/scripts/plan_save.py-346-            "pr_url": result.url,
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py-9-from erk.cli.ensure import Ensure
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py-10-from erk.core.branch_slug_generator import generate_branch_slug
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py-11-from erk.core.context import ErkContext
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py-12-from erk.core.repo_discovery import ensure_erk_metadata_dir
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py-13-from erk_shared.naming import generate_planned_pr_branch_name
+src/erk/cli/commands/pr/create_cmd.py:14:from erk_shared.output.next_steps import format_pr_next_steps_plain
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014uLQ6E2zDmrc74SJeVQEnP">
+    <param name="pattern">format_pr_next_steps_plain|format_next_steps_markdown</param>
+    <param name="path">/Users/schrockn/code/erk/.claude</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="47374" output_tokens="466" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014uLQ6E2zDmrc74SJeVQEnP">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3254" cache_read_input_tokens="47917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good - the branch name is available at all call sites. Let me check the exit_plan_mode_hook for branch name availability and also see `format_next_steps_markdown` callers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3254" cache_read_input_tokens="47917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Xy2uBMxzDiBv5UhNnjGRQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="offset">255</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3254" cache_read_input_tokens="47917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Xy2uBMxzDiBv5UhNnjGRQ">
+   255→
+   256→    return None
+   257→
+   258→
+   259→def build_step2_message(
+   260→    *,
+   261→    pr_number: int,
+   262→    url: str,
+   263→) -&gt; str:
+   264→    """Build the Step 2 blocking message after plan is saved.
+   265→
+   266→    Pure function - string building only. Testable without mocking.
+   267→
+   268→    Displays plain-text next-steps commands the user can copy-paste
+   269→    into their shell. No interactive menu — just informational output.
+   270→
+   271→    Args:
+   272→        pr_number: The plan PR number that was just saved.
+   273→        url: The URL of the saved plan PR.
+   274→    """
+   275→    next_steps = format_pr_next_steps_plain(pr_number, url=url)
+   276→
+   277→    lines = [
+   278→        f"PR #{pr_number} saved successfully.",
+   279→        "",
+   280→        "Display ALL of the following next-steps commands to the user as plain text.",
+   281→        "Show every line exactly as written — do NOT summarize, truncate, or omit any lines.",
+   282→        "(do NOT use AskUserQuestion — just display the text):",
+   283→        "",
+   284→        next_steps,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011QQ2AMZWM9WHpn66s7dBd6">
+    <param name="pattern">format_next_steps_markdown</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3254" cache_read_input_tokens="47917" output_tokens="425" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011QQ2AMZWM9WHpn66s7dBd6">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1889" cache_read_input_tokens="51171" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1889}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FvvsWxfqidcSh1sS8K6BYT">
+    <param name="pattern">build_step2_message</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1889" cache_read_input_tokens="51171" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1889, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FvvsWxfqidcSh1sS8K6BYT">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-249-    # Look for ## Task section
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-250-    for i, line in enumerate(lines[:20]):
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-251-        if line.strip() == "## Task":
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-252-            for next_line in lines[i + 1 : i + 5]:
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-253-                if next_line.strip():
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-254-                    return next_line.strip()
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-255-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-256-    return None
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-257-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-258-
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:259:def build_step2_message(
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-260-    *,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-261-    pr_number: int,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-262-    url: str,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-263-) -&gt; str:
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-264-    """Build the Step 2 blocking message after plan is saved.
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-265-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-266-    Pure function - string building only. Testable without mocking.
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-267-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-268-    Displays plain-text next-steps commands the user can copy-paste
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-269-    into their shell. No interactive menu — just informational output.
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-503-        return HookOutput(
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-504-            ExitAction.ALLOW,
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-505-            "Incremental-plan mode: skipping save prompt, proceeding to implementation",
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-506-            delete_incremental_plan_marker=True,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-507-        )
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-508-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-509-    # Plan-saved marker present — show Step 2 "what next?" prompt
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py-510-    if hook_input.plan_saved_marker_exists:
+
+... [13 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1997" cache_read_input_tokens="53060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1997}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TpFJ9Vvu7JSXpgCstukkyz">
+    <param name="pattern">plan_saved_marker|plan_saved_pr_number|plan_saved_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1997" cache_read_input_tokens="53060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1997}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TpFJ9Vvu7JSXpgCstukkyz">
+64-from erk_shared.scratch.scratch import get_scratch_dir
+65-from erk_shared.scratch.session_markers import (
+66-    read_objective_context_marker,
+67:    read_plan_saved_marker,
+68-)
+69-
+70-# Known terminal-based editors that cannot run inside Claude Code
+--
+133-    session_id: str | None
+134-    github_planning_enabled: bool
+135-    implement_now_marker_exists: bool
+136:    plan_saved_marker_exists: bool
+137:    plan_saved_pr_number: int | None  # Plan number read from plan-saved marker
+138-    incremental_plan_marker_exists: bool
+139-    objective_context_marker_exists: bool
+140-    objective_id: int | None  # Objective issue number if marker exists
+--
+154-        session_id: str | None = "test-session",
+155-        github_planning_enabled: bool = True,
+156-        implement_now_marker_exists: bool = False,
+157:        plan_saved_marker_exists: bool = False,
+158:        plan_saved_pr_number: int | None = None,
+159-        incremental_plan_marker_exists: bool = False,
+160-        objective_context_marker_exists: bool = False,
+161-        objective_id: int | None = None,
+--
+174-        - session_id: "test-session"
+175-        - github_planning_enabled: True
+176-        - All marker exists flags: False
+177:        - plan_saved_pr_number: None
+
+... [96 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DNCrJDeripKG589jZjP7WT">
+    <param name="pattern">class.*HookInput|plan_saved_marker|plan_saved_pr_number|plan_saved_branch</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">**/plan_snapshots.py"</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1997" cache_read_input_tokens="53060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1997}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DNCrJDeripKG589jZjP7WT">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01WKRhMCqexuccQ84tayq414">
+    <param name="pattern">plan_saved_marker|plan_saved_pr_number|plan_saved_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1997" cache_read_input_tokens="53060" output_tokens="534" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1997, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WKRhMCqexuccQ84tayq414">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-14-from pathlib import Path
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-15-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-16-from erk_shared.scratch.scratch import get_scratch_dir
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-17-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-18-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py:19:def create_plan_saved_marker(session_id: str, repo_root: Path, pr_number: int) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-20-    """Create marker file to indicate plan was saved to GitHub.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-21-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-22-    The plan number is stored on the first line so the hook can read it
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-23-    when building the Step 2 "what next?" prompt.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-24-
+--
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-37-        "Lifecycle: Deleted after being read by next hook invocation\n",
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-38-        encoding="utf-8",
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-39-    )
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-40-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-41-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py:42:def read_plan_saved_marker(session_id: str, repo_root: Path) -&gt; int | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-43-    """Read plan number from the plan-saved marker.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-44-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-45-    Args:
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-46-        session_id: The session ID for the scratch directory.
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-47-        repo_root: The repository root path.
+--
+packages/erk-shared/src/erk_shared/scratch/session_markers.py-128-    if not content:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-129-        return None
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-130-    return content
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-131-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-132-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py:133:def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -&gt; None:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3763" cache_read_input_tokens="55057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3763}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Aczjz8tesRVBG4ZqSm86pT">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="offset">19</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3763" cache_read_input_tokens="55057" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3763, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Aczjz8tesRVBG4ZqSm86pT">
+    19→def create_plan_saved_marker(session_id: str, repo_root: Path, pr_number: int) -&gt; None:
+    20→    """Create marker file to indicate plan was saved to GitHub.
+    21→
+    22→    The plan number is stored on the first line so the hook can read it
+    23→    when building the Step 2 "what next?" prompt.
+    24→
+    25→    Args:
+    26→        session_id: The session ID for the scratch directory.
+    27→        repo_root: The repository root path.
+    28→        pr_number: The plan PR number.
+    29→    """
+    30→    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    31→    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+    32→    marker_file.write_text(
+    33→        f"{pr_number}\n"
+    34→        "Created by: /erk:plan-save\n"
+    35→        "Trigger: Plan was successfully saved to GitHub\n"
+    36→        "Effect: Next ExitPlanMode call will be BLOCKED with Step 2 prompt\n"
+    37→        "Lifecycle: Deleted after being read by next hook invocation\n",
+    38→        encoding="utf-8",
+    39→    )
+    40→
+    41→
+    42→def read_plan_saved_marker(session_id: str, repo_root: Path) -&gt; int | None:
+    43→    """Read plan number from the plan-saved marker.
+    44→
+    45→    Args:
+    46→        session_id: The session ID for the scratch directory.
+    47→        repo_root: The repository root path.
+    48→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2267" cache_read_input_tokens="58820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WArNFgyTCgTEJpSdjXCtFE">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py</param>
+    <param name="offset">133</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2267" cache_read_input_tokens="58820" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2267}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WArNFgyTCgTEJpSdjXCtFE">
+   133→def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -&gt; None:
+   134→    """Create marker file storing the branch name of the saved plan.
+   135→
+   136→    This enables the skipped_duplicate response to include the branch name
+   137→    when a session tries to save a plan that was already saved.
+   138→
+   139→    Args:
+   140→        session_id: The session ID for the scratch directory.
+   141→        repo_root: The repository root path.
+   142→        branch_name: The branch name where the plan was saved.
+   143→    """
+   144→    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+   145→    marker_file = marker_dir / "plan-saved-branch.marker"
+   146→    marker_file.write_text(branch_name, encoding="utf-8")
+   147→
+   148→
+   149→def get_existing_saved_branch(session_id: str, repo_root: Path) -&gt; str | None:
+   150→    """Check if this session already saved a plan and return the branch name.
+   151→
+   152→    Args:
+   153→        session_id: The session ID for the scratch directory.
+   154→        repo_root: The repository root path.
+   155→
+   156→    Returns:
+   157→        The branch name if plan was already saved, None otherwise.
+   158→    """
+   159→    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+   160→    marker_file = marker_dir / "plan-saved-branch.marker"
+   161→    if not marker_file.exists():
+   162→        return None
+
+... [10 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="61087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 749}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017tJkiNapbLa7CqxhCk5kcg">
+    <param name="pattern">create_plan_saved_branch_marker</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="61087" output_tokens="917" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017tJkiNapbLa7CqxhCk5kcg">
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-55-from erk_shared.plan_utils import get_title_tag_from_labels
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-56-from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-57-from erk_shared.scratch.session_markers import (
+src/erk/cli/commands/exec/scripts/plan_save.py:58:    create_plan_saved_branch_marker,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-59-    create_plan_saved_issue_marker,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-60-    create_plan_saved_marker,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-61-    get_existing_saved_branch,
+--
+src/erk/cli/commands/exec/scripts/plan_save.py-319-    if session_id is not None:
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-320-        create_plan_saved_marker(session_id, repo_root, pr_number)
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-321-        create_plan_saved_issue_marker(session_id, repo_root, pr_number, title=title)
+src/erk/cli/commands/exec/scripts/plan_save.py:322:        create_plan_saved_branch_marker(session_id, repo_root, branch_name)
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-323-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-324-        snapshot_result = _get_snapshot_result(
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-325-            session_id=session_id,
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-130-    return content
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-131-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-132-
+packages/erk-shared/src/erk_shared/scratch/session_markers.py:133:def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-134-    """Create marker file storing the branch name of the saved plan.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-135-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/scratch/session_markers.py-136-    This enables the skipped_duplicate response to include the branch name
+--
+/Users/schrockn/code/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py-3-from pathlib import Path
+/Users/schrockn/code/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py-4-
+/Users/schrockn/code/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py-5-from erk_shared.scratch.session_markers import (
+packages/erk-shared/tests/unit/scratch/test_session_markers.py:6:    create_plan_saved_branch_marker,
+/Users/schrockn/code/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py-7-    create_plan_saved_issue_marker,
+/Users/schrockn/code/erk/packages/erk-shared/tests/unit/scratch/test_session_markers.py-8-    create_plan_saved_marker,
+
+... [32 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3484" cache_read_input_tokens="61836" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3484}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013gzW3zYot8BvmCM3FiDRHj">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py</param>
+    <param name="offset">125</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3484" cache_read_input_tokens="61836" output_tokens="1013" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3484, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013gzW3zYot8BvmCM3FiDRHj">
+   125→
+   126→    # Display success message with next steps
+   127→    user_output(f"Created PR #{result.pr_number}")
+   128→    user_output("")
+   129→    user_output(f"PR: {result.pr_url}")
+   130→    user_output(f"Branch: {result.branch_name}")
+   131→    user_output("")
+   132→    if (
+   133→        result.pr_number is not None
+   134→        and result.branch_name is not None
+   135→        and result.pr_url is not None
+   136→    ):
+   137→        user_output(format_pr_next_steps_plain(result.pr_number, url=result.pr_url))
+   138→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1187" cache_read_input_tokens="65320" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1187}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EhQbjpXVzRopnLxh1seSJ8">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">330</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1187" cache_read_input_tokens="65320" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1187}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EhQbjpXVzRopnLxh1seSJ8">
+   330→        )
+   331→
+   332→    # Output
+   333→    if output_format == "display":
+   334→        click.echo(f"PR saved as planned PR #{pr_number}")
+   335→        click.echo(f"Title: {prefixed_title}")
+   336→        click.echo(f"URL: {result.url}")
+   337→        click.echo(f"Branch: {branch_name}")
+   338→        if snapshot_result is not None:
+   339→            click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+   340→        click.echo()
+   341→        click.echo(format_pr_next_steps_plain(pr_number, url=result.url))
+   342→    else:
+   343→        output_data: dict[str, str | int | bool | None] = {
+   344→            "success": True,
+   345→            "pr_number": pr_number,
+   346→            "pr_url": result.url,
+   347→            "title": prefixed_title,
+   348→            "branch_name": branch_name,
+   349→            "plan_backend": "planned_pr",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="66507" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 468}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015Gscb89Qpj39AdRFfL2RHE">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="offset">720</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="66507" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 468, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Gscb89Qpj39AdRFfL2RHE">
+   720→
+   721→    Returns:
+   722→        HookInput with all gathered state.
+   723→    """
+   724→    # Determine marker existence
+   725→    implement_now_marker_exists = False
+   726→    plan_saved_marker_exists = False
+   727→    plan_saved_pr_number: int | None = None
+   728→    incremental_plan_marker_exists = False
+   729→    objective_context_marker_exists = False
+   730→    objective_id: int | None = None
+   731→    if session_id is not None:
+   732→        implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
+   733→        plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
+   734→        if plan_saved_marker_exists:
+   735→            plan_saved_pr_number = read_plan_saved_marker(session_id, repo_root)
+   736→        marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
+   737→        incremental_plan_marker_exists = marker_path.exists()
+   738→        objective_context_marker_exists = _get_objective_context_marker_path(
+   739→            session_id, repo_root
+   740→        ).exists()
+   741→        objective_id = _read_objective_context(session_id, repo_root)
+   742→
+   743→    # Find plan file path (None if doesn't exist)
+   744→    plan_file_path: Path | None = None
+   745→    if session_id is not None:
+   746→        plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
+   747→
+   748→    # Extract title for display (after finding plan file)
+   749→    pr_title: str | None = None
+
+... [10 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1100" cache_read_input_tokens="66975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1100}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I now have a complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1100" cache_read_input_tokens="66975" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1100}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01P4cRd6FzsJCAiNsNbiNpgK">
+    <param name="file_path">/Users/schrockn/.claude/plans/logical-hugging-penguin.md</param>
+    <param name="content"># Plan: Use `erk slot co` in next-steps output
+
+## Context
+
+After saving a plan as a PR, t...[truncated 2588 chars]... for any remaining references to `erk br co` in next_steps.py to confirm full replacement
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1100" cache_read_input_tokens="66975" output_tokens="1270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P4cRd6FzsJCAiNsNbiNpgK">
+File created successfully at: /Users/schrockn/.claude/plans/logical-hugging-penguin.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01WU1VCiogGamXLxtsRjwLqP">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="68075" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WU1VCiogGamXLxtsRjwLqP">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01QXtGjmiGJ5HURMTNUVmFqb">
+    <param name="plan"># Plan: Use `erk slot co` in next-steps output
+
+## Context
+
+After saving a plan as a PR, t...[truncated 2588 chars]... for any remaining references to `erk br co` in next_steps.py to confirm full replacement
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/logical-hugging-penguin.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="69378" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QXtGjmiGJ5HURMTNUVmFqb">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/logical-hugging-penguin.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Use `erk slot co` in next-steps output
+Current context: (wt:erk) (br:plnd/add-slot-checkout-nav-03-20-1715) (pr:#9294)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id a25365e5-2973-4a22-a5df-b9ea3ffe7892 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/logical-hugging-penguin.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Plan: Use `erk slot co` in next-steps output
+
+## Context
+
+After saving a plan as a PR, the "next steps" output suggests commands using `erk br co --for-plan &lt;number&gt;`. Now that the slot system is the primary checkout mechanism, these should use `erk slot co &lt;branch_name&gt;` instead, which is more direct (no plan-number resolution needed) and aligns with the slots workflow.
+
+## Changes
+
+### 1. Add `branch_name` to `PrNextSteps` and add slot properties
+
+**File:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
+
+- Add `branch_name: str` field to `PrNextSteps` dataclass
+- Replace the `erk br co` properties with `erk slot co` equivalents:
+  - `checkout` → `erk slot co {branch_name}`
+  - `checkout_new_slot` → `erk slot co {branch_name} --new-slot`
+  - `implement_current_wt` → `erk slot co {branch_name} &amp;&amp; erk implement`
+  - `implement_current_wt_dangerous` → `erk slot co {branch_name} &amp;&amp; erk implement -d`
+  - `implement_new_wt` → `source "$(erk slot co {branch_name} --new-slot --script)" &amp;&amp; erk implement`
+  - `implement_new_wt_dangerous` → same with `-d`
+- Update `format_pr_next_steps_plain` signature to accept `branch_name`
+- Update `format_next_steps_markdown` signature to accept `branch_name`
+
+### 2. Update call sites to pass `branch_name`
+
+**File:** `src/erk/cli/commands/exec/scripts/plan_save.py` (line 341)
+- `branch_name` is already in scope — pass it through
+
+**File:** `src/erk/cli/commands/pr/create_cmd.py` (line 137)
+- `result.branch_name` is already available — pass it through
+
+**File:** `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`
+- Add `plan_saved_branch_name: str | None` to `HookInput` dataclass
+- In `gather_hook_input()`, when `plan_saved_marker_exists`, also read branch via `get_existing_saved_branch(session_id, repo_root)`
+- Add `branch_name` param to `build_step2_message()` and pass it through
+- Update the call at line 513
+
+### 3. Update tests
+
+- `packages/erk-shared/tests/unit/output/test_next_steps.py`
+- `tests/unit/shared/test_next_steps.py`
+- Exit plan mode hook tests
+
+## Verification
+
+- Run relevant test files
+- Grep for remaining `erk br co` references in next_steps.py</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="671" cache_read_input_tokens="70116" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 671}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GNR74cpgB1uvEFhUao7Bd6">
+    <param name="questions">[{'question': '📋 Plan: Use `erk slot co` in next-steps output\nCurrent context: (wt:erk) (...[truncated 417 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="671" cache_read_input_tokens="70116" output_tokens="952" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 671, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GNR74cpgB1uvEFhUao7Bd6">
+User has answered your questions: "📋 Plan: Use `erk slot co` in next-steps output
+Current context: (wt:erk) (br:plnd/add-slot-checkout-nav-03-20-1715) (pr:#9294)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_013y1G5dz8TWfQej2k2dJ6Kc">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1153" cache_read_input_tokens="70787" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1153, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013y1G5dz8TWfQej2k2dJ6Kc">
+Launching skill: erk:plan-save
+  </tool_result>
+</session>
