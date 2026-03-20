@@ -9,7 +9,7 @@ from tests.fakes.gateway.git import FakeGit
 from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def test_implement_from_plain_issue_number() -> None:
@@ -23,7 +23,7 @@ def test_implement_from_plain_issue_number() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_pr_backend_with_plans({"123": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -50,7 +50,7 @@ def test_implement_from_issue_number() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -77,7 +77,7 @@ def test_implement_from_issue_url() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_pr_backend_with_plans({"123": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -104,7 +104,7 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
 
@@ -127,7 +127,7 @@ def test_implement_from_issue_fails_when_not_found() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#999", "--dry-run"], obj=ctx)
@@ -147,7 +147,7 @@ def test_implement_from_issue_dry_run() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
@@ -173,10 +173,10 @@ def test_auto_detect_fails_on_plnd_branch_without_plan_ref() -> None:
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "plnd/my-feature-01-16-1200"},
         )
-        store, fake_github = create_plan_store_with_plans({"42": plan_issue})
+        store, fake_github = create_pr_backend_with_plans({"42": plan_issue})
         # Also register the PR under the real branch name so ManagedGitHubPrBackend
         # can resolve it via get_pr_for_branch during auto-detection.
-        # (create_plan_store_with_plans registers under "plan-42")
+        # (create_pr_backend_with_plans registers under "plan-42")
         real_branch = "P42-my-feature-01-16-1200"
         fake_github._prs[real_branch] = fake_github._prs["plan-42"]
         fake_github._prs_by_branch[real_branch] = fake_github._pr_details[42]

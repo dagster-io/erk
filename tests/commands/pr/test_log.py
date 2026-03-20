@@ -23,7 +23,7 @@ from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import (
-    create_plan_store_with_plans,
+    create_pr_backend_with_plans,
     issue_info_to_pr_details,
 )
 
@@ -344,7 +344,7 @@ def test_log_with_invalid_plan_identifier() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
 
         # Act

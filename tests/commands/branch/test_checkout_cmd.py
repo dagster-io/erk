@@ -22,7 +22,7 @@ from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 # Fixed timestamp for test Plan objects
 TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
@@ -282,7 +282,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"500": plan})
+        plan_store, _ = create_pr_backend_with_plans({"500": plan})
 
         # Draft-PR backend needs the branch to exist already
         git = FakeGit(
@@ -338,7 +338,7 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"600": plan})
+        plan_store, _ = create_pr_backend_with_plans({"600": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -432,7 +432,7 @@ def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
             metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"600": plan})
+        plan_store, _ = create_pr_backend_with_plans({"600": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -533,7 +533,7 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"601": plan})
+        plan_store, _ = create_pr_backend_with_plans({"601": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -586,7 +586,7 @@ def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
             metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"602": plan})
+        plan_store, _ = create_pr_backend_with_plans({"602": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -643,7 +643,7 @@ def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"603": plan})
+        plan_store, _ = create_pr_backend_with_plans({"603": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -699,7 +699,7 @@ def test_checkout_for_plan_updates_stale_local_parent() -> None:
             metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"604": plan})
+        plan_store, _ = create_pr_backend_with_plans({"604": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},

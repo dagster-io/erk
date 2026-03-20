@@ -77,12 +77,12 @@ def setup_submit_context(
     from tests.fakes.gateway.git import FakeGit
     from tests.fakes.gateway.github import FakeLocalGitHub
     from tests.fakes.gateway.graphite import FakeGraphite
-    from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, fake_backing = create_plan_store_with_plans(plans)
+    fake_pr_backend, fake_backing = create_pr_backend_with_plans(plans)
 
     git_kwargs = git_kwargs or {}
     if "current_branches" not in git_kwargs:
@@ -130,7 +130,7 @@ def setup_submit_context(
         git=fake_git,
         github=fake_github,
         issues=fake_backing.issues,
-        plan_store=fake_plan_store,
+        plan_store=fake_pr_backend,
         graphite=fake_graphite,
         repo=repo,
         global_config=global_config,

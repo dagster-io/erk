@@ -7,7 +7,7 @@ from erk.cli.commands.pr.shared import maybe_advance_lifecycle_to_impl
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.tests.shared_context import context_for_test
 from tests.test_utils.plan_helpers import (
-    create_plan_store_with_plans,
+    create_pr_backend_with_plans,
     format_plan_header_body_for_test,
 )
 
@@ -35,7 +35,7 @@ def _make_plan(*, number: int, lifecycle_stage: str | None = None) -> Plan:
 def test_advances_planned_to_impl(tmp_path: Path) -> None:
     """Plan at 'planned' stage gets updated to 'impl'."""
     plan = _make_plan(number=100, lifecycle_stage="planned")
-    backend, fake_github = create_plan_store_with_plans({"100": plan})
+    backend, fake_github = create_pr_backend_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
@@ -48,7 +48,7 @@ def test_advances_planned_to_impl(tmp_path: Path) -> None:
 def test_advances_none_stage_to_impl(tmp_path: Path) -> None:
     """Plan with None stage gets updated to 'impl'."""
     plan = _make_plan(number=100, lifecycle_stage=None)
-    backend, fake_github = create_plan_store_with_plans({"100": plan})
+    backend, fake_github = create_pr_backend_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
@@ -60,7 +60,7 @@ def test_advances_none_stage_to_impl(tmp_path: Path) -> None:
 def test_skips_when_already_impl(tmp_path: Path) -> None:
     """Plan already at 'impl' is not updated (idempotent)."""
     plan = _make_plan(number=100, lifecycle_stage="impl")
-    backend, fake_github = create_plan_store_with_plans({"100": plan})
+    backend, fake_github = create_pr_backend_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
@@ -83,7 +83,7 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
 def test_advances_planning_stage_to_impl(tmp_path: Path) -> None:
     """Plan at 'planning' stage gets updated to 'impl'."""
     plan = _make_plan(number=100, lifecycle_stage="planning")
-    backend, fake_github = create_plan_store_with_plans({"100": plan})
+    backend, fake_github = create_pr_backend_with_plans({"100": plan})
     ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)

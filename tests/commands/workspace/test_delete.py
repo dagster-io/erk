@@ -24,7 +24,7 @@ from tests.fakes.gateway.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def _make_plan_body_with_worktree(worktree_name: str) -> str:
@@ -435,7 +435,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_github = create_plan_store_with_plans({"123": plan})
+        fake_pr_backend, fake_github = create_pr_backend_with_plans({"123": plan})
 
         # Add PR for the branch to the same FakeLocalGitHub backing the plan store
         pr_info = _make_pr_info(456, state="OPEN")
@@ -452,7 +452,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=fake_github,
-            plan_store=fake_plan_store,
+            plan_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
@@ -617,7 +617,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_github = create_plan_store_with_plans({"456": plan})
+        fake_pr_backend, fake_github = create_pr_backend_with_plans({"456": plan})
 
         # Build fake git ops with worktree info
         fake_git = FakeGit(
@@ -628,7 +628,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=FakeLocalGitHub(),
-            plan_store=fake_plan_store,
+            plan_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
@@ -665,7 +665,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_github = create_plan_store_with_plans({"789": plan})
+        fake_pr_backend, fake_github = create_pr_backend_with_plans({"789": plan})
 
         # Create OPEN PR for the branch
         pr_info = _make_pr_info(123, state="OPEN")
@@ -684,7 +684,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=fake_github,
-            plan_store=fake_plan_store,
+            plan_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},

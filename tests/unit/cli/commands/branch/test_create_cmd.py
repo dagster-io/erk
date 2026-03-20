@@ -13,7 +13,7 @@ from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 # Fixed timestamp for test Plan objects - deterministic test data
 TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
@@ -376,7 +376,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"123": plan})
+        plan_store, _ = create_pr_backend_with_plans({"123": plan})
 
         # planned_pr backend reuses an existing branch; pre-configure FakeGit with it
         git_ops = FakeGit(
@@ -453,7 +453,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"456": plan})
+        plan_store, _ = create_pr_backend_with_plans({"456": plan})
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
@@ -515,7 +515,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"100": plan})
+        plan_store, _ = create_pr_backend_with_plans({"100": plan})
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
@@ -688,7 +688,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"200": plan})
+        plan_store, _ = create_pr_backend_with_plans({"200": plan})
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),
@@ -901,7 +901,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_plan_store_with_plans({"300": plan})
+        plan_store, _ = create_pr_backend_with_plans({"300": plan})
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main"),

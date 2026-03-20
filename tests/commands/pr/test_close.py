@@ -12,7 +12,7 @@ from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import (
-    create_plan_store_with_plans,
+    create_pr_backend_with_plans,
     format_plan_header_body_for_test,
 )
 
@@ -36,7 +36,7 @@ def test_close_pr_with_pr_number() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
+        store, fake_github = create_pr_backend_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -79,7 +79,7 @@ def test_close_pr_not_found() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -105,7 +105,7 @@ def test_close_pr_invalid_identifier() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -131,7 +131,7 @@ def test_close_pr_invalid_url_format() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -176,7 +176,7 @@ def test_close_pr_with_objective_invokes_update() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
-        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
+        store, fake_github = create_pr_backend_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -241,7 +241,7 @@ def test_close_pr_without_objective_skips_update() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor()
-        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
+        store, fake_github = create_pr_backend_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",
@@ -304,7 +304,7 @@ def test_close_pr_objective_update_failure_does_not_break_close() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         executor = FakePromptExecutor(command_should_fail=True)
-        store, fake_github = create_plan_store_with_plans({"42": pr_issue})
+        store, fake_github = create_pr_backend_with_plans({"42": pr_issue})
         fake_remote = FakeRemoteGitHub(
             authenticated_user="test-user",
             default_branch_name="main",

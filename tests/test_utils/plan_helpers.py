@@ -1,4 +1,4 @@
-"""Helpers for creating plan stores with Plan objects in tests.
+"""Helpers for creating PR backends with Plan objects in tests.
 
 This module provides utilities for tests that need to set up plan state.
 It converts Plan objects to ManagedGitHubPrBackend backed by FakeLocalGitHub.
@@ -80,7 +80,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     )
 
 
-def create_plan_store_with_plans(
+def create_pr_backend_with_plans(
     plans: dict[str, Plan],
 ) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
     """Create ManagedGitHubPrBackend backed by FakeLocalGitHub.
