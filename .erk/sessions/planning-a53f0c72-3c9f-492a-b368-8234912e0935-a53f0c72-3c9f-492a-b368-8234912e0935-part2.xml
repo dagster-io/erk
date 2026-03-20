@@ -1,0 +1,554 @@
+<session>
+  <meta branch="plnd/add-slot-checkout-nav-03-20-1715" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_011zUW9jcnsHFUuuS8Wzyoqo">
+    85→    objective_id: int | None = None
+    86→    raw_objective = header_fields.get(OBJECTIVE_ISSUE)
+    87→    if isinstance(raw_objective, int):
+    88→        objective_id = raw_objective
+    89→
+    90→    body = plan_body if plan_body is not None else pr.body
+    91→
+    92→    return Plan(
+    93→        pr_identifier=str(pr.number),
+    94→        title=pr.title,
+    95→        body=body,
+    96→        state=state,
+    97→        url=pr.url,
+    98→        labels=list(pr.labels),
+    99→        assignees=[],
+   100→        created_at=pr.created_at,
+   101→        updated_at=pr.updated_at,
+   102→        metadata={
+   103→            "number": pr.number,
+   104→            "owner": pr.owner,
+   105→            "repo": pr.repo,
+   106→            "author": pr.author,
+   107→            "is_draft": pr.is_draft,
+   108→            "pr_state": pr.state,
+   109→            "base_ref_name": pr.base_ref_name,
+   110→        },
+   111→        objective_id=objective_id,
+   112→        header_fields=header_fields,
+   113→    )
+   114→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KuZdw1Yw2v8JauqcDcaD5G">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">60</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1734" cache_read_input_tokens="52322" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1734}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KuZdw1Yw2v8JauqcDcaD5G">
+    60→from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
+    61→from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
+    62→from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
+    63→    get_pr_discussion_comments,
+    64→)
+    65→from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
+    66→from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
+    67→from erk.cli.commands.exec.scripts.get_pr_review_comments import (
+    68→    get_pr_review_comments,
+    69→)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WdSKZKxUgnmv2igWvLGRJ5">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">213</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1734" cache_read_input_tokens="52322" output_tokens="312" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1734, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WdSKZKxUgnmv2igWvLGRJ5">
+   213→exec_group.add_command(fetch_sessions, name="fetch-sessions")
+   214→exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
+   215→exec_group.add_command(get_plan_info, name="get-plan-info")
+   216→exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
+   217→exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
+   218→exec_group.add_command(get_pr_for_plan, name="get-pr-for-plan")
+   219→exec_group.add_command(get_pr_view, name="get-pr-view")
+   220→exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
+   221→exec_group.add_command(get_issue_body, name="get-issue-body")
+   222→exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="54056" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1303}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me also check `get-plan-info` output to understand one more thing — the `header_fields` contain `branch_name` which is the same as `head_ref_name`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="54056" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1303}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TSfyzXpyg2gEQuQKJwpsDc">
+    <param name="pattern">branch_name</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="54056" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TSfyzXpyg2gEQuQKJwpsDc">
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:118:    def resolve_pr_number_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:126:            branch_name: Git branch name
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:131:        result = self._github.get_pr_for_branch(repo_root, branch_name)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:136:    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:143:            branch_name: Git branch name
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:148:        result = self._github.get_pr_for_branch(repo_root, branch_name)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:150:            return PlanNotFound(pr_id=branch_name)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:266:        Requires "branch_name" in metadata since draft PRs need an existing
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:275:                - branch_name: str (branch for the draft PR)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:286:            RuntimeError: If branch_name not in metadata or creation fails
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:288:        branch_name = metadata.get("branch_name")
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:289:        if branch_name is None or not isinstance(branch_name, str):
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:290:            raise RuntimeError("branch_name is required in metadata for ManagedGitHubPrBackend")
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:329:            branch_name=branch_name,
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:361:            branch=branch_name,
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:653:            branch_name=result.head_ref_name,
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:36:        branch_name: Branch name if created (None on failure)
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:44:    branch_name: str | None
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:59:    branch_name: str,
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:78:    6. Build metadata dict with branch_name and optional fields
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:92:        branch_name: Pre-generated branch name (callers use generate_planned_pr_branch_name)
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:114:    create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:120:            branch_name=None,
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:142:        branch=branch_name,
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:148:    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:151:    metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": trunk}
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:188:            branch_name=branch_name,
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py:200:        branch_name=branch_name,
+packages/erk-shared/src/erk_shared/plan_store/backend.py:248:    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -&gt; Plan | PlanNotFound:
+packages/erk-shared/src/erk_shared/plan_store/backend.py:257:            branch_name: Git branch name (e.g., "plnd/fix-bug-01-15-1430")
+
+... [2 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1715" cache_read_input_tokens="55359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have all the context I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1715" cache_read_input_tokens="55359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1715}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011Zb1enF5HxbWjrxTQW9rAG">
+    <param name="file_path">/Users/schrockn/.claude/plans/vivid-giggling-coral.md</param>
+    <param name="content"># Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)
+
+## Context
+
+`ge...[truncated 3119 chars]...ny remaining references to `get-pr-for-plan`
+5. Run full test suite to catch any breakage
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1715" cache_read_input_tokens="55359" output_tokens="2446" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011Zb1enF5HxbWjrxTQW9rAG">
+File created successfully at: /Users/schrockn/.claude/plans/vivid-giggling-coral.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_013JsdAdtGRWG5b6CVPTKjCr">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2576" cache_read_input_tokens="57074" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013JsdAdtGRWG5b6CVPTKjCr">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_016YEAarTTUdbuDE8Yds85sN">
+    <param name="plan"># Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)
+
+## Context
+
+`ge...[truncated 3119 chars]...ny remaining references to `get-pr-for-plan`
+5. Run full test suite to catch any breakage
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/vivid-giggling-coral.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3409" cache_read_input_tokens="57074" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3409, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016YEAarTTUdbuDE8Yds85sN">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/vivid-giggling-coral.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)
+Current context: (wt:erk) (br:plnd/add-slot-checkout-nav-03-20-1715) (pr:#9294)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id a53f0c72-3c9f-492a-b368-8234912e0935 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/vivid-giggling-coral.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)
+
+## Context
+
+`get-pr-for-plan` is a redundant exec command — since the plan number IS the PR number, it's just a thin wrapper around `github.get_pr()`. The richer `get-plan-info` command already exists but is missing `head_ref_name`/`base_ref_name` fields that some callers need. This plan migrates callers to `get-plan-info` and deletes the redundant command.
+
+## Current State
+
+**`get-pr-for-plan`** (`src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`):
+- Returns: `{success, pr: {number, title, state, url, head_ref_name, base_ref_name}}`
+- Uses GitHub gateway directly
+
+**`get-plan-info`** (`src/erk/cli/commands/exec/scripts/get_plan_info.py`):
+- Returns: `{success, pr_number, title, state, labels, url, objective_id, backend}`
+- Missing: `head_ref_name`, `base_ref_name`
+- Uses plan backend (backend-agnostic)
+
+**Callers of `get-pr-for-plan`:**
+- `.claude/commands/erk/learn.md` (line 140) — uses `head_ref_name`, `base_ref_name`
+- `.claude/skills/erk-exec/reference.md` — documentation
+- ~8 `docs/learned/` files — documentation references
+
+## Implementation
+
+### Phase 1: Add branch fields to `get-plan-info`
+
+1. **Add `head_ref_name` to conversion metadata** (`packages/erk-shared/src/erk_shared/plan_store/conversion.py:109`)
+   - Add `"head_ref_name": pr.head_ref_name` to the metadata dict (alongside existing `base_ref_name`)
+
+2. **Expose branch fields in `get-plan-info` output** (`src/erk/cli/commands/exec/scripts/get_plan_info.py`)
+   - Add `head_ref_name` and `base_ref_name` to the result dict, reading from `plan.metadata`
+
+3. **Update `get-plan-info` tests** (`tests/unit/cli/commands/exec/scripts/test_get_plan_info.py`)
+   - Add assertions for `head_ref_name` and `base_ref_name` in success responses
+
+### Phase 2: Migrate callers and delete
+
+4. **Update `learn.md`** (`.claude/commands/erk/learn.md:140`)
+   - Replace `erk exec get-pr-for-plan &lt;pr-number&gt;` with `erk exec get-plan-info &lt;pr-number&gt;`
+   - Update field references (output structure differs: fields are top-level, not nested under `pr`)
+
+5. **Delete `get-pr-for-plan` script** (`src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`)
+
+6. **Delete tests** (`tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py`)
+
+7. **Remove registration** (`src/erk/cli/commands/exec/group.py`)
+   - Remove import (line 66) and `add_command` call (line 218)
+
+8. **Update documentation references** — all `docs/learned/` files and `.claude/skills/erk-exec/reference.md` that reference `get-pr-for-plan`
+
+## Verification
+
+1. Run unit tests for `get-plan-info` to verify new fields
+2. Run `ty` type checker
+3. Run `ruff` linter
+4. Grep for any remaining references to `get-pr-for-plan`
+5. Run full test suite to catch any breakage
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="60483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 683}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01FHn7jaxE6XXUVxE3yEDQe1">
+    <param name="questions">[{'question': 'Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)\nCu...[truncated 442 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="60483" output_tokens="1199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 683, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FHn7jaxE6XXUVxE3yEDQe1">
+User has answered your questions: "Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)
+Current context: (wt:erk) (br:plnd/add-slot-checkout-nav-03-20-1715) (pr:#9294)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016AbomkkKAMrMdJhbecFzRF">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1313" cache_read_input_tokens="61166" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1313, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016AbomkkKAMrMdJhbecFzRF">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="a53f0c72-3c9f-492a-b368-8234912e0935" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="a53f0c72-3c9f-492a-b368-8234912e0935" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "a53f0c72-3c9f-492a-b368-8234912e0935" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "a53f0c72-3c9f-492a-b368-8234912e0935" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "a53f0c72-3c9f-492a-b368-8234912e0935" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "a53f0c72-3c9f-492a-b368-8234912e0935" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2284" cache_read_input_tokens="62479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2284}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BSG1bntgjXSB3ZUA9V3G4C">
+    <param name="command">erk exec plan-save --format json --session-id="a53f0c72-3c9f-492a-b368-8234912e0935" --bra...[truncated 191 chars]...over the gap, then removes the script, tests, registration, and documentation references."</param>
+    <param name="description">Save plan as draft PR with objective link</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2284" cache_read_input_tokens="62479" output_tokens="414" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BSG1bntgjXSB3ZUA9V3G4C">
+Linked to objective #9109 from session context
+{"success": true, "pr_number": 9296, "pr_url": "https://github.com/dagster-io/erk/pull/9296", "title": "[erk-pr] Plan: Delete `get-pr-for-plan` exec command (Objective #9109, Node 8.1)", "branch_name": "plnd/O9109-delete-get-pr-for-pl-03-20-1803", "plan_backend": "planned_pr", "objective_issue": 9109, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/a53f0c72-3c9f-492a-b368-8234912e0935/plan_snapshots/000001-0bcbd945"}
+  </tool_result>
+  <assistant>Plan saved. Now verifying objective link and updating roadmap.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="716" cache_read_input_tokens="64763" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 716}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HR3JyxSEiGsd1HsZdcFFL7">
+    <param name="command">erk exec get-plan-metadata 9296 objective_issue</param>
+    <param name="description">Verify objective link on saved plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="716" cache_read_input_tokens="64763" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 716, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HR3JyxSEiGsd1HsZdcFFL7">
+{"success": true, "value": 9109, "pr_number": 9296, "field": "objective_issue"}
+  </tool_result>
+  <assistant>Verified objective link: #9109</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="144" cache_read_input_tokens="65479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 144}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LjokXA8GhZYRbtywiygbCc">
+    <param name="command">erk exec marker read --session-id "a53f0c72-3c9f-492a-b368-8234912e0935" roadmap-step</param>
+    <param name="description">Read roadmap node marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="144" cache_read_input_tokens="65479" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 144, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LjokXA8GhZYRbtywiygbCc">
+8.1
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019hBP9mFFXSy8F8yFTYLtCL">
+    <param name="command">erk exec update-objective-node 9109 --node 8.1 --pr '#9296' --status in_progress</param>
+    <param name="description">Update objective roadmap for node 8.1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="65623" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 245, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019hBP9mFFXSy8F8yFTYLtCL">
+{"success": true, "issue_number": 9109, "node_id": "8.1", "previous_pr": null, "new_pr": "#9296", "url": "https://github.com/dagster-io/erk/issues/9109", "backlink_set": true}
+  </tool_result>
+  <assistant>Updated objective #9109 roadmap: node 8.1 → PR #9296
+
+Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="65868" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 286}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VhkBqKDjJz3s635inDbFHx">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="65868" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VhkBqKDjJz3s635inDbFHx">
+SESSION_ID=a53f0c72-3c9f-492a-b368-8234912e0935
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/a53f0c72-3c9f-492a-b368-8234912e0935.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q9GGgMnDYpZaWqZh33ra9h">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...2a-b368-8234912e0935" --stage planning --source local --pr-number 9296 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="66154" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 210, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
