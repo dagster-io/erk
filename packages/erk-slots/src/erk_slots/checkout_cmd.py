@@ -15,25 +15,15 @@ from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.core.worktree_pool import load_pool_state
 from erk_shared.cli_alias import alias
 from erk_shared.core.script_error import script_error_handler
 from erk_shared.output.output import user_output
-from erk_slots.common import (
-    allocate_slot_for_branch,
-    find_current_slot_assignment,
-    update_slot_assignment_tip,
-)
+from erk_slots.common import allocate_slot_for_branch
 
 
 @alias("co")
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH")
-@click.option(
-    "--new-slot",
-    is_flag=True,
-    help="Allocate a new slot instead of stacking in place",
-)
 @click.option(
     "-f",
     "--force",
@@ -42,12 +32,11 @@ from erk_slots.common import (
 )
 @script_option
 @click.pass_obj
-def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool, script: bool) -> None:
+def slot_checkout(ctx: ErkContext, branch: str, force: bool, script: bool) -> None:
     """Checkout BRANCH into a pool slot.
 
-    By default, if running inside an assigned slot, updates the slot's
-    assignment to the new branch (stack-in-place). Use --new-slot to
-    allocate a fresh slot instead.
+    If the branch already has a slot, navigates to it. Otherwise,
+    allocates a new slot and checks out the branch there.
 
     The branch must already exist. Use `erk branch create` to create
     a new branch.
@@ -57,12 +46,11 @@ def slot_checkout(ctx: ErkContext, branch: str, new_slot: bool, force: bool, scr
 
     Examples:
 
-        erk slot checkout feature/auth        # Stack in current slot
-        erk slot checkout feature/auth --new-slot  # Allocate new slot
-        erk slot checkout feature/auth --force     # Auto-evict if full
+        erk slot checkout feature/auth         # Checkout into a slot
+        erk slot checkout feature/auth --force  # Auto-evict if full
     """
     with script_error_handler(ctx) if script else nullcontext():
-        _slot_checkout_body(ctx, branch=branch, new_slot=new_slot, force=force, script=script)
+        _slot_checkout_body(ctx, branch=branch, force=force, script=script)
 
 
 def _navigate_and_show(
@@ -105,9 +93,7 @@ def _navigate_and_show(
         )
 
 
-def _slot_checkout_body(
-    ctx: ErkContext, *, branch: str, new_slot: bool, force: bool, script: bool
-) -> None:
+def _slot_checkout_body(ctx: ErkContext, *, branch: str, force: bool, script: bool) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
@@ -128,35 +114,7 @@ def _slot_checkout_body(
             )
             raise SystemExit(1) from None
 
-    # Check for stack-in-place (unless --new-slot)
-    if not new_slot:
-        state = load_pool_state(repo.pool_json_path)
-        if state is not None:
-            current_assignment = find_current_slot_assignment(state, repo.root)
-            if current_assignment is not None:
-                slot_result = update_slot_assignment_tip(
-                    repo.pool_json_path,
-                    state,
-                    current_assignment,
-                    branch_name=branch,
-                    now=ctx.time.now().isoformat(),
-                )
-                ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)
-                styled_msg = click.style(
-                    f"✓ Stacked {branch} in {slot_result.slot_name} (in place)",
-                    fg="green",
-                )
-                _navigate_and_show(
-                    ctx,
-                    worktree_path=slot_result.worktree_path,
-                    branch=branch,
-                    script=script,
-                    script_message=f'echo "Stacked {branch} in {slot_result.slot_name} (in place)"',
-                    user_message=styled_msg,
-                )
-                return
-
-    # Allocate a new slot for the branch
+    # Allocate a new slot for the branch (or return existing if already assigned)
     slot_result = allocate_slot_for_branch(
         ctx,
         repo,

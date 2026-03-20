@@ -26,36 +26,32 @@ class TestPrNextSteps:
         steps = _steps()
         assert steps.dispatch == "erk pr dispatch 42"
 
-    def test_checkout_uses_branch_name(self) -> None:
+    def test_checkout_current_wt(self) -> None:
         steps = _steps()
-        assert steps.checkout == "erk slot co plnd/my-feature"
+        assert steps.checkout_current_wt == "git checkout plnd/my-feature"
+
+    def test_checkout_new_wt(self) -> None:
+        steps = _steps()
+        assert steps.checkout_new_wt == "erk slot co plnd/my-feature"
 
     def test_implement_current_wt(self) -> None:
         steps = _steps()
-        assert steps.implement_current_wt == "erk slot co plnd/my-feature && erk implement"
+        assert steps.implement_current_wt == "git checkout plnd/my-feature && erk implement"
 
     def test_implement_current_wt_dangerous(self) -> None:
         steps = _steps()
         assert (
             steps.implement_current_wt_dangerous
-            == "erk slot co plnd/my-feature && erk implement -d"
+            == "git checkout plnd/my-feature && erk implement -d"
         )
-
-    def test_checkout_new_slot(self) -> None:
-        steps = _steps()
-        assert steps.checkout_new_slot == "erk slot co plnd/my-feature --new-slot"
 
     def test_implement_new_wt(self) -> None:
         steps = _steps()
-        assert steps.implement_new_wt == (
-            'source "$(erk slot co plnd/my-feature --new-slot --script)" && erk implement'
-        )
+        assert steps.implement_new_wt == "erk slot co plnd/my-feature && erk implement"
 
     def test_implement_new_wt_dangerous(self) -> None:
         steps = _steps()
-        assert steps.implement_new_wt_dangerous == (
-            'source "$(erk slot co plnd/my-feature --new-slot --script)" && erk implement -d'
-        )
+        assert steps.implement_new_wt_dangerous == "erk slot co plnd/my-feature && erk implement -d"
 
     def test_dispatch_slash_command(self) -> None:
         steps = _steps()
@@ -84,6 +80,6 @@ class TestFormatPrNextStepsPlain:
         assert "/erk:pr-dispatch" in output
         assert "Dispatch PR #42:" in output
 
-    def test_contains_checkout_new_slot(self) -> None:
+    def test_contains_git_checkout(self) -> None:
         output = format_pr_next_steps_plain(42, url=_URL, branch_name=_BRANCH)
-        assert "erk slot co plnd/my-feature --new-slot" in output
+        assert "git checkout plnd/my-feature" in output

@@ -991,16 +991,17 @@ class TestBuildStep2Message:
     def test_contains_implement_current_wt_command(self) -> None:
         """Step 2 shows implement-in-current-worktree command."""
         message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
-        assert "erk slot co plnd/my-feature && erk implement" in message
+        assert "git checkout plnd/my-feature && erk implement" in message
 
     def test_contains_implement_new_wt_command(self) -> None:
         """Step 2 shows implement-in-new-worktree command."""
         message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
-        assert "erk slot co plnd/my-feature --new-slot" in message
+        assert "erk slot co plnd/my-feature && erk implement" in message
 
     def test_contains_checkout_commands(self) -> None:
         """Step 2 shows checkout commands."""
         message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "git checkout plnd/my-feature" in message
         assert "erk slot co plnd/my-feature" in message
 
     def test_contains_dispatch_command(self) -> None:
