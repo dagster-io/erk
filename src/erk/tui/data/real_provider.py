@@ -634,11 +634,16 @@ class RealPrDataProvider(PrDataProvider):
                     f"https://github.com/{owner}/{repo_name}/actions/runs/{learn_run_id}"
                 )
 
-        objective_url = (
-            f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}"
-            if objective_issue is not None
-            else None
-        )
+        # Objective rows: the row IS the objective, use its own URL
+        if objective_issue is None and "erk-objective" in plan.labels:
+            objective_issue = pr_number
+            objective_url = plan.url
+        else:
+            objective_url = (
+                f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}"
+                if objective_issue is not None
+                else None
+            )
         objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
 
         objective_slug_display = "-"
