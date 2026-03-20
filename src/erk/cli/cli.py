@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 import os
 import sys
@@ -216,12 +217,10 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.docs.group import docs_group
 
     cli.add_command(docs_group)
-try:
+if importlib.util.find_spec("erk_slots") is not None:
     from erk_slots import slot_group
 
     cli.add_command(slot_group)
-except ImportError:
-    pass
 cli.add_command(exec_group)
 cli.add_command(json_group)
 cli.add_command(md_group)
