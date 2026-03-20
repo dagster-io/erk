@@ -14,8 +14,8 @@ def last_output_line(result: OperationResult) -> str:
     return next((ln for ln in reversed(result.output_lines) if ln), "Unknown error")
 
 
-def extract_learn_plan_number(result: OperationResult) -> int | None:
-    """Extract learn plan number from land-execute output, if present."""
+def extract_learn_pr_number(result: OperationResult) -> int | None:
+    """Extract learn PR number from land-execute output, if present."""
     for line in result.output_lines:
         match = _LEARN_PLAN_RE.search(line)
         if match:

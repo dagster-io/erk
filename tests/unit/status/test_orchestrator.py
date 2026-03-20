@@ -27,7 +27,7 @@ from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
 from erk.status.collectors.git import GitStatusCollector
 from erk.status.collectors.impl import PlanFileCollector
-from erk.status.models.status_data import GitStatus, PlanStatus
+from erk.status.models.status_data import GitStatus, PrStatus
 from erk.status.orchestrator import StatusOrchestrator
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.parallel.real import RealParallelTaskRunner
@@ -191,7 +191,7 @@ def test_orchestrator_with_failing_collector(tmp_path: Path) -> None:
             return True
 
         def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> object:
-            return "This is not a PlanStatus object"  # Wrong type
+            return "This is not a PrStatus object"  # Wrong type
 
     collectors = [WrongTypeCollector()]
     orchestrator = StatusOrchestrator(collectors, runner=RealParallelTaskRunner())
@@ -523,7 +523,7 @@ def test_orchestrator_multiple_collector_types(tmp_path: Path) -> None:
             return True
 
         def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> object:
-            return PlanStatus(
+            return PrStatus(
                 exists=True,
                 path=get_impl_dir(worktree_path, branch_name=BRANCH),
                 line_count=5,

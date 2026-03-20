@@ -11,7 +11,7 @@ from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.naming import generate_planned_pr_branch_name
-from erk_shared.output.next_steps import format_plan_next_steps_plain
+from erk_shared.output.next_steps import format_pr_next_steps_plain
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_utils import extract_title_from_plan
@@ -134,4 +134,4 @@ def pr_create(
         and result.branch_name is not None
         and result.pr_url is not None
     ):
-        user_output(format_plan_next_steps_plain(result.pr_number, url=result.pr_url))
+        user_output(format_pr_next_steps_plain(result.pr_number, url=result.pr_url))

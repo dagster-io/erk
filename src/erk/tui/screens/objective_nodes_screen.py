@@ -526,13 +526,13 @@ class ObjectiveNodesScreen(ModalScreen):
             return
         op_id = f"land-pr-{row.pr_number}"
         app._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
-        plan_number = row.pr_number if not row.is_learn_plan else None
+        learn_source_pr = row.pr_number if not row.is_learn_plan else None
         app._land_pr_async(
             op_id=op_id,
             pr_number=row.pr_number,
             branch=row.pr_head_branch,
             objective_issue=row.objective_issue,
-            plan_number=plan_number,
+            learn_source_pr=learn_source_pr,
         )
 
     def _action_rebase_remote(self, row: PrRowData) -> None:

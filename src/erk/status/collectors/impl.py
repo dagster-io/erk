@@ -5,7 +5,7 @@ from pathlib import Path
 
 from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
-from erk.status.models.status_data import PlanStatus
+from erk.status.models.status_data import PrStatus
 from erk_shared.impl_folder import (
     get_impl_dir,
     get_impl_path,
@@ -39,7 +39,7 @@ class PlanFileCollector(StatusCollector):
         impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
         return impl_path is not None
 
-    def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> PlanStatus | None:
+    def collect(self, ctx: ErkContext, worktree_path: Path, repo_root: Path) -> PrStatus | None:
         """Collect .erk/impl-context/ folder information.
 
         Args:
@@ -48,11 +48,11 @@ class PlanFileCollector(StatusCollector):
             repo_root: Repository root path
 
         Returns:
-            PlanStatus with folder information or None if collection fails
+            PrStatus with folder information or None if collection fails
         """
         branch = ctx.git.branch.get_current_branch(worktree_path)
         if branch is None:
-            return PlanStatus(
+            return PrStatus(
                 exists=False,
                 path=None,
                 summary=None,
@@ -64,7 +64,7 @@ class PlanFileCollector(StatusCollector):
         impl_path = get_impl_path(worktree_path, branch_name=branch, git_ops=ctx.git)
 
         if impl_path is None:
-            return PlanStatus(
+            return PrStatus(
                 exists=False,
                 path=None,
                 summary=None,
@@ -104,7 +104,7 @@ class PlanFileCollector(StatusCollector):
         pr_number = int(plan_ref.pr_id) if plan_ref else None
         pr_url = plan_ref.url if plan_ref else None
 
-        return PlanStatus(
+        return PrStatus(
             exists=True,
             path=impl_folder,
             summary=summary,

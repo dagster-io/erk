@@ -1095,7 +1095,7 @@ def _land_target(
         worktree_path=worktree_path,
         is_current_branch=target.is_current_branch,
         objective_number=objective_number,
-        plan_number=int(pr_id) if pr_id is not None else None,
+        learn_source_pr=int(pr_id) if pr_id is not None else None,
         use_graphite=target.use_graphite,
         skip_learn=skip_learn,
         cleanup_confirmed=cleanup_confirmed,
@@ -1310,7 +1310,7 @@ def render_land_execution_script(
     worktree_path: Path | None,
     is_current_branch: bool,
     objective_number: int | None,
-    plan_number: int | None,
+    learn_source_pr: int | None,
     use_graphite: bool,
     skip_learn: bool,
     cleanup_confirmed: bool,
@@ -1358,6 +1358,7 @@ def render_land_execution_script(
         worktree_path: Path to worktree being cleaned up (if any)
         is_current_branch: Whether landing from the branch's own worktree
         objective_number: Linked objective issue number (if any)
+        learn_source_pr: Linked PR number for learn issue creation
         use_graphite: Whether to use Graphite for merge
         target_path: Where to cd after land completes
 
@@ -1385,8 +1386,8 @@ def render_land_execution_script(
         cmd_parts.append("--skip-learn")
     if objective_number is not None:
         cmd_parts.append(f"--objective-number={objective_number}")
-    if plan_number is not None:
-        cmd_parts.append(f"--linked-pr-number={plan_number}")
+    if learn_source_pr is not None:
+        cmd_parts.append(f"--linked-pr-number={learn_source_pr}")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 
@@ -1417,7 +1418,7 @@ def _execute_land(
     no_delete: bool,
     no_cleanup: bool,
     script: bool,
-    plan_number: int | None,
+    learn_source_pr: int | None,
     skip_learn: bool,
 ) -> None:
     """Execute deferred land operations from activation script.
@@ -1442,7 +1443,7 @@ def _execute_land(
         no_delete: Whether to preserve branch and slot
         no_cleanup: Whether user declined cleanup during validation
         script: Whether running in script mode
-        plan_number: Plan number for learn issue creation
+        learn_source_pr: Linked PR number for learn issue creation
     """
     # Validate required parameters
     Ensure.invariant(pr_number is not None, "Missing --exec-pr-number in execute mode")
@@ -1463,7 +1464,7 @@ def _execute_land(
         no_cleanup=no_cleanup,
         script=script,
         target_child_branch=target_child_branch,
-        pr_id=str(plan_number) if plan_number is not None else None,
+        pr_id=str(learn_source_pr) if learn_source_pr is not None else None,
         skip_learn=skip_learn,
     )
 

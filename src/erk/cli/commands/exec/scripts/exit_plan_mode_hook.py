@@ -59,7 +59,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
-from erk_shared.output.next_steps import format_plan_next_steps_plain
+from erk_shared.output.next_steps import format_pr_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 from erk_shared.scratch.session_markers import (
@@ -272,7 +272,7 @@ def build_step2_message(
         pr_number: The plan PR number that was just saved.
         url: The URL of the saved plan PR.
     """
-    next_steps = format_plan_next_steps_plain(pr_number, url=url)
+    next_steps = format_pr_next_steps_plain(pr_number, url=url)
 
     lines = [
         f"PR #{pr_number} saved successfully.",

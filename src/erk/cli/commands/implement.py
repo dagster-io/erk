@@ -134,7 +134,7 @@ def _show_dry_run_output(
 def _implement_from_issue(
     ctx: ErkContext,
     *,
-    plan_number: str,
+    pr_number: str,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -148,7 +148,7 @@ def _implement_from_issue(
 
     Args:
         ctx: Erk context
-        plan_number: GitHub plan number
+        pr_number: GitHub PR number
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -164,9 +164,9 @@ def _implement_from_issue(
 
     # Fetch plan from GitHub
     ctx.console.info("Fetching plan from GitHub...")
-    result = ctx.plan_store.get_managed_pr(repo.root, plan_number)
+    result = ctx.plan_store.get_managed_pr(repo.root, pr_number)
     if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+        user_output(click.style("Error: ", fg="red") + f"Plan #{pr_number} not found")
         raise SystemExit(1)
     plan = result
 
@@ -174,7 +174,7 @@ def _implement_from_issue(
     if not plan.title.startswith("[erk-pr]"):
         user_output(
             click.style("Error: ", fg="red")
-            + f"Plan #{plan_number} does not have the '[erk-pr]' title prefix.\n"
+            + f"Plan #{pr_number} does not have the '[erk-pr]' title prefix.\n"
             "Create a plan using 'erk pr create' to ensure correct formatting."
         )
         raise SystemExit(1) from None
@@ -182,7 +182,7 @@ def _implement_from_issue(
     ctx.console.info(f"Plan: {plan.title}")
 
     # Create dry-run description
-    dry_run_desc = f"Would create impl folder from plan #{plan_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create impl folder from plan #{pr_number}\n  Title: {plan.title}"
     plan_source = PlanSource(
         plan_content=plan.body,
         base_name=plan.title,
@@ -221,7 +221,7 @@ def _implement_from_issue(
     save_plan_ref(
         impl_dir,
         provider=provider_name,
-        pr_number=str(plan_number),
+        pr_number=str(pr_number),
         url=plan.url,
         labels=(),
         objective_id=plan.objective_id,
@@ -463,7 +463,7 @@ def implement(
 
         _implement_from_issue(
             ctx,
-            plan_number=target_info.pr_number,
+            pr_number=target_info.pr_number,
             dry_run=dry_run,
             submit=submit,
             dangerous=effective_dangerous,

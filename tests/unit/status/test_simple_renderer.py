@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.status.models.status_data import (
     CommitInfo,
     GitStatus,
-    PlanStatus,
+    PrStatus,
     PullRequestStatus,
     StackPosition,
     StatusData,
@@ -120,7 +120,7 @@ def test_renderer_with_plan_file() -> None:
     # Arrange
     worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")
 
-    plan = PlanStatus(
+    plan = PrStatus(
         exists=True,
         path=Path("/tmp/test/.plan"),
         summary="Test plan summary",
@@ -167,7 +167,7 @@ def test_renderer_without_plan_file() -> None:
     worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")
 
     # Plan exists but file not found
-    plan = PlanStatus(
+    plan = PrStatus(
         exists=False,
         path=None,
         summary=None,
@@ -652,7 +652,7 @@ def test_renderer_full_status() -> None:
         ready_to_merge=False,
     )
 
-    plan = PlanStatus(
+    plan = PrStatus(
         exists=True,
         path=Path("/tmp/test/.plan"),
         summary="Implementation plan",

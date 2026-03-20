@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class PlanNextSteps:
+class PrNextSteps:
     """Canonical commands for plan operations."""
 
     pr_number: int
@@ -58,9 +58,9 @@ DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"
 CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 
 
-def format_plan_next_steps_plain(pr_number: int, *, url: str) -> str:
+def format_pr_next_steps_plain(pr_number: int, *, url: str) -> str:
     """Format for CLI output (plain text)."""
-    s = PlanNextSteps(pr_number=pr_number, url=url)
+    s = PrNextSteps(pr_number=pr_number, url=url)
     return f"""Implement PR #{pr_number}:
   In current wt:    {s.implement_current_wt}
     (dangerously):  {s.implement_current_wt_dangerous}
@@ -78,7 +78,7 @@ Dispatch PR #{pr_number}:
 
 def format_next_steps_markdown(pr_number: int, *, url: str) -> str:
     """Format for PR body (markdown)."""
-    s = PlanNextSteps(pr_number=pr_number, url=url)
+    s = PrNextSteps(pr_number=pr_number, url=url)
     return f"""## Execution Commands
 
 **Dispatch to Erk Queue:**

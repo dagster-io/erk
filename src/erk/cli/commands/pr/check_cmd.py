@@ -299,15 +299,15 @@ def _check_pr_body(ctx: ErkContext, stage: str | None) -> None:
             )
 
     # Check 0: Plan reference exists
-    expected_plan_number: int | None = None
+    expected_pr_number: int | None = None
     plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
 
     if plan_ref is not None:
-        expected_plan_number = int(plan_ref.pr_id)
+        expected_pr_number = int(plan_ref.pr_id)
         checks.append(
             PrCheck(
                 passed=True,
-                description=f"Plan reference found (#{expected_plan_number})",
+                description=f"Plan reference found (#{expected_pr_number})",
             )
         )
 

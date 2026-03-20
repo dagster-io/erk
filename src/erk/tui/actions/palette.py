@@ -209,13 +209,13 @@ class PaletteActionsMixin:
             if row.pr_number and row.pr_head_branch:
                 op_id = f"land-pr-{row.pr_number}"
                 self._start_operation(op_id=op_id, label=f"Landing PR #{row.pr_number}...")
-                plan_number = row.pr_number if not row.is_learn_plan else None
+                learn_source_pr = row.pr_number if not row.is_learn_plan else None
                 self._land_pr_async(
                     op_id=op_id,
                     pr_number=row.pr_number,
                     branch=row.pr_head_branch,
                     objective_issue=row.objective_issue,
-                    plan_number=plan_number,
+                    learn_source_pr=learn_source_pr,
                 )
 
         elif command_id == "incremental_dispatch":

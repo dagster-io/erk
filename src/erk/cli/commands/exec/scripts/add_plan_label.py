@@ -1,10 +1,10 @@
 """Backend-aware label addition for plans.
 
 Usage:
-    erk exec add-plan-label <plan-number> --label <label>
+    erk exec add-plan-label <pr-number> --label <label>
 
 Output:
-    JSON with {success, plan_number, label}
+    JSON with {success, pr_number, label}
 
 Exit Codes:
     0: Success - label added
