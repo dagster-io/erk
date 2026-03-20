@@ -16,7 +16,7 @@ from pathlib import Path
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int) -> None:
+def create_plan_saved_marker(session_id: str, repo_root: Path, pr_number: int) -> None:
     """Create marker file to indicate plan was saved to GitHub.
 
     The plan number is stored on the first line so the hook can read it
@@ -25,12 +25,12 @@ def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int)
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        plan_number: The plan PR number.
+        pr_number: The plan PR number.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
     marker_file.write_text(
-        f"{plan_number}\n"
+        f"{pr_number}\n"
         "Created by: /erk:plan-save\n"
         "Trigger: Plan was successfully saved to GitHub\n"
         "Effect: Next ExitPlanMode call will be BLOCKED with Step 2 prompt\n"
@@ -61,7 +61,7 @@ def read_plan_saved_marker(session_id: str, repo_root: Path) -> int | None:
 
 
 def create_plan_saved_issue_marker(
-    session_id: str, repo_root: Path, plan_number: int, *, title: str
+    session_id: str, repo_root: Path, pr_number: int, *, title: str
 ) -> None:
     """Create marker file storing the issue number and title of the saved plan.
 
@@ -74,12 +74,12 @@ def create_plan_saved_issue_marker(
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        plan_number: The plan number where the plan was saved.
+        pr_number: The plan number where the plan was saved.
         title: The plan title (used for per-title dedup).
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "plan-saved-issue.marker"
-    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")
+    marker_file.write_text(f"{pr_number}\n{title}", encoding="utf-8")
 
 
 def read_objective_context_marker(session_id: str, repo_root: Path) -> int | None:

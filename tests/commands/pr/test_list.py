@@ -409,7 +409,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="1",
+            pr_number="1",
             url="https://github.com/owner/repo/issues/1",
             labels=(),
             objective_id=None,
@@ -515,7 +515,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         save_plan_ref(
             impl1,
             provider="github",
-            plan_id="1",
+            pr_number="1",
             url="https://github.com/owner/repo/issues/1",
             labels=(),
             objective_id=None,
@@ -531,7 +531,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         save_plan_ref(
             impl2,
             provider="github",
-            plan_id="2",
+            pr_number="2",
             url="https://github.com/owner/repo/issues/2",
             labels=(),
             objective_id=None,

@@ -12,7 +12,7 @@ Unlike .impl/ folders (ephemeral, local, never committed), .erk/impl-context/ fo
 Folder structure:
 .erk/impl-context/
 ├── plan.md          # Full plan content from GitHub issue
-└── ref.json         # Plan reference metadata (provider, plan_id, url, etc.)
+└── ref.json         # Plan reference metadata (provider, pr_id, url, etc.)
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 
 def create_impl_context(
     plan_content: str,
-    plan_id: str,
+    pr_number: str,
     url: str,
     repo_root: Path,
     *,
@@ -39,7 +39,7 @@ def create_impl_context(
 
     Args:
         plan_content: Full plan markdown content from GitHub issue
-        plan_id: Provider-specific plan ID as string (e.g., "42")
+        pr_number: Provider-specific plan ID as string (e.g., "42")
         url: Full plan URL
         repo_root: Repository root directory path
         provider: Plan provider name (e.g., "github", "github-draft-pr")
@@ -74,7 +74,7 @@ def create_impl_context(
     # Write ref.json directly (lighter format than plan-ref.json)
     ref_data: dict[str, str | int | list[str] | None] = {
         "provider": provider,
-        "plan_id": plan_id,
+        "pr_id": pr_number,
         "url": url,
         "created_at": now_iso,
         "synced_at": now_iso,
@@ -130,7 +130,7 @@ def impl_context_exists(repo_root: Path) -> bool:
 
 def build_impl_context_files(
     plan_content: str,
-    plan_id: str,
+    pr_number: str,
     url: str,
     *,
     provider: str,
@@ -145,7 +145,7 @@ def build_impl_context_files(
 
     Args:
         plan_content: Full plan markdown content from GitHub issue
-        plan_id: Provider-specific plan ID as string (e.g., "42")
+        pr_number: Provider-specific plan ID as string (e.g., "42")
         url: Full plan URL
         provider: Plan provider name (e.g., "github", "github-draft-pr")
         objective_id: Optional linked objective issue number
@@ -158,7 +158,7 @@ def build_impl_context_files(
     """
     ref_data: dict[str, str | int | list[str] | None] = {
         "provider": provider,
-        "plan_id": plan_id,
+        "pr_id": pr_number,
         "url": url,
         "created_at": now_iso,
         "synced_at": now_iso,

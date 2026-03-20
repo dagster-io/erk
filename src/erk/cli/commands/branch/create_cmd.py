@@ -253,7 +253,7 @@ def branch_create(
         save_plan_ref(
             impl_path,
             provider="github",
-            plan_id=str(setup.plan_number),
+            pr_number=str(setup.pr_number),
             url=setup.issue_url,
             labels=(),
             objective_id=setup.objective_issue,
@@ -266,18 +266,18 @@ def branch_create(
                 worktree_path=slot_result.worktree_path,
                 target_subpath=None,
                 post_cd_commands=None,
-                final_message=f'echo "Prepared PR #{setup.plan_number} at $(pwd)"',
+                final_message=f'echo "Prepared PR #{setup.pr_number} at $(pwd)"',
                 comment="erk branch create activation script",
             )
             result = ctx.script_writer.write_activation_script(
                 activation_script,
                 command_name="branch-create",
-                comment=f"branch create --for-plan {setup.plan_number}",
+                comment=f"branch create --for-plan {setup.pr_number}",
             )
             result.output_for_script_handler()
             sys.exit(0)
 
-        user_output(f"Created .erk/impl-context/ folder from PR #{setup.plan_number}")
+        user_output(f"Created .erk/impl-context/ folder from PR #{setup.pr_number}")
 
         # Write activation script
         activate_script_path = write_worktree_activate_script(

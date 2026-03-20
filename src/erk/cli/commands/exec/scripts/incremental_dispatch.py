@@ -117,7 +117,7 @@ def incremental_dispatch(
     pr_id = str(pr_number)
     files = build_impl_context_files(
         plan_content=plan_content,
-        plan_id=pr_id,
+        pr_number=pr_id,
         url=pr_result.url,
         provider="incremental-dispatch",
         objective_id=None,

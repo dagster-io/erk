@@ -224,14 +224,14 @@ def _load_impl_data(impl_dir: Path) -> dict | None:
     return None
 
 
-def get_plan_number(git_root: str) -> int | None:
-    """Load plan number from .impl/plan-ref.json file.
+def get_pr_number(git_root: str) -> int | None:
+    """Load PR number from .impl/plan-ref.json file.
 
     Args:
         git_root: Absolute path to git repository root
 
     Returns:
-        Plan number if file exists and is valid, None otherwise.
+        PR number if file exists and is valid, None otherwise.
     """
     if not git_root:
         return None
@@ -240,9 +240,9 @@ def get_plan_number(git_root: str) -> int | None:
     if data is None:
         return None
 
-    plan_id = data.get("plan_id")
-    if isinstance(plan_id, str) and plan_id.isdigit():
-        return int(plan_id)
+    pr_id = data.get("pr_id")
+    if isinstance(pr_id, str) and pr_id.isdigit():
+        return int(pr_id)
     return None
 
 
@@ -1064,7 +1064,7 @@ def build_gh_label(
     repo_info: RepoInfo,
     github_data: GitHubData | None,
     *,
-    plan_number: int | None,
+    pr_number: int | None,
     objective_issue: int | None,
 ) -> TokenSeq:
     """Build GitHub PR metadata label.
@@ -1072,7 +1072,7 @@ def build_gh_label(
     Args:
         repo_info: Repository and PR information
         github_data: GitHub data from GraphQL query (for checks status and comments)
-        plan_number: Optional plan number from .impl/plan-ref.json
+        pr_number: Optional PR number from .impl/plan-ref.json
         objective_issue: Optional objective issue number from .impl/plan-ref.json
 
     Returns:
@@ -1086,11 +1086,11 @@ def build_gh_label(
         parts.append(Token(f"#{repo_info.pr_number}", color=Color.BLUE))
 
         # Add plan number if available
-        if plan_number:
+        if pr_number:
             parts.extend(
                 [
                     Token(" plan:"),
-                    Token(f"#{plan_number}", color=Color.BLUE),
+                    Token(f"#{pr_number}", color=Color.BLUE),
                 ]
             )
 
@@ -1194,7 +1194,7 @@ def main():
         relative_cwd = ""
         new_plan_file = None
         git_root = ""
-        plan_number = None
+        pr_number = None
         objective_issue = None
         github_data = None
         if cwd:
@@ -1212,7 +1212,7 @@ def main():
                     )
                     relative_cwd = get_relative_cwd(cwd, git_root)
                     new_plan_file = find_new_plan_file(git_root)
-                    plan_number = get_plan_number(git_root)
+                    pr_number = get_pr_number(git_root)
                     objective_issue = get_objective_issue(git_root)
                     # Fetch GitHub data using gateway for Graphite PR cache
                     github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
@@ -1254,7 +1254,7 @@ def main():
                 build_gh_label(
                     repo_info,
                     github_data,
-                    plan_number=plan_number,
+                    pr_number=pr_number,
                     objective_issue=objective_issue,
                 ),
                 TokenSeq((Token("│ ("), Token(model_code), Token(")"))),

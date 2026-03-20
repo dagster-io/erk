@@ -91,7 +91,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert ref_data["provider"] == "github-draft-pr"
-    assert ref_data["plan_id"] == "123"
+    assert ref_data["pr_id"] == "123"
     assert ref_data["url"] == "https://github.com/test-owner/test-repo/pull/123"
     assert "created_at" in ref_data
     assert "synced_at" in ref_data

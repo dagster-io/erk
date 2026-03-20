@@ -41,8 +41,8 @@ from erk_statusline.statusline import (
     get_github_repo_via_gateway,
     get_model_code,
     get_objective_issue,
-    get_plan_number,
     get_pr_info_via_branch_manager,
+    get_pr_number,
     get_repo_info,
     get_worktree_info_via_gateway,
     main,
@@ -378,7 +378,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -408,7 +408,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -438,7 +438,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=456, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -460,7 +460,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -488,7 +488,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -516,7 +516,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -544,7 +544,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" not in result_text
@@ -571,7 +571,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=789)
+        result = build_gh_label(repo_info, github_data, pr_number=456, objective_issue=789)
 
         result_text = result.render()
         # Note: render() includes ANSI codes between labels and numbers
@@ -592,7 +592,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=456, objective_issue=None)
 
         result_text = result.render()
         assert "obj:" not in result_text
@@ -624,7 +624,7 @@ class TestBuildGhLabel:
             from_fallback=True,  # Data came from GitHub API fallback
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         # Should NOT contain warning emoji - fallback indicator was removed
@@ -633,42 +633,42 @@ class TestBuildGhLabel:
         assert "#123" in result_text
 
 
-class TestGetPlanNumber:
-    """Test plan number loading from .impl/plan-ref.json."""
+class TestGetPrNumber:
+    """Test PR number loading from .impl/plan-ref.json."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
-        result = get_plan_number("")
+        result = get_pr_number("")
         assert result is None
 
     def test_missing_plan_file_returns_none(self) -> None:
         """Missing plan file should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = get_plan_number(tmpdir)
+            result = get_pr_number(tmpdir)
             assert result is None
 
     def test_plan_ref_json_returns_number(self) -> None:
-        """Valid plan-ref.json with plan_id field should return the number."""
+        """Valid plan-ref.json with pr_id field should return the number."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
             plan_ref_file.write_text(
-                '{"provider": "github", "plan_id": "42", "url": "https://example.com"}'
+                '{"provider": "github", "pr_id": "42", "url": "https://example.com"}'
             )
 
-            result = get_plan_number(tmpdir)
+            result = get_pr_number(tmpdir)
             assert result == 42
 
-    def test_plan_ref_json_non_numeric_plan_id_returns_none(self) -> None:
-        """plan-ref.json with non-numeric plan_id returns None."""
+    def test_plan_ref_json_non_numeric_pr_id_returns_none(self) -> None:
+        """plan-ref.json with non-numeric pr_id returns None."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text('{"provider": "linear", "plan_id": "PROJ-123", "url": "u"}')
+            plan_ref_file.write_text('{"provider": "linear", "pr_id": "PROJ-123", "url": "u"}')
 
-            result = get_plan_number(tmpdir)
+            result = get_pr_number(tmpdir)
             assert result is None
 
 
@@ -693,7 +693,7 @@ class TestGetObjectiveIssue:
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
             plan_ref_file.write_text(
-                '{"provider": "github", "plan_id": "42", "url": "u", "objective_id": 789}'
+                '{"provider": "github", "pr_id": "42", "url": "u", "objective_id": 789}'
             )
 
             result = get_objective_issue(tmpdir)
@@ -705,7 +705,7 @@ class TestGetObjectiveIssue:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text('{"provider": "github", "plan_id": "42", "url": "u"}')
+            plan_ref_file.write_text('{"provider": "github", "pr_id": "42", "url": "u"}')
 
             result = get_objective_issue(tmpdir)
             assert result is None

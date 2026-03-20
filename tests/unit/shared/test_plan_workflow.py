@@ -95,8 +95,8 @@ def test_prepare_plan_converts_identifier_to_int() -> None:
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
     assert isinstance(result, PlanBranchSetup)
-    assert result.plan_number == 789
-    assert isinstance(result.plan_number, int)
+    assert result.pr_number == 789
+    assert isinstance(result.pr_number, int)
 
 
 def test_prepare_plan_invalid_identifier_returns_failure() -> None:
@@ -159,7 +159,7 @@ def test_uses_existing_branch_from_header() -> None:
 
     assert isinstance(result, PlanBranchSetup)
     assert result.branch_name == "plan-add-new-feature-01-15-1430"
-    assert result.plan_number == 456
+    assert result.pr_number == 456
 
 
 def test_missing_branch_returns_failure() -> None:

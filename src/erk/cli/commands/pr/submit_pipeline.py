@@ -178,7 +178,7 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id=pr_id,
+            pr_number=pr_id,
             url=pr_url,
             labels=(),
             objective_id=None,

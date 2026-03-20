@@ -72,7 +72,7 @@ def create_impl_context_from_plan(
     impl_context_path = repo_root / IMPL_CONTEXT_DIR
     create_impl_context(
         plan_content=plan.body,
-        plan_id=pr_id,
+        pr_number=pr_id,
         url=plan.url,
         repo_root=repo_root,
         provider=provider,

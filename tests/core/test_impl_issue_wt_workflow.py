@@ -32,7 +32,7 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
     save_plan_ref(
         impl_folder,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -60,7 +60,7 @@ def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
         save_plan_ref(
             impl_folder,
             provider="github",
-            plan_id="42",
+            pr_number="42",
             url="https://github.com/owner/repo/issues/42",
             labels=(),
             objective_id=None,
@@ -84,7 +84,7 @@ def test_has_plan_ref_true_when_file_exists(tmp_path: Path) -> None:
     save_plan_ref(
         impl_folder,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -132,7 +132,7 @@ Test the workflow.
     save_plan_ref(
         impl_folder,
         provider="github",
-        plan_id=str(result.number),
+        pr_number=str(result.number),
         url=result.url,
         labels=(),
         objective_id=None,

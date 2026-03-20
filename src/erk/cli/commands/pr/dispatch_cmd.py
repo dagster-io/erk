@@ -240,7 +240,7 @@ def _dispatch_planned_pr_plan(
     user_output("Committing plan to branch...")
     files = build_impl_context_files(
         plan_content=plan.body,
-        plan_id=str(pr_number),
+        pr_number=str(pr_number),
         url=validated.url,
         provider="github-draft-pr",
         objective_id=plan.objective_id,
@@ -486,7 +486,7 @@ def _dispatch_planned_pr_plan_remote(
     now_iso = time_gateway.now().isoformat()
     files = build_impl_context_files(
         plan_content=plan_content,
-        plan_id=str(pr_number),
+        pr_number=str(pr_number),
         url=validated.url,
         provider="github-draft-pr",
         objective_id=None,

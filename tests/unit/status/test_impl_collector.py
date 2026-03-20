@@ -57,7 +57,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     save_plan_ref(
         plan_folder,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
