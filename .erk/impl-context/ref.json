@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Extract slot naming utilities to `erk-shared/slots/naming.py`"
+}
