@@ -38,16 +38,22 @@ def test_module_name_from_package_prefixes_numeric_start() -> None:
 
 def test_render_pyproject_contains_required_fields() -> None:
     """Rendered pyproject.toml should include expected metadata."""
-    content = reserve_command.render_pyproject("demo", "demo_pkg", "Reserved description")
+    content = reserve_command.render_pyproject("demo", "demo_pkg", "Reserved description", "0.0.1")
     assert 'name = "demo"' in content
     assert 'version = "0.0.1"' in content
     assert 'description = "Reserved description"' in content
     assert 'packages = ["src/demo_pkg"]' in content
 
 
+def test_render_pyproject_uses_provided_version() -> None:
+    """Rendered pyproject.toml should use the specified version."""
+    content = reserve_command.render_pyproject("demo", "demo_pkg", "Reserved description", "0.0.2")
+    assert 'version = "0.0.2"' in content
+
+
 def test_write_project_files_creates_structure(tmp_path: Path) -> None:
     """write_project_files should create src structure and pyproject.toml."""
-    reserve_command.write_project_files(tmp_path, "demo_pkg", "demo", "A description")
+    reserve_command.write_project_files(tmp_path, "demo_pkg", "demo", "A description", "0.0.1")
 
     init_path = tmp_path / "src" / "demo_pkg" / "__init__.py"
     pyproject_path = tmp_path / "pyproject.toml"
@@ -62,9 +68,20 @@ def test_write_project_files_creates_structure(tmp_path: Path) -> None:
     assert 'name = "demo"' in pyproject_content
 
 
+def test_write_project_files_uses_provided_version(tmp_path: Path) -> None:
+    """write_project_files should use the specified version in generated files."""
+    reserve_command.write_project_files(tmp_path, "demo_pkg", "demo", "A description", "0.0.2")
+
+    init_content = (tmp_path / "src" / "demo_pkg" / "__init__.py").read_text(encoding="utf-8")
+    pyproject_content = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert '__version__ = "0.0.2"' in init_content
+    assert 'version = "0.0.2"' in pyproject_content
+
+
 def test_write_project_files_fails_if_structure_exists(tmp_path: Path) -> None:
     """Existing src directory should trigger SystemExit."""
     (tmp_path / "src" / "demo_pkg").mkdir(parents=True)
 
     with pytest.raises(SystemExit):
-        reserve_command.write_project_files(tmp_path, "demo_pkg", "demo", "A description")
+        reserve_command.write_project_files(tmp_path, "demo_pkg", "demo", "A description", "0.0.1")
