@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Add `--version` option to `reserve-pypi-name` command"
+}
