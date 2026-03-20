@@ -1,8 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Objective #9272 Node 1.4 \u2014 Move Branch Checkout into Slot Checkout",
-  "objective_id": 9272,
-  "node_ids": [
-    "1.4"
-  ]
-}
