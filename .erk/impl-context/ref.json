@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Fix false positive review for ternary context managers"
-}
