@@ -43,11 +43,56 @@ REST API-based GitHub operations without a local git or `gh` CLI dependency. Ena
 
 ### Pull Requests
 
-| Method                                                             | Returns | Description    |
-| ------------------------------------------------------------------ | ------- | -------------- |
-| `create_pull_request(owner, repo, head, base, title, body, draft)` | `int`   | PR number      |
-| `update_pull_request_body(owner, repo, pr_number, body)`           | `None`  | Update PR body |
-| `close_pr(owner, repo, number)`                                    | `None`  | Close a PR     |
+| Method                                                             | Returns                            | Description        |
+| ------------------------------------------------------------------ | ---------------------------------- | ------------------ |
+| `get_pr(owner, repo, number)`                                      | `RemotePRInfo \| RemotePRNotFound` | Fetch PR by number |
+| `create_pull_request(owner, repo, head, base, title, body, draft)` | `int`                              | PR number          |
+| `update_pull_request_body(owner, repo, pr_number, body)`           | `None`                             | Update PR body     |
+| `close_pr(owner, repo, number)`                                    | `None`                             | Close a PR         |
+
+## PR Types
+
+Defined in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
+
+### `RemotePRInfo`
+
+```python
+@dataclass(frozen=True)
+class RemotePRInfo:
+    number: int
+    title: str
+    state: str           # "OPEN", "CLOSED", or "MERGED" (uppercase, from GitHub REST API)
+    url: str
+    head_ref_name: str   # PR's source branch
+    base_ref_name: str   # PR's target branch
+    owner: str
+    repo: str
+    labels: list[str]    # Always list[str], never None
+```
+
+State values are uppercase strings matching GitHub REST API: `"OPEN"`, `"CLOSED"`, `"MERGED"`.
+
+### `RemotePRNotFound`
+
+Sentinel for when a PR does not exist:
+
+```python
+@dataclass(frozen=True)
+class RemotePRNotFound:
+    pr_number: int
+```
+
+### LBYL Pattern for PR Lookup
+
+```python
+pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
+Ensure.invariant(
+    not isinstance(pr, RemotePRNotFound),
+    f"No pull request found with number #{pr_number}",
+)
+assert not isinstance(pr, RemotePRNotFound)
+# pr is now RemotePRInfo
+```
 
 ### Issues
 

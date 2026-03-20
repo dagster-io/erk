@@ -42,6 +42,8 @@ Rules triggered by matching actions in code.
 
 **adding a new call site for run_commit_message_generation without time parameter** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. The time parameter is required for test isolation. Pass time=ctx.time from the ErkContext.
 
+**adding a new dispatch handler that does not return (branch_name, run_id)** → Read [Unified Dispatch Pattern](unified-dispatch-pattern.md) first. All PR-targeting dispatch handlers must return (branch_name, run_id) for post-dispatch metadata enrichment. learn and consolidate-learn-plans are exceptions (no branch/run_id needed for metadata). See unified-dispatch-pattern.md.
+
 **adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
@@ -136,6 +138,8 @@ Rules triggered by matching actions in code.
 
 **calling time.sleep() or time.monotonic() directly in progress feedback code** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. Use ctx.time.sleep() and ctx.time.monotonic() for testability. All production call sites pass time=ctx.time.
 
+**calling update_local_ref on a branch without checking if it is checked out** → Read [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) first. Use sync_branch_to_sha instead. It detects checkout state and handles dirty worktrees. Direct update_local_ref on a checked-out branch desynchronizes the index. See sync-branch-to-sha-pattern.md.
+
 **changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
 
 **changing config section names ([interactive-claude] or [interactive-agent])** → Read [Interactive Agent Configuration](interactive-agent-config.md) first. Maintain fallback from [interactive-agent] to [interactive-claude] for backward compatibility.
@@ -197,6 +201,8 @@ Rules triggered by matching actions in code.
 **detecting current worktree using path comparisons on cwd** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile.
 
 **detecting mode after Phase 0 has already executed** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection wastes work and creates scattered conditionals across all phases
+
+**dispatching a workflow directly from the launch command body without a handler** → Read [Unified Dispatch Pattern](unified-dispatch-pattern.md) first. Add a dedicated _dispatch_<workflow> handler function. The handler pattern separates PR lookup, validation, input building, and dispatch. See unified-dispatch-pattern.md.
 
 **duplicating environment setup in remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. build_codespace_ssh_command() bootstraps the environment - don't duplicate setup
 
@@ -373,6 +379,8 @@ Rules triggered by matching actions in code.
 **using sed -i in scripts that run on both macOS and Linux** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform.
 
 **using subprocess.run with git command outside of a gateway** [pattern: `subprocess\.run\(\s*\[.*["']git`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
+
+**using sync_branch_to_sha when merge-base analysis is needed** → Read [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) first. sync_branch_to_sha moves a branch to a known SHA. For trunk sync with divergence detection, use ensure_trunk_synced(). See sync-branch-to-sha-pattern.md.
 
 **using this pattern** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Using run_ssh_command() for interactive TUI processes causes apparent hangs
 
