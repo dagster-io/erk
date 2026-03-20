@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9303,
+  "sessions": [
+    {
+      "session_id": "f923b413-b923-44f9-802c-9e1299cea916",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-20T19:16:33.623777+00:00",
+      "files": [
+        "impl-f923b413-b923-44f9-802c-9e1299cea916-f923b413-b923-44f9-802c-9e1299cea916-part1.xml",
+        "impl-f923b413-b923-44f9-802c-9e1299cea916-f923b413-b923-44f9-802c-9e1299cea916-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 9,
+      "raw_size_kb": 1052,
+      "xml_size_kb": 106,
+      "git_branch": "plnd/extract-slot-naming-shared-03-20-1906"
+    }
+  ]
+}
