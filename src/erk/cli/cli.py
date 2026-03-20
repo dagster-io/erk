@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 import os
 import sys
@@ -33,7 +34,6 @@ from erk.cli.commands.pr.list.cli import dash
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
 from erk.cli.commands.reconcile_cmd import reconcile
-from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
@@ -205,7 +205,6 @@ cli.add_command(release_notes_cmd)
 cli.add_command(objective_group)
 cli.add_command(one_shot)
 cli.add_command(project_group)
-cli.add_command(slot_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
 cli.add_command(launch)
@@ -218,6 +217,10 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.docs.group import docs_group
 
     cli.add_command(docs_group)
+if importlib.util.find_spec("erk_slots") is not None:
+    from erk_slots import slot_group
+
+    cli.add_command(slot_group)
 cli.add_command(exec_group)
 cli.add_command(json_group)
 cli.add_command(md_group)

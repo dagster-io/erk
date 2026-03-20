@@ -13,6 +13,7 @@ members = [
     "erk-dev",
     "erk-mcp",
     "erk-shared",
+    "erk-slots",
     "erk-statusline",
 ]
 
@@ -633,6 +634,7 @@ dependencies = [
 dev = [
     { name = "erk-dev" },
     { name = "erk-mcp" },
+    { name = "erk-slots" },
     { name = "libcst" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -666,6 +668,7 @@ requires-dist = [
 dev = [
     { name = "erk-dev", editable = "packages/erk-dev" },
     { name = "erk-mcp", editable = "packages/erk-mcp" },
+    { name = "erk-slots", editable = "packages/erk-slots" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
@@ -729,6 +732,17 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "tomlkit", specifier = ">=0.12.0" },
 ]
+
+[[package]]
+name = "erk-slots"
+version = "0.9.11"
+source = { editable = "packages/erk-slots" }
+dependencies = [
+    { name = "erk-shared" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "erk-shared", editable = "packages/erk-shared" }]
 
 [[package]]
 name = "erk-statusline"
