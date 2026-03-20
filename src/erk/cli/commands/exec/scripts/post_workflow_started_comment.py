@@ -100,7 +100,7 @@ def _build_workflow_started_comment(
         started_at=started_at,
         workflow_run_id=run_id,
         workflow_run_url=run_url,
-        plan_number=pr_number,
+        pr_number=pr_number,
         branch_name=branch_name,
     )
 

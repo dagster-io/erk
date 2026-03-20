@@ -663,7 +663,7 @@ def test_create_objective_comment_passes_validation(tmp_path: Path) -> None:
     )
 
     assert result.success
-    assert result.plan_number is not None
+    assert result.pr_number is not None
 
     # Get the final issue body (after update_issue_body with comment_id)
     final_issue_body = fake_gh.updated_bodies[-1][1]

@@ -173,14 +173,14 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         timestamp="2025-01-15T10:00:00Z",
     ),
     "erk-plan": create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-worktree",
         timestamp="2025-01-15T10:00:00Z",
     ),
     "submission-queued": create_submission_queued_block(
         queued_at="2025-01-15T10:00:00Z",
         submitted_by="testuser",
-        plan_number=42,
+        pr_number=42,
         validation_results={"pr_is_open": True, "has_erk_pr_title": True},
         expected_workflow="implement-plan",
     ),
@@ -188,7 +188,7 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         started_at="2025-01-15T10:00:00Z",
         workflow_run_id="12345678",
         workflow_run_url="https://github.com/owner/repo/actions/runs/12345678",
-        plan_number=42,
+        pr_number=42,
     ),
     "plan-header": create_plan_header_block(
         created_at="2025-01-15T10:00:00Z",

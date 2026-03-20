@@ -35,7 +35,7 @@ from erk_shared.context.helpers import (
     require_plan_backend,
     require_repo_root,
 )
-from erk_shared.gateway.github.parsing import parse_plan_number_from_url
+from erk_shared.gateway.github.parsing import parse_issue_number_from_url
 from erk_shared.naming import extract_objective_number
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -65,7 +65,7 @@ def _resolve_objective_ref_impl(
             return {"resolved": True, "objective_number": int(ref), "source": "argument"}
 
         # Try as URL
-        number = parse_plan_number_from_url(ref)
+        number = parse_issue_number_from_url(ref)
         if number is not None:
             return {"resolved": True, "objective_number": number, "source": "argument"}
 

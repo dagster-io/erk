@@ -84,11 +84,11 @@ def test_log_displays_timeline_chronologically() -> None:
         started_at="2024-01-15T12:35:00Z",
         workflow_run_id="123456",
         workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
-        plan_number=42,
+        pr_number=42,
     )
 
     plan_block = create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -96,7 +96,7 @@ def test_log_displays_timeline_chronologically() -> None:
     submission_block = create_submission_queued_block(
         queued_at="2024-01-15T12:32:00Z",
         submitted_by="user",
-        plan_number=42,
+        pr_number=42,
         validation_results={"pr_is_open": True},
         expected_workflow="implement-plan",
     )
@@ -165,7 +165,7 @@ def test_log_json_output() -> None:
     )
 
     plan_block = create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -274,7 +274,7 @@ def test_log_with_all_event_types() -> None:
 
     # Create all event types
     plan_block = create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -282,7 +282,7 @@ def test_log_with_all_event_types() -> None:
     submission_block = create_submission_queued_block(
         queued_at="2024-01-15T12:32:00Z",
         submitted_by="testuser",
-        plan_number=42,
+        pr_number=42,
         validation_results={"pr_is_open": True},
         expected_workflow="implement-plan",
     )
@@ -291,7 +291,7 @@ def test_log_with_all_event_types() -> None:
         started_at="2024-01-15T12:35:00Z",
         workflow_run_id="123456",
         workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
-        plan_number=42,
+        pr_number=42,
     )
 
     status_block = create_implementation_status_block(
@@ -445,7 +445,7 @@ def test_log_json_structure() -> None:
     submission_block = create_submission_queued_block(
         queued_at="2024-01-15T12:32:00Z",
         submitted_by="testuser",
-        plan_number=42,
+        pr_number=42,
         validation_results={"pr_is_open": True},
         expected_workflow="implement-plan",
     )

@@ -200,7 +200,7 @@ def create_worktree_creation_block(
     worktree_name: str,
     branch_name: str,
     timestamp: str,
-    plan_number: int | None = None,
+    pr_number: int | None = None,
     plan_file: str | None = None,
 ) -> MetadataBlock:
     """Create an erk-worktree-creation block with validation.
@@ -209,7 +209,7 @@ def create_worktree_creation_block(
         worktree_name: Name of the worktree
         branch_name: Git branch name
         timestamp: ISO 8601 timestamp of creation
-        plan_number: Optional GitHub plan number this worktree implements
+        pr_number: Optional GitHub PR number this worktree implements
         plan_file: Optional path to the plan file
 
     Returns:
@@ -222,8 +222,8 @@ def create_worktree_creation_block(
         "timestamp": timestamp,
     }
 
-    if plan_number is not None:
-        data["plan_number"] = plan_number
+    if pr_number is not None:
+        data["pr_number"] = pr_number
 
     if plan_file is not None:
         data["plan_file"] = plan_file
@@ -236,7 +236,7 @@ def create_worktree_creation_block(
 
 
 def create_plan_block(
-    plan_number: int,
+    pr_number: int,
     worktree_name: str,
     timestamp: str,
     plan_file: str | None = None,
@@ -244,7 +244,7 @@ def create_plan_block(
     """Create an erk-plan block with validation.
 
     Args:
-        plan_number: GitHub plan number for this plan
+        pr_number: GitHub PR number for this plan
         worktree_name: Auto-generated worktree name from issue title
         timestamp: ISO 8601 timestamp of issue creation
         plan_file: Optional path to the plan file
@@ -254,7 +254,7 @@ def create_plan_block(
     """
     schema = PlanSchema()
     data: dict[str, Any] = {
-        "plan_number": plan_number,
+        "pr_number": pr_number,
         "worktree_name": worktree_name,
         "timestamp": timestamp,
     }
@@ -273,7 +273,7 @@ def create_submission_queued_block(
     *,
     queued_at: str,
     submitted_by: str,
-    plan_number: int,
+    pr_number: int,
     validation_results: dict[str, bool],
     expected_workflow: str,
 ) -> MetadataBlock:
@@ -282,7 +282,7 @@ def create_submission_queued_block(
     Args:
         queued_at: ISO 8601 timestamp when submission was queued
         submitted_by: Username from git config (user.name)
-        plan_number: GitHub plan issue number
+        pr_number: GitHub PR issue number
         validation_results: Dict with validation checks (pr_is_open, has_erk_pr_title, etc.)
         expected_workflow: Name of the GitHub Actions workflow that will run
 
@@ -294,7 +294,7 @@ def create_submission_queued_block(
         "status": "queued",
         "queued_at": queued_at,
         "submitted_by": submitted_by,
-        "plan_number": plan_number,
+        "pr_number": pr_number,
         "validation_results": validation_results,
         "expected_workflow": expected_workflow,
         "trigger_mechanism": "label-based-webhook",
@@ -312,7 +312,7 @@ def create_workflow_started_block(
     started_at: str,
     workflow_run_id: str,
     workflow_run_url: str,
-    plan_number: int,
+    pr_number: int,
     branch_name: str | None = None,
     worktree_path: str | None = None,
 ) -> MetadataBlock:
@@ -322,7 +322,7 @@ def create_workflow_started_block(
         started_at: ISO 8601 timestamp when workflow started
         workflow_run_id: GitHub Actions run ID
         workflow_run_url: Full URL to the workflow run
-        plan_number: GitHub plan issue number
+        pr_number: GitHub PR issue number
         branch_name: Optional git branch name
         worktree_path: Optional path to worktree
 
@@ -335,7 +335,7 @@ def create_workflow_started_block(
         "started_at": started_at,
         "workflow_run_id": workflow_run_id,
         "workflow_run_url": workflow_run_url,
-        "plan_number": plan_number,
+        "pr_number": pr_number,
     }
 
     if branch_name is not None:
@@ -403,24 +403,24 @@ def render_plan_body_block(block: MetadataBlock) -> str:
 <!-- /erk:metadata-block:{block.key} -->"""
 
 
-def format_execution_commands(plan_number: int, *, url: str) -> str:
+def format_execution_commands(pr_number: int, *, url: str) -> str:
     """Format execution commands section for plan issues.
 
     Args:
-        plan_number: GitHub plan issue number
+        pr_number: GitHub PR issue number
         url: GitHub issue URL
 
     Returns:
         Formatted markdown with copy-pasteable commands
     """
-    return format_next_steps_markdown(plan_number, url=url)
+    return format_next_steps_markdown(pr_number, url=url)
 
 
-def format_plan_commands_section(plan_number: int) -> str:
+def format_plan_commands_section(pr_number: int) -> str:
     """Format copy-pasteable commands section for plan issues.
 
     Args:
-        plan_number: GitHub plan issue number
+        pr_number: GitHub PR issue number
 
     Returns:
         Formatted markdown with copy-pasteable commands for the issue body
@@ -428,11 +428,11 @@ def format_plan_commands_section(plan_number: int) -> str:
     return f"""## Commands
 
 ```bash
-erk br co --for-plan {plan_number}
+erk br co --for-plan {pr_number}
 ```
 
 ```bash
-erk pr dispatch {plan_number}
+erk pr dispatch {pr_number}
 ```"""
 
 
@@ -453,7 +453,7 @@ def format_plan_issue_body_simple(plan_content: str) -> str:
     return render_plan_body_block(plan_block)
 
 
-def format_plan_issue_body(plan_content: str, plan_number: int, *, url: str) -> str:
+def format_plan_issue_body(plan_content: str, pr_number: int, *, url: str) -> str:
     """Format the complete issue body for a plan issue.
 
     Creates an issue body with:
@@ -463,7 +463,7 @@ def format_plan_issue_body(plan_content: str, plan_number: int, *, url: str) -> 
 
     Args:
         plan_content: The plan markdown content
-        plan_number: GitHub plan issue number (for command formatting)
+        pr_number: GitHub PR issue number (for command formatting)
         url: GitHub issue URL
 
     Returns:
@@ -471,7 +471,7 @@ def format_plan_issue_body(plan_content: str, plan_number: int, *, url: str) -> 
     """
     plan_block = create_plan_body_block(plan_content)
     plan_markdown = render_plan_body_block(plan_block)
-    commands_section = format_execution_commands(plan_number, url=url)
+    commands_section = format_execution_commands(pr_number, url=url)
 
     return f"""{plan_markdown}
 
