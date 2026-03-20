@@ -116,10 +116,12 @@ gh api repos/{owner}/{repo}/issues/comments/{comment_id} -X PATCH -f body="<upda
 **Plan-vs-Actual Insight Generation:**
 
 After prose reconciliation, compare two things:
+
 1. **Plan intent** — the original plan from `plan.body` + node descriptions from the roadmap
 2. **Actual implementation** — `changed_files` list + commit messages (from Step 1.5)
 
 From this delta, generate 1-3 insights focused on what's useful for remaining objective nodes:
+
 - **Scope divergence**: Plan said N files, PR touched M — what was unexpected?
 - **API/naming changes**: Did the implementation choose different names than planned? Future nodes need to know.
 - **Discovered coupling**: Did the PR reveal dependencies between modules not anticipated in the roadmap?
@@ -139,6 +141,7 @@ echo '<json>' | erk exec objective-post-action-comment
 ```
 
 JSON fields:
+
 - `issue_number`: The objective issue number
 - `date`: Today's date (`YYYY-MM-DD`)
 - `pr_number`: The PR number that was landed
