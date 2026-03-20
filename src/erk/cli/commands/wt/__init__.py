@@ -2,7 +2,6 @@
 
 import click
 
-from erk.cli.alias import register_with_aliases
 from erk.cli.commands.status import status_cmd
 from erk.cli.commands.wt.checkout_cmd import wt_checkout
 from erk.cli.commands.wt.create_cmd import create_wt
@@ -11,7 +10,8 @@ from erk.cli.commands.wt.current_cmd import current_wt
 from erk.cli.commands.wt.delete_cmd import delete_wt
 from erk.cli.commands.wt.list_cmd import list_wt
 from erk.cli.commands.wt.rename_cmd import rename_wt
-from erk.cli.help_formatter import ErkCommandGroup
+from erk_shared.cli_alias import register_with_aliases
+from erk_shared.cli_group import ErkCommandGroup
 
 
 @click.group("wt", cls=ErkCommandGroup, grouped=False)

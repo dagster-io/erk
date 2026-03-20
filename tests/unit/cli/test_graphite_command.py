@@ -6,17 +6,17 @@ import click
 from click.testing import CliRunner
 from pytest import MonkeyPatch
 
-from erk.cli import help_formatter as help_formatter_module
 from erk.cli.graphite_command import (
     GraphiteCommand,
     GraphiteCommandWithHiddenOptions,
     GraphiteGroup,
 )
-from erk.cli.help_formatter import (
+from erk.cli.help_formatter import script_option
+from erk_shared import cli_group as cli_group_module
+from erk_shared.cli_group import (
     ErkCommandGroup,
     _is_graphite_available,
     _requires_graphite,
-    script_option,
 )
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
@@ -126,10 +126,10 @@ def test_is_graphite_available_falls_back_to_config_when_ctx_obj_is_none(
             return mock_config
 
     # Monkeypatch RealErkInstallation to return our mock
-    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
+    monkeypatch.setattr(cli_group_module, "RealErkInstallation", MockErkInstallation)
 
     # Monkeypatch shutil.which to simulate gt being installed
-    monkeypatch.setattr(help_formatter_module.shutil, "which", lambda cmd: "/usr/bin/gt")
+    monkeypatch.setattr(cli_group_module.shutil, "which", lambda cmd: "/usr/bin/gt")
 
     # Create a Click context with obj=None (simulating help before callback)
     click_ctx = click.Context(click.Command("test"))
@@ -156,7 +156,7 @@ def test_is_graphite_available_returns_false_when_config_disabled_and_ctx_obj_no
         def load_config(self) -> GlobalConfig:
             return mock_config
 
-    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
+    monkeypatch.setattr(cli_group_module, "RealErkInstallation", MockErkInstallation)
 
     click_ctx = click.Context(click.Command("test"))
     click_ctx.obj = None
@@ -182,9 +182,9 @@ def test_is_graphite_available_returns_false_when_gt_not_installed_and_ctx_obj_n
         def load_config(self) -> GlobalConfig:
             return mock_config
 
-    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
+    monkeypatch.setattr(cli_group_module, "RealErkInstallation", MockErkInstallation)
     # gt is not installed
-    monkeypatch.setattr(help_formatter_module.shutil, "which", lambda cmd: None)
+    monkeypatch.setattr(cli_group_module.shutil, "which", lambda cmd: None)
 
     click_ctx = click.Context(click.Command("test"))
     click_ctx.obj = None
@@ -204,7 +204,7 @@ def test_is_graphite_available_returns_false_when_no_config_and_ctx_obj_none(
         def load_config(self) -> GlobalConfig:
             raise FileNotFoundError("No config")
 
-    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockMissingErkInstallation)
+    monkeypatch.setattr(cli_group_module, "RealErkInstallation", MockMissingErkInstallation)
 
     click_ctx = click.Context(click.Command("test"))
     click_ctx.obj = None
@@ -576,8 +576,8 @@ def test_graphite_command_visible_when_help_shown_without_ctx_obj(
             return mock_config
 
     # Monkeypatch at the module level where it's used
-    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
-    monkeypatch.setattr(help_formatter_module.shutil, "which", lambda cmd: "/usr/bin/gt")
+    monkeypatch.setattr(cli_group_module, "RealErkInstallation", MockErkInstallation)
+    monkeypatch.setattr(cli_group_module.shutil, "which", lambda cmd: "/usr/bin/gt")
 
     @click.group("cli", cls=ErkCommandGroup, grouped=False)
     def cli() -> None:
@@ -622,7 +622,7 @@ def test_graphite_command_hidden_when_help_shown_without_ctx_obj_and_config_disa
         def load_config(self) -> GlobalConfig:
             return mock_config
 
-    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
+    monkeypatch.setattr(cli_group_module, "RealErkInstallation", MockErkInstallation)
 
     @click.group("cli", cls=ErkCommandGroup, grouped=False)
     def cli() -> None:

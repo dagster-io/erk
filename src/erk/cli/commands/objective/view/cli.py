@@ -9,7 +9,6 @@ from rich.markup import escape
 from rich.table import Table
 from rich.text import Text
 
-from erk.cli.alias import alias
 from erk.cli.commands.objective.view.operation import (
     ObjectiveViewRequest,
     ObjectiveViewResult,
@@ -20,6 +19,7 @@ from erk.cli.repo_resolution import resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.agentclick.machine_command import MachineCommandError
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
     compute_graph_summary,

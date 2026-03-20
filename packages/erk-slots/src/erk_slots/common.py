@@ -728,3 +728,26 @@ def allocate_slot_for_branch(
         worktree_path=worktree_path,
         already_assigned=False,
     )
+
+
+def find_current_slot_assignment(state: PoolState, cwd: Path) -> SlotAssignment | None:
+    """Find slot assignment matching the current working directory.
+
+    Compares the resolved cwd against each assignment's worktree_path.
+
+    Args:
+        state: Current pool state
+        cwd: Current working directory path
+
+    Returns:
+        SlotAssignment if cwd is a pool slot, None otherwise
+    """
+    if not cwd.exists():
+        return None
+    resolved_path = cwd.resolve()
+    for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            continue
+        if assignment.worktree_path.resolve() == resolved_path:
+            return assignment
+    return None

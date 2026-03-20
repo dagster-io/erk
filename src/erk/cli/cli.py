@@ -6,7 +6,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.alias import register_with_aliases
 from erk.cli.capability_check import is_learned_docs_available
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.artifact.group import artifact_group
@@ -37,7 +36,6 @@ from erk.cli.commands.reconcile_cmd import reconcile
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
-from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.command_log import get_cli_args, log_command_start, register_exit_handler
 from erk.core.context import create_context
 from erk.core.release_notes import check_for_version_change, get_current_version
@@ -46,6 +44,8 @@ from erk.core.version_check import (
     get_required_version,
     is_version_mismatch,
 )
+from erk_shared.cli_alias import register_with_aliases
+from erk_shared.cli_group import ErkCommandGroup
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.real import RealGit

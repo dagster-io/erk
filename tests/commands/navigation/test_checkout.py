@@ -115,7 +115,7 @@ def test_checkout_to_branch_not_found() -> None:
 def test_checkout_creates_worktree_for_unchecked_branch() -> None:
     """Test that checkout checks out in current worktree when branch exists but is not checked out.
 
-    Default behavior (no --new-slot) checks out in the current worktree.
+    Default behavior checks out in the current worktree.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -174,8 +174,8 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
 def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
     """Test that checkout checks out in current worktree when branch exists but is not checked out.
 
-    Default behavior (no --new-slot) checks out in the current worktree rather
-    than creating a new slot.
+    Default behavior checks out in the current worktree rather than creating
+    a new worktree.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -444,8 +444,8 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 def test_checkout_creates_worktree_for_remote_only_branch() -> None:
     """Test checkout checks out in current worktree when branch exists only on origin.
 
-    Default behavior (no --new-slot) creates a tracking branch and checks out
-    in the current worktree.
+    Default behavior creates a tracking branch and checks out in the current
+    worktree.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -624,19 +624,18 @@ def test_checkout_message_when_switching_worktrees() -> None:
         assert len(git_ops.checked_out_branches) == 0
 
 
-def test_checkout_trunk_with_dirty_root_errors() -> None:
-    """Test that checkout prevents creating worktree for trunk branch when root is dirty.
+def test_checkout_trunk_with_dirty_root_checks_out_in_current_worktree() -> None:
+    """Test that checkout of trunk when root is dirty checks out in current worktree.
 
-    When the root worktree is dirty, try_switch_root_worktree() fails and the command
-    falls through to ensure_worktree_for_branch(). This test verifies that the trunk
-    validation in ensure_worktree_for_branch() catches this and errors appropriately.
+    After slot logic was moved to `erk slot checkout`, `branch checkout` simply
+    does a `git checkout` in the current worktree when the branch isn't found
+    in any worktree and root takeover fails (dirty root).
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
 
         # Setup: root worktree is on a feature branch, not trunk
-        # This way when user tries to checkout trunk, it won't already be checked out
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -661,19 +660,12 @@ def test_checkout_trunk_with_dirty_root_errors() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Try to checkout trunk branch (main) - should error
+        # Checkout trunk - now succeeds by checking out in current worktree
         result = runner.invoke(
             cli, ["branch", "checkout", "main"], obj=test_ctx, catch_exceptions=False
         )
 
-        # Should fail with error
-        assert result.exit_code == 1
-
-        # Error message should indicate trunk branch cannot have worktree
-        assert "Cannot create worktree for trunk branch" in result.stderr
-        assert "main" in result.stderr
-        assert "erk br co root" in result.stderr
-        assert "root worktree" in result.stderr
+        assert result.exit_code == 0
 
 
 def test_checkout_tracks_untracked_branch_with_graphite() -> None:

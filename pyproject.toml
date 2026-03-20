@@ -27,6 +27,7 @@ dependencies = [
     "anthropic>=0.40.0",
     "click>=8.1.7",
     "erk-shared",
+    "erk-slots",
     "erk-statusline",
     "packaging>=21.0",
     "pathspec>=0.12.0",

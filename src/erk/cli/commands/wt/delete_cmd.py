@@ -9,7 +9,6 @@ from erk.cli.commands.navigation_helpers import (
     check_pending_learn_marker,
     find_assignment_by_worktree_path,
 )
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import (
     discover_repo_context,
     validate_worktree_name_for_deletion,
@@ -29,6 +28,7 @@ from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import PlanQuery, PlanState
+from erk_slots.unassign_cmd import execute_unassign
 
 
 def _get_pr_info_for_branch(

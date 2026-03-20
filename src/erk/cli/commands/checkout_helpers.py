@@ -19,11 +19,11 @@ from erk.cli.activation import (
     render_activation_script,
     render_error_script,
 )
-from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
+from erk_slots.common import allocate_slot_for_branch
 
 logger = logging.getLogger(__name__)
 

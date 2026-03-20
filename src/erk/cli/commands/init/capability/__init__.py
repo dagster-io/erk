@@ -5,7 +5,7 @@ import click
 from erk.cli.commands.init.capability.add_cmd import add_cmd
 from erk.cli.commands.init.capability.list_cmd import list_cmd
 from erk.cli.commands.init.capability.remove_cmd import remove_cmd
-from erk.cli.help_formatter import ErkCommandGroup
+from erk_shared.cli_group import ErkCommandGroup
 
 
 @click.group("capability", cls=ErkCommandGroup)

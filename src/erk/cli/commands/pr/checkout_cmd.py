@@ -15,7 +15,6 @@ from erk.cli.activation import (
     ensure_worktree_activate_script,
     print_activation_instructions,
 )
-from erk.cli.alias import alias
 from erk.cli.commands.checkout_helpers import (
     ensure_branch_has_worktree,
     navigate_and_display_checkout,
@@ -25,6 +24,7 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.parsing import (
     parse_issue_number_from_url,
     parse_pr_number_from_url,

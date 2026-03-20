@@ -19,14 +19,14 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     run_objective_update_after_land,
 )
-from erk.cli.commands.slot.common import find_branch_assignment
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.context.types import RepoContext
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
+from erk_slots.common import find_branch_assignment
+from erk_slots.unassign_cmd import execute_unassign
 
 logger = logging.getLogger(__name__)
 

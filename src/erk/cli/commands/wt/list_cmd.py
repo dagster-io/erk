@@ -6,16 +6,16 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.alias import alias
-from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time, get_pr_status_emoji
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_utils import find_current_worktree
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.git.abc import BranchSyncInfo
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.impl_folder import get_impl_path, read_plan_ref
+from erk_slots.common import is_placeholder_branch
 
 
 def _get_sync_status(ctx: ErkContext, worktree_path: Path, branch: str | None) -> str:

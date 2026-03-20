@@ -11,7 +11,6 @@ import click
 from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
-from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
@@ -44,6 +43,7 @@ from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_content
 from erk_shared.plan_store.types import PlanNotFound
 from erk_shared.subprocess_utils import run_subprocess_with_context
+from erk_slots.common import is_placeholder_branch
 
 logger = logging.getLogger(__name__)
 

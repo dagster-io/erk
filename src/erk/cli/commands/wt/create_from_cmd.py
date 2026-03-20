@@ -8,11 +8,11 @@ from erk.cli.activation import (
     print_activation_instructions,
 )
 from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
-from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
+from erk_slots.common import allocate_slot_for_branch
 
 
 @click.command("create-from", cls=CommandWithHiddenOptions)

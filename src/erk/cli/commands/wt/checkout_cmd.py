@@ -7,7 +7,6 @@ from erk.cli.activation import (
     ensure_worktree_activate_script,
     print_activation_instructions,
 )
-from erk.cli.alias import alias
 from erk.cli.commands.checkout_helpers import navigate_to_worktree
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.navigation_helpers import activate_root_repo
@@ -16,6 +15,7 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.cli_alias import alias
 from erk_shared.output.output import user_output
 
 

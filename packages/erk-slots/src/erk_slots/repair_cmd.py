@@ -5,15 +5,15 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.slot.diagnostics import (
-    SyncIssue,
-    SyncIssueCode,
-    run_sync_diagnostics,
-)
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.output.output import user_output
+from erk_slots.diagnostics import (
+    SyncIssue,
+    SyncIssueCode,
+    run_sync_diagnostics,
+)
 
 # Issue codes that can be repaired by removing the assignment
 REPAIRABLE_CODES = frozenset(

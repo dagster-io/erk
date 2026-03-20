@@ -615,6 +615,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "click" },
     { name = "erk-shared" },
+    { name = "erk-slots" },
     { name = "erk-statusline" },
     { name = "packaging" },
     { name = "pathspec" },
@@ -649,6 +650,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.40.0" },
     { name = "click", specifier = ">=8.1.7" },
     { name = "erk-shared", editable = "packages/erk-shared" },
+    { name = "erk-slots", editable = "packages/erk-slots" },
     { name = "erk-statusline", editable = "packages/erk-statusline" },
     { name = "packaging", specifier = ">=21.0" },
     { name = "pathspec", specifier = ">=0.12.0" },
@@ -738,11 +740,15 @@ name = "erk-slots"
 version = "0.9.11"
 source = { editable = "packages/erk-slots" }
 dependencies = [
+    { name = "click" },
     { name = "erk-shared" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "erk-shared", editable = "packages/erk-shared" }]
+requires-dist = [
+    { name = "click", specifier = ">=8.1.7" },
+    { name = "erk-shared", editable = "packages/erk-shared" },
+]
 
 [[package]]
 name = "erk-statusline"
