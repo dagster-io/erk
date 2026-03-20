@@ -118,5 +118,5 @@ gt restack
 
 ## Related Topics
 
-- Load `gt-graphite` skill for comprehensive Graphite guidance
+- Load `graphite` + `erk-gt` skills for comprehensive Graphite guidance
 - [Branch Cleanup](branch-cleanup.md) - Cleaning up branches and worktrees

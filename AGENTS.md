@@ -72,7 +72,7 @@ This file routes to skills and docs; it doesn't contain everything.
 
 - `dignified-python`: Python coding standards (LBYL, frozen dataclasses, modern types)
 - `fake-driven-testing`: 5-layer test architecture with comprehensive fakes
-- `gt-graphite`: Worktree stack mental model
+- `graphite` + `erk-gt`: Graphite stacked PRs (official skill + erk-specific patterns)
 - `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
 
 **Documentation Index** (embedded below for ambient awareness):
@@ -123,7 +123,7 @@ Without built-in plan mode, follow this explicit protocol:
 
 - **Python** → `dignified-python` skill
 - **Tests** → `fake-driven-testing` skill
-- **Worktrees/gt** → `gt-graphite` skill
+- **Worktrees/gt** → `graphite` + `erk-gt` skills
 - **Agent docs** → `learned-docs` skill
 
 **Tool routing:**
@@ -183,7 +183,7 @@ This grep step is mandatory for ALL coding tasks. It costs milliseconds and prev
 
 - **UPSTACK** = away from trunk (toward leaves/top)
 - **DOWNSTACK** = toward trunk (main at BOTTOM)
-- **Full details**: Load `gt-graphite` skill for complete visualization and mental model
+- **Full details**: Load `graphite` + `erk-gt` skills for complete visualization and mental model
 
 ## Project Naming Conventions
 

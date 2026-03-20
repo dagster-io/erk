@@ -243,4 +243,4 @@ Four of these five paths are protected by a `cleanup_confirmed` flag, which requ
 
 - [Architecture](../architecture/) - Worktree management in erk
 - [Planning](../planning/) - Plan-based development workflow
-- Load `gt-graphite` skill for Graphite stack management
+- Load `graphite` + `erk-gt` skills for Graphite stack management

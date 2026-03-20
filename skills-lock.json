@@ -16,6 +16,11 @@
       "sourceType": "github",
       "computedHash": "a7c88842ce3f9e65d3db5227fd6da2ea4f379f832641d83cece6868e7a457445"
     },
+    "graphite": {
+      "source": "withgraphite/agent-skills",
+      "sourceType": "github",
+      "computedHash": "9315b842df6de2a23216a2e72033fa99337398a8d62c11d6c320e55a6b810339"
+    },
     "skill-creator": {
       "source": "anthropics/skills",
       "sourceType": "github",
