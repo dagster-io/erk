@@ -16,6 +16,14 @@ from erk_shared.naming import (
 )
 from erk_shared.plan_store.types import Plan, PlanState
 
+_ERK_PR_TITLE_PREFIX = "[erk-pr] "
+_ERK_LEARN_TITLE_PREFIX = "[erk-learn] "
+
+
+def _has_plan_title_prefix(title: str) -> bool:
+    """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
+    return title.startswith(_ERK_PR_TITLE_PREFIX) or title.startswith(_ERK_LEARN_TITLE_PREFIX)
+
 
 @dataclass(frozen=True)
 class PlanBranchSetup:
@@ -76,10 +84,10 @@ def prepare_plan_for_worktree(
     Returns:
         PlanBranchSetup on success, PlanValidationFailed on validation failure
     """
-    # Validate erk-pr title prefix
-    if not plan.title.startswith("[erk-pr]"):
+    # Validate plan title prefix
+    if not _has_plan_title_prefix(plan.title):
         return PlanValidationFailed(
-            f"Plan #{plan.pr_identifier} must have '[erk-pr]' title prefix.\n"
+            f"Plan #{plan.pr_identifier} does not have a valid plan title prefix ([erk-pr] or [erk-learn]).\n"
             f"Create a plan using 'erk pr create' to ensure correct formatting."
         )
 
