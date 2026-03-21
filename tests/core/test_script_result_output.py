@@ -25,9 +25,9 @@ def test_output_for_script_handler_routes_to_stdout() -> None:
         # Act
         result.output_for_script_handler()
 
-        # Assert
+        # Assert - outputs script content, not path
         output = sys.stdout.getvalue()
-        assert output == "/tmp/test_script.sh"
+        assert output == "#!/bin/bash\necho 'test'"
     finally:
         sys.stdout = old_stdout
 

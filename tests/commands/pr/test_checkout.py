@@ -1,7 +1,6 @@
 """Tests for erk pr checkout command."""
 
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -345,13 +344,9 @@ def test_pr_checkout_script_mode_outputs_script_path() -> None:
         result = runner.invoke(pr_group, ["checkout", "555", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        # In script mode, output is just the script path
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        # Script file should exist and contain activation commands
-        script_path = Path(script_path_str)
-        assert script_path.exists()
-        script_content = script_path.read_text()
+        # In script mode, output is the script content directly
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "cd " in script_content
         assert ".venv" in script_content
 

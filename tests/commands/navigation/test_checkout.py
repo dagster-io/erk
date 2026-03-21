@@ -1,7 +1,5 @@
 """Tests for erk branch checkout command."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -66,9 +64,7 @@ def test_checkout_to_branch_in_single_worktree() -> None:
         # Should not checkout (already on the branch)
         assert len(git_ops.checked_out_branches) == 0
         # Should generate activation script (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(feature_wt) in script_content
 
 
@@ -273,10 +269,6 @@ def test_checkout_works_without_graphite() -> None:
 
         # Should succeed - checkout does not require Graphite
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        # Verify script was written to in-memory store
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
 
 
 def test_checkout_already_on_target_branch() -> None:
@@ -332,9 +324,7 @@ def test_checkout_already_on_target_branch() -> None:
         assert len(git_ops.checked_out_branches) == 0
 
         # Verify activation script was generated
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # CRITICAL: Message should say "Already on branch" since we're already in target location
         # Message format: "Already on branch {branch} in worktree {name}"
@@ -386,10 +376,6 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
         assert result.exit_code == 0
         # Should not checkout (already on feature-2)
         assert len(git_ops.checked_out_branches) == 0
-        # Should generate activation script (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
 
 
 def test_checkout_with_multiple_worktrees_same_branch() -> None:
@@ -605,9 +591,7 @@ def test_checkout_message_when_switching_worktrees() -> None:
         assert result.exit_code == 0
 
         # Verify activation script was generated
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # CRITICAL: Message should say "Switched to worktree"
         # NOT "Already on branch" or "Already in worktree"

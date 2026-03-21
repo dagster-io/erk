@@ -1,7 +1,7 @@
 """Script-mode error handling for --script commands.
 
 Provides a context manager that catches errors and emits a valid error script
-so that ``source "$(erk ... --script)"`` never receives empty stdout.
+so that ``source <(erk ... --script)`` never receives empty stdout.
 """
 
 import contextlib
@@ -15,11 +15,11 @@ from erk_shared.output.output import user_output
 
 
 def _write_error_script_and_exit(ctx: ErkContext) -> None:
-    """Write a minimal error script and output its path, then exit 1.
+    """Write a minimal error script and output its content, then exit 1.
 
-    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
-    always receives a valid file path — even on failure — so the shell never
-    sees ``source ""``.
+    Used by ``script_error_handler`` to ensure ``source <(erk br co --script)``
+    always receives valid script content — even on failure — so the shell never
+    sees an empty process substitution.
     """
     result = ctx.script_writer.write_activation_script(
         "# erk error\nreturn 1\n",
@@ -34,10 +34,9 @@ def _write_error_script_and_exit(ctx: ErkContext) -> None:
 def script_error_handler(ctx: ErkContext) -> Generator[None]:
     """Catch errors in --script mode and emit an error script instead of empty stdout.
 
-    Wraps the checkout body so that any error path produces a valid script
-    file on stdout. Without this, ``source "$(erk br co --script)"`` receives
-    an empty string when the command fails, causing a confusing
-    ``source: no such file or directory:`` error.
+    Wraps the checkout body so that any error path produces valid script
+    content on stdout. Without this, ``source <(erk br co --script)`` receives
+    empty content when the command fails, causing a confusing shell error.
 
     Exception handling:
     - ``SystemExit(0)``: Re-raised (success exit from e.g. ``_setup_impl_for_plan``).

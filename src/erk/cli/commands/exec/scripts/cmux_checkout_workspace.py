@@ -115,9 +115,9 @@ def cmux_open_pr(ctx: click.Context, pr: int, branch: str | None, mode: str) -> 
 
     # Build the checkout command that will run inside the new workspace
     if mode == "teleport":
-        checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'
+        checkout_cmd = f"source <(erk pr teleport {pr} --new-slot --script --sync)"
     else:
-        checkout_cmd = f'source "$(erk pr checkout {pr} --script)"'
+        checkout_cmd = f"source <(erk pr checkout {pr} --script)"
 
     cmux = require_context(ctx).cmux
 

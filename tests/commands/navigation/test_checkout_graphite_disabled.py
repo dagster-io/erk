@@ -4,8 +4,6 @@ This file verifies that branch checkout works correctly when Graphite
 is disabled (use_graphite=False), proving graceful degradation.
 """
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -54,9 +52,7 @@ def test_checkout_succeeds_without_graphite() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Should generate activation script
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(feature_wt) in script_content
 
 

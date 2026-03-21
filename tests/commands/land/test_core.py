@@ -11,8 +11,6 @@ It accepts:
 - Branch name
 """
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -124,9 +122,7 @@ def test_land_outputs_deferred_execution_script() -> None:
         assert not any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
         # Verify script was written with execution command
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # Script uses shell variables for pr-number and branch (passed as arguments)
         assert '--pr-number="$PR_NUMBER"' in script_content

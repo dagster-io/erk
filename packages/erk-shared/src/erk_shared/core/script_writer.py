@@ -29,11 +29,11 @@ class ScriptResult:
     _output_performed: bool = False
 
     def output_for_script_handler(self) -> None:
-        """Output script path to stdout for script handler.
+        """Output script content to stdout for process substitution.
 
-        This method routes the script path to stdout (machine_output), which is
-        where the script handler expects to find it. Commands that
-        support the --script flag should call this method after generating an
+        This method routes the script content to stdout (machine_output), which
+        is consumed by process substitution: source <(erk ... --script). Commands
+        that support the --script flag should call this method after generating an
         activation script.
 
         Each ScriptResult should output exactly once. Calling this method multiple
@@ -68,8 +68,8 @@ class ScriptResult:
         # Lazy import to avoid circular dependency (cli depends on core)
         from erk_shared.output.output import machine_output
 
-        # Output path to stdout for shell integration handler
-        machine_output(str(self.path), nl=False)
+        # Output script content to stdout for process substitution: source <(erk ... --script)
+        machine_output(self.content, nl=False)
 
         # Mark as performed using object.__setattr__ (dataclass is frozen)
         object.__setattr__(self, "_output_performed", True)

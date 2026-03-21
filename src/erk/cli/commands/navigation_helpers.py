@@ -930,7 +930,7 @@ def _activate_with_deferred_deletion(
             command_name=command_name,
             comment=activate_comment,
         )
-        machine_output(str(result.path), nl=False)
+        machine_output(result.content, nl=False)
     else:
         if shared_worktree and deletion_commands:
             # Shared-worktree with deletion: show the filtered commands directly.

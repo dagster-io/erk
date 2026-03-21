@@ -74,9 +74,7 @@ def test_down_with_existing_worktree() -> None:
 
         assert result.exit_code == 0
         # Should generate script for feature-1 (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
 
@@ -120,9 +118,7 @@ def test_down_to_trunk_root() -> None:
 
         assert result.exit_code == 0
         # Should generate script for root (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
         assert "root" in script_content.lower()
 
@@ -289,9 +285,7 @@ def test_down_script_flag() -> None:
 
         assert result.exit_code == 0
         # Output should be a script path (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         # Verify script contains the target worktree path
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
@@ -369,9 +363,7 @@ def test_down_with_mismatched_worktree_name() -> None:
         assert result.exit_code == 0
 
         # Should generate script for auth-work (not feature/auth) (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "auth-work") in script_content
 
 
@@ -439,9 +431,7 @@ def test_down_delete_current_success() -> None:
         assert result.exit_code == 0
 
         # Assert: Navigated to feature-1
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
         # Assert: Deletion is DEFERRED - no immediate removal
@@ -688,9 +678,7 @@ def test_down_delete_current_force_with_open_pr() -> None:
         assert "Closed PR #123" in result.output
 
         # Assert: Navigated to feature-1
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
         # Assert: Deletion is DEFERRED - no immediate removal
@@ -764,9 +752,7 @@ def test_down_delete_current_pr_closed() -> None:
         assert result.exit_code == 0
 
         # Assert: Navigated to feature-1
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
         # Assert: Deletion is DEFERRED - no immediate removal
@@ -830,9 +816,7 @@ def test_down_delete_current_no_pr() -> None:
         assert "Proceeding with deletion without PR verification" in result.output
 
         # Assert: Deletion is DEFERRED - script generated with deletion commands
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert len(git_ops.removed_worktrees) == 0, "Deletion should be deferred"
         assert "git worktree remove --force" in script_content
         assert "gt delete -f --no-interactive feature-2" in script_content
@@ -896,9 +880,7 @@ def test_down_delete_current_trunk_in_root() -> None:
         assert result.exit_code == 0
 
         # Assert: Navigated to root (main)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
 
         # Assert: Deletion is DEFERRED - no immediate removal
@@ -956,9 +938,7 @@ def test_down_count_moves_multiple_levels() -> None:
         result = runner.invoke(cli, ["down", "2", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
 
@@ -1000,9 +980,7 @@ def test_down_count_1_is_default_behavior() -> None:
         result = runner.invoke(cli, ["down", "1", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
 
@@ -1083,9 +1061,7 @@ def test_down_count_to_root() -> None:
         result = runner.invoke(cli, ["down", "2", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
         assert "root" in script_content.lower()
 
@@ -1136,9 +1112,7 @@ def test_down_count_exceeds_stack_stops_at_root() -> None:
         assert "Warning:" in result.output
         assert "Reached root after 2 step(s) (requested 10)" in result.output
         # Should still navigate to root
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
 
 
@@ -1285,9 +1259,7 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         assert len(graphite_ops.delete_branch_calls) == 0, "Branch deletion should be deferred"
 
         # Assert: Script contains slot unassign command (not git worktree remove)
-        script_path = Path(result.stdout.strip())
-        # Read from filesystem since erk_isolated_fs_env uses RealScriptWriter
-        script_content = script_path.read_text()
+        script_content = result.stdout
         assert "erk slot unassign erk-slot-01" in script_content
         assert "gt delete -f --no-interactive feature-2" in script_content
 
@@ -1340,9 +1312,7 @@ def test_down_from_root_worktree_non_trunk_branch() -> None:
         assert result.exit_code == 0
 
         # Should generate script navigating to root
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
         # Should include git checkout to switch root to trunk
         assert "git checkout main" in script_content
@@ -1411,9 +1381,7 @@ def test_down_delete_current_from_root_worktree() -> None:
         assert result.exit_code == 0
 
         # Should generate script navigating to root
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
         # Should include git checkout to switch root to trunk
         assert "git checkout main" in script_content
@@ -1479,9 +1447,7 @@ def test_down_worktree_branch_mismatch() -> None:
         result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         # Should navigate to the worktree at the feature-1 path
         assert str(feature_1_path) in script_content
         # Should include git checkout to switch to the correct branch
@@ -1554,9 +1520,7 @@ def test_down_delete_current_same_worktree_script() -> None:
 
         assert result.exit_code == 0
 
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # Worktree removal must NOT be in the script — the worktree belongs to the parent
         assert "git worktree remove" not in script_content

@@ -486,7 +486,7 @@ def _navigate_or_exit(cleanup: CleanupContext) -> None:
                 command_name="land",
                 comment="no-op",
             )
-            machine_output(str(result.path), nl=False)
+            machine_output(result.content, nl=False)
         raise SystemExit(0)
 
 
@@ -994,7 +994,7 @@ def _execute_land_directly(
             command_name="land",
             comment="no-op",
         )
-        machine_output(str(script_result.path), nl=False)
+        machine_output(script_result.content, nl=False)
 
     if exit_after is not None:
         raise exit_after
@@ -1122,8 +1122,8 @@ def _land_target(
         display_flags.append("--no-delete")
 
     if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
+        # Shell integration mode: output script content for process substitution
+        machine_output(result.content, nl=False)
     else:
         # Interactive mode: show instructions and copy to clipboard
         print_temp_script_instructions(

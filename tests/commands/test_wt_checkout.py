@@ -1,7 +1,6 @@
 """Tests for erk wt checkout command (and co alias)."""
 
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -45,9 +44,7 @@ def test_checkout_named_worktree() -> None:
         assert result.exit_code == 0
 
         # Assert: Script path is in stdout
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # Assert: Script contains cd to worktree
         assert str(worktree_path) in script_content
@@ -86,9 +83,7 @@ def test_checkout_root() -> None:
         assert result.exit_code == 0
 
         # Assert: Script path is in stdout
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # Assert: Script contains cd to root
         assert str(env.cwd) in script_content
@@ -245,14 +240,9 @@ def test_checkout_script_mode() -> None:
         # Assert: Command succeeded
         assert result.exit_code == 0
 
-        # Assert: Output contains script path (not user messages)
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-
-        # Assert: Script is valid and contains cd command
-        script_path = Path(script_path_str)
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        # Assert: Output contains script content
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert str(worktree_path) in script_content
 
 

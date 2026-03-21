@@ -380,19 +380,10 @@ def test_create_with_script_flag() -> None:
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / "test-worktree"
         assert worktree_path.exists()
 
-        # Output should be a temp file path
-        script_path = Path(result.output.strip())
-        assert script_path.exists()
-        assert script_path.name.startswith("erk-create-")
-        assert script_path.name.endswith(".sh")
-
         # Verify script content contains activation keywords (not simple cd)
         # Since worktree_path != repo_root, render_navigation_script uses full activation
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.output
 
         # Check for activation script indicators (uv sync, venv activation, .env loading)
         assert "uv sync" in script_content or "# cd to new worktree" in script_content
         assert str(worktree_path) in script_content
-
-        # Cleanup
-        script_path.unlink(missing_ok=True)

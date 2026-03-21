@@ -1115,21 +1115,16 @@ def test_consolidate_with_name_outputs_script_even_when_branch_delete_fails(
             f"Script should have been written before failure. Output: {result.output}"
         )
 
-        # Key verification: Script path IS output in stdout (before failure)
-        # The script path is output via output_for_script_handler() and appears in stdout
-        script_path = list(env.script_writer.written_scripts.keys())[0]
-        assert str(script_path) in result.stdout, (
-            f"Script path should be in stdout. Script: {script_path}, stdout: {result.stdout}"
-        )
+        # Key verification: Script content IS output in stdout (before failure)
+        # output_for_script_handler() outputs content directly to stdout
+        script_content = result.stdout
+        assert script_content.strip() != "", "Script content should be in stdout, got empty"
 
         # Verify source worktree WAS removed (deletion happened before the failure)
         # The source worktree is env.cwd
         assert env.cwd.resolve() in test_ctx.git.removed_worktrees, (
             "Source worktree should have been removed"
         )
-
-        # Verify script content IS valid (navigates to new worktree)
-        script_content = list(env.script_writer.written_scripts.values())[0]
         expected_new_path = (
             env.erk_root / "repos" / env.root_worktree.name / "worktrees" / "my-stack"
         )

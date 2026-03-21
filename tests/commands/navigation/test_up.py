@@ -82,9 +82,7 @@ def test_up_with_existing_worktree() -> None:
             print(f"stdout: {result.stdout}")
         assert result.exit_code == 0
         # Should generate script for feature-2 (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
 
@@ -320,9 +318,7 @@ def test_up_script_flag() -> None:
 
         assert result.exit_code == 0
         # Output should be a script path (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         # Verify script contains the target worktree path
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
@@ -451,9 +447,7 @@ def test_up_with_mismatched_worktree_name() -> None:
         assert result.exit_code == 0
 
         # Should generate script for auth-tests-work (not feature/auth-tests) - verify in-memory
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "auth-tests-work") in script_content
 
 
@@ -798,9 +792,7 @@ def test_up_delete_current_force_with_open_pr() -> None:
         assert "Closed PR #123" in result.output
 
         # Assert: Navigated to feature-2
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
         # Assert: Deletion is DEFERRED (not immediate) - commands embedded in script
@@ -879,9 +871,7 @@ def test_up_delete_current_pr_closed() -> None:
         assert result.exit_code == 0
 
         # Assert: Navigated to feature-2
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
         # Assert: Deletion is DEFERRED (not immediate) - commands embedded in script
@@ -949,9 +939,7 @@ def test_up_delete_current_no_pr() -> None:
         assert "Proceeding with deletion without PR verification" in result.output
 
         # Assert: Navigated to feature-2
-        script_path = Path(result.stdout.strip().split("\n")[-1])
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
         # Assert: Deletion is DEFERRED (not immediate) - commands embedded in script
@@ -1032,9 +1020,7 @@ def test_up_delete_current_success() -> None:
         assert result.exit_code == 0
 
         # Assert: Navigated to feature-2
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
         # Assert: Deletion is DEFERRED (not immediate) - commands embedded in script
@@ -1093,9 +1079,7 @@ def test_up_count_moves_multiple_levels() -> None:
         result = runner.invoke(cli, ["up", "2", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-3") in script_content
 
 
@@ -1137,9 +1121,7 @@ def test_up_count_1_is_default_behavior() -> None:
         result = runner.invoke(cli, ["up", "1", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
 
@@ -1361,9 +1343,7 @@ def test_up_delete_current_slot_aware_unassigns_slot() -> None:
         assert result.exit_code == 0, f"Expected success, got: {result.output}"
 
         # Assert: Navigated to feature-2
-        script_path = Path(result.stdout.strip())
-        # Read from filesystem since erk_isolated_fs_env uses RealScriptWriter
-        script_content = script_path.read_text()
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
         # Assert: Deletion is DEFERRED - no immediate mutations
@@ -1442,9 +1422,7 @@ def test_up_worktree_branch_mismatch() -> None:
         result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         # Should navigate to the worktree at the feature-2 path
         assert str(feature_2_path) in script_content
         # Should include git checkout to switch to the correct branch

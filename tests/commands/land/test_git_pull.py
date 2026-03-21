@@ -7,8 +7,6 @@ The git pull is executed in Python (not in the activation script) to avoid
 race conditions with stale index.lock files from earlier git operations.
 """
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -223,9 +221,7 @@ def test_land_no_pull_flag_skips_git_pull() -> None:
         assert len(git_ops.pulled_branches) == 0
 
         # Verify activation script does NOT include git pull
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "git pull" not in script_content
         assert "# Post-activation commands" not in script_content
 
@@ -322,9 +318,7 @@ def test_land_with_up_does_not_call_git_pull() -> None:
         assert len(git_ops.pulled_branches) == 0
 
         # Verify activation script points to feature-2 (child branch)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(feature_2_path) in script_content
 
         # Activation script should not include git pull either

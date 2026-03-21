@@ -3,8 +3,6 @@
 The --up flag navigates to the child branch after landing.
 """
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -109,9 +107,7 @@ def test_land_with_up_navigates_to_child_branch() -> None:
         assert 123 not in github_ops.merged_prs
 
         # Verify script was generated with passthrough for --up flag
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # --target-child is NOT baked in - --up is passed via "$@"
         assert "--target-child" not in script_content
@@ -413,9 +409,7 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         assert 123 not in github_ops.merged_prs
 
         # Verify script was generated with passthrough for --up flag
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # --target-child is NOT baked in - --up is passed via "$@"
         assert "--target-child" not in script_content
