@@ -25,7 +25,8 @@ Create an implementation plan for a specific node in an objective's dependency g
 
 Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an issue number:
 
-**Invoke the inner skill immediately** via the Skill tool:
+1. Run `/erk:objective-reconcile <objective-number>` via the Skill tool.
+2. Then invoke the inner skill via the Skill tool:
 
 ```
 /erk:system:objective-plan-node <objective-number> --node <node-id>
@@ -65,6 +66,18 @@ erk exec objective-plan-setup <objective-number> --session-id "${CLAUDE_SESSION_
 - If `"success": true`: Continue with the roadmap data.
 
 Display any `"warnings"` to the user.
+
+### Step 2.5: Reconcile Objective
+
+Invoke `/erk:objective-reconcile <objective-number>` via the Skill tool.
+
+This audits the objective against the current codebase, identifies stale references
+and nodes completed outside the erk land workflow, and applies updates with user
+confirmation before proceeding to node selection.
+
+If reconciliation finds no issues, it reports "all references current" and continues.
+If it finds and fixes issues, the roadmap displayed in Step 4 will reflect the
+updated state.
 
 ### Step 3: Load Objective Skill
 
