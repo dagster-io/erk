@@ -31,12 +31,12 @@ Shared utilities for constructing PR bodies live in `src/erk/cli/commands/pr/sha
 
 ## Planned PR Backend: plan-header metadata
 
-`assemble_pr_body()` detects whether the existing PR body contains a plan-header metadata block. When present, it uses `build_original_plan_section()` (from `planned_pr_lifecycle.py`) instead of `build_plan_details_section()` to format the plan content.
+`assemble_pr_body()` detects whether the existing PR body contains a plan-header metadata block. When present, it uses `build_original_pr_section()` (from `planned_pr_lifecycle.py`) instead of `build_plan_details_section()` to format the plan content.
 
-| Backend                        | Plan section format             |
-| ------------------------------ | ------------------------------- |
-| Issue-based (`github`)         | `build_plan_details_section()`  |
-| Planned PR (`github-draft-pr`) | `build_original_plan_section()` |
+| Backend                        | Plan section format            |
+| ------------------------------ | ------------------------------ |
+| Issue-based (`github`)         | `build_plan_details_section()` |
+| Planned PR (`github-draft-pr`) | `build_original_pr_section()`  |
 
 ## No "Closes #N" References
 

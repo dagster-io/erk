@@ -36,7 +36,7 @@ def test_advances_planned_to_impl(tmp_path: Path) -> None:
     """Plan at 'planned' stage gets updated to 'impl'."""
     plan = _make_plan(number=100, lifecycle_stage="planned")
     backend, fake_github = create_pr_backend_with_plans({"100": plan})
-    ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, github=fake_github, pr_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
@@ -49,7 +49,7 @@ def test_advances_none_stage_to_impl(tmp_path: Path) -> None:
     """Plan with None stage gets updated to 'impl'."""
     plan = _make_plan(number=100, lifecycle_stage=None)
     backend, fake_github = create_pr_backend_with_plans({"100": plan})
-    ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, github=fake_github, pr_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
@@ -61,7 +61,7 @@ def test_skips_when_already_impl(tmp_path: Path) -> None:
     """Plan already at 'impl' is not updated (idempotent)."""
     plan = _make_plan(number=100, lifecycle_stage="impl")
     backend, fake_github = create_pr_backend_with_plans({"100": plan})
-    ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, github=fake_github, pr_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 
@@ -84,7 +84,7 @@ def test_advances_planning_stage_to_impl(tmp_path: Path) -> None:
     """Plan at 'planning' stage gets updated to 'impl'."""
     plan = _make_plan(number=100, lifecycle_stage="planning")
     backend, fake_github = create_pr_backend_with_plans({"100": plan})
-    ctx = context_for_test(cwd=tmp_path, github=fake_github, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, github=fake_github, pr_store=backend)
 
     maybe_advance_lifecycle_to_impl(ctx, repo_root=tmp_path, pr_id="100", quiet=False)
 

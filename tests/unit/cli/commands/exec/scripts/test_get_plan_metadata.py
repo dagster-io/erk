@@ -92,7 +92,7 @@ def test_get_plan_metadata_returns_existing_field() -> None:
         ["3509", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -120,7 +120,7 @@ def test_get_plan_metadata_returns_string_field() -> None:
         ["3509", "worktree_name"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -147,7 +147,7 @@ def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
         ["3509", "nonexistent_field"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -174,7 +174,7 @@ def test_get_plan_metadata_returns_null_for_null_field() -> None:
         ["3509", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -204,7 +204,7 @@ This is an issue created before plan-header blocks were introduced.
         ["100", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -232,7 +232,7 @@ def test_get_plan_metadata_issue_not_found() -> None:
         ["9999", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -264,7 +264,7 @@ def test_json_output_structure_success() -> None:
         ["321", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -300,7 +300,7 @@ def test_json_output_structure_error() -> None:
         ["999", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

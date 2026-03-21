@@ -28,7 +28,7 @@ from dataclasses import asdict, dataclass
 
 import click
 
-from erk_shared.context.helpers import require_github, require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_github, require_pr_backend, require_repo_root
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -168,7 +168,7 @@ def handle_no_changes(
     Exits with code 0 on success (making the workflow succeed rather than fail).
     """
     github = require_github(ctx)
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Build PR title and body

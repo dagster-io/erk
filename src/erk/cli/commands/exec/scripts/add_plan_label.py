@@ -16,7 +16,7 @@ import json
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
 
 
 @click.command(name="add-plan-label")
@@ -34,7 +34,7 @@ def add_plan_label(
     label: str,
 ) -> None:
     """Add a label to a plan via the appropriate backend."""
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     pr_id = str(pr_number)

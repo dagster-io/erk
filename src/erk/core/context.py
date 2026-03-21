@@ -301,7 +301,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.github_repo, time=time)
     github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
 
-    plan_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
+    pr_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
     pr_list_service: PrListService = ManagedPrListService(github, time=time)
 
     # Objectives use GitHub issues (not draft PRs)
@@ -355,7 +355,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         git=git,
         github=github,
         github_admin=RealGitHubAdmin(),
-        plan_store=plan_store,
+        pr_store=pr_store,
         graphite=graphite,
         graphite_branch_ops=graphite_branch_ops,
         console=console,

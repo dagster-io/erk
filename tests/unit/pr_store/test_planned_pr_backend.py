@@ -1,7 +1,7 @@
 """ManagedGitHubPrBackend-specific tests.
 
 Tests for behaviors unique to the draft PR backend that aren't covered
-by the parameterized interface tests in test_plan_backend_interface.py.
+by the parameterized interface tests in test_pr_backend_interface.py.
 """
 
 from pathlib import Path

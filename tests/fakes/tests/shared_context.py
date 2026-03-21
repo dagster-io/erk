@@ -53,7 +53,7 @@ def context_for_test(
     prompt_executor: PromptExecutor | None = None,
     codespace: Codespace | None = None,
     cmux: Cmux | None = None,
-    plan_store: ManagedPrBackend | None = None,
+    pr_store: ManagedPrBackend | None = None,
     local_config: LoadedConfig | None = None,
     remote_github: RemoteGitHub | None = None,
     debug: bool = False,
@@ -82,7 +82,7 @@ def context_for_test(
         agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         codespace: Optional Codespace. If None, creates FakeCodespace.
-        plan_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
+        pr_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
         local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -183,12 +183,12 @@ def context_for_test(
 
     resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
 
-    # Resolve plan_store: explicit > ManagedGitHubPrBackend default
-    resolved_plan_store: ManagedPrBackend
-    if plan_store is not None:
-        resolved_plan_store = plan_store
+    # Resolve pr_store: explicit > ManagedGitHubPrBackend default
+    resolved_pr_store: ManagedPrBackend
+    if pr_store is not None:
+        resolved_pr_store = pr_store
     else:
-        resolved_plan_store = ManagedGitHubPrBackend(
+        resolved_pr_store = ManagedGitHubPrBackend(
             resolved_github, resolved_issues, time=FakeTime()
         )
 
@@ -204,7 +204,7 @@ def context_for_test(
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         agent_docs=resolved_agent_docs,
-        plan_store=resolved_plan_store,
+        pr_store=resolved_pr_store,
         shell=FakeShell(),
         completion=FakeCompletion(),
         codespace=resolved_codespace,

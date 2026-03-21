@@ -44,7 +44,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.env import in_github_actions
@@ -232,7 +232,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
 
     # Get ManagedPrBackend from context
     try:
-        backend = require_plan_backend(ctx)
+        backend = require_pr_backend(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
@@ -330,7 +330,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
 
     # Get ManagedPrBackend from context
     try:
-        backend = require_plan_backend(ctx)
+        backend = require_pr_backend(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return
@@ -392,7 +392,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
 
     # Get ManagedPrBackend from context
     try:
-        backend = require_plan_backend(ctx)
+        backend = require_pr_backend(ctx)
     except SystemExit:
         _output_error(event, "context-not-initialized", "Context not initialized")
         return

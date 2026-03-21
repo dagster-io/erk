@@ -105,7 +105,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         git=git,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
-        plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time),
         graphite=fake_graphite,
         graphite_branch_ops=fake_graphite_branch_ops,
         console=fake_console,
@@ -140,7 +140,7 @@ def context_for_test(
     github: LocalGitHub | None = None,
     github_admin: GitHubAdmin | None = None,
     issues: GitHubIssues | None = None,
-    plan_store: ManagedPrBackend | None = None,
+    pr_store: ManagedPrBackend | None = None,
     graphite: Graphite | None = None,
     console: Console | None = None,
     shell: Shell | None = None,
@@ -247,8 +247,8 @@ def context_for_test(
     if github_admin is None:
         github_admin = FakeGitHubAdmin()
 
-    if plan_store is None:
-        plan_store = ManagedGitHubPrBackend(github, issues, time=FakeTime())
+    if pr_store is None:
+        pr_store = ManagedGitHubPrBackend(github, issues, time=FakeTime())
 
     # Handle graphite based on global_config.use_graphite to match production behavior
     # When use_graphite=False, use GraphiteDisabled sentinel so that
@@ -353,7 +353,7 @@ def context_for_test(
         git=git,
         github=github,
         github_admin=github_admin,
-        plan_store=plan_store,
+        pr_store=pr_store,
         graphite=graphite,
         graphite_branch_ops=graphite_branch_ops,
         console=console,

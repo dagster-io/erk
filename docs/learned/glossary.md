@@ -509,7 +509,7 @@ A frozen dataclass containing all injected dependencies.
 - `shell: Shell` - Shell detection
 - `completion: Completion` - Shell completion generation
 - `script_writer: ScriptWriter` - Activation script generation
-- `plan_store: PlanStore` - Plan storage operations
+- `pr_store: ManagedPrBackend` - Plan storage operations
 - `prompt_executor: PromptExecutor` - Claude CLI execution
 
 **Configuration Fields**:

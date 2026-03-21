@@ -52,7 +52,7 @@ def test_get_plan_info_success() -> None:
         [pr_id],
         obj=context_for_test(
             github=fake_github,
-            plan_store=backend,
+            pr_store=backend,
         ),
     )
 
@@ -79,7 +79,7 @@ def test_get_plan_info_includes_objective_id() -> None:
         [pr_id],
         obj=context_for_test(
             github=fake_github,
-            plan_store=backend,
+            pr_store=backend,
         ),
     )
 
@@ -103,7 +103,7 @@ def test_get_plan_info_include_body() -> None:
         [pr_id, "--include-body"],
         obj=context_for_test(
             github=fake_github,
-            plan_store=backend,
+            pr_store=backend,
         ),
     )
 
@@ -124,7 +124,7 @@ def test_get_plan_info_excludes_body_by_default() -> None:
         [pr_id],
         obj=context_for_test(
             github=fake_github,
-            plan_store=backend,
+            pr_store=backend,
         ),
     )
 

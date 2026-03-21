@@ -72,7 +72,7 @@ Planned PR plans don't have separate review PRs, so the land pipeline skips revi
 
 ## Learn Pipeline Integration
 
-The learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `pr_id` is the PR number — the learn pipeline can call `github.get_pr(pr_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.
+The learn pipeline detects planned-PR plans via `pr_backend.get_provider_name()`. For planned-PR plans, `pr_id` is the PR number — the learn pipeline can call `github.get_pr(pr_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.
 
 ## Metadata API Asymmetry
 

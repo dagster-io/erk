@@ -93,7 +93,7 @@ def _ctx(tmp_path: Path, *, issues: FakeGitHubIssues, github: FakeLocalGitHub) -
     (tmp_path / ".erk" / "config.toml").write_text("", encoding="utf-8")
     return ErkContext.for_test(
         github=github,
-        plan_store=ManagedGitHubPrBackend(github, issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(github, issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 

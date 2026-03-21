@@ -85,7 +85,7 @@ class TestRunSmokeTest:
         wf = remote.dispatched_workflows[0]
         assert wf.workflow == "one-shot.yml"
         assert wf.inputs["submitted_by"] == "testuser"
-        assert wf.inputs["plan_backend"] == "planned_pr"
+        assert wf.inputs["pr_backend"] == "planned_pr"
 
     def test_returns_error_when_not_in_repo(self) -> None:
         """Smoke test returns error for NoRepoSentinel."""

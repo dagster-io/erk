@@ -363,15 +363,15 @@ queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
 **Source:** See `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
 
-## ctx.plan_backend
+## ctx.pr_backend
 
-- `ctx.plan_backend` — The `ManagedPrBackend` ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
+- `ctx.pr_backend` — The `ManagedPrBackend` ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
 
 After PR #8210, the `PlanStore` ABC was consolidated into `ManagedPrBackend` (formerly `PlanBackend`). There is no separate read-side interface.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, ManagedPrBackend -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_store/backend.py, ManagedPrBackend -->
 
-**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/pr_store/backend.py`.
 
 ## TUI Exit-with-Command Pattern
 

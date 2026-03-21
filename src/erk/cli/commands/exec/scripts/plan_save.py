@@ -352,7 +352,7 @@ def _save_as_planned_pr(
             "pr_url": result.url,
             "title": prefixed_title,
             "branch_name": branch_name,
-            "plan_backend": "planned_pr",
+            "pr_backend": "planned_pr",
             "objective_issue": objective_issue,
         }
         if snapshot_result is not None:
@@ -443,7 +443,7 @@ def _save_plan_via_planned_pr(
                     "pr_number": existing_issue,
                     "skipped_duplicate": True,
                     "message": f"Session already saved PR #{existing_issue}",
-                    "plan_backend": "planned_pr",
+                    "pr_backend": "planned_pr",
                 }
                 if existing_branch is not None:
                     dedup_response["branch_name"] = existing_branch

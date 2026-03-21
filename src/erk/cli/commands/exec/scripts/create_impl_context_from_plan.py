@@ -26,7 +26,7 @@ import json
 import click
 
 from erk_shared.context.helpers import (
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -49,7 +49,7 @@ def create_impl_context_from_plan(
 
     PLAN_ID: Plan identifier (e.g., GitHub issue number or PR number)
     """
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
     pr_id = str(pr_number)

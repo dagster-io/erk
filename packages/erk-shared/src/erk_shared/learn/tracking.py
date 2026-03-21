@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def track_learn_invocation(
-    plan_backend: ManagedPrBackend,
+    pr_backend: ManagedPrBackend,
     repo_root: Path,
     pr_number: str,
     *,
@@ -35,7 +35,7 @@ def track_learn_invocation(
     to track when learn was run and from which session.
 
     Args:
-        plan_backend: ManagedPrBackend for posting the comment
+        pr_backend: ManagedPrBackend for posting the comment
         repo_root: Repository root path
         pr_number: Plan identifier (e.g., issue number as string)
         session_id: Session ID invoking learn (passed via --session-id CLI flag)
@@ -71,4 +71,4 @@ def track_learn_invocation(
         description=description,
     )
 
-    plan_backend.add_comment(repo_root, pr_number, comment_body)
+    pr_backend.add_comment(repo_root, pr_number, comment_body)

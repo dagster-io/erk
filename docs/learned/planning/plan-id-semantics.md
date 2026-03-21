@@ -31,10 +31,10 @@ For planned-PR plans, call `github.get_pr(repo_root, pr_number)` and check for `
 
 ## Provider Name Check
 
-Use `plan_backend.get_provider_name()` for backend-conditional logic:
+Use `pr_backend.get_provider_name()` for backend-conditional logic:
 
 ```python
-backend_name = ctx.plan_backend.get_provider_name()
+backend_name = ctx.pr_backend.get_provider_name()
 is_planned_pr = backend_name == "github-draft-pr"
 ```
 

@@ -39,7 +39,7 @@ def test_add_plan_label_success() -> None:
         [create_result.pr_id, "--label", "erk-consolidated"],
         obj=context_for_test(
             github=fake_github,
-            plan_store=backend,
+            pr_store=backend,
         ),
     )
 

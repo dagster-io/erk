@@ -87,7 +87,7 @@ def test_incremental_dispatch_success(tmp_path: Path) -> None:
     assert workflow == "plan-implement.yml"
     assert inputs["pr_number"] == "42"
     assert inputs["branch_name"] == "feature/my-feature"
-    assert inputs["plan_backend"] == "planned_pr"
+    assert inputs["pr_backend"] == "planned_pr"
 
 
 def test_incremental_dispatch_pr_not_found(tmp_path: Path) -> None:
@@ -257,14 +257,14 @@ def test_incremental_dispatch_writes_dispatch_metadata(tmp_path: Path) -> None:
         ),
     }
     fake_github = FakeLocalGitHub(pr_details={42: pr}, prs=prs)
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     runner = CliRunner()
     result = runner.invoke(
         incremental_dispatch,
         ["--plan-file", str(plan_file), "--pr", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            git=fake_git, github=fake_github, plan_store=plan_store, repo_root=tmp_path
+            git=fake_git, github=fake_github, pr_store=pr_store, repo_root=tmp_path
         ),
     )
 

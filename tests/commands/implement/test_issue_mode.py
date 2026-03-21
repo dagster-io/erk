@@ -25,7 +25,7 @@ def test_implement_from_plain_issue_number() -> None:
         )
         store, _ = create_pr_backend_with_plans({"123": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         # Test with plain number (no # prefix)
         result = runner.invoke(implement, ["123"], obj=ctx)
@@ -52,7 +52,7 @@ def test_implement_from_issue_number() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -79,7 +79,7 @@ def test_implement_from_issue_url() -> None:
         )
         store, _ = create_pr_backend_with_plans({"123": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         url = "https://github.com/owner/repo/issues/123"
         result = runner.invoke(implement, [url], obj=ctx)
@@ -106,7 +106,7 @@ def test_implement_creates_impl_folder_in_cwd() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -128,7 +128,7 @@ def test_implement_from_issue_fails_when_not_found() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#999", "--dry-run"], obj=ctx)
 
@@ -148,7 +148,7 @@ def test_implement_from_issue_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
 
@@ -180,7 +180,7 @@ def test_auto_detect_fails_on_plnd_branch_without_plan_ref() -> None:
         real_branch = "P42-my-feature-01-16-1200"
         fake_github._prs[real_branch] = fake_github._prs["plan-42"]
         fake_github._prs_by_branch[real_branch] = fake_github._pr_details[42]
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # TARGET omitted — cannot auto-detect without plan-ref.json
         result = runner.invoke(implement, ["--dry-run"], obj=ctx)

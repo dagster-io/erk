@@ -165,7 +165,7 @@ def _implement_from_issue(
 
     # Fetch plan from GitHub
     ctx.console.info("Fetching plan from GitHub...")
-    result = ctx.plan_store.get_managed_pr(repo.root, pr_number)
+    result = ctx.pr_store.get_managed_pr(repo.root, pr_number)
     if isinstance(result, PrNotFound):
         user_output(click.style("Error: ", fg="red") + f"Plan #{pr_number} not found")
         raise SystemExit(1)
@@ -219,7 +219,7 @@ def _implement_from_issue(
     # Save plan reference for PR linking
     ctx.console.info("Saving plan reference for PR linking...")
     impl_dir = get_impl_dir(ctx.cwd, branch_name=branch or "current")
-    provider_name = ctx.plan_store.get_provider_name()
+    provider_name = ctx.pr_store.get_provider_name()
     save_plan_ref(
         impl_dir,
         provider=provider_name,

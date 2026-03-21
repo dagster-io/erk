@@ -31,7 +31,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.gateway.git.remote_ops.types import PushError
@@ -91,7 +91,7 @@ def plan_update(
         raise SystemExit(1)
 
     # Get dependencies from context
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)

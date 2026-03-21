@@ -87,7 +87,7 @@ class ErkContext:
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     agent_docs: AgentDocs  # docs/learned/ file access
-    plan_store: ManagedPrBackend
+    pr_store: ManagedPrBackend
     prompt_executor: PromptExecutor
 
     # Shell/CLI integrations (moved to erk_shared)
@@ -173,13 +173,13 @@ class ErkContext:
         return self.github.issues
 
     @property
-    def plan_backend(self) -> ManagedPrBackend:
-        """Access plan_store as ManagedPrBackend (read/write interface).
+    def pr_backend(self) -> ManagedPrBackend:
+        """Access pr_store as ManagedPrBackend (read/write interface).
 
-        Since plan_store is typed as ManagedPrBackend, this is a direct alias.
+        Since pr_store is typed as ManagedPrBackend, this is a direct alias.
         Retained for call-site compatibility.
         """
-        return self.plan_store
+        return self.pr_store
 
     @property
     def branch_manager(self) -> BranchManager:
@@ -218,7 +218,7 @@ class ErkContext:
         github_admin: GitHubAdmin | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
-        plan_store: ManagedPrBackend | None = None,
+        pr_store: ManagedPrBackend | None = None,
         cmux: Cmux | None = None,
         remote_github: RemoteGitHub | None = None,
         debug: bool = False,
@@ -238,7 +238,7 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            plan_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
+            pr_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -263,7 +263,7 @@ class ErkContext:
             github_admin=github_admin,
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
-            plan_store=plan_store,
+            pr_store=pr_store,
             cmux=cmux,
             remote_github=remote_github,
             debug=debug,

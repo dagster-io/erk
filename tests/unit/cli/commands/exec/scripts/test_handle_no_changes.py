@@ -192,7 +192,7 @@ def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command succeeds with valid inputs."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -224,7 +224,7 @@ def test_cli_success_minimal_options(tmp_path: Path) -> None:
     """Test CLI command succeeds with only required options."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -251,7 +251,7 @@ def test_cli_updates_pr_title_and_body(tmp_path: Path) -> None:
     """Test that CLI command updates PR title and body."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     runner.invoke(
@@ -289,7 +289,7 @@ def test_cli_adds_label_to_pr(tmp_path: Path) -> None:
     """Test that CLI command adds no-changes label to PR."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     runner.invoke(
@@ -318,7 +318,7 @@ def test_cli_adds_comment_to_issue(tmp_path: Path) -> None:
     """Test that CLI command adds comment to plan."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     runner.invoke(
@@ -443,7 +443,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     """Test that JSON output has expected structure on success."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -477,7 +477,7 @@ def test_cli_exits_with_code_0_on_success(tmp_path: Path) -> None:
     """Test that CLI exits with code 0 on success (workflow succeeds)."""
     github, fake_gh_issues, backend = _create_github_with_plan_pr(123)
 
-    ctx = ErkContext.for_test(github=github, plan_store=backend, repo_root=tmp_path, cwd=tmp_path)
+    ctx = ErkContext.for_test(github=github, pr_store=backend, repo_root=tmp_path, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(

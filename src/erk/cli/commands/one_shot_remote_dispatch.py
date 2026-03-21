@@ -407,7 +407,7 @@ def dispatch_one_shot_remote(
             "branch_name": branch_name,
             "pr_number": str(pr_number),
             "submitted_by": submitted_by,
-            "plan_backend": "planned_pr",
+            "pr_backend": "planned_pr",
         }
         if params.model is not None:
             inputs["model_name"] = params.model

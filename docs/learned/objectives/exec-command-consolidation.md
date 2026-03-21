@@ -48,7 +48,7 @@ Result types are defined in `erk_shared/objective_apply_landed_update_result.py`
 The script auto-fills missing parameters using a cascading discovery chain:
 
 1. **Branch** — Auto-filled from current git branch if not provided
-2. **Plan** — If `--plan` is provided, use it directly (direct lookup). Otherwise, discover via `plan_backend.get_plan_for_branch()`
+2. **Plan** — If `--plan` is provided, use it directly (direct lookup). Otherwise, discover via `pr_backend.get_plan_for_branch()`
 3. **Objective** — If `--objective` is provided, use it directly. Otherwise, extract from `plan_result.objective_id`
 4. **PR** — If `--pr` is provided, use it directly. Otherwise, discover via `github.get_pr_for_branch()`
 

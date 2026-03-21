@@ -135,10 +135,8 @@ def test_land_skips_learn_prompt_for_remote_pr(
                 f"(no local worktree), but was called with pr_id={pr_id}"
             )
 
-        # Patch the method on the plan_backend instance
-        monkeypatch.setattr(
-            test_ctx.plan_backend, "find_sessions_for_managed_pr", mock_find_sessions
-        )
+        # Patch the method on the pr_backend instance
+        monkeypatch.setattr(test_ctx.pr_backend, "find_sessions_for_managed_pr", mock_find_sessions)
 
         # Execute mode: test PR merge with no local worktree
         # Note: worktree_path is None because there's no local checkout

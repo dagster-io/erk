@@ -30,7 +30,7 @@ issue = gh.get_issue(repo_root, issue_number)
 **After (PlanBackend):**
 
 ```python
-backend = require_plan_backend(ctx)
+backend = require_pr_backend(ctx)
 plan_result = backend.get_plan(repo_root, pr_id)
 if isinstance(plan_result, PlanNotFound):
     # Handle missing plan explicitly
@@ -43,7 +43,7 @@ if isinstance(plan_result, PlanNotFound):
 Always check plan existence **before** calling mutation methods:
 
 ```python
-backend = require_plan_backend(ctx)
+backend = require_pr_backend(ctx)
 pr_id = str(issue_number)
 
 # LBYL: Check plan exists before updating
@@ -128,7 +128,7 @@ def test_my_exec_script(tmp_path: Path) -> None:
     )
 ```
 
-`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_plan_backend(ctx)` returns a working implementation.
+`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_pr_backend(ctx)` returns a working implementation.
 
 ## Known Inconsistencies
 
@@ -140,7 +140,7 @@ These represent opportunities for future migration.
 
 ## PlanBackend Methods
 
-Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):
+Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/pr_store/backend.py`):
 
 | Method                                           | Returns                  | Description                                 |
 | ------------------------------------------------ | ------------------------ | ------------------------------------------- |
@@ -154,7 +154,7 @@ Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store
 
 ## Source Code
 
-The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
+The canonical implementation lives in `packages/erk-shared/src/erk_shared/pr_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
 
 ## get_metadata_field Returns object | PlanNotFound
 

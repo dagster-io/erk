@@ -24,7 +24,7 @@ def test_model_flag_in_interactive_mode() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         # Set ERK_SHELL to simulate shell integration being active
         result = runner.invoke(
@@ -52,7 +52,7 @@ def test_model_flag_short_form_in_interactive_mode() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         # Set ERK_SHELL to simulate shell integration being active
         result = runner.invoke(
@@ -80,7 +80,7 @@ def test_model_alias_in_interactive_mode() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         # Set ERK_SHELL to simulate shell integration being active
         result = runner.invoke(implement, ["#42", "-m", "h"], obj=ctx, env={"ERK_SHELL": "zsh"})
@@ -106,7 +106,7 @@ def test_model_flag_in_non_interactive_mode() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--no-interactive", "--model", "opus"], obj=ctx)
 
@@ -130,7 +130,7 @@ def test_model_flag_in_script_mode() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--script", "--model", "sonnet"], obj=ctx)
 
@@ -154,7 +154,7 @@ def test_model_flag_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(
             implement, ["#42", "--dry-run", "--no-interactive", "--model", "opus"], obj=ctx
@@ -182,7 +182,7 @@ def test_invalid_model_flag() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--model", "invalid-model"], obj=ctx)
 

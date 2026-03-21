@@ -114,7 +114,7 @@ def learn_cmd(
             raise SystemExit(1)
         pr_id = str(pr_number)
     elif branch_name is not None:
-        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(ctx.cwd, branch_name)
+        pr_id = ctx.pr_backend.resolve_pr_number_for_branch(ctx.cwd, branch_name)
 
     if pr_id is None:
         user_output(
@@ -149,7 +149,7 @@ def learn_cmd(
 
     # No learn branch — fall through to session discovery
     # Find sessions for the plan
-    sessions_for_plan = ctx.plan_backend.find_sessions_for_managed_pr(
+    sessions_for_plan = ctx.pr_backend.find_sessions_for_managed_pr(
         repo_root,
         pr_number=pr_id,
     )
@@ -249,7 +249,7 @@ def _get_learn_materials_branch(
     Returns:
         Branch name if found on the plan header, None otherwise
     """
-    result = ctx.plan_backend.get_metadata_field(repo_root, pr_id, "learn_materials_branch")
+    result = ctx.pr_backend.get_metadata_field(repo_root, pr_id, "learn_materials_branch")
     if isinstance(result, PrNotFound):
         return None
     if not isinstance(result, str):

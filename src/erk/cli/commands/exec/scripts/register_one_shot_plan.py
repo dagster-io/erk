@@ -14,7 +14,7 @@ from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk_shared.context.helpers import (
     require_github,
     require_issues,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -39,14 +39,14 @@ def register_one_shot_plan(
     """Register a one-shot plan with issue metadata and comment."""
     issues = require_issues(ctx)
     github = require_github(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
     results: dict[str, object] = {}
 
     # Op 1: dispatch metadata
     try:
         write_dispatch_metadata(
-            plan_backend=plan_backend,
+            pr_backend=pr_backend,
             github=github,
             repo_root=repo_root,
             pr_number=pr_number,
@@ -86,7 +86,7 @@ def register_one_shot_plan(
 
     # Op 3: update lifecycle stage to "planned"
     try:
-        plan_backend.update_metadata(
+        pr_backend.update_metadata(
             repo_root,
             str(pr_number),
             metadata={"lifecycle_stage": "planned"},

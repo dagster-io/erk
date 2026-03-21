@@ -38,8 +38,8 @@ class PrContextProvider:
     Uses RemoteGitHub for objective title lookup (objectives are issues, not plans).
     """
 
-    def __init__(self, *, plan_backend: ManagedPrBackend, remote_github: RemoteGitHub) -> None:
-        self._plan_backend = plan_backend
+    def __init__(self, *, pr_backend: ManagedPrBackend, remote_github: RemoteGitHub) -> None:
+        self._pr_backend = pr_backend
         self._remote_github = remote_github
 
     def get_plan_context(
@@ -59,7 +59,7 @@ class PrContextProvider:
         Returns None on any failure, allowing graceful degradation for
         branches not linked to plans.
         """
-        result = self._plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
+        result = self._pr_backend.get_managed_pr_for_branch(repo_root, branch_name)
         if isinstance(result, PrNotFound):
             return None
 

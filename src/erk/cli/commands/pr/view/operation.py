@@ -113,7 +113,7 @@ def run_pr_view(
                 message="No identifier specified and could not infer from branch name",
             )
 
-        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(ctx.repo.root, branch)
+        pr_id = ctx.pr_backend.resolve_pr_number_for_branch(ctx.repo.root, branch)
         if pr_id is None:
             return MachineCommandError(
                 error_type="missing_identifier",
@@ -139,7 +139,7 @@ def run_pr_view(
 
     # Optional local enrichment for richer header metadata
     if repo_root is not None:
-        all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, pr_id)
+        all_meta = ctx.pr_backend.get_all_metadata_fields(repo_root, pr_id)
         if isinstance(all_meta, PrNotFound):
             header_info: dict[str, object] = plan.header_fields
         else:

@@ -82,12 +82,12 @@ PR is marked ready for review. Standard review/merge flow. No body format change
 
 ## Key Functions
 
-All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
+All in `packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py`:
 
 | Function                                                         | Purpose                                                                                                                                                  |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `build_plan_stage_body(metadata_body, plan_content, *, summary)` | Build Stage 1 body: details-wrapped plan + metadata. Optional `summary: str \| None` prepends before `<details>`. Footer NOT included (needs PR number). |
-| `build_original_plan_section(plan_content)`                      | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2.                                              |
+| `build_original_pr_section(plan_content)`                        | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2.                                              |
 | `extract_plan_content(pr_body)`                                  | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. Summary is NOT included in output.           |
 | `find_metadata_block(pr_body, "plan-header")`                    | Extract metadata block for preservation during stage transitions.                                                                                        |
 
@@ -104,7 +104,7 @@ These are distinct: `find()` matches the first (content), `rsplit()` matches the
 
 The content separator `\n\n---\n\n` can accidentally form when "Remotely executed" notes or other text end with a blank line followed by the footer delimiter `\n---\n`. This creates a false positive for `find()`.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py -->
 
 `find_metadata_block()` defends against this by validating that `<!-- erk:metadata-block:` appears in the prefix. If the marker is absent, the function returns None rather than treating the accidental separator as the real content boundary.
 
@@ -117,7 +117,7 @@ This means even if `\n\n---\n\n` appears mid-body, `find()` still finds the real
 
 ## Constants
 
-**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
+**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py`
 
 ## Self-Referential Close Prevention
 

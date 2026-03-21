@@ -41,7 +41,7 @@ Supported formats:
 
 The plan-implement workflow uses a `run-name` template of `"${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"`, which includes the branch name for easier identification. The `#(\d+)` regex works with both old and new formats because it matches the `#NNN` pattern regardless of surrounding context.
 
-Formats without `#` return None and fall back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.
+Formats without `#` return None.
 
 ## Workflow Source Column
 

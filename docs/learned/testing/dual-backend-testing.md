@@ -34,7 +34,7 @@ After PR #8210, only the ManagedGitHubPrBackend exists. Use `create_plan_store_w
 
 ## Context Integration
 
-`context_for_test()` in `tests/test_utils/test_context.py` accepts an optional `plan_store` parameter, allowing tests to inject the backend.
+`context_for_test()` in `tests/test_utils/test_context.py` accepts an optional `pr_store` parameter, allowing tests to inject the backend.
 
 ## Assertion Patterns
 

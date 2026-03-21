@@ -70,7 +70,7 @@ def get_pr_context(ctx: click.Context, *, debug: bool) -> None:
 
     # Plan context
     plan_provider = PrContextProvider(
-        plan_backend=erk_ctx.plan_backend, remote_github=get_remote_github(erk_ctx)
+        pr_backend=erk_ctx.pr_backend, remote_github=get_remote_github(erk_ctx)
     )
     if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
         raise click.ClickException("Repository has no GitHub remote configured")

@@ -43,7 +43,7 @@ from datetime import UTC
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root, require_time
+from erk_shared.context.helpers import require_pr_backend, require_repo_root, require_time
 from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_erk_issue_event,
@@ -144,7 +144,7 @@ def post_workflow_started_comment(
     Posts a structured comment with YAML metadata block indicating that a
     GitHub Actions workflow has started processing the plan.
     """
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
 

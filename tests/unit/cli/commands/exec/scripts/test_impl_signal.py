@@ -288,7 +288,7 @@ def test_started_posts_comment_and_updates_metadata(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -329,7 +329,7 @@ def test_ended_updates_metadata(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -368,7 +368,7 @@ def test_started_sets_lifecycle_stage_impl(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -401,7 +401,7 @@ def test_started_writes_local_run_state(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -438,7 +438,7 @@ def test_submitted_updates_lifecycle_stage(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -496,7 +496,7 @@ def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 
@@ -521,7 +521,7 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
             cwd=tmp_path,
             git=_fake_git(tmp_path),
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
         ),
     )
 

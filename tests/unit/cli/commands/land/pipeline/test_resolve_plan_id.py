@@ -73,12 +73,12 @@ def test_sets_plan_id_when_branch_has_plan(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(prs_by_branch={branch: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         cwd=tmp_path,
     )
 
@@ -94,12 +94,12 @@ def test_sets_pr_id_none_when_no_plan(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         cwd=tmp_path,
     )
 
