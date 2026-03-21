@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Remove --new-slot from erk slot teleport"
+  "pr_id": "9384",
+  "url": "https://github.com/dagster-io/erk/pull/9384",
+  "created_at": "2026-03-21T15:31:46.211082",
+  "synced_at": "2026-03-21T15:31:46.211082",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
