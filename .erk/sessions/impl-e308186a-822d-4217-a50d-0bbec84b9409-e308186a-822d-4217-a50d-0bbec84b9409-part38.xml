@@ -1,0 +1,152 @@
+<session>
+  <meta source="agent-ad9c123" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py`:
+
+Rename all occurrences of `plan_backend` to `pr_backend`.
+Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
+
+This includes:
+- Imports
+- Parameter names
+- Variable names and attribute accesses
+- Type annotations
+- Comments
+
+DO NOT rename:
+- External API field names
+- User-facing string messages
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` in that file. Let me start by reading it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16123, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UutvWECoaBubr86nTucMbW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16123, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UutvWECoaBubr86nTucMbW">
+     1→"""Core operation for pr view (transport-independent).
+     2→
+     3→Contains the request type and operation function that both the
+     4→human command (pr/view/cli.py) and machine command (pr/view/json_cli.py) share.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from datetime import datetime
+     9→from typing import Any
+    10→
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.cli.repo_resolution import get_remote_github
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.agentclick.machine_command import MachineCommandError
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    18→from erk_shared.gateway.github.types import GitHubRepoId
+    19→from erk_shared.pr_store.conversion import github_issue_to_plan
+    20→from erk_shared.pr_store.types import PrNotFound
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class PrViewRequest:
+    25→    """Request type for pr view."""
+    26→
+    27→    identifier: str | None = None
+    28→    full: bool = False
+    29→
+    30→
+
+... [139 lines omitted] ...
+
+    83→) -&gt; PrViewResult | MachineCommandError:
+    92→        PrViewResult or MachineCommandError
+   101→            return MachineCommandError(
+   102→                error_type="missing_identifier",
+   111→            return MachineCommandError(
+   112→                error_type="missing_identifier",
+   118→            return MachineCommandError(
+   119→                error_type="missing_identifier",
+   133→        return MachineCommandError(
+   134→            error_type="not_found",
+  </tool_result>
+  <assistant>Now I'll apply the renames. I can see two occurrences of `plan_backend` that need to be renamed to `pr_backend`:
+- Line 116: `ctx.plan_backend.resolve_pr_number_for_branch`
+- Line 142: `ctx.plan_backend.get_all_metadata_fields`
+
+Let me make these edits:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="8261" cache_read_input_tokens="10113" cache_creation="{'ephemeral_5m_input_tokens': 8261, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Y48Wi5TNQwF5pEydagdfaf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+    <param name="old_string">        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(ctx.repo.root, branch)</param>
+    <param name="new_string">        pr_id = ctx.pr_backend.resolve_pr_number_for_branch(ctx.repo.root, branch)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8261" cache_read_input_tokens="10113" cache_creation="{'ephemeral_5m_input_tokens': 8261, 'ephemeral_1h_input_tokens': 0}" output_tokens="258" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y48Wi5TNQwF5pEydagdfaf">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ABfmSA6EVaG1rbruHf8z9B">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+    <param name="old_string">        all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, pr_id)</param>
+    <param name="new_string">        all_meta = ctx.pr_backend.get_all_metadata_fields(repo_root, pr_id)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="306" cache_read_input_tokens="18374" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="169" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ABfmSA6EVaG1rbruHf8z9B">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by reading the file again:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="217" cache_read_input_tokens="18680" cache_creation="{'ephemeral_5m_input_tokens': 217, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JS3g7UkpPGoFX6DLUj1auC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py</param>
+    <param name="offset">110</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="217" cache_read_input_tokens="18680" cache_creation="{'ephemeral_5m_input_tokens': 217, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JS3g7UkpPGoFX6DLUj1auC">
+   110→        if branch is None:
+   111→            return MachineCommandError(
+   112→                error_type="missing_identifier",
+   113→                message="No identifier specified and could not infer from branch name",
+   114→            )
+   115→
+   116→        pr_id = ctx.pr_backend.resolve_pr_number_for_branch(ctx.repo.root, branch)
+   117→        if pr_id is None:
+   118→            return MachineCommandError(
+   119→                error_type="missing_identifier",
+   120→                message="No identifier specified and could not infer from branch name",
+   121→            )
+   122→
+   123→        identifier = pr_id
+   124→
+   125→    pr_number = parse_issue_identifier(identifier)
+   126→    if pr_id is None:
+   127→        pr_id = str(pr_number)
+   128→
+   129→    remote = get_remote_github(ctx)
+   130→
+   131→    issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
+   132→    if isinstance(issue, IssueNotFound):
+   133→        return MachineCommandError(
+   134→            error_type="not_found",
+   135→            message=f"PR #{pr_id} not found",
+   136→        )
+   137→
+   138→    plan = github_issue_to_plan(issue)
+   139→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! All renames have been successfully applied. Here's a summary of the changes made:
+
+## Summary
+
+I've successfully renamed all occurrences of `plan_backend` to `pr_backend` in the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py`:
+
+### Changes Made:
+
+1. **Line 116**: `ctx.plan_backend.resolve_pr_number_for_branch()` → `ctx.pr_backend.resolve_pr_number_for_branch()`
+2. **Line 142**: `ctx.plan_backend.get_all_metadata_fields()` → `ctx.pr_backend.get_all_metadata_fields()`
+
+Both attribute accesses have been updated to use the new `pr_backend` name. No imports of `require_plan_backend` were found in this file, so the rename is complete. All changes maintain the integrity of the code without modifying any user-facing messages or external API field names.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="787" cache_read_input_tokens="18897" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

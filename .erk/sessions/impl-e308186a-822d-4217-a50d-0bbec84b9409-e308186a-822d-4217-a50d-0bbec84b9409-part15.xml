@@ -1,0 +1,602 @@
+<session>
+  <meta source="agent-a19a107" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In each of these files, rename all occurrences of `plan_backend` to `pr_backend`, and rename `require_plan_backend` to `require_pr_backend` wherever it appears:
+
+1. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py`
+2. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py`
+3. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+4. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py`
+
+This includes:
+- Imports
+- Parameter names
+- Variable names and attribute accesses
+- Type annotations
+- Comments
+
+DO NOT rename:
+- External API field names
+- User-facing string messages
+
+Read each file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading all four files to understand the current code, then apply the renames systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16236" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16236, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XqpdDDCDGu4XBcDLbrPEVe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16236" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16236, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LoK6Y7btEc6ZjhuQekToVv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16236" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16236, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JpjHuHQaGwsWb2f8hovvPV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16236" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16236, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RNoLrAZ4QorqeZjNt22kxC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16236" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16236, 'ephemeral_1h_input_tokens': 0}" output_tokens="312" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XqpdDDCDGu4XBcDLbrPEVe">
+     1→"""Resolve an objective reference to an objective number.
+     2→
+     3→Consolidates argument parsing + branch inference for objective-plan command.
+     4→
+     5→Resolution cascade:
+     6→1. Non-empty ref → parse as number/URL
+     7→2. Empty ref + branch matches objective pattern → extract from branch name
+     8→3. Empty ref + plan metadata lookup → get objective_id from branch's plan
+     9→4. All fail → {"resolved": false}
+    10→
+    11→Usage:
+    12→    erk exec resolve-objective-ref
+    13→    erk exec resolve-objective-ref 3679
+    14→    erk exec resolve-objective-ref https://github.com/owner/repo/issues/3679
+    15→
+    16→Output:
+    17→    JSON with resolution result:
+    18→    {"resolved": true, "objective_number": 3679, "source": "argument"}
+    19→    {"resolved": true, "objective_number": 456, "source": "branch_name"}
+    20→    {"resolved": true, "objective_number": 123, "source": "plan_metadata"}
+    21→    {"resolved": false}
+    22→
+    23→Exit Codes:
+    24→    0: Always (caller decides how to handle not-resolved)
+    25→"""
+    26→
+    27→import json
+    28→from collections.abc import Callable
+    29→
+    30→import click
+
+... [99 lines omitted] ...
+
+   110→        except RuntimeError:
+  </tool_result>
+  <tool_result tool="toolu_01LoK6Y7btEc6ZjhuQekToVv">
+     1→"""Apply mechanical updates to an objective after landing a PR.
+     2→
+     3→Combines the fetch-context, update-nodes, and post-action-comment steps into
+     4→a single call, eliminating 5+ sequential agent commands.  Only prose
+     5→reconciliation (which requires LLM judgment) is left to the calling skill.
+     6→
+     7→The PR number doubles as the plan number (in erk, the PR IS the plan).
+     8→
+     9→Usage:
+    10→    erk exec objective-apply-landed-update --pr 6517 --objective 6423 --branch P6517-...
+    11→    erk exec objective-apply-landed-update  # auto-discovers all arguments
+    12→
+    13→Output:
+    14→    JSON with {success, objective, plan, pr, roadmap, node_updates,
+    15→    action_comment_id} or {success, error}
+    16→
+    17→Exit Codes:
+    18→    0: Success - all mechanical updates applied
+    19→    1: Error - missing data or API failure
+    20→"""
+    21→
+    22→import json
+    23→
+    24→import click
+    25→
+    26→from erk.cli.commands.exec.scripts.objective_fetch_context import (
+    27→    _build_roadmap_context,
+    28→    _fetch_objective_content,
+    29→)
+    30→from erk.cli.commands.exec.scripts.objective_post_action_comment import (
+
+... [320 lines omitted] ...
+
+    57→    ApplyLandedUpdateErrorDict,
+    69→def _error_json(error: str) -&gt; str:
+    70→    result: ApplyLandedUpdateErrorDict = {"success": False, "error": error}
+   194→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   206→            click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   213→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   220→        click.echo(_error_json(f"PR #{pr_number} not found"))
+   229→            click.echo(_error_json(msg))
+   236→        click.echo(_error_json(f"Objective #{objective_number} not found"))
+   242→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <tool_result tool="toolu_01JpjHuHQaGwsWb2f8hovvPV">
+     1→"""Fetch all context needed for objective-update-with-landed-pr in one call.
+     2→
+     3→Bundles objective, plan, PR details, and parsed roadmap context
+     4→into a single JSON blob, eliminating multiple sequential LLM turns for data
+     5→fetching and step matching.
+     6→
+     7→Usage:
+     8→    erk exec objective-fetch-context --pr 6517 --objective 6423 --branch plnd/...
+     9→    erk exec objective-fetch-context  # auto-discovers all arguments
+    10→
+    11→Output:
+    12→    JSON with {success, objective, plan, pr, roadmap} or {success, error}
+    13→
+    14→Exit Codes:
+    15→    0: Success - all data fetched
+    16→    1: Error - missing data or invalid arguments
+    17→"""
+    18→
+    19→import json
+    20→
+    21→import click
+    22→
+    23→from erk.cli.repo_resolution import get_remote_github
+    24→from erk_shared.context.helpers import (
+    25→    require_context,
+    26→    require_cwd,
+    27→    require_git,
+    28→    require_github,
+    29→    require_plan_backend,
+    30→    require_repo_root,
+
+... [247 lines omitted] ...
+
+    53→    ObjectiveFetchContextErrorDict,
+    63→def _error_json(error: str) -&gt; str:
+    64→    result: ObjectiveFetchContextErrorDict = {"success": False, "error": error}
+   176→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   186→            click.echo(_error_json(f"PR #{pr_number_arg} not found"))
+   196→                click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   202→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   210→            click.echo(_error_json(msg))
+   217→            click.echo(_error_json("Cannot auto-discover PR without --branch or --pr"))
+   221→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   228→        click.echo(_error_json(f"Objective issue #{objective_number} not found"))
+   234→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <tool_result tool="toolu_01RNoLrAZ4QorqeZjNt22kxC">
+     1→"""Plan save: creates a planned PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [560 lines omitted] ...
+
+   165→            click.echo(f"Error: {title_validation.message}", err=True)
+   171→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   172→                        "error_type": "validation_failed",
+   186→            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+   193→                "Error: --branch-slug is required. "
+   225→            click.echo(f"Error: {create_result.message}", err=True)
+   320→        raise RuntimeError(msg)
+   422→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   424→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   454→    valid, error, details = _validate_plan_content(plan)
+   457→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   463→                        "error": f"Plan validation failed: {error}",
+   464→                        "error_type": "validation_failed",
+  </tool_result>
+  <assistant>Now I have all four files read. Let me apply the renames systematically:
+
+1. `resolve_objective_ref.py`: Rename `require_plan_backend` and `plan_backend`
+2. `objective_apply_landed_update.py`: Rename `require_plan_backend` and `plan_backend`
+3. `objective_fetch_context.py`: Rename `require_plan_backend` and `plan_backend`
+4. `plan_save.py`: Check for occurrences (this one should not have these imports based on the read)
+
+Let me start with the edits:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="18639" cache_read_input_tokens="16236" cache_creation="{'ephemeral_5m_input_tokens': 18639, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01146RAU8G4Q1LtqfN9PkPNY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py</param>
+    <param name="old_string">from erk_shared.context.helpers import (
+    require_cwd,
+    require_git,
+    require_plan_backend,
+    require_repo_root,
+)</param>
+    <param name="new_string">from erk_shared.context.helpers import (
+    require_cwd,
+    require_git,
+    require_pr_backend,
+    require_repo_root,
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18639" cache_read_input_tokens="16236" cache_creation="{'ephemeral_5m_input_tokens': 18639, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FCV7MJjjqcV9gm2BDt3Fjr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py</param>
+    <param name="old_string">    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    repo_root = require_repo_root(ctx)
+    plan_backend = require_plan_backend(ctx)</param>
+    <param name="new_string">    cwd = require_cwd(ctx)
+    git = require_git(ctx)
+    repo_root = require_repo_root(ctx)
+    pr_backend = require_pr_backend(ctx)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18639" cache_read_input_tokens="16236" cache_creation="{'ephemeral_5m_input_tokens': 18639, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PkbahsUyzqd8TPkk1d8RPz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py</param>
+    <param name="old_string">    def get_objective_for_branch(branch: str) -&gt; int | None:
+        try:
+            resu...[truncated 175 chars]...esult.objective_id is not None:
+            return result.objective_id
+        return None</param>
+    <param name="new_string">    def get_objective_for_branch(branch: str) -&gt; int | None:
+        try:
+            resu...[truncated 173 chars]...esult.objective_id is not None:
+            return result.objective_id
+        return None</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="18639" cache_read_input_tokens="16236" cache_creation="{'ephemeral_5m_input_tokens': 18639, 'ephemeral_1h_input_tokens': 0}" output_tokens="839" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01146RAU8G4Q1LtqfN9PkPNY">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FCV7MJjjqcV9gm2BDt3Fjr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PkbahsUyzqd8TPkk1d8RPz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let's update `objective_apply_landed_update.py`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1142" cache_read_input_tokens="34875" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SKFHTAqDEBBq66Feo19Ufr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">from erk_shared.context.helpers import (
+    require_context,
+    require_cwd,
+    require_git,
+    require_github,
+    require_plan_backend,
+    require_repo_root,
+    require_time,
+)</param>
+    <param name="new_string">from erk_shared.context.helpers import (
+    require_context,
+    require_cwd,
+    require_git,
+    require_github,
+    require_pr_backend,
+    require_repo_root,
+    require_time,
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1142" cache_read_input_tokens="34875" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018zuPr4czW4sBnLNLGKhynP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">    erk_ctx = require_context(ctx)
+    github = require_github(ctx)
+    repo_root = requir...[truncated 20 chars]...ire_plan_backend(ctx)
+    time = require_time(ctx)
+    remote = get_remote_github(erk_ctx)</param>
+    <param name="new_string">    erk_ctx = require_context(ctx)
+    github = require_github(ctx)
+    repo_root = requir...[truncated 16 chars]...quire_pr_backend(ctx)
+    time = require_time(ctx)
+    remote = get_remote_github(erk_ctx)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1142" cache_read_input_tokens="34875" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UUxBXjDMpVKpV9d43VPs4w">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="old_string">    # --- Resolve plan using PR number (the PR IS the plan) ---
+    plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number))</param>
+    <param name="new_string">    # --- Resolve plan using PR number (the PR IS the plan) ---
+    plan_result = pr_backend.get_managed_pr(repo_root, str(pr_number))</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1142" cache_read_input_tokens="34875" cache_creation="{'ephemeral_5m_input_tokens': 1142, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SKFHTAqDEBBq66Feo19Ufr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018zuPr4czW4sBnLNLGKhynP">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UUxBXjDMpVKpV9d43VPs4w">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let's update `objective_fetch_context.py`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1012" cache_read_input_tokens="36017" cache_creation="{'ephemeral_5m_input_tokens': 1012, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RrDv5fUDJj1gUmRPtwiwJQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">from erk_shared.context.helpers import (
+    require_context,
+    require_cwd,
+    require_git,
+    require_github,
+    require_plan_backend,
+    require_repo_root,
+)</param>
+    <param name="new_string">from erk_shared.context.helpers import (
+    require_context,
+    require_cwd,
+    require_git,
+    require_github,
+    require_pr_backend,
+    require_repo_root,
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1012" cache_read_input_tokens="36017" cache_creation="{'ephemeral_5m_input_tokens': 1012, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016x9Qv1buDz5KueeqLhoHSR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">    erk_ctx = require_context(ctx)
+    github = require_github(ctx)
+    repo_root = require_repo_root(ctx)
+    plan_backend = require_plan_backend(ctx)
+    remote = get_remote_github(erk_ctx)</param>
+    <param name="new_string">    erk_ctx = require_context(ctx)
+    github = require_github(ctx)
+    repo_root = require_repo_root(ctx)
+    pr_backend = require_pr_backend(ctx)
+    remote = get_remote_github(erk_ctx)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1012" cache_read_input_tokens="36017" cache_creation="{'ephemeral_5m_input_tokens': 1012, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018gebhRi21PH9WU1UBw5NsR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">    # When --plan is provided, do direct plan lookup (skip branch-based discovery)
+    if pr_number_arg is not None:
+        plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))</param>
+    <param name="new_string">    # When --plan is provided, do direct plan lookup (skip branch-based discovery)
+    if pr_number_arg is not None:
+        plan_result = pr_backend.get_managed_pr(repo_root, str(pr_number_arg))</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1012" cache_read_input_tokens="36017" cache_creation="{'ephemeral_5m_input_tokens': 1012, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GYpw48xAWWvEZeDYLPfpFw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">        # Resolve plan from branch via backend (works for both P&lt;number&gt;- and plan-... branches)
+        plan_result = plan_backend.get_managed_pr_for_branch(repo_root, branch_name)</param>
+    <param name="new_string">        # Resolve plan from branch via backend (works for both P&lt;number&gt;- and plan-... branches)
+        plan_result = pr_backend.get_managed_pr_for_branch(repo_root, branch_name)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1012" cache_read_input_tokens="36017" cache_creation="{'ephemeral_5m_input_tokens': 1012, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RrDv5fUDJj1gUmRPtwiwJQ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016x9Qv1buDz5KueeqLhoHSR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018gebhRi21PH9WU1UBw5NsR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GYpw48xAWWvEZeDYLPfpFw">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let's check `plan_save.py`. Looking at the file, I see it doesn't import `require_plan_backend`, but it does have `"plan_backend": "planned_pr"` on line 355, which is an external API field name and should NOT be renamed according to the instructions. Let me verify there are no other occurrences to rename:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1266" cache_read_input_tokens="37029" cache_creation="{'ephemeral_5m_input_tokens': 1266, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012KvFKowvH7w5q4SREgyt3m">
+    <param name="pattern">plan_backend|require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1266" cache_read_input_tokens="37029" cache_creation="{'ephemeral_5m_input_tokens': 1266, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012KvFKowvH7w5q4SREgyt3m">
+355:            "plan_backend": "planned_pr",
+446:                    "plan_backend": "planned_pr",
+  </tool_result>
+  <assistant>Good! The only occurrences in `plan_save.py` are the external API field names (`"plan_backend": "planned_pr"`), which should NOT be renamed per the instructions. So `plan_save.py` doesn't need any changes.
+
+Let me verify the edits were applied correctly by reading a section of each modified file:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HDjjjqrybTg4kSWziFtfHw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py</param>
+    <param name="offset">30</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MLiZvzXw7w2vmfcW5fGFmo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py</param>
+    <param name="offset">100</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018Wsfpg1ssuP2FSnnijV8KF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="offset">38</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0176LETSikgxHQh9DDeYhuuk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="offset">186</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011jsLXnUgUAJdoBAxdF5C6d">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="offset">24</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K6WjJtnKqWhsWPgi6ko6Av">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="offset">169</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="248" cache_read_input_tokens="38295" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HDjjjqrybTg4kSWziFtfHw">
+    30→import click
+    31→
+    32→from erk_shared.context.helpers import (
+    33→    require_cwd,
+    34→    require_git,
+    35→    require_pr_backend,
+    36→    require_repo_root,
+    37→)
+    38→from erk_shared.gateway.github.parsing import parse_issue_number_from_url
+    39→from erk_shared.naming import extract_objective_number
+    40→from erk_shared.pr_store.types import PrNotFound
+    41→
+    42→
+    43→def _resolve_objective_ref_impl(
+    44→    *,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MLiZvzXw7w2vmfcW5fGFmo">
+   100→    cwd = require_cwd(ctx)
+   101→    git = require_git(ctx)
+   102→    repo_root = require_repo_root(ctx)
+   103→    pr_backend = require_pr_backend(ctx)
+   104→
+   105→    current_branch = git.branch.get_current_branch(cwd)
+   106→
+   107→    def get_objective_for_branch(branch: str) -&gt; int | None:
+   108→        try:
+   109→            result = pr_backend.get_managed_pr_for_branch(repo_root, branch)
+   110→        except RuntimeError:
+   111→            return None
+   112→        if isinstance(result, PrNotFound):
+   113→            return None
+   114→        if result.objective_id is not None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_018Wsfpg1ssuP2FSnnijV8KF">
+    38→from erk_shared.context.helpers import (
+    39→    require_context,
+    40→    require_cwd,
+    41→    require_git,
+    42→    require_github,
+    43→    require_pr_backend,
+    44→    require_repo_root,
+    45→    require_time,
+    46→)
+    47→from erk_shared.context.types import NoRepoSentinel
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_0176LETSikgxHQh9DDeYhuuk">
+   186→    erk_ctx = require_context(ctx)
+   187→    github = require_github(ctx)
+   188→    repo_root = require_repo_root(ctx)
+   189→    pr_backend = require_pr_backend(ctx)
+   190→    time = require_time(ctx)
+   191→    remote = get_remote_github(erk_ctx)
+   192→
+   193→    if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
+   194→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   195→        raise SystemExit(1)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011jsLXnUgUAJdoBAxdF5C6d">
+    24→from erk_shared.context.helpers import (
+    25→    require_context,
+    26→    require_cwd,
+    27→    require_git,
+    28→    require_github,
+    29→    require_pr_backend,
+    30→    require_repo_root,
+    31→)
+    32→from erk_shared.context.types import NoRepoSentinel
+    33→from erk_shared.gateway.github.issues.types import IssueNotFound
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01K6WjJtnKqWhsWPgi6ko6Av">
+   169→    erk_ctx = require_context(ctx)
+   170→    github = require_github(ctx)
+   171→    repo_root = require_repo_root(ctx)
+   172→    pr_backend = require_pr_backend(ctx)
+   173→    remote = get_remote_github(erk_ctx)
+   174→
+   175→    if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
+   176→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   177→        raise SystemExit(1)
+   178→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! All the edits have been successfully applied. Let me verify there are no remaining occurrences of the old names in the files we modified:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2351" cache_read_input_tokens="38543" cache_creation="{'ephemeral_5m_input_tokens': 2351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012GABEjTLU5mMpRJB9Fj3vL">
+    <param name="command">grep -n "plan_backend\|require_plan_backend" src/erk/cli/commands/exec/scripts/resolve_obj...[truncated 74 chars]...ommands/exec/scripts/objective_fetch_context.py 2&gt;&amp;1 || echo "No matches found (expected)"</param>
+    <param name="description">Check for remaining old names in modified files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2351" cache_read_input_tokens="38543" cache_creation="{'ephemeral_5m_input_tokens': 2351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012GABEjTLU5mMpRJB9Fj3vL">
+No matches found (expected)
+  </tool_result>
+  <assistant>Excellent! Now let me create a summary of the changes made:
+
+## Summary
+
+I have successfully completed the renaming task across all four files. Here's what was changed:
+
+### Files Modified
+
+1. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_objective_ref.py`**
+   - Line 35: `require_plan_backend` → `require_pr_backend` (import)
+   - Line 103: `plan_backend` → `pr_backend` (variable assignment)
+   - Line 109: `plan_backend.get_managed_pr_for_branch()` → `pr_backend.get_managed_pr_for_branch()` (method call)
+
+2. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py`**
+   - Line 43: `require_plan_backend` → `require_pr_backend` (import)
+   - Line 189: `plan_backend` → `pr_backend` (variable assignment)
+   - Line 218: `plan_backend.get_managed_pr()` → `pr_backend.get_managed_pr()` (method call)
+
+3. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py`**
+   - Line 29: `require_plan_backend` → `require_pr_backend` (import)
+   - Line 172: `plan_backend` → `pr_backend` (variable assignment)
+   - Line 184: `plan_backend.get_managed_pr()` → `pr_backend.get_managed_pr()` (method call)
+   - Line 200: `plan_backend.get_managed_pr_for_branch()` → `pr_backend.get_managed_pr_for_branch()` (method call)
+
+4. **`/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py`**
+   - No changes needed. The only occurrences of `plan_backend` in this file are external API field names (`"plan_backend": "planned_pr"` on lines 355 and 446), which were correctly excluded from renaming per your instructions.
+
+All renames have been applied to imports, parameter names, variable names, and attribute accesses. No external API field names or user-facing messages were modified.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="217" cache_read_input_tokens="40894" cache_creation="{'ephemeral_5m_input_tokens': 217, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

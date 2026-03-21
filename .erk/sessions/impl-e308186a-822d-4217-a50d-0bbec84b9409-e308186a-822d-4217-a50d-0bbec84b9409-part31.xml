@@ -1,0 +1,176 @@
+<session>
+  <meta source="agent-a9b68cc" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py`:
+
+Rename all occurrences of `plan_backend` to `pr_backend`.
+Also rename `require_plan_backend` to `require_pr_backend`.
+
+This includes:
+- Function names (require_plan_backend → require_pr_backend)
+- Parameter names
+- Variable names
+- Internal references (e.g., ctx.obj.plan_backend → ctx.obj.pr_backend)
+- Comments that reference these names
+
+DO NOT rename:
+- External API field names
+- String literals that are user-facing messages
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to understand its structure and identify all occurrences that need to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16154" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16154, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JLgLLUN3BiSe6tiwbBmmZh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16154" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16154, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JLgLLUN3BiSe6tiwbBmmZh">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.pr_store.backend import ManagedPrBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get ManagedPrBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <assistant>Now I'll apply the renames. I can see the following items that need to be changed:
+
+1. Line 397: Function name `require_plan_backend` → `require_pr_backend`
+2. Line 415: Comment reference `require_plan_backend` → `require_pr_backend`
+3. Line 422: Variable access `ctx.obj.plan_backend` → `ctx.obj.pr_backend`
+
+Let me make these edits:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="5790" cache_read_input_tokens="16154" cache_creation="{'ephemeral_5m_input_tokens': 5790, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Adeoztq3qn4DYHkhfXsgtX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="old_string">def require_plan_backend(ctx: click.Context) -&gt; ManagedPrBackend:
+    """Get ManagedPrBack...[truncated 652 chars]...t not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.plan_backend</param>
+    <param name="new_string">def require_pr_backend(ctx: click.Context) -&gt; ManagedPrBackend:
+    """Get ManagedPrBacken...[truncated 646 chars]...ext not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.pr_backend</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="5790" cache_read_input_tokens="16154" cache_creation="{'ephemeral_5m_input_tokens': 5790, 'ephemeral_1h_input_tokens': 0}" output_tokens="709" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Adeoztq3qn4DYHkhfXsgtX">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes were applied correctly by reading the modified section:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="760" cache_read_input_tokens="21944" cache_creation="{'ephemeral_5m_input_tokens': 760, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jps3DoJje89XF99UgcBo4U">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="offset">397</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="760" cache_read_input_tokens="21944" cache_creation="{'ephemeral_5m_input_tokens': 760, 'ephemeral_1h_input_tokens': 0}" output_tokens="136" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jps3DoJje89XF99UgcBo4U">
+   397→def require_pr_backend(ctx: click.Context) -&gt; ManagedPrBackend:
+   398→    """Get ManagedPrBackend from context, exiting with error if not initialized.
+   399→
+   400→    Uses LBYL pattern to check context before accessing.
+   401→
+   402→    Args:
+   403→        ctx: Click context (must have ErkContext in ctx.obj)
+   404→
+   405→    Returns:
+   406→        ManagedPrBackend instance from context
+   407→
+   408→    Raises:
+   409→        SystemExit: If context not initialized (exits with code 1)
+   410→
+   411→    Example:
+   412→        &gt;&gt;&gt; @click.command()
+   413→        &gt;&gt;&gt; @click.pass_context
+   414→        &gt;&gt;&gt; def my_command(ctx: click.Context) -&gt; None:
+   415→        ...     backend = require_pr_backend(ctx)
+   416→        ...     result = backend.create_managed_pr(repo_root, title, content, labels, metadata)
+   417→    """
+   418→    if ctx.obj is None:
+   419→        click.echo("Error: Context not initialized", err=True)
+   420→        raise SystemExit(1)
+   421→
+   422→    return ctx.obj.pr_backend
+   423→
+   424→
+   425→def require_time(ctx: click.Context) -&gt; Time:
+   426→    """Get Time from context, exiting with error if not initialized.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! All the renames have been successfully applied. Let me provide a summary of the changes made:
+
+## Summary
+
+I have successfully renamed all occurrences in `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py`:
+
+### Changes Made:
+
+1. **Function name** (line 397): `require_plan_backend` → `require_pr_backend`
+2. **Comment/docstring example** (line 415): `require_plan_backend(ctx)` → `require_pr_backend(ctx)`
+3. **Context attribute access** (line 422): `ctx.obj.plan_backend` → `ctx.obj.pr_backend`
+
+All three occurrences have been renamed consistently, maintaining the integrity of the code while updating the terminology from "plan_backend" to "pr_backend" throughout the helper function.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="599" cache_read_input_tokens="22704" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

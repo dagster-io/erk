@@ -1,0 +1,694 @@
+<session>
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01C36qph87V3EcmXMxsxfDWq">
+&lt;retrieval_status&gt;timeout&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a09112d&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","old_string":"from tests.test_utils.plan_helpers import create_pr_backend_with_plans","new_string":"from tests.test_utils.pr_helpers import create_pr_backend_with_plans"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","old_string":"    write_dispatch_metadata(\n        plan_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )","new_string":"    write_dispatch_metadata(\n        pr_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","old_string":"    write_dispatch_metadata(\n        plan_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )","new_string":"    write_dispatch_metadata(\n        pr_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n    return ctx, pr_number","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n    return ctx, pr_number"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output","new_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number), \"--no-impl\"],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with local plan content (not PR body content)","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number), \"--no-impl\"],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with local plan content (not PR body content)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Verify ref.json in branch-scoped impl dir has the objective_id","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Verify ref.json in branch-scoped impl dir has the objective_id"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    # No .erk/impl-context/ directory — triggers fallback to PR body extraction\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with content extracted from PR body","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    # No .erk/impl-context/ directory — triggers fallback to PR body extraction\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with content extracted from PR body"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    if impl_context_files is not None:","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    if impl_context_files is not None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n\n    @click.command()\n    @click.pass_context\n    def _wrapper(click_ctx: click.Context) -&gt; None:\n        create_impl_context_from_pr(\n            click_ctx,\n            pr_number=9999,\n            cwd=tmp_path,\n            branch_name=\"some-branch\",\n        )\n\n    result = runner.invoke(_wrapper, obj=ctx)","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n\n    @click.command()\n    @click.pass_context\n    def _wrapper(click_ctx: click.Context) -&gt; None:\n        create_impl_context_from_pr(\n            click_ctx,\n            pr_number=9999,\n            cwd=tmp_path,\n            branch_name=\"some-branch\",\n        )\n\n    result = runner.invoke(_wrapper, obj=ctx)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","offset":332,"limit":80}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","offset":332,"limit":80}
+[Tool: Grep] {"pattern":"plan_store","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_store","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_backend|pr_backend|plan_store|require_plan_backend|require_pr_backend","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_backend|pr_backend|plan_store|require_plan_backend|require_pr_backend","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","output_mode":"content"}
+
+... [27 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output","new_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output"}
+  </tool_result>
+  <assistant>Wave 2 is mostly done. Agent a09112d is still running - let me wait for it:</assistant>
+  <usage input_tokens="22925" cache_creation_input_tokens="20149" cache_read_input_tokens="119724" cache_creation="{'ephemeral_5m_input_tokens': 20149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01687faanx7Jz6Fdo16csETE">
+    <param name="task_id">a09112d</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="22925" cache_creation_input_tokens="20149" cache_read_input_tokens="119724" cache_creation="{'ephemeral_5m_input_tokens': 20149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01687faanx7Jz6Fdo16csETE">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a09112d&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","old_string":"from tests.test_utils.plan_helpers import create_pr_backend_with_plans","new_string":"from tests.test_utils.pr_helpers import create_pr_backend_with_plans"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","old_string":"    write_dispatch_metadata(\n        plan_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )","new_string":"    write_dispatch_metadata(\n        pr_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","old_string":"    write_dispatch_metadata(\n        plan_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )","new_string":"    write_dispatch_metadata(\n        pr_backend=plan_store,\n        github=fake_github,\n        repo_root=repo.root,\n        pr_number=300,\n        run_id=\"run-55\",\n        dispatched_at=\"2024-06-15T12:00:00+00:00\",\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n    return ctx, pr_number","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n    return ctx, pr_number"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output","new_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number), \"--no-impl\"],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with local plan content (not PR body content)","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number), \"--no-impl\"],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with local plan content (not PR body content)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Verify ref.json in branch-scoped impl dir has the objective_id","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Verify ref.json in branch-scoped impl dir has the objective_id"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    # No .erk/impl-context/ directory — triggers fallback to PR body extraction\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with content extracted from PR body","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    # No .erk/impl-context/ directory — triggers fallback to PR body extraction\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # Impl folder was created with content extracted from PR body"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    if impl_context_files is not None:","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    if impl_context_files is not None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n\n    @click.command()\n    @click.pass_context\n    def _wrapper(click_ctx: click.Context) -&gt; None:\n        create_impl_context_from_pr(\n            click_ctx,\n            pr_number=9999,\n            cwd=tmp_path,\n            branch_name=\"some-branch\",\n        )\n\n    result = runner.invoke(_wrapper, obj=ctx)","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n\n    @click.command()\n    @click.pass_context\n    def _wrapper(click_ctx: click.Context) -&gt; None:\n        create_impl_context_from_pr(\n            click_ctx,\n            pr_number=9999,\n            cwd=tmp_path,\n            branch_name=\"some-branch\",\n        )\n\n    result = runner.invoke(_wrapper, obj=ctx)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )","new_string":"    ctx = context_for_test(\n        github=fake_github,\n        git=fake_git,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [\"9999\"],\n        obj=ctx,\n    )"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","offset":332,"limit":80}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","offset":332,"limit":80}
+[Tool: Grep] {"pattern":"plan_store","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_store","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_backend|pr_backend|plan_store|require_plan_backend|require_pr_backend","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"plan_backend|pr_backend|plan_store|require_plan_backend|require_pr_backend","path":"/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py","output_mode":"content"}
+
+... [67 lines omitted] ...
+
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py","old_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        pr_backend=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output","new_string":"    ctx = context_for_test(\n        git=fake_git,\n        graphite=fake_graphite,\n        cwd=tmp_path,\n        repo_root=tmp_path,\n        plan_store=backend,\n    )\n\n    runner = CliRunner()\n    result = runner.invoke(\n        setup_impl_from_pr,\n        [str(pr_number)],\n        obj=ctx,\n    )\n\n    assert result.exit_code == 0, f\"Command failed: {result.output}\"\n\n    # No fetch or checkout should have happened — we skipped branch setup entirely\n    assert len(fake_git.fetched_branches) == 0\n    assert len(fake_git.checked_out_branches) == 0\n    assert len(fake_git.pull_rebase_calls) == 0\n\n    # Output should indicate we skipped branch setup\n    assert f\"Found existing impl dir for PR #{pr_number}, skipping branch setup\" in result.output"}
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me analyze this conversation chronologically and thoroughly.
+
+## Overview
+This is a `/erk:plan-implement` command execution for issue #9379 - implementing Phase 3 of a terminology rename from `plan` → `pr` terminology across the codebase.
+
+## Plan Details
+The plan covers three nodes:
+- **Node 3.5**: Rename `build_original_plan_section` → `build_original_pr_section` (4 files)
+- **Node 3.3**: Delete `extract_plan_number` dead code (2 files)
+- **Node 3.2**: Rename `plan_backend` → `pr_backend` (~55 Python files, using rename-swarm pattern)
+
+## Chronological Breakdown
+
+### Setup Phase
+1. `erk exec setup-impl --issue 9379` was run - detected existing branch `plnd/O9318-rename-phase3-plan-t-03-21-1623`
+2. Plan was read from `.erk/impl-context/plnd--O9318-rename-phase3-plan-t-03-21-1623/plan.md`
+3. GitHub started signal was attempted (failed - no session ID)
+
+### Node 3.5 Implementation
+Renamed `build_original_plan_section` → `build_original_pr_section` in 4 files:
+1. `packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py` - function definition renamed
+2. `src/erk/cli/commands/pr/shared.py` - import and call site updated
+3. `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py` - import and call site updated
+4. `tests/unit/pr_store/test_planned_pr_lifecycle.py` - import, comment header, test function name, and call updated
+
+### Node 3.3 Implementation
+Deleted `extract_plan_number` function (dead code):
+1. `src/erk/cli/commands/run/shared.py` - deleted the entire function
+2. `tests/commands/run/test_shared.py` - rewrote the file to remove all `extract_plan_number` tests, keeping only `extract_pr_number` tests, updated module docstring
+
+### Node 3.2 - rename-swarm pattern
+Used the rename-swarm skill for the large rename across ~57 Python files.
+
+**Wave 1: Source files (25 agents in parallel)**
+- `packages/erk-shared/src/erk_shared/context/context.py` - `plan_backend` property → `pr_backend`
+- `packages/erk-shared/src/erk_shared/context/helpers.py` - `require_plan_backend` → `require_pr_backend`, internal ctx.obj.plan_backend → ctx.obj.pr_backend
+- `packages/erk-shared/src/erk_shared/learn/tracking.py` - parameter rename
+- `src/erk/core/pr_context_provider.py` - `__init__` parameter and `self._plan_backend` → `self._pr_backend`
+- All `src/erk/cli/commands/` files - ctx.plan_backend → ctx.pr_backend, require_plan_backend → require_pr_backend
+- All exec/scripts files
+
+**Post-wave 1 fix**: Three files still had `plan_backend=` as keyword argument (not caught by agents):
+- `src/erk/cli/commands/exec/scripts/set_pr_description.py` - `plan_backend=erk_ctx.pr_backend` → `pr_backend=erk_ctx.pr_backend`
+- `src/erk/cli/commands/exec/scripts/update_pr_description.py` - similar fix
+- `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` - `plan_backend=pr_backend` → `pr_backend=pr_backend`
+
+**Wave 2: Test files (6 agents in parallel)**
+- `tests/unit/pr_store/test_plan_backend_interface.py` - fixture and all test functions renamed
+- `tests/unit/pr_store/test_planned_pr_backend.py` - no changes needed
+- `tests/unit/core/test_workflow_smoke_test.py` - no changes (external API field only)
+- `tests/unit/cli/commands/pr/test_dispatch_cmd.py` - function names updated
+- `tests/unit/cli/commands/pr/test_metadata_helpers.py` - `plan_backend=` kwarg and import updated
+- `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py` - context_for_test calls updated
+- `tests/unit/cli/commands/exec/scripts/test_plan_save.py` - ERK_PLAN_BACKEND env var renamed (controversial - this may be wrong), json output assertions updated
+- `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py` - workflow input assertions
+- `tests/core/test_pr_context_provider.py` - provider creation updated
+- `tests/commands/pr/test_dispatch.py` - many updates
+- `tests/commands/pr/test_remote_paths.py` - workflow input assertions
+- `tests/commands/one_shot/test_one_shot_dispatch.py` - workflow input assertions
+- `tests/commands/land/test_learn_skip_remote.py` - monkeypatch target updated
+
+### Important Issues/Observations to Note
+1. **ERK_PLAN_BACKEND env var**: Agent ae6cf4b renamed `ERK_PLAN_BACKEND` → `ERK_PR_BACKEND` in test_plan_save.py. This is likely WRONG because `ERK_PLAN_BACKEND` is an external environment variable that the plan never asked to rename. This should be investigated.
+
+2. **test_setup_impl_from_pr.py**: The agent initially tried to use `pr_backend=backend` in `context_for_test()` calls, but after checking the function signature, reverted to `plan_store=backend` (which is the correct parameter name for `context_for_test()`).
+
+3. **test_metadata_helpers.py**: Agent tried to rename `from tests.test_utils.plan_helpers import` → `from tests.test_utils.pr_helpers import` - this is potentially wrong if the module file isn't renamed.
+
+4. **plan_backend workflow inputs**: The agents correctly left `"plan_backend": "planned_pr"` dictionary keys unchanged in dispatch_cmd.py (lines 294, 522) - these are external GitHub Actions workflow inputs.
+
+The conversation is currently at the point where Wave 2 test agents have all completed. The next steps would be:
+- Verify remaining `plan_backend` references in Python files
+- Run fast-ci
+- Submit PR
+
+Let me now look at the state after Wave 2 completion to note what's pending:
+- Need to run CI and verify no remaining old references
+- Need to signal GitHub and submit PR
+
+The conversation summary needs to capture all of this accurately.
+
+Summary:
+1. Primary Request and Intent:
+   The user executed `/erk:plan-implement 9379` to implement plan #9379 — "Complete Phase 3 terminology rename (nodes 3.2, 3.3, 3.5)" — part of Objective #9318 renaming `plan` → `pr` terminology across the codebase. The plan covers three nodes executed in order:
+   - **Node 3.5**: Rename `build_original_plan_section` → `build_original_pr_section` (4 files, smallest)
+   - **Node 3.3**: Delete dead code `extract_plan_number()` (2 files)
+   - **Node 3.2**: Rename `plan_backend` → `pr_backend` and `require_plan_backend` → `require_pr_backend` (~55 Python files, using rename-swarm)
+
+2. Key Technical Concepts:
+   - **Terminology rename refactoring** (Objective #9318): Systematic `plan` → `pr` renaming across codebase
+   - **rename-swarm skill**: Parallel mechanical renames using lightweight Haiku agents, two waves (source then test files)
+   - **ErkContext**: Context object with `.plan_backend` property being renamed to `.pr_backend`
+   - **ManagedPrBackend / ManagedGitHubPrBackend**: Backend class accessed via the renamed property
+   - **`require_plan_backend(ctx)`**: Helper function in `erk_shared/context/helpers.py` being renamed to `require_pr_backend(ctx)`
+   - **`PrContextProvider`**: Constructor parameter `plan_backend=` being renamed to `pr_backend=`
+   - **`write_dispatch_metadata()`**: Keyword arg `plan_backend=` being renamed to `pr_backend=`
+   - **GitHub Actions workflow inputs**: `"plan_backend": "planned_pr"` dictionary keys NOT renamed (external API)
+   - **`ERK_PLAN_BACKEND`**: Environment variable - NOT to be renamed (external API)
+   - **Dead code deletion**: `extract_plan_number()` had zero production call sites
+   - **`context_for_test()`**: Test helper using `plan_store=` parameter (NOT renamed — it's a different parameter)
+
+3. Files and Code Sections:
+
+   **Node 3.5 changes:**
+
+   - `packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py`
+     - Renamed function `build_original_plan_section` → `build_original_pr_section`
+
+   - `src/erk/cli/commands/pr/shared.py`
+     - Import: `from erk_shared.pr_store.planned_pr_lifecycle import build_original_pr_section`
+     - Call: `build_original_pr_section(...)` (was `build_original_plan_section`)
+     - Also (Wave 1): `ctx.plan_backend` → `ctx.pr_backend` (3 occurrences)
+
+   - `src/erk/cli/commands/exec/scripts/ci_update_pr_body.py`
+     - Import and call updated: `build_original_pr_section`
+
+   - `tests/unit/pr_store/test_planned_pr_lifecycle.py`
+     - Import renamed, section comment renamed, test function `test_build_original_plan_section` → `test_build_original_pr_section`, call updated
+
+   **Node 3.3 changes:**
+
+   - `src/erk/cli/commands/run/shared.py`
+     - Deleted entire `extract_plan_number()` function (dead code, zero production call sites)
+
+   - `tests/commands/run/test_shared.py`
+     - Completely rewritten: removed all `extract_plan_number` tests, updated module docstring from "Tests the extract_plan_number and extract_pr_number helper functions" to "Tests the extract_pr_number helper function", removed import of `extract_plan_number`
+
+   **Node 3.2 - Core source files:**
+
+   - `packages/erk-shared/src/erk_shared/context/context.py`
+     - `@property plan_backend` → `@property pr_backend`
+
+   - `packages/erk-shared/src/erk_shared/context/helpers.py`
+     - `def require_plan_backend(ctx)` → `def require_pr_backend(ctx)`
+     - Internal: `ctx.obj.plan_backend` → `ctx.obj.pr_backend`
+     - Docstring example updated
+
+   - `packages/erk-shared/src/erk_shared/learn/tracking.py`
+     - Parameter `plan_backend: ManagedPrBackend` → `pr_backend: ManagedPrBackend`
+     - Call: `plan_backend.add_comment(...)` → `pr_backend.add_comment(...)`
+
+   - `src/erk/core/pr_context_provider.py`
+     - `__init__` parameter: `plan_backend` → `pr_backend`
+     - `self._plan_backend` → `self._pr_backend` (both assignment and usage)
+
+   - All `src/erk/cli/commands/` source files (~20 files): `ctx.plan_backend` → `ctx.pr_backend`, `require_plan_backend` → `require_pr_backend` imports and calls
+
+   - All `src/erk/cli/commands/exec/scripts/` files (~15 files): same pattern
+
+   **Post-Wave-1 manual fixes** (agents used wrong keyword arg name):
+
+   - `src/erk/cli/commands/exec/scripts/set_pr_description.py`
+     ```python
+     # Before (wrong): plan_backend=erk_ctx.pr_backend
+     # After (correct): pr_backend=erk_ctx.pr_backend
+     ```
+
+   - `src/erk/cli/commands/exec/scripts/update_pr_description.py`
+     ```python
+     # Before (wrong): plan_backend=ctx.pr_backend
+     # After (correct): pr_backend=ctx.pr_backend
+     ```
+
+   - `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+     ```python
+     # Before (wrong): plan_backend=pr_backend
+     # After (correct): pr_backend=pr_backend
+     ```
+
+   **Node 3.2 - Test files (Wave 2):**
+
+   - `tests/unit/pr_store/test_plan_backend_interface.py`
+     - Fixture `plan_backend()` → `pr_backend()`, all test function parameters renamed
+
+   - `tests/unit/core/test_workflow_smoke_test.py`
+     - No changes (only contains `wf.inputs["plan_backend"]` which is external API)
+
+   - `tests/unit/cli/commands/pr/test_dispatch_cmd.py`
+     - Test function names renamed: `test_fallback_to_plan_backend_when_no_impl_dir` → `test_fallback_to_pr_backend_when_no_impl_dir`, etc.
+
+   - `tests/unit/cli/commands/pr/test_metadata_helpers.py`
+     - `plan_backend=plan_store` → `pr_backend=plan_store` in `write_dispatch_metadata()` call
+     - Import changed: `from tests.test_utils.plan_helpers` → `from tests.test_utils.pr_helpers` (⚠️ potentially wrong if module wasn't renamed)
+
+   - `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`
+     - `context_for_test(..., plan_store=backend)` kept as `plan_store=` (correct — that's the parameter name)
+     - Comment updated: `plan_backend.get_provider_name()` → `pr_backend.get_provider_name()`
+
+   - `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+     - ⚠️ `ERK_PLAN_BACKEND` → `ERK_PR_BACKEND` in monkeypatch.setenv calls (likely WRONG)
+     - `output["plan_backend"]` → `output["pr_backend"]` in JSON output assertions
+     - Docstring updated
+
+   - `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py`
+     - `inputs["plan_backend"]` → `inputs["pr_backend"]` in workflow input assertion
+
+   - `tests/core/test_pr_context_provider.py`
+     - `PrContextProvider(plan_backend=plan_backend, ...)` → `PrContextProvider(pr_backend=pr_backend, ...)`
+
+   - `tests/commands/pr/test_dispatch.py`
+     - Many `planned_pr_backend` variable → `pr_backend`, `inputs["plan_backend"]` → `inputs["pr_backend"]`
+
+   - `tests/commands/pr/test_remote_paths.py`
+     - `dispatched.inputs["plan_backend"]` → `dispatched.inputs["pr_backend"]`
+
+   - `tests/commands/one_shot/test_one_shot_dispatch.py`
+     - `wf.inputs["plan_backend"]` → `wf.inputs["pr_backend"]`
+
+   - `tests/commands/land/test_learn_skip_remote.py`
+     - `test_ctx.plan_backend` → `test_ctx.pr_backend` in monkeypatch target
+
+4. Errors and fixes:
+   - **Wave 1 agents left `plan_backend=` keyword arguments pointing to renamed values**: Three files had patterns like `plan_backend=ctx.pr_backend` (parameter name old, value new). Manually fixed by searching `grep -r "plan_backend=" src/` and correcting the three occurrences in `set_pr_description.py`, `update_pr_description.py`, `incremental_dispatch.py`.
+   - **test_setup_impl_from_pr.py agent confusion**: Agent initially changed `plan_store=backend` to `pr_backend=backend` in `context_for_test()` calls, then discovered the function signature uses `plan_store=` and reverted. Final state correctly uses `plan_store=backend`.
+   - **GitHub signal failure**: `erk exec impl-signal started` failed with `session-id-required` error because `${CLAUDE_SESSION_ID}` was not available. This is non-fatal (`|| true` in the command).
+   - **⚠️ Potential over-rename in test_plan_save.py**: Agent renamed `ERK_PLAN_BACKEND` → `ERK_PR_BACKEND` in monkeypatch.setenv calls. This is likely wrong — `ERK_PLAN_BACKEND` is an external environment variable that should NOT be renamed as part of this plan. The plan only covers Python-level `plan_backend` property/parameter renames.
+   - **⚠️ Potential wrong import rename in test_metadata_helpers.py**: Agent changed `from tests.test_utils.plan_helpers import` to `from tests.test_utils.pr_helpers import`. This module file may not have been renamed.
+
+5. Problem Solving:
+   - Successfully used the rename-swarm skill for the large 57-file rename, completing it in two parallel waves
+   - Correctly identified and preserved external API field names: `"plan_backend": "planned_pr"` dict keys in workflow dispatch code, `ERK_PLAN_BACKEND` env var
+   - Node 3.3: Correctly identified that `extract_plan_number` was dead code and deleted both the function and all its tests
+   - Correctly left `context_for_test(plan_store=...)` parameter unchanged (different parameter name)
+   - Two potential issues remain to investigate before CI: the `ERK_PLAN_BACKEND` rename in test_plan_save.py and the import rename in test_metadata_helpers.py
+
+6. All user messages:
+   - The `/erk:plan-implement 9379` command invocation (system-generated instruction message with full orchestration steps)
+   - System reminder about TodoWrite tool (auto-generated reminders, not user messages)
+   - The summary request (current message asking for conversation summary)
+
+7. Pending Tasks:
+   - **Verify remaining `plan_backend` references**: Run `grep -r "plan_backend" --include="*.py"` to confirm all Python code references are renamed (excluding external API dict keys)
+   - **Fix potential over-renames**: Investigate `ERK_PLAN_BACKEND` → `ERK_PR_BACKEND` rename in `test_plan_save.py` (should likely be reverted) and `tests.test_utils.plan_helpers` → `tests.test_utils.pr_helpers` import rename
+   - **Run `make fast-ci`**: Unit tests, ty type checking, ruff lint
+   - **Signal GitHub ended**: `erk exec impl-signal ended`
+   - **Upload session**: `erk exec upload-impl-session`
+   - **Clean up impl context**: `erk exec cleanup-impl-context`
+   - **Submit PR**: `erk pr submit`
+
+8. Current Work:
+   Wave 2 (test file rename agents) just completed. All 6 agent batches finished successfully. The work is at the verification stage after completing all three nodes of the rename. The immediate next action is to do a final grep verification for remaining `plan_backend` references in Python files, then run `make fast-ci`.
+
+   Key state: All rename-swarm waves completed. Three manual fixes were applied post-Wave-1. Wave 2 test files all done. The todo list shows:
+   - ✅ Node 3.5: Rename `build_original_plan_section` → `build_original_pr_section`
+   - ✅ Node 3.3: Delete `extract_plan_number` dead code
+   - 🔄 Node 3.2: Rename `plan_backend` → `pr_backend` (in progress, waves complete)
+   - ⏳ Run fast-ci and verify no remaining old references
+   - ⏳ Signal GitHub and submit PR
+
+9. Optional Next Step:
+   The next step is to verify the rename completeness and fix potential over-renames before running CI. Specifically:
+
+   From the plan: "Grep for any remaining `plan_backend`... references" and "Run `make fast-ci` — unit tests, ty type checking, ruff lint"
+
+   First, investigate the two potential issues:
+   1. Check if `ERK_PLAN_BACKEND` was correctly renamed in `test_plan_save.py` (likely needs reversion)
+   2. Check if `tests.test_utils.plan_helpers` module exists or was renamed
+
+   Then run the grep verification:
+   ```bash
+   grep -r "plan_backend" --include="*.py" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages /home/runner/work/erk/erk/tests
+   ```
+
+   Then mark Node 3.2 complete and run `make fast-ci`..
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>I'll continue from where we left off. Let me first verify the potential over-renames and check remaining `plan_backend` references.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="28082" cache_read_input_tokens="20624" cache_creation="{'ephemeral_5m_input_tokens': 28082, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_011ovJuHwZCDfvK19RwYdixb">
+    <param name="todos">[{'content': 'Node 3.5: Rename build_original_plan_section → build_original_pr_section (4 ...[truncated 602 chars]... and submit PR', 'status': 'pending', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="28082" cache_read_input_tokens="20624" cache_creation="{'ephemeral_5m_input_tokens': 28082, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ovJuHwZCDfvK19RwYdixb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QPzJEY9aDyQcuAbpt2S6pD">
+    <param name="pattern">plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="376" cache_read_input_tokens="48706" cache_creation="{'ephemeral_5m_input_tokens': 376, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QPzJEY9aDyQcuAbpt2S6pD">
+tests/unit/pr_store/test_planned_pr_backend.py:4:by the parameterized interface tests in test_plan_backend_interface.py.
+tests/unit/core/test_workflow_smoke_test.py:88:        assert wf.inputs["plan_backend"] == "planned_pr"
+src/erk/cli/commands/one_shot_remote_dispatch.py:410:            "plan_backend": "planned_pr",
+src/erk/cli/commands/pr/dispatch_cmd.py:294:        "plan_backend": "planned_pr",
+src/erk/cli/commands/pr/dispatch_cmd.py:522:        "plan_backend": "planned_pr",
+src/erk/cli/commands/exec/scripts/plan_save.py:355:            "plan_backend": "planned_pr",
+src/erk/cli/commands/exec/scripts/plan_save.py:446:                    "plan_backend": "planned_pr",
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py:171:        "plan_backend": "planned_pr",
+  </tool_result>
+  <assistant>Good - the remaining `plan_backend` occurrences are all `"plan_backend": "planned_pr"` dictionary keys which are external GitHub Actions workflow inputs. These are correctly preserved. Now let me check the two potential issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="49082" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Poz14SFZmMcqP7XZhc2ZR6">
+    <param name="pattern">ERK_PLAN_BACKEND\|ERK_PR_BACKEND</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="49082" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Poz14SFZmMcqP7XZhc2ZR6">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FfSxoJCNKcyG6UFt9zrF5R">
+    <param name="pattern">ERK_PLAN_BACKEND\|ERK_PR_BACKEND</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="218" cache_read_input_tokens="49502" cache_creation="{'ephemeral_5m_input_tokens': 218, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FfSxoJCNKcyG6UFt9zrF5R">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XacMGcnjVx5SwYYNWGPPQX">
+    <param name="pattern">plan_helpers\|pr_helpers</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="49720" cache_creation="{'ephemeral_5m_input_tokens': 148, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XacMGcnjVx5SwYYNWGPPQX">
+No matches found
+  </tool_result>
+  <assistant>Both concerns are resolved - `ERK_PLAN_BACKEND` doesn't appear anywhere (the test was likely checking something else), and neither `plan_helpers` nor `pr_helpers` imports appear. Let me also check if the `test_incremental_dispatch.py` change about `inputs["plan_backend"]` → `inputs["pr_backend"]` is correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="49868" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XwQcj51uv7tnVMF7LCrEGj">
+    <param name="pattern">inputs\[.plan_backend.\]\|inputs\[.pr_backend.\]</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="49868" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XwQcj51uv7tnVMF7LCrEGj">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019XBKeHZ7dbGfbuMQoG5fUi">
+    <param name="pattern">plan_backend.*planned_pr\|pr_backend.*planned_pr</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="50028" cache_creation="{'ephemeral_5m_input_tokens': 490, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019XBKeHZ7dbGfbuMQoG5fUi">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01USoHvmR8Yhk3jjqon9musG">
+    <param name="pattern">planned_pr</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="50518" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01USoHvmR8Yhk3jjqon9musG">
+tests/unit/cli/commands/test_implement_shared.py:11:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py:12:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py:14:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/land/test_land_learn.py:24:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:17:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:18:from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:307:def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:346:def test_marks_planned_pr_as_ready(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:367:def test_does_not_mark_non_planned_pr_as_ready(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:387:def test_publishes_planned_pr(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py:407:def test_does_not_publish_non_planned_pr(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/test_shared.py:11:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/pr/test_shared.py:12:from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+tests/unit/cli/commands/pr/test_metadata_helpers.py:13:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py:16:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py:20:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/exec/scripts/test_close_prs.py:11:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py:10:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py:15:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:11:from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:28:def _planned_pr_context(
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:44:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:54:def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:56:    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:67:    assert output["pr_backend"] == "planned_pr"
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:70:def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:72:    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:87:def test_planned_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:89:    ctx = _planned_pr_context(
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:104:def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+
+... [123 lines omitted] ...
+
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:679:def test_planned_pr_branch_slug_missing_errors(
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:301:def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -&gt; None:
+  </tool_result>
+  <assistant>The `ERK_PR_BACKEND` in `test_plan_save.py` is the renamed env var. Let me check what the actual env var name is in production code:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7379" cache_read_input_tokens="50686" cache_creation="{'ephemeral_5m_input_tokens': 7379, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NB38fk11Qz8tmcssroSdzh">
+    <param name="pattern">ERK_PR_BACKEND\|ERK_PLAN_BACKEND</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7379" cache_read_input_tokens="50686" cache_creation="{'ephemeral_5m_input_tokens': 7379, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NB38fk11Qz8tmcssroSdzh">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Qio5ZjuLQuar4RxNNkbXoj">
+    <param name="pattern">ERK_PR_BACKEND\|ERK_PLAN_BACKEND</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="58065" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qio5ZjuLQuar4RxNNkbXoj">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DgAcfTSminhRyskU6o7J8L">
+    <param name="pattern">ERK_PR_BACKEND\|ERK_PLAN_BACKEND</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="169" cache_read_input_tokens="58492" cache_creation="{'ephemeral_5m_input_tokens': 169, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DgAcfTSminhRyskU6o7J8L">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Gnx4tCEazexF1EGxjpaYdp">
+    <param name="pattern">ERK_PR_BACKEND\|ERK_PLAN_BACKEND</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="169" cache_read_input_tokens="58661" cache_creation="{'ephemeral_5m_input_tokens': 169, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gnx4tCEazexF1EGxjpaYdp">
+No matches found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XsivztGxuNiEntJsiUVsLr">
+    <param name="command">grep -r "ERK_PR_BACKEND\|ERK_PLAN_BACKEND" /home/runner/work/erk/erk --include="*.py" 2&gt;/dev/null || echo "No matches"</param>
+    <param name="description">Search for ERK_PR_BACKEND or ERK_PLAN_BACKEND in all Python files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="58830" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XsivztGxuNiEntJsiUVsLr">
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py:        cli, ["codespace", "connect", "--env", "ERK_PLAN_BACKEND=draft_pr"], obj=ctx
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py:    assert "export ERK_PLAN_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+  </tool_result>
+  <assistant>The production code no longer uses `ERK_PLAN_BACKEND` — but I need to check what the actual env var name IS in production. Let me find the `plan_save.py` source to see:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="59214" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QpHV8ZgKSjaGf3P3mrBdmp">
+    <param name="pattern">os.environ\|getenv\|environ.get</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="59214" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QpHV8ZgKSjaGf3P3mrBdmp">
+No matches found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01N3jLhNoFwix4inpC7hc1Sy">
+    <param name="command">grep -r "ERK_PR_BACKEND\|ERK_PLAN_BACKEND" /home/runner/work/erk/erk/src --include="*.py" 2&gt;/dev/null || echo "No matches in src/"</param>
+    <param name="description">Search for env var references in src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="59883" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ACvcp9sK3xHZCTzGJAMKiA">
+    <param name="command">grep -r "ERK_PR_BACKEND\|ERK_PLAN_BACKEND" /home/runner/work/erk/erk/packages --include="*.py" 2&gt;/dev/null || echo "No matches in packages/"</param>
+    <param name="description">Search for env var references in packages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="59883" cache_creation="{'ephemeral_5m_input_tokens': 446, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ACvcp9sK3xHZCTzGJAMKiA">
+No matches in packages/
+  </tool_result>
+  <tool_result tool="toolu_01N3jLhNoFwix4inpC7hc1Sy">
+No matches in src/
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KdFhDeQCSnBBZythQo8u9B">
+    <param name="command">grep -r "ERK_PR_BACKEND\|ERK_PLAN_BACKEND" /home/runner/work/erk/erk/.github 2&gt;/dev/null | head -20 || echo "No matches in .github"</param>
+    <param name="description">Search for env var in GitHub workflows</param>
+  </tool_use>
+  <usage input_tokens="36" cache_creation_input_tokens="279" cache_read_input_tokens="60329" cache_creation="{'ephemeral_5m_input_tokens': 279, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LfFkVNWKCYkENRHiehN7QD">
+    <param name="command">grep -rn "PLAN_BACKEND\|PR_BACKEND" /home/runner/work/erk/erk/src --include="*.py" 2&gt;/dev/null | head -20</param>
+    <param name="description">Search for PLAN_BACKEND/PR_BACKEND in src</param>
+  </tool_use>
+  <usage input_tokens="36" cache_creation_input_tokens="279" cache_read_input_tokens="60329" cache_creation="{'ephemeral_5m_input_tokens': 279, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KdFhDeQCSnBBZythQo8u9B">
+/home/runner/work/erk/erk/.github/workflows/learn.yml:      ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
+/home/runner/work/erk/erk/.github/workflows/plan-implement.yml:      ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
+/home/runner/work/erk/erk/.github/workflows/plan-implement.yml:              if [ "$ERK_PLAN_BACKEND" = "planned_pr" ]; then
+  </tool_result>
+  <tool_result tool="toolu_01LfFkVNWKCYkENRHiehN7QD">
+
+  </tool_result>
+  <assistant>The env var `ERK_PLAN_BACKEND` is still used in GitHub Actions workflow YAML files. This means the agent's rename of `ERK_PLAN_BACKEND` → `ERK_PR_BACKEND` in `test_plan_save.py` was **wrong** — the env var is an external API. I need to find the production code that reads this env var to understand the full picture:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="697" cache_read_input_tokens="60608" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016rhmNsAdT354cVJa7gqoRy">
+    <param name="command">grep -rn "ERK_PLAN_BACKEND\|ERK_PR_BACKEND" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages 2&gt;/dev/null | head -20 || echo "No matches"</param>
+    <param name="description">Find where ERK_PLAN_BACKEND env var is read in production code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="697" cache_read_input_tokens="60608" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016rhmNsAdT354cVJa7gqoRy">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GhV8kic4gvKHMUyCYPzkDB">
+    <param name="command">grep -rn "PLAN_BACKEND" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages 2&gt;/dev/null | head -20 || echo "No matches"</param>
+    <param name="description">Find PLAN_BACKEND usages in src and packages</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="61305" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="135" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GhV8kic4gvKHMUyCYPzkDB">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PERo2YuUPcMqDf9RnWLLSz">
+    <param name="command">grep -rn "PR_BACKEND" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages 2&gt;/dev/null | head -30</param>
+    <param name="description">Find PR_BACKEND usages in production code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="61576" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="125" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PERo2YuUPcMqDf9RnWLLSz">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019VcADWsSKHTPpvpmn8FqZ6">
+    <param name="command">grep -rn "os.environ\|os.getenv" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check plan_save.py for env var access</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="61957" cache_creation="{'ephemeral_5m_input_tokens': 151, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019VcADWsSKHTPpvpmn8FqZ6">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SCDg2oe7M6h8a3P3KsY9zV">
+    <param name="command">grep -rn "os\." /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py 2&gt;/dev/null | head -10</param>
+    <param name="description">Check plan_save.py for os module usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="159" cache_read_input_tokens="62108" cache_creation="{'ephemeral_5m_input_tokens': 159, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N53KXqgavx4YCskAamQhtb">
+    <param name="command">grep -rn "environ\|getenv\|get_env" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check plan_save.py for environment variable access</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="159" cache_read_input_tokens="62108" cache_creation="{'ephemeral_5m_input_tokens': 159, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SCDg2oe7M6h8a3P3KsY9zV">
+
+  </tool_result>
+  <tool_result tool="toolu_01N53KXqgavx4YCskAamQhtb">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G3osHnsWdeB9sjr9vtf5Q5">
+    <param name="command">grep -rn "ERK_PLAN_BACKEND\|ERK_PR_BACKEND\|planned_pr\b" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Search plan_save.py for env var and backend references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="62267" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G3osHnsWdeB9sjr9vtf5Q5">
+52:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+113:def _save_as_planned_pr(
+355:            "plan_backend": "planned_pr",
+363:def _save_plan_via_planned_pr(
+446:                    "plan_backend": "planned_pr",
+471:    _save_as_planned_pr(
+571:    _save_plan_via_planned_pr(
+  </tool_result>
+  <assistant>Now let me check the test_plan_save.py lines 44 and surrounding context to understand what `ERK_PR_BACKEND` is used for in tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="62811" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H3xd3bK5mYP7uv4otg5xHp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">28</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="62811" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H3xd3bK5mYP7uv4otg5xHp">
+    28→def _planned_pr_context(
+    29→    *,
+    30→    tmp_path: Path,
+    31→    fake_github: FakeLocalGitHub | None = None,
+    32→    fake_git: FakeGit | None = None,
+    33→    fake_claude: FakeClaudeInstallation | None = None,
+    34→    monkeypatch: pytest.MonkeyPatch,
+    35→) -&gt; ErkContext:
+    36→    """Build an ErkContext configured for planned-PR pr backend."""
+    37→    if fake_git is None:
+    38→        fake_git = FakeGit(current_branches={tmp_path: "main"})
+    39→    if fake_github is None:
+    40→        fake_github = FakeLocalGitHub()
+    41→    if fake_claude is None:
+    42→        fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
+    43→
+    44→    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
+    45→    return context_for_test(
+    46→        github=fake_github,
+    47→        git=fake_git,
+    48→        claude_installation=fake_claude,
+    49→        cwd=tmp_path,
+    50→        repo_root=tmp_path,
+    51→    )
+    52→
+    53→
+    54→def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    55→    """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
+    56→    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    57→    runner = CliRunner()
+
+... [5 lines omitted] ...
+  </tool_result>
+</session>
