@@ -1,0 +1,1054 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a1c2763a723f72351&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01DU2341gyWaHBPex8c3vnU5&lt;/tool-use-id&gt;
+&lt;output-file&gt;/tmp/claude-1000/-workspaces-erk/d5cfacbd-fde1-48ff-93b1-76eb6f1d9b22/tasks/a1c2763a723f72351.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Investigate slots/navigation plans" completed&lt;/summary&gt;
+&lt;result&gt;Now I have all the information needed to provide a comprehensive report. Let me compile the findings.
+
+## Summary of Investigation: 3 Erk-Learn Plans on Slots and Navigation
+
+### Plan Contents Summary
+
+#### Plan #9368: Move navigation commands (up/down) to erk_slots package
+- **Status**: OPEN (erk-learn plan, not yet merged to master)
+- **Source PR**: #9353 (already merged)
+- **Key Changes**:
+  - Move `erk up` and `erk down` commands from `src/erk/cli/commands/` to `packages/erk-slots/src/erk_slots/`
+  - Rename to `erk slot up` and `erk slot down`
+  - Extract navigation orchestration logic into new `erk_slots/navigation.py` module
+  - Retain shared utilities (activation, validation, deletion) in `src/erk/cli/commands/navigation_helpers.py`
+  - 60+ test invocations updated to new command paths
+- **Implementation Status**: COMPLETE (PR #9353 merged)
+- **Files Changed**: 12 files (2 new, 10 modified, 2 deleted)
+
+#### Plan #9339: Add slot goto command for navigating to existing slots
+- **Status**: OPEN (erk-learn plan, not yet merged to master)
+- **Source PR**: #9327 (already merged)
+- **Key Changes**:
+  - New `erk slot goto` command to navigate to assigned slots by number or full name
+  - Supports numeric lookup (e.g., `1`) and full names (e.g., `erk-slot-01`)
+  - Reuses `navigate_to_worktree` helper for activation script generation
+  - Validates pool state and worktree existence
+- **Implementation Status**: COMPLETE (PR #9327 merged)
+- **Files Added**: `packages/erk-slots/src/erk_slots/goto_cmd.py` (already exists and functional)
+
+#### Plan #9334: Move slot allocation functions to erk_slots package
+- **Status**: OPEN (erk-learn plan, not yet merged to master)
+- **Source PR**: #9286 (already merged)
+- **Key Changes**:
+  - Move `allocate_slot_for_branch()`, `find_inactive_slot()`, and `find_next_available_slot()` functions
+  - Move from core erk module to `packages/erk-slots/src/erk_slots/common.py`
+  - Enable erk_slots to own slot allocation logic as a self-contained package
+- **Implementation Status**: COMPLETE (PR #9286 merged)
+- **Module Status**: `packages/erk-slots/src/erk_slots/common.py` contains all allocation functions
+
+### Current State of Implementation
+
+**What's Already Implemented (Merged PRs)**:
+1. PR #9327: `slot goto` command fully functional
+2. PR #9286: Slot allocation functions moved to erk_slots/common.py
+3. PR #9353: Navigation commands (up/down) moved to erk_slots package
+
+**What Doesn't Exist Yet**:
+- No `erk_slots/navigation.py` module (though PR #9353 shows it should exist)
+- No `erk_slots/up_cmd.py` and `erk_slots/down_cmd.py` visible on master
+- Old navigation commands still exist at `src/erk/cli/commands/up.py` and `down.py`
+
+**Conclusion**: The underlying implementation is merged, but the CLI interface changes haven't propagated. The erk-learn plans are tracking the documentation/lessons learned from these three implementation PRs.
+
+### Key Modules in erk_slots Package
+
+Current package structure (12 modules):
+- `group.py` - Command registration and CLI group definition
+- `common.py` - Slot allocation logic (`allocate_slot_for_branch()`, `find_inactive_slot()`, `find_next_available_slot()`, `sync_pool_assignments()`)
+- `config.py` - Pool configuration management
+- **Command Modules**:
+  - `assign_cmd.py` - Assign existing branch to slot
+  - `checkout_cmd.py` - Checkout branch into pool slot
+  - `goto_cmd.py` - Navigate to existing slot (NEW)
+  - `unassign_cmd.py` - Remove branch assignment
+  - `init_pool_cmd.py` - Initialize pool slots
+  - `list_cmd.py` - Display pool status
+- `diagnostics.py` - Pool health checks
+- `repair_cmd.py` - Auto-fix stale assignments
+
+### Existing Documentation Status
+
+**Comprehensive Documentation Already Exists**:
+1. `/workspaces/erk/docs/learned/erk/slot-pool-architecture.md` (9.7 KB)
+   - Pool design, allocation algorithm, naming conventions
+   - Artifact cleanup, state correction, diagnostics &amp; repair
+   - Entry points for all slot-using commands
+   - **Already covers**: Navigation integration (references `erk up`, `erk down`, `erk land --up`)
+   
+2. `/workspaces/erk/docs/learned/architecture/slot-pool-state-sync.md` (3.7 KB)
+   - Pool sync algorithm and timing
+   - I/O optimization (mtime preservation)
+   - Tripwire warning about sync ordering
+
+3. `/workspaces/erk/docs/learned/erk/same-worktree-navigation.md` (2.9 KB)
+   - Same-worktree navigation detection pattern
+   - Affected functions and deletion behavior
+   - 5 call sites documented
+
+4. `/workspaces/erk/docs/learned/cli/teleport-slot-awareness.md` (1.5 KB)
+   - Slot assignment updates during teleport operations
+   - In-place vs new-slot behavior
+
+5. `/workspaces/erk/docs/learned/cli/slot-assign-from-current-branch.md` (1.9 KB)
+   - Flag behavior and target branch selection
+   - Detached HEAD fallback pattern
+
+### Documentation Gaps and Opportunities
+
+#### Gap 1: No `erk_slots` Package Overview
+- **What's Missing**: High-level doc explaining erk_slots as a self-contained package and its role in the CLI architecture
+- **Why It Matters**: Users/developers need to understand that slot management is now a separate package with its own commands (`erk slot ...`)
+- **Recommended File**: `/workspaces/erk/docs/learned/erk/erk-slots-package.md` or `/workspaces/erk/docs/learned/architecture/erk-slots-architecture.md`
+- **Read When Conditions**:
+  - "understanding erk_slots package structure"
+  - "adding new slot commands"
+  - "understanding slot command organization"
+- **Content Outline**:
+  - Package purpose and scope
+  - Module breakdown (common.py, config.py, command modules)
+  - Entry points for slot allocation
+  - Relationship to core erk CLI
+  - Configuration and pool management
+
+#### Gap 2: `slot goto` Command Usage and Behavior
+- **What's Missing**: Dedicated documentation for the new `erk slot goto` command
+- **Why It Matters**: Users need to know about this navigation pattern; current slot-pool-architecture.md doesn't mention it
+- **Recommended File**: `/workspaces/erk/docs/learned/cli/slot-goto-navigation.md`
+- **Read When Conditions**:
+  - "navigating between assigned slots"
+  - "understanding erk slot goto command"
+  - "comparing slot goto vs other navigation methods"
+- **Content Outline**:
+  - Command syntax (numeric vs full names)
+  - Use cases vs other navigation (up/down vs goto)
+  - Integration with activation scripts
+  - Error handling (unassigned slots, missing worktrees)
+  - Comparison matrix: `erk slot goto` vs `erk slot up` vs `erk slot down`
+
+#### Gap 3: Navigation Commands Moved to erk_slots
+- **What's Missing**: Updated documentation about navigation commands now living in `erk slot up/down`
+- **Why It Matters**: Users still see old `erk up`/`erk down` in some docs; same-worktree-navigation.md references old paths
+- **Recommended Updates**:
+  - Update `/workspaces/erk/docs/learned/erk/same-worktree-navigation.md` to reference `erk slot up/down`
+  - Create `/workspaces/erk/docs/learned/erk/stack-navigation-in-slots.md` OR update slot-pool-architecture.md "Navigation Integration" section
+- **Content Outline**:
+  - Why navigation commands moved to erk_slots
+  - New command syntax: `erk slot up/down` instead of `erk up/down`
+  - Orchestration logic in `erk_slots/navigation.py`
+  - Shared utilities retained in core CLI
+  - How navigation interacts with slot allocation
+
+#### Gap 4: Shared Utilities vs erk_slots Specifics
+- **What's Missing**: Clear documentation of which functions are in `src/erk/cli/commands/navigation_helpers.py` (shared) vs `erk_slots/navigation.py` (specific)
+- **Why It Matters**: Developers need to know where to find/modify navigation-related code
+- **Recommended File**: `/workspaces/erk/docs/learned/architecture/navigation-helpers-split.md`
+- **Read When Conditions**:
+  - "modifying navigation command behavior"
+  - "understanding which helpers are shared vs erk_slots-specific"
+  - "adding cross-command navigation logic"
+- **Content Outline**:
+  - Functions remaining in `navigation_helpers.py` (activation, validation, deletion)
+  - Functions moved to `erk_slots/navigation.py` (orchestration, direction-specific resolvers)
+  - Boundary between shared and erk_slots-specific logic
+  - Why the split (cross-command vs slot-specific use)
+
+#### Gap 5: Slot Allocation Function Relocation
+- **What's Missing**: Documentation that `allocate_slot_for_branch()` and related functions now live in `erk_slots.common`
+- **Why It Matters**: Developers searching for allocation logic might look in wrong place; import paths changed
+- **Recommended File**: Update existing slot-pool-architecture.md OR create `/workspaces/erk/docs/learned/architecture/slot-allocation-functions.md`
+- **Content Outline**:
+  - Functions in `erk_slots.common`: `allocate_slot_for_branch()`, `find_inactive_slot()`, `find_next_available_slot()`, `sync_pool_assignments()`
+  - Historical move from core erk to erk_slots
+  - Import paths for external callers
+  - Data structures (`SlotAllocationResult`, `PoolSyncResult`)
+  - Example: How checkout_helpers.py uses these functions
+
+### Overlap Between Plans
+
+All three plans address the **consolidation of slot-related functionality into the erk_slots package**:
+
+| Aspect | Plan #9334 | Plan #9339 | Plan #9368 |
+|--------|-----------|-----------|-----------|
+| **Focus** | Slot allocation functions | New goto command | Navigation commands |
+| **What Moved** | `allocate_slot_for_branch()` &amp; variants | (new feature) | `up_cmd`/`down_cmd` |
+| **Module Created** | (moved to common.py) | goto_cmd.py | navigation.py |
+| **Dependency** | Enables isolated allocation logic | Uses pool state queries | Uses allocation via `ensure_branch_has_worktree()` |
+| **User Impact** | Internal refactoring | New command: `erk slot goto` | New syntax: `erk slot up/down` |
+| **Current Status** | Merged | Merged | Merged (but erk-learn plan open) |
+
+**Key Insight**: These three plans represent a larger refactoring theme of **moving worktree/slot management into a cohesive erk_slots package** that can be understood, modified, and extended independently from the core erk CLI.
+
+### Recommended Documentation Roadmap
+
+**Priority 1 - Critical Gaps** (needed for comprehension):
+1. `erk-slots-package.md` - Package overview and structure
+2. `navigation-helpers-split.md` - Which code lives where
+3. Update slot-pool-architecture.md section on "Navigation Integration" with `erk slot up/down` syntax
+
+**Priority 2 - Feature Documentation**:
+4. `slot-goto-navigation.md` - Dedicated `erk slot goto` command guide
+5. `stack-navigation-in-slots.md` - Why navigation moved to erk_slots
+
+**Priority 3 - Deep Dives**:
+6. `slot-allocation-functions.md` - Import paths and examples for external callers
+7. Update `same-worktree-navigation.md` to reference new command paths&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;62628&lt;/total_tokens&gt;&lt;tool_uses&gt;51&lt;/tool_uses&gt;&lt;duration_ms&gt;80148&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /tmp/claude-1000/-workspaces-erk/d5cfacbd-fde1-48ff-93b1-76eb6f1d9b22/tasks/a1c2763a723f72351.output</user>
+  <assistant>
+
+Slots/navigation agent completed (4 of 6 done). Waiting for remaining 2 agents...</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3570" cache_read_input_tokens="51301" output_tokens="29" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3570, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;a2f6b61e586e90103&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01Ww1MmH6YPKwKw8VfejqtJL&lt;/tool-use-id&gt;
+&lt;output-file&gt;/tmp/claude-1000/-workspaces-erk/d5cfacbd-fde1-48ff-93b1-76eb6f1d9b22/tasks/a2f6b61e586e90103.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Investigate plan header/metadata plans" completed&lt;/summary&gt;
+&lt;result&gt;Perfect. Now I have comprehensive information. Let me compile my findings into a detailed investigation report.
+
+## Investigation Summary
+
+I have completed a thorough investigation of the three erk-learn plans related to plan header metadata and refactoring. Here are my findings:
+
+### Plan Content Summary
+
+#### Plan #9360: Delete dead and test-only functions from plan_header.py
+**Source:** PR #9350 (merged)
+**Status:** OPEN (erk-learn PR, awaiting documentation)
+- **Key Changes:** Removed 11 dead/test-only extraction and update functions that followed boilerplate patterns
+- **Deleted Functions:** `extract_plan_header_created_from_session`, `extract_plan_header_local_impl_session`, `extract_plan_header_last_learn_session`, `extract_plan_header_last_learn_at`, `extract_plan_header_remote_impl_run_id`, `extract_plan_header_remote_impl_session_id`, `extract_plan_header_learn_status`, `extract_plan_header_session_branch`, `extract_plan_header_last_session_id`, `update_plan_header_local_impl_event`, plus `update_plan_header_session_branch`
+- **Removed Tests:** 21 test cases from `test_plan_header_extraction.py` (136 lines)
+- **Cleanup:** 6 now-unused schema imports removed
+- **Refactoring Helper:** Introduced `_update_plan_header()` helper that all update functions now delegate to (reducing boilerplate from ~12 lines to ~3-5 lines per function)
+
+#### Plan #9357: Introduce PlanHeaderData frozen dataclass
+**Source:** PR #9338 (merged)
+**Status:** OPEN (erk-learn PR, awaiting documentation)
+- **Key Addition:** New `PlanHeaderData` frozen dataclass with 2 required and 32 optional fields
+- **Parse-Once/Access-Many Pattern:** Typed field access via `from_dict()`, `from_issue_body()`, `to_dict()`, `to_metadata_block()` methods
+- **Tuple Convention:** `node_ids` uses `tuple[str, ...]` internally for immutability, converted to/from `list` at serialization boundaries
+- **Refactored Functions:** 16 update functions now delegate to `_update_plan_header()` helper instead of repeating 7-line boilerplate
+- **Rewritten `create_plan_header_block()`:** Now constructs `PlanHeaderData` object and calls `.to_metadata_block()`, eliminating 60+ lines of conditional field assembly
+- **Test Coverage:** 11 tests verifying construction, serialization round-trips, tuple↔list conversion, YAML rendering, and frozen semantics
+
+#### Plan #9347: Fix multi-node landing: store node_ids in plan-header metadata
+**Source:** PR #9326 (merged)
+**Status:** OPEN (erk-learn PR, awaiting documentation)
+- **Problem Solved:** Multi-node PRs were only marking the first node as done because landing script couldn't find other nodes without explicit PR references
+- **Solution:** Added `node_ids` field to plan-header schema for durable metadata storage
+- **Key Changes:**
+  - Added `NODE_IDS` constant and list validation to `schemas.py`
+  - Updated `Plan` dataclass with `node_ids` field
+  - Modified `pr_details_to_plan()` and `github_issue_to_plan()` to parse `node_ids` from metadata
+  - Enhanced `objective_apply_landed_update()` to use plan metadata as primary auto-discovery, falling back to PR refs only when metadata unavailable
+  - Added extraction/update functions following existing patterns
+  - Modified plan creation flow to write `node_ids` during PR creation
+
+### Implementation Status
+
+All three source PRs (#9350, #9338, #9326) are **merged to master**:
+- `98da2ac9f` - Delete dead functions (9350)
+- `71c84b351` - PlanHeaderData dataclass (9338)
+- `a778d3823` - Store node_ids (9326)
+
+**All changes are LIVE** - the implementations are complete and integrated.
+
+### Existing Documentation
+
+Found 4 existing docs relevant to plan headers:
+1. **[plan-header-privatization.md](file:///workspaces/erk/docs/learned/planning/plan-header-privatization.md)** - Explains privatization of plan_header.py functions behind PlanBackend abstraction (3 migration phases)
+2. **[learn-plan-metadata-fields.md](file:///workspaces/erk/docs/learned/planning/learn-plan-metadata-fields.md)** - Covers learn-specific metadata fields, `learned_from_issue` vs `learn_plan_issue` naming distinction
+3. **[metadata-update-patterns.md](file:///workspaces/erk/docs/learned/planning/metadata-update-patterns.md)** - Compares assertive vs best-effort metadata operations, set-based field validation
+4. **[plan-schema.md](file:///workspaces/erk/docs/learned/planning/plan-schema.md)** - High-level plan two-part structure (header in issue body, content in first comment)
+
+Plus architecture docs on:
+- **[metadata-blocks.md](file:///workspaces/erk/docs/learned/architecture/metadata-blocks.md)** - Block format and parsing/rendering API
+- **[json-dataclass-utilities.md](file:///workspaces/erk/docs/learned/architecture/json-dataclass-utilities.md)** - Frozen dataclass patterns for exec scripts
+- **[frozen-dataclass-test-doubles.md](file:///workspaces/erk/docs/learned/testing/frozen-dataclass-test-doubles.md)** - Mutation tracking in frozen dataclass fakes
+- **[frozen-dataclass-field-management.md](file:///workspaces/erk/docs/learned/tui/frozen-dataclass-field-management.md)** - Field addition/removal checklists for frozen dataclasses
+
+### Documentation Gaps &amp; Recommendations
+
+**Gap 1: PlanHeaderData as Typed Metadata Pattern**
+- **Current state:** PlanHeaderData exists but isn't documented as a reusable pattern
+- **Why it matters:** Other metadata blocks (plan-body, learn-invoked, etc.) may benefit from same parse-once/access-many pattern
+- **Recommendation:** Create `/workspaces/erk/docs/learned/architecture/typed-metadata-pattern.md`
+  - Example: PlanHeaderData case study
+  - When to use frozen dataclass vs raw dicts
+  - Serialization boundaries (tuple↔list conversion pattern)
+  - From_dict/to_dict roundtrip testing
+  - Read when: "adding a new metadata block type", "implementing typed metadata accessors"
+
+**Gap 2: Helper Refactoring Pattern (_update_plan_header)**
+- **Current state:** `_update_plan_header()` eliminates boilerplate but pattern isn't documented
+- **Why it matters:** Similar refactoring patterns (extract, update, validate) appear in other metadata operations
+- **Recommendation:** Add section to `/workspaces/erk/docs/learned/planning/metadata-update-patterns.md`
+  - Document the `_update_plan_header()` centralized helper pattern
+  - Show before/after comparison of refactored functions
+  - Explain schema validation within the helper
+  - When to apply: Multiple field-specific update functions with repeated find/validate/merge/render logic
+
+**Gap 3: Node IDs and Multi-Node Operations**
+- **Current state:** node_ids field exists for landing, but multi-node planning patterns aren't documented
+- **Why it matters:** Objectives can span multiple nodes; plans should track which nodes they cover
+- **Recommendation:** Create `/workspaces/erk/docs/learned/planning/multi-node-plans.md`
+  - How node_ids enables multi-node auto-discovery (vs PR refs only)
+  - When to populate node_ids (during plan creation via plan-save)
+  - How objective_apply_landed_update uses node_ids as primary source
+  - Backward compatibility (fallback to PR refs)
+  - Cross-reference to refactoring-decomposition.md (3-node pattern)
+  - Read when: "planning a multi-node objective", "understanding node_id metadata field"
+
+**Gap 4: Cleanup/Refactoring as Erk-Learn Pattern**
+- **Current state:** PR #9350 (delete dead functions) is mentioned in plan but no guidance exists
+- **Why it matters:** Part of erk-learn's feedback loop: identify dead code → create plan → implement → learn
+- **Recommendation:** Add section to `/workspaces/erk/docs/learned/planning/learn-workflow.md` or create new doc
+  - Dead code identification as learn opportunity
+  - Test coverage implications when removing functions
+  - Boilerplate elimination as valid refactoring target
+  - Read when: "identifying refactoring opportunities from learn", "planning code cleanup"
+
+**Gap 5: Field Naming Consistency (camelCase vs snake_case)**
+- **Current state:** `learned_from_issue` (storage) vs `learn_plan_issue` (application) naming already documented in learn-plan-metadata-fields.md
+- **Observation:** Pattern repeats in node_ids handling, dispatch metadata
+- **Recommendation:** Expand section in existing doc or cross-reference
+  - Template: storage-layer names vs application-layer names
+  - Where conversion happens (gateway)
+  - Why the split matters
+
+### Overlaps Between Plans
+
+1. **Plans #9357 and #9350 form a sequence:** PlanHeaderData (9357) provides the typed structure, then dead function deletion (9350) cleans up the old pattern
+2. **Plan #9347 depends on #9357:** node_ids field added to PlanHeaderData, validates through PlanHeaderSchema
+3. **All three use `_update_plan_header()` helper:** Central validation logic once it exists
+
+### Recommended Documentation Files &amp; Paths
+
+1. **`/workspaces/erk/docs/learned/architecture/typed-metadata-pattern.md`**
+   - Covers frozen dataclass metadata pattern (PlanHeaderData case study)
+   - Serialization boundaries and tuple↔list convention
+   - Testing strategies
+
+2. **Update `/workspaces/erk/docs/learned/planning/metadata-update-patterns.md`**
+   - Add section on `_update_plan_header()` centralized helper
+   - Before/after comparison showing boilerplate elimination
+
+3. **`/workspaces/erk/docs/learned/planning/multi-node-plans.md`**
+   - Multi-node objective tracking via node_ids
+   - Auto-discovery pattern in objective_apply_landed_update
+   - Backward compatibility with PR refs
+   - Connection to refactoring-decomposition.md
+
+4. **Enhance `/workspaces/erk/docs/learned/planning/learn-workflow.md`**
+   - Add section: "Dead Code Cleanup as Learn Opportunity"
+   - Boilerplate elimination identification pattern
+
+All paths are absolute paths in `/workspaces/erk/docs/learned/`.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;64346&lt;/total_tokens&gt;&lt;tool_uses&gt;34&lt;/tool_uses&gt;&lt;duration_ms&gt;94606&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /tmp/claude-1000/-workspaces-erk/d5cfacbd-fde1-48ff-93b1-76eb6f1d9b22/tasks/a2f6b61e586e90103.output</user>
+  <assistant>
+
+Plan header/metadata agent completed (5 of 6 done). Waiting for the last agent (plan-to-PR terminology)...</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3337" cache_read_input_tokens="54871" output_tokens="35" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;afbc7621d4a4dff6d&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_0142aamLAKfWQ5HbfgubdqJk&lt;/tool-use-id&gt;
+&lt;output-file&gt;/tmp/claude-1000/-workspaces-erk/d5cfacbd-fde1-48ff-93b1-76eb6f1d9b22/tasks/afbc7621d4a4dff6d.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Agent "Investigate plan-to-PR terminology plans" completed&lt;/summary&gt;
+&lt;result&gt;Perfect! Now I have all the information I need. Let me compile the comprehensive report.
+
+---
+
+## INVESTIGATION REPORT: Plan-to-PR Renaming and Terminology Standardization
+
+### 1. PLAN SUMMARIES
+
+#### Plan #9370: Fix stale plan-to-PR terminology references in docs/learned/
+- **Status**: OPEN (erk-learn PR)
+- **Source PR**: #9363 (MERGED)
+- **Purpose**: Document cleanup for stale references after renaming work
+- **Key fixes**: Updates to references in docs/learned/ for service classes and terminology
+
+#### Plan #9359: Rename plan-to-PR modules across erk and erk_shared (Phase 2)
+- **Status**: OPEN (erk-learn PR)  
+- **Source PR**: #9352 (MERGED)
+- **Purpose**: Large-scale module rename: `plan_store/` → `pr_store/`, class renames, function renames
+- **Scope**: 100+ file renames, 150+ file modifications across both packages
+
+#### Plan #9349: Rename PlanContext → PrContext and validate_plan_title → validate_pr_title
+- **Status**: OPEN (erk-learn PR)
+- **Source PR**: #9340 (MERGED)
+- **Purpose**: Rename core abstractions to reflect PR-focused purpose
+- **Scope**: 16 files modified, type annotations and call sites updated
+
+#### Plan #9336: Standardize "planned PR" terminology in user-facing copy
+- **Status**: OPEN (erk-learn PR)
+- **Source PR**: #9314 (MERGED)
+- **Purpose**: User-facing terminology standardization
+- **Scope**: User-facing strings and labels
+
+---
+
+### 2. IMPLEMENTATION STATUS
+
+#### COMPLETED WORK
+All 4 plans have **successfully merged** their implementation PRs (#9314, #9340, #9352, #9363). The renaming work is substantially complete:
+
+✅ **Codebase Status:**
+- `PlanContext` fully renamed to `PrContext` in source code
+- `validate_plan_title()` fully renamed to `validate_pr_title()` in naming.py
+- Module renames: `plan_store/` → `pr_store/` in both erk-shared and src/erk/core
+- Class renames: `PlanListService` → `PrListService`, `PlanContextProvider` → `PrContextProvider`, etc.
+- All active imports now reference `pr_store`, `pr_context_provider`, `pr_list_service`, etc.
+- Legacy `plan_store/` directory exists but is empty (only __pycache__)
+
+#### REMAINING WORK: DOCUMENTATION GAPS
+
+Despite code completion, **significant stale terminology persists in docs/learned/**:
+
+---
+
+### 3. STALE REFERENCES IN DOCUMENTATION
+
+**High Priority (Active API references):**
+
+1. **`/workspaces/erk/docs/learned/architecture/pr-body-assembly.md` (Line 26)**
+   - Stale: `PlanContext` → Should be: `PrContext`
+   - Impact: Developer confusion when reading documentation about plan details section
+
+2. **`/workspaces/erk/docs/learned/pr-operations/plan-embedding-in-pr.md` (Line 26)**
+   - Stale: `state.plan_context` (a `PlanContext`...) → Should be: `state.plan_context` (a `PrContext`...)
+   - Impact: Type annotation mismatch with actual source code
+
+3. **`/workspaces/erk/docs/learned/architecture/agent-backpressure-gates.md` (Line 69)**
+   - Stale: `validate_plan_title` → Should be: `validate_pr_title`
+   - Impact: Agents may reference wrong function name, causing confusion
+
+4. **`/workspaces/erk/docs/learned/cli/exec-script-performance.md` (Lines 9, 54)**
+   - Stale: `PlanListService` → Should be: `PrListService`
+   - Impact: Service reference mismatch with actual codebase
+
+5. **`/workspaces/erk/docs/learned/planning/learn-plan-metadata-fields.md` (Line 95)**
+   - Stale: `PlanListService` → Should be: `PrListService`
+   - Impact: Data flow documentation references wrong class name
+
+6. **`/workspaces/erk/docs/learned/tui/plan-title-rendering-pipeline.md` (Line 60)**
+   - Stale: `PlanListService` → Should be: `PrListService`
+   - Impact: TUI data flow diagram references outdated class
+
+**Medium Priority (File paths with plan_store):**
+
+7. **Multiple architecture files reference `plan_store/` in paths:**
+   - `/workspaces/erk/docs/learned/architecture/erk-shared-package.md` (Line 32) - Comments that directory "still named plan_store" (true but confusing)
+   - `/workspaces/erk/docs/learned/architecture/gateway-vs-backend.md` (Lines 49, 50, 60) - Example paths use `plan_store/`
+   - `/workspaces/erk/docs/learned/architecture/erk-architecture.md` (Lines 372, 374) - Source pointers to `plan_store/`
+   - `/workspaces/erk/docs/learned/planning/planned-pr-backend.md` (Line 37) - Path to PlannedPRBackend uses `plan_store/`
+   - `/workspaces/erk/docs/learned/planning/planned-pr-lifecycle.md` (Line 85) - Source comment references `plan_store/`
+   - `/workspaces/erk/docs/learned/planning/branch-plan-resolution.md` (Lines 20, 46) - Method and type references in `plan_store/`
+
+   **Note:** These paths are technically CORRECT (files do exist at those locations) BUT create reader confusion because:
+   - The legacy `plan_store/` directory is empty except for __pycache__
+   - All imports in the codebase reference `pr_store/`
+   - New developers see conflicting information
+
+**Testing Documentation:**
+
+8. **`/workspaces/erk/docs/learned/testing/dual-backend-testing.md` (Lines 21, 37)**
+   - Mentions `plan_store` parameter in context injection
+   - Should reference `pr_store` or clarify the parameter name hasn't changed yet
+
+9. **`/workspaces/erk/docs/learned/testing/environment-variable-isolation.md`**
+   - References `plan_store` in test context code example
+
+10. **`/workspaces/erk/docs/learned/testing/cli-testing.md`**
+    - References `create_plan_store_with_plans()` - may need rename to `create_pr_store_with_plans()`
+
+---
+
+### 4. OVERLAP ANALYSIS BETWEEN 4 PLANS
+
+**Plan Dependencies (Sequential):**
+```
+#9314 (standardize user-facing copy)
+  ↓
+#9340 (PlanContext → PrContext, validate_plan_title → validate_pr_title)
+  ↓
+#9352 (module renames: plan_store/ → pr_store/)
+  ↓
+#9363 (fix stale terminology in docs/learned/)
+```
+
+**Overlap Details:**
+
+- **#9363 partially addresses #9370**: PR #9363 fixed stale references but **incomplete** — 10+ additional stale references remain
+- **#9352 + #9363 should have coordinated**: Plan #9352 renamed modules and classes, but #9363 documentation audit missed many references
+- **#9349 is DISTINCT**: Class-level renames (PrContext, validate_pr_title) vs module/function renames
+
+**Hidden Dependency**: All 4 plans depend on a **missing documentation work item** — systematically updating ALL docs/learned/ references to reflect both code changes AND documenting WHY terminology changed.
+
+---
+
+### 5. RECOMMENDED DOCUMENTATION WORK
+
+#### NEW DOCUMENT: Plan-to-PR Terminology Standardization (Overview)
+**File**: `/workspaces/erk/docs/learned/reference/plan-to-pr-rename-glossary.md`
+
+**Content Outline:**
+- Title: "Plan-to-PR Terminology Standardization"
+- Purpose: Central glossary explaining why terminology shifted and mapping old → new
+- Sections:
+  1. Why the rename: "plans are saved as pull requests, not stored as issues"
+  2. Terminology map (old → new):
+     - `plan_store/` → `pr_store/`
+     - `PlanContext` → `PrContext`
+     - `validate_plan_title()` → `validate_pr_title()`
+     - `PlanListService` → `PrListService`
+     - `PlanContextProvider` → `PrContextProvider`
+     - `[erk-plan]` → `[erk-pr]`
+  3. When each rename was completed (with PR numbers)
+  4. Files that still use legacy names (if any) and why
+  5. Pointers to Phase 2 and Phase 3 work
+
+#### CRITICAL UPDATES TO EXISTING FILES
+
+1. **`/workspaces/erk/docs/learned/architecture/pr-body-assembly.md`** (Line 26)
+   - Change: `Used when a \`PlanContext\` is available` → `Used when a \`PrContext\` is available`
+
+2. **`/workspaces/erk/docs/learned/pr-operations/plan-embedding-in-pr.md`** (Line 26)
+   - Change: `a \`PlanContext\` with issue number` → `a \`PrContext\` with issue number`
+
+3. **`/workspaces/erk/docs/learned/architecture/agent-backpressure-gates.md`** (Line 69)
+   - Change: `\`validate_plan_title\`` → `\`validate_pr_title\``
+
+4. **`/workspaces/erk/docs/learned/cli/exec-script-performance.md`** (Lines 9, 54, 58)
+   - Change: `PlanListService` → `PrListService` (all 3 occurrences)
+   - Update source pointer (Line 58): `plan_list_service.py` → `pr_list_service.py`
+
+5. **`/workspaces/erk/docs/learned/planning/learn-plan-metadata-fields.md`** (Line 95)
+   - Change: `The \`PlanListService\` transforms` → `The \`PrListService\` transforms`
+
+6. **`/workspaces/erk/docs/learned/tui/plan-title-rendering-pipeline.md`** (Line 60)
+   - Change: `The \`PlanListService\` transforms` → `The \`PrListService\` transforms`
+
+7. **`/workspaces/erk/docs/learned/architecture/gateway-vs-backend.md`** (Lines 49-60)
+   - Change all `plan_store/` path references to `pr_store/`
+   - Update example: `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/pr_store/backend.py`
+
+8. **`/workspaces/erk/docs/learned/architecture/erk-shared-package.md`** (Line 32)
+   - Change: `├── plan_store/    # Plan backend abstraction (directory still named plan_store)` → `├── pr_store/    # Plan backend abstraction (PR storage for plans)`
+   - Note: The comment about "still named plan_store" is confusing — remove it
+
+9. **`/workspaces/erk/docs/learned/architecture/erk-architecture.md`** (Lines 372, 374)
+   - Update source pointers: `plan_store/backend.py` → `pr_store/backend.py`
+
+10. **File path updates in planning docs:**
+    - `planned-pr-backend.md` (Line 37): `plan_store/planned_pr.py` → `pr_store/planned_pr.py`
+    - `planned-pr-lifecycle.md` (Line 85): `plan_store/planned_pr_lifecycle.py` → `pr_store/planned_pr_lifecycle.py`
+    - `branch-plan-resolution.md` (Lines 20, 46): Update `plan_store/` paths → `pr_store/`
+    - Plus 4 more planning docs with stale paths
+
+#### DOCUMENTATION CONSOLIDATION OPPORTUNITY
+
+Create a new **reference document** explaining the historical directory situation:
+- **File**: `/workspaces/erk/docs/learned/reference/pr-store-migration.md`
+- **Content**: Why `plan_store/` directory still exists (backward compatibility), why it's empty (migration complete), when to delete it
+
+---
+
+### 6. CODEBASE ANOMALIES TO CLARIFY
+
+**Question 1**: Why does `plan_store/` directory still exist in both erk-shared and src/erk/core?
+- **Answer**: Legacy compatibility. The directory is empty except for __pycache__, all imports use `pr_store/`. Can be safely deleted in Phase 4.
+
+**Question 2**: Have test helper functions been renamed?
+- **Status UNCLEAR**: Need to verify if `create_plan_store_with_plans()` has been renamed to `create_pr_store_with_plans()` or if test context parameters still reference `plan_store`
+
+**Question 3**: Why do multiple docs still reference `plan_store/` paths?
+- **Answer**: Incomplete documentation audit in #9363. Paths are technically correct (files exist there) but misleading because all active code uses `pr_store/`.
+
+---
+
+### 7. SUMMARY TABLE
+
+| Item | Completed | Missing | Risk Level |
+|------|-----------|---------|------------|
+| Code rename: `plan_store/` → `pr_store/` | ✅ PR #9352 | - | LOW (code complete) |
+| Code rename: `PlanContext` → `PrContext` | ✅ PR #9340 | - | LOW (code complete) |
+| Code rename: `validate_plan_title()` → `validate_pr_title()` | ✅ PR #9340 | - | LOW (code complete) |
+| Code rename: Service/Provider classes | ✅ PR #9352 | - | LOW (code complete) |
+| Docs: Update class references in docs/learned/ | ✅ PR #9363 | 6 files with stale refs | MEDIUM (docs incomplete) |
+| Docs: Update file path references | ❌ Not started | 10+ files | MEDIUM (misleading) |
+| Docs: Create centralized glossary | ❌ Not started | New reference doc | LOW (nice-to-have) |
+| Test helper naming alignment | ❌ Unclear | TBD | MEDIUM (verify status) |
+
+---
+
+### 8. ABSOLUTE FILE PATHS WITH STALE REFERENCES
+
+1. `/workspaces/erk/docs/learned/architecture/agent-backpressure-gates.md` - Line 69
+2. `/workspaces/erk/docs/learned/architecture/erk-architecture.md` - Lines 372, 374
+3. `/workspaces/erk/docs/learned/architecture/erk-shared-package.md` - Line 32
+4. `/workspaces/erk/docs/learned/architecture/gateway-vs-backend.md` - Lines 49, 50, 60
+5. `/workspaces/erk/docs/learned/architecture/pr-body-assembly.md` - Line 26
+6. `/workspaces/erk/docs/learned/cli/exec-script-performance.md` - Lines 9, 54, 58
+7. `/workspaces/erk/docs/learned/planning/branch-plan-resolution.md` - Lines 20, 46
+8. `/workspaces/erk/docs/learned/planning/learn-plan-metadata-fields.md` - Line 95
+9. `/workspaces/erk/docs/learned/planning/planned-pr-backend.md` - Line 37
+10. `/workspaces/erk/docs/learned/planning/planned-pr-lifecycle.md` - Lines 85, 107, 120
+11. `/workspaces/erk/docs/learned/pr-operations/plan-embedding-in-pr.md` - Line 26
+12. `/workspaces/erk/docs/learned/tui/plan-title-rendering-pipeline.md` - Line 60
+
+---
+
+**CONCLUSION**: Plan #9370's source PR (#9363) successfully addressed the most critical stale references, but the audit was incomplete. The renaming work demonstrates a pattern where code migrations should trigger systematic documentation audits using structured search+replace, not manual selective updates. All 4 plans are learn-focused opportunities to document the **WHY** and **HOW** of the rename, not just fix the symptoms.&lt;/result&gt;
+&lt;usage&gt;&lt;total_tokens&gt;58032&lt;/total_tokens&gt;&lt;tool_uses&gt;49&lt;/tool_uses&gt;&lt;duration_ms&gt;117976&lt;/duration_ms&gt;&lt;/usage&gt;
+&lt;/task-notification&gt;
+Full transcript available at: /tmp/claude-1000/-workspaces-erk/d5cfacbd-fde1-48ff-93b1-76eb6f1d9b22/tasks/afbc7621d4a4dff6d.output</user>
+  <usage input_tokens="3" cache_creation_input_tokens="7971" cache_read_input_tokens="58208" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>All 6 investigation agents have completed. Now I have comprehensive findings across all 20 plans. Let me synthesize and create the consolidated plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7971" cache_read_input_tokens="58208" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01QGe86pNsHGJN1wNmh25HDm">
+    <param name="query">select:EnterPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7971" cache_read_input_tokens="58208" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7971}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QGe86pNsHGJN1wNmh25HDm">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1708" cache_read_input_tokens="66179" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1708}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'm already in plan mode. Let me write the consolidated plan based on all 6 investigation results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1708" cache_read_input_tokens="66179" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1708}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01NX3JyjYF6dFMiKHtxo3VZ7">
+    <param name="file_path">/home/vscode/.claude/plans/effervescent-sprouting-allen.md</param>
+    <param name="content"># Plan: Consolidated Documentation from 20 erk-learn Plans
+
+&gt; **Consolidates:** #9370, #93...[truncated 11559 chars]...p 10 |
+| #9331 | Step 11 |
+| All | Step 12 |
+| #9342 | No doc needed (command deletion) |
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1708" cache_read_input_tokens="66179" output_tokens="3954" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1708, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NX3JyjYF6dFMiKHtxo3VZ7">
+File created successfully at: /home/vscode/.claude/plans/effervescent-sprouting-allen.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01KbayuE7LzyhQJpLN2SZg5a">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4087" cache_read_input_tokens="67887" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4087, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KbayuE7LzyhQJpLN2SZg5a">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01V2ZjasvWLFTUeq8TEMrq22">
+    <param name="plan"># Plan: Consolidated Documentation from 20 erk-learn Plans
+
+&gt; **Consolidates:** #9370, #93...[truncated 11559 chars]...p 10 |
+| #9331 | Step 11 |
+| All | Step 12 |
+| #9342 | No doc needed (command deletion) |
+</param>
+    <param name="planFilePath">/home/vscode/.claude/plans/effervescent-sprouting-allen.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4825" cache_read_input_tokens="67887" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4825, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V2ZjasvWLFTUeq8TEMrq22">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/effervescent-sprouting-allen.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Consolidated Documentation from 20 erk-learn Plans
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Create a new branch and save plan as a planned PR. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without creating a planned PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider creating a planned PR instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 241cf10d-037f-4527-9eb6-fd45606049d2 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LLacGdMpujcrkTpZGdkRjr">
+    <param name="file_path">/home/vscode/.claude/plans/effervescent-sprouting-allen.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="673" cache_read_input_tokens="72712" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 673, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LLacGdMpujcrkTpZGdkRjr">
+     1→# Plan: Consolidated Documentation from 20 erk-learn Plans
+     2→
+     3→&gt; **Consolidates:** #9370, #9369, #9368, #9362, #9360, #9359, #9357, #9356, #9354, #9351, #9349, #9347, #9345, #9343, #9342, #9341, #9339, #9336, #9334, #9331
+     4→
+     5→## Context
+     6→
+     7→20 erk-learn plans accumulated from recent implementation sessions. All source PRs are merged — no code changes needed. This plan captures the documentation opportunities discovered during those implementations.
+     8→
+     9→## Source Plans
+    10→
+    11→| # | Title | Items |
+    12→| --- | --- | --- |
+    13→| #9370 | Fix stale plan-to-PR terminology in docs/learned/ | 12 stale refs |
+    14→| #9369 | Enable dangerous mode propagation in objective plan | 1 item |
+    15→| #9362 | Promote objective-reevaluate → objective-reconcile | 2 items |
+    16→| #9360 | Delete dead functions from plan_header.py | 1 item |
+    17→| #9359 | Rename plan-to-PR modules (Phase 2) | merged into #9370 |
+    18→| #9357 | Introduce PlanHeaderData frozen dataclass | 2 items |
+    19→| #9349 | Rename PlanContext → PrContext | merged into #9370 |
+    20→| #9347 | Fix multi-node landing: store node_ids | 1 item |
+    21→| #9356 | Decouple pool config from core erk config | 1 item |
+    22→| #9354 | Push PR Feedback Classification into CLI | 1 item |
+    23→| #9351 | TUI close command works with Graphite URLs | 1 item |
+    24→| #9368 | Move navigation commands to erk_slots | 2 items |
+    25→| #9339 | Add slot goto command | 1 item |
+    26→| #9334 | Move slot allocation to erk_slots | merged into #9368 |
+    27→| #9343 | Refactor teleport dry-run to action plan pattern | 1 item |
+    28→| #9341 | Add --dry-run flag to erk pr teleport | merged into #9343 |
+    29→| #9342 | Delete erk branch create command | 0 (no doc needed) |
+    30→| #9345 | Fix: source &lt;(erk --script) output | 1 item |
+
+... [217 lines omitted] ...
+
+   182→1. **Problem**: TUI close command failed with Graphite URLs (different format than GitHub)
+  </tool_result>
+  <assistant>Here's the consolidated plan:
+
+---
+
+**Plan: Consolidated Documentation from 20 erk-learn Plans**
+
+Consolidates all 20 open erk-learn plans into 12 implementation steps:
+
+- **Step 1**: Fix 12 stale plan-to-PR terminology references across docs/learned/ (mechanical find-and-replace)
+- **Steps 2-11**: Create 10 new documentation files covering:
+  - Action plan pattern (teleport dry-run case study)
+  - erk_slots package overview
+  - Objective reconciliation workflow
+  - Typed metadata pattern (PlanHeaderData)
+  - Multi-node plans
+  - Feedback classification architecture
+  - Pool config decoupling
+  - TUI Graphite URL handling
+  - Script flag behavior
+  - erk-learn plan dispatch
+- **Step 12**: Update index and tripwires
+
+7 plans were merged into related steps (overlap deduplication). 1 plan (#9342, delete branch create) needs no documentation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4663" cache_read_input_tokens="73385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4663}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01AHyUnuSQFyPVuQsU2ZRePp">
+    <param name="questions">[{'question': 'Plan: Consolidated Documentation from 20 erk-learn Plans\nCurrent context: ...[truncated 402 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4663" cache_read_input_tokens="73385" output_tokens="446" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4663, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AHyUnuSQFyPVuQsU2ZRePp">
+User has answered your questions: "Plan: Consolidated Documentation from 20 erk-learn Plans
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_015adVmWqs8yd4uSVfjjtD8a">
+    <param name="skill">erk:plan-save</param>
+    <param name="args">--plan-type=learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1834" cache_read_input_tokens="78048" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1834, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015adVmWqs8yd4uSVfjjtD8a">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a planned PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `--plan-type=learn` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If --plan-type=learn contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If --plan-type=learn contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If --plan-type=learn contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="241cf10d-037f-4527-9eb6-fd45606049d2" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="241cf10d-037f-4527-9eb6-fd45606049d2" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "241cf10d-037f-4527-9eb6-fd45606049d2" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as planned PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "241cf10d-037f-4527-9eb6-fd45606049d2" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "241cf10d-037f-4527-9eb6-fd45606049d2" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "241cf10d-037f-4527-9eb6-fd45606049d2" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2309" cache_read_input_tokens="79882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Following the plan-save steps:
+
+**Step 1**: PLAN_TYPE_FLAG=`--plan-type=learn`, no objective, no current-branch.
+
+**Step 2**: Branch slug from "Consolidated Documentation from 20 erk-learn Plans" → `consolidate-learn-docs`
+
+**Step 3**: Summary: "Consolidates 20 open erk-learn plans into a single unified documentation plan covering plan-to-PR terminology fixes, 10 new docs (action plan pattern, erk_slots package, objective reconciliation, typed metadata, and more), and index updates."
+
+**Step 4**: Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2309" cache_read_input_tokens="79882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018yXnBNWxpjJ1fKBsB4WzZx">
+    <param name="command">erk exec plan-save --format json --session-id="241cf10d-037f-4527-9eb6-fd45606049d2" --bra...[truncated 195 chars]...objective reconciliation, typed metadata, and more), and index updates." --plan-type=learn</param>
+    <param name="description">Save plan as planned PR on GitHub</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2309" cache_read_input_tokens="79882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018yXnBNWxpjJ1fKBsB4WzZx">
+{"success": true, "pr_number": 9373, "pr_url": "https://github.com/dagster-io/erk/pull/9373", "title": "[erk-learn] Consolidated Documentation from 20 erk-learn Plans", "branch_name": "plnd/consolidate-learn-docs-03-21-1606", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/workspaces/erk/.erk/scratch/sessions/241cf10d-037f-4527-9eb6-fd45606049d2/plan_snapshots/000001-33b2e0a7"}
+  </tool_result>
+  <assistant>Plan saved successfully. No objective link to verify (Steps 5-6 skipped).
+
+Now pushing the planning session and uploading:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="82191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 662}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0162zpWqyf42Ag83oEPNWsLC">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="82191" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0162zpWqyf42Ag83oEPNWsLC">
+SESSION_ID=241cf10d-037f-4527-9eb6-fd45606049d2
+SESSION_FILE=/home/vscode/.claude/projects/-workspaces-erk/241cf10d-037f-4527-9eb6-fd45606049d2.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BGKYvYYJgEAjVgHRuxcpWz">
+    <param name="command">erk exec push-session \
+    --session-file "/home/vscode/.claude/projects/-workspaces-erk/...[truncated 84 chars]...    --stage planning \
+    --source local \
+    --pr-number 9373 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="82853" output_tokens="211" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
