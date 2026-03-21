@@ -444,8 +444,6 @@ class TestMergeConfigsWithLocal:
         base_config = LoadedConfig.test(
             post_create_shell="bash",
             github_repo="base/repo",
-            pool_size=4,
-            pool_checkout_shell="bash",
         )
         local_config = LoadedConfig.test()  # All None
 
@@ -461,11 +459,9 @@ class TestMergeConfigsWithLocal:
         """Local shell settings override base shell settings."""
         base_config = LoadedConfig.test(
             post_create_shell="bash",
-            pool_checkout_shell="bash",
         )
         local_config = LoadedConfig.test(
             post_create_shell="zsh",
-            pool_checkout_shell="zsh",
         )
 
         result = merge_configs_with_local(

@@ -17,13 +17,13 @@ def test_load_config_reads_from_specified_path(tmp_path: Path) -> None:
     erk_dir.mkdir()
     config_path = erk_dir / "config.toml"
     config_path.write_text(
-        "[pool]\nmax_slots = 16\n",
+        '[env]\nTEST_VAR = "hello"\n',
         encoding="utf-8",
     )
 
     result = load_config(tmp_path)
 
-    assert result.pool_size == 16
+    assert result.env == {"TEST_VAR": "hello"}
 
 
 def test_load_local_config_reads_from_specified_path(tmp_path: Path) -> None:
@@ -33,21 +33,21 @@ def test_load_local_config_reads_from_specified_path(tmp_path: Path) -> None:
     erk_dir.mkdir()
     config_path = erk_dir / "config.local.toml"
     config_path.write_text(
-        "[pool]\nmax_slots = 64\n",
+        '[env]\nLOCAL_VAR = "local_value"\n',
         encoding="utf-8",
     )
 
     result = load_local_config(tmp_path)
 
-    assert result.pool_size == 64
+    assert result.env == {"LOCAL_VAR": "local_value"}
 
 
 def test_load_local_config_returns_defaults_when_missing(tmp_path: Path) -> None:
     """Test that load_local_config returns defaults when config doesn't exist."""
     result = load_local_config(tmp_path)
 
-    assert result.pool_size is None
     assert result.env == {}
+    assert result.post_create_shell is None
 
 
 def test_config_worktree_scenario(tmp_path: Path) -> None:
@@ -73,7 +73,7 @@ def test_config_worktree_scenario(tmp_path: Path) -> None:
     # Create local config in main repo
     main_config_path = main_erk_dir / "config.local.toml"
     main_config_path.write_text(
-        "[pool]\nmax_slots = 64\n",
+        '[env]\nTEAM_VAR = "main_value"\n',
         encoding="utf-8",
     )
 
@@ -86,7 +86,7 @@ def test_config_worktree_scenario(tmp_path: Path) -> None:
     result = load_local_config(main_repo)
 
     # Assert: Config from main repo is loaded
-    assert result.pool_size == 64
+    assert result.env == {"TEAM_VAR": "main_value"}
 
 
 def test_config_worktree_scenario_repo_config(tmp_path: Path) -> None:
@@ -130,7 +130,7 @@ def test_config_loading_ignores_worktree_config(tmp_path: Path) -> None:
     main_erk_dir.mkdir(parents=True)
     main_config = main_erk_dir / "config.local.toml"
     main_config.write_text(
-        "[pool]\nmax_slots = 64\n",
+        '[env]\nTEAM_VAR = "main_value"\n',
         encoding="utf-8",
     )
 
@@ -140,12 +140,12 @@ def test_config_loading_ignores_worktree_config(tmp_path: Path) -> None:
     worktree_erk_dir.mkdir(parents=True)
     worktree_config = worktree_erk_dir / "config.local.toml"
     worktree_config.write_text(
-        "[pool]\nmax_slots = 4\n",  # Different value
+        '[env]\nTEAM_VAR = "worktree_value"\n',  # Different value
         encoding="utf-8",
     )
 
     # Act: Load config from main_repo_root (the correct behavior)
     result = load_local_config(main_repo)
 
-    # Assert: Main repo config is loaded (64), not worktree config (4)
-    assert result.pool_size == 64
+    # Assert: Main repo config is loaded ("main_value"), not worktree config ("worktree_value")
+    assert result.env == {"TEAM_VAR": "main_value"}
