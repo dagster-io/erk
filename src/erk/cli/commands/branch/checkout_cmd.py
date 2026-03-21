@@ -495,7 +495,7 @@ def _branch_checkout_impl(
 
     if for_pr is not None:
         pr_number = parse_issue_identifier(for_pr)
-        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+        result = ctx.pr_store.get_managed_pr(repo.root, str(pr_number))
         if isinstance(result, PrNotFound):
             raise click.ClickException(f"PR #{pr_number} not found")
         plan = result

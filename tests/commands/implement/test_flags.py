@@ -24,7 +24,7 @@ def test_implement_with_submit_flag_from_issue() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # Use --script --submit to generate activation script with all commands
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
@@ -75,7 +75,7 @@ def test_implement_without_submit_uses_default_command() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
@@ -98,7 +98,7 @@ def test_implement_submit_in_script_mode() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--submit", "--script"], obj=ctx)
 
@@ -127,7 +127,7 @@ def test_implement_submit_with_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(
             implement, ["#42", "--no-interactive", "--submit", "--dry-run"], obj=ctx
@@ -163,7 +163,7 @@ def test_implement_with_dangerous_flag_in_script_mode() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)
 
@@ -192,7 +192,7 @@ def test_implement_with_safe_flag_in_script_mode() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--safe", "--script"], obj=ctx)
 
@@ -218,7 +218,7 @@ def test_implement_with_dangerous_and_submit_flags() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--dangerous", "--submit", "--script"], obj=ctx)
 
@@ -253,7 +253,7 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--dangerous", "--dry-run"], obj=ctx)
 
@@ -284,7 +284,7 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(
             implement,
@@ -343,7 +343,7 @@ def test_implement_with_dangerous_shows_in_script_content() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # Use --script flag to generate activation script with dangerous flag
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)

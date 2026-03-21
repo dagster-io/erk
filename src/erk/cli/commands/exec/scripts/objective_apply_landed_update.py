@@ -40,7 +40,7 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -186,7 +186,7 @@ def objective_apply_landed_update(
     erk_ctx = require_context(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
     time = require_time(ctx)
     remote = get_remote_github(erk_ctx)
 
@@ -215,7 +215,7 @@ def objective_apply_landed_update(
         pr_number = pr_result.number
 
     # --- Resolve plan using PR number (the PR IS the plan) ---
-    plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number))
+    plan_result = pr_backend.get_managed_pr(repo_root, str(pr_number))
     if isinstance(plan_result, PrNotFound):
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)

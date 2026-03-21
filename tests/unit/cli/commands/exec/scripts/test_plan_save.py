@@ -64,7 +64,7 @@ def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert "pr_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plnd/")
-    assert output["plan_backend"] == "planned_pr"
+    assert output["pr_backend"] == "planned_pr"
 
 
 def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -146,7 +146,7 @@ def test_planned_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Mo
     output2 = json.loads(result2.output)
     assert output2["success"] is True
     assert output2["skipped_duplicate"] is True
-    assert output2["plan_backend"] == "planned_pr"
+    assert output2["pr_backend"] == "planned_pr"
     # branch_name should be included from the branch marker saved during first call
     assert "branch_name" in output2
     assert output2["branch_name"] == output1["branch_name"]

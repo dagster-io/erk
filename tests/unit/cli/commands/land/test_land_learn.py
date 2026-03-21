@@ -235,12 +235,12 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         cwd=tmp_path,
     )
     state = _land_state(tmp_path, pr_id="100", merged_pr_number=99)
@@ -255,12 +255,12 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         cwd=tmp_path,
     )
     # pr_id "999" has no PR configured in FakeGitHub
@@ -285,12 +285,12 @@ def test_skips_when_no_xml_files_and_no_sessions(
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
@@ -324,12 +324,12 @@ def test_skips_when_sessions_exist_but_no_xml_extracted(
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
@@ -350,7 +350,7 @@ def test_skips_when_sessions_exist_but_no_xml_extracted(
     )
 
     monkeypatch.setattr(
-        plan_store,
+        pr_store,
         "find_sessions_for_managed_pr",
         lambda _root, _plan_id: sessions_with_ids,
     )
@@ -389,13 +389,13 @@ def test_creates_pr_and_shows_success(
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
@@ -441,12 +441,12 @@ def test_skips_when_no_sessions_discovered(
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
@@ -1079,13 +1079,13 @@ def test_fetches_from_context_branch_when_local_not_found(
             ("origin/planned-pr-context/100", ".erk/sessions/impl-aaaa1111.xml"): xml_content,
         },
     )
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
@@ -1098,7 +1098,7 @@ def test_fetches_from_context_branch_when_local_not_found(
     )
 
     monkeypatch.setattr(
-        plan_store,
+        pr_store,
         "find_sessions_for_managed_pr",
         lambda _root, _plan_id: sessions_with_ids,
     )
@@ -1140,13 +1140,13 @@ def test_skips_when_context_branch_not_found(
     fake_time = FakeTime()
     # No planned-pr-context branch configured
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
@@ -1158,7 +1158,7 @@ def test_skips_when_context_branch_not_found(
     )
 
     monkeypatch.setattr(
-        plan_store,
+        pr_store,
         "find_sessions_for_managed_pr",
         lambda _root, _plan_id: sessions_with_ids,
     )

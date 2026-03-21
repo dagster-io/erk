@@ -203,7 +203,7 @@ def _dispatch_planned_pr_plan(
     For planned-PR plans, the branch and PR already exist. This function:
     - Syncs local branch ref to remote using git plumbing (no checkout)
     - Commits .erk/impl-context/ files directly to branch (no checkout)
-    - Pushes and triggers the workflow with plan_backend="planned_pr"
+    - Pushes and triggers the workflow with pr_backend="planned_pr"
 
     Args:
         ctx: ErkContext with git operations
@@ -220,7 +220,7 @@ def _dispatch_planned_pr_plan(
 
     # Fetch plan content via ManagedPrBackend
     user_output("Fetching plan content...")
-    result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+    result = ctx.pr_store.get_managed_pr(repo.root, str(pr_number))
     if isinstance(result, PrNotFound):
         user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
         raise SystemExit(1)
@@ -280,7 +280,7 @@ def _dispatch_planned_pr_plan(
     # Load workflow-specific config
     workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
 
-    # Build inputs dict with plan_backend="planned_pr"
+    # Build inputs dict with pr_backend="planned_pr"
     user_output("")
     user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
 
@@ -291,7 +291,7 @@ def _dispatch_planned_pr_plan(
         "branch_name": branch_name,
         "impl_pr_number": str(pr_number),
         "base_branch": base_branch,
-        "plan_backend": "planned_pr",
+        "pr_backend": "planned_pr",
         **workflow_config,
     }
 
@@ -309,7 +309,7 @@ def _dispatch_planned_pr_plan(
     # Write dispatch metadata FIRST (before any PR body modification)
     try:
         write_dispatch_metadata(
-            plan_backend=ctx.plan_backend,
+            pr_backend=ctx.pr_backend,
             github=ctx.github,
             repo_root=repo.root,
             pr_number=pr_number,
@@ -359,7 +359,7 @@ def _dispatch_planned_pr_plan(
         )
 
         user_output("Posting queued event comment...")
-        ctx.plan_backend.add_comment(repo.root, str(pr_number), comment_body)
+        ctx.pr_backend.add_comment(repo.root, str(pr_number), comment_body)
         user_output(click.style("✓", fg="green") + " Queued event comment posted")
     except Exception as e:
         user_output(
@@ -519,7 +519,7 @@ def _dispatch_planned_pr_plan_remote(
         "branch_name": branch_name,
         "impl_pr_number": str(pr_number),
         "base_branch": base_branch,
-        "plan_backend": "planned_pr",
+        "pr_backend": "planned_pr",
     }
     run_id = remote.dispatch_workflow(
         owner=owner,
@@ -621,7 +621,7 @@ def _detect_pr_number_from_context(
             return int(plan_ref.pr_id)
 
     if branch_name is not None:
-        pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)
+        pr_id = ctx.pr_backend.resolve_pr_number_for_branch(repo.root, branch_name)
         if pr_id is not None and pr_id.isdigit():
             return int(pr_id)
 

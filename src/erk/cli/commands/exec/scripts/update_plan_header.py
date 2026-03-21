@@ -18,7 +18,7 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
 from erk_shared.pr_store.types import PlanHeaderNotFoundError
 
 
@@ -123,7 +123,7 @@ def update_plan_header(
     except ValueError as e:
         _fail(error="invalid_field_format", message=str(e))
 
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     try:

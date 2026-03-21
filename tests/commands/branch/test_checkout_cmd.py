@@ -282,7 +282,7 @@ def test_checkout_for_pr_creates_impl_folder() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"500": plan})
+        pr_store, _ = create_pr_backend_with_plans({"500": plan})
 
         # Draft-PR backend needs the branch to exist already
         git = FakeGit(
@@ -292,7 +292,7 @@ def test_checkout_for_pr_creates_impl_folder() -> None:
             existing_paths={env.cwd, env.repo.worktrees_dir},
         )
 
-        ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=pr_store)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(branch_group, ["checkout", "--for-pr", "500"], obj=ctx)
@@ -338,7 +338,7 @@ def test_checkout_for_pr_prints_activation_when_sync_status_fails() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"600": plan})
+        pr_store, _ = create_pr_backend_with_plans({"600": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -362,7 +362,7 @@ def test_checkout_for_pr_prints_activation_when_sync_status_fails() -> None:
         )
         save_pool_state(env.repo.pool_json_path, existing_state)
 
-        ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=pr_store)
 
         # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
         # display_sync_status catches this internally, so activation instructions still print.
@@ -430,7 +430,7 @@ def test_checkout_for_pr_planned_pr_stacks_on_base_ref() -> None:
             metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"600": plan})
+        pr_store, _ = create_pr_backend_with_plans({"600": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -442,7 +442,7 @@ def test_checkout_for_pr_planned_pr_stacks_on_base_ref() -> None:
 
         graphite = FakeGraphite()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+            env, git=git, pr_store=pr_store, graphite=graphite, use_graphite=True
         )
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
@@ -531,7 +531,7 @@ def test_checkout_for_pr_planned_pr_falls_back_to_trunk_without_base_ref() -> No
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"601": plan})
+        pr_store, _ = create_pr_backend_with_plans({"601": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -543,7 +543,7 @@ def test_checkout_for_pr_planned_pr_falls_back_to_trunk_without_base_ref() -> No
 
         graphite = FakeGraphite()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+            env, git=git, pr_store=pr_store, graphite=graphite, use_graphite=True
         )
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
@@ -584,7 +584,7 @@ def test_checkout_for_pr_rebases_onto_stale_parent() -> None:
             metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"602": plan})
+        pr_store, _ = create_pr_backend_with_plans({"602": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -596,7 +596,7 @@ def test_checkout_for_pr_rebases_onto_stale_parent() -> None:
 
         graphite = FakeGraphite()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+            env, git=git, pr_store=pr_store, graphite=graphite, use_graphite=True
         )
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
@@ -641,7 +641,7 @@ def test_checkout_for_pr_skips_rebase_for_trunk_parent() -> None:
             metadata={},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"603": plan})
+        pr_store, _ = create_pr_backend_with_plans({"603": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -653,7 +653,7 @@ def test_checkout_for_pr_skips_rebase_for_trunk_parent() -> None:
 
         graphite = FakeGraphite()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+            env, git=git, pr_store=pr_store, graphite=graphite, use_graphite=True
         )
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
@@ -697,7 +697,7 @@ def test_checkout_for_pr_updates_stale_local_parent() -> None:
             metadata={"base_ref_name": "feature-parent"},
             objective_id=None,
         )
-        plan_store, _ = create_pr_backend_with_plans({"604": plan})
+        pr_store, _ = create_pr_backend_with_plans({"604": plan})
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -713,7 +713,7 @@ def test_checkout_for_pr_updates_stale_local_parent() -> None:
 
         graphite = FakeGraphite()
         ctx = build_workspace_test_context(
-            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+            env, git=git, pr_store=pr_store, graphite=graphite, use_graphite=True
         )
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):

@@ -190,7 +190,7 @@ def test_cli_success(tmp_path: Path) -> None:
     )
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -233,7 +233,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh_issues)
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
@@ -288,7 +288,7 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     )
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 

@@ -114,7 +114,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     click.echo(click.style("Phase 3: Generating commit message", bold=True))
 
     plan_provider = PrContextProvider(
-        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
+        pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
     )
     if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
         raise click.ClickException("Repository has no GitHub remote configured")

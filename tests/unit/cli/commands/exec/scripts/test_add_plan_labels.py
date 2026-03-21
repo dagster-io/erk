@@ -62,7 +62,7 @@ def test_add_plan_labels_batch_success() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -99,7 +99,7 @@ def test_add_plan_labels_partial_failure() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -122,7 +122,7 @@ def test_add_plan_labels_invalid_json() -> None:
         input="not valid json",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -145,7 +145,7 @@ def test_add_plan_labels_missing_field() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -167,7 +167,7 @@ def test_add_plan_labels_empty_array() -> None:
         input="[]",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

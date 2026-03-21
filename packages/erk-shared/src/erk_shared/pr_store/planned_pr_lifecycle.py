@@ -108,7 +108,7 @@ def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str
     return plan_section + "\n\n" + metadata_body
 
 
-def build_original_plan_section(plan_content: str) -> str:
+def build_original_pr_section(plan_content: str) -> str:
     """Build the ``<details><summary>original-plan</summary>`` section.
 
     Used by both Stage 1 (plan creation) and Stage 2 (implementation)

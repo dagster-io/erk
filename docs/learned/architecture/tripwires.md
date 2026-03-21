@@ -124,7 +124,7 @@ Rules triggered by matching actions in code.
 
 **calling gh CLI for GitHub API operations in remote mode** → Read [RemoteGitHub Gateway](remote-github-gateway.md) first. use RemoteGitHub gateway instead. Remote mode has no local git/gh CLI.
 
-**calling gh api directly in an exec script for plan metadata updates** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
+**calling gh api directly in an exec script for plan metadata updates** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. Use `require_pr_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
 
 **calling graphite.track_branch() with a remote ref like origin/main** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch().
 
@@ -188,7 +188,7 @@ Rules triggered by matching actions in code.
 
 **creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
 
-**creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
+**creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, pr_backend operates on a different instance and metadata writes are invisible.
 
 **creating fake subgateway without shared state** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries.
 

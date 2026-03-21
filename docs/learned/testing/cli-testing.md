@@ -491,7 +491,7 @@ When testing code that uses both `ManagedPrBackend` and direct `FakeGitHubIssues
 
 ```python
 def test_plan_operations_with_shared_issues() -> None:
-    """Test that plan_backend and direct issue operations share state."""
+    """Test that pr_backend and direct issue operations share state."""
     issues = FakeGitHubIssues()
     runner = CliRunner()
 

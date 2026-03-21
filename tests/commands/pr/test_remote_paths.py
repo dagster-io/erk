@@ -484,7 +484,7 @@ def test_dispatch_remote_dispatches_workflow() -> None:
     assert len(fake_remote.dispatched_workflows) == 1
     dispatched = fake_remote.dispatched_workflows[0]
     assert dispatched.inputs["pr_number"] == "42"
-    assert dispatched.inputs["plan_backend"] == "planned_pr"
+    assert dispatched.inputs["pr_backend"] == "planned_pr"
     assert dispatched.inputs["branch_name"] == "plnd/remote-test"
 
     # Verify impl-context files were committed to the branch

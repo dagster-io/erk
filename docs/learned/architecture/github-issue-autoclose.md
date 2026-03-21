@@ -25,7 +25,7 @@ These issues caused frequent "issue didn't close" bugs that required retry logic
 
 Plans are now closed directly via the GitHub API during `erk land`:
 
-- `check_and_display_plan_issue_closure()` in `objective_helpers.py` calls `plan_store.close_plan()` directly
+- `check_and_display_plan_issue_closure()` in `objective_helpers.py` calls `pr_store.close_plan()` directly
 - No dependency on PR body content
 - No retry logic needed
 - Deterministic and immediate

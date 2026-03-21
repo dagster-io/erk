@@ -452,7 +452,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=fake_github,
-            plan_store=fake_pr_backend,
+            pr_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
@@ -628,7 +628,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=FakeLocalGitHub(),
-            plan_store=fake_pr_backend,
+            pr_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
@@ -684,7 +684,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=fake_github,
-            plan_store=fake_pr_backend,
+            pr_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},

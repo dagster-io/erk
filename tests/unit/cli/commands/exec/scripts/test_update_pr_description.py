@@ -415,7 +415,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=ManagedGitHubPrBackend(github, fake_github_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, fake_github_issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -449,7 +449,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

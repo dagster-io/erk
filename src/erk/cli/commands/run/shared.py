@@ -21,23 +21,3 @@ def extract_pr_number(display_title: str | None) -> int | None:
     if match is None:
         return None
     return int(match.group(1))
-
-
-def extract_plan_number(display_title: str | None) -> int | None:
-    """Extract plan number from display_title format '123:abc456'.
-
-    Handles:
-    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
-    - New plan-implement format: "branch-name (#460):abc456" → None
-      (handled by extract_pr_number instead, since plan_id == pr_number)
-    - Old format: "Issue title [abc123]" → None (no colon at start)
-    - None or empty → None
-    """
-    if not display_title or ":" not in display_title:
-        return None
-    parts = display_title.split(":", 1)
-    # Validate that the first part is a number
-    first_part = parts[0].strip()
-    if not first_part.isdigit():
-        return None
-    return int(first_part)

@@ -139,7 +139,7 @@ def _make_planned_pr_context(
     """Create an ErkContext configured for planned-PR PR backend with shared FakeLocalGitHub.
 
     The FakeLocalGitHub is shared between the ManagedGitHubPrBackend and the context,
-    so that both plan_backend.get_provider_name() and github.get_pr() work.
+    so that both pr_backend.get_provider_name() and github.get_pr() work.
 
     Returns (context, pr_number).
     """
@@ -166,7 +166,7 @@ def _make_planned_pr_context(
         graphite=fake_graphite,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
     return ctx, pr_number
 
@@ -270,7 +270,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
         graphite=fake_graphite,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()
@@ -471,7 +471,7 @@ def _invoke_create_impl_context(
         git=fake_git,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     if impl_context_files is not None:
@@ -511,7 +511,7 @@ def test_create_impl_context_pr_not_found(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()
@@ -630,7 +630,7 @@ def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()

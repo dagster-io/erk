@@ -38,8 +38,8 @@ def _make_pr_details(*, number: int, branch: str) -> PRDetails:
     )
 
 
-def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
-    """When resolve_impl_dir returns None, falls back to plan_backend.resolve_pr_id_for_branch."""
+def test_fallback_to_pr_backend_when_no_impl_dir(tmp_path: Path) -> None:
+    """When resolve_impl_dir returns None, falls back to pr_backend.resolve_pr_id_for_branch."""
     branch = "plnd/fix-something-01-01-1200"
     pr_details = _make_pr_details(number=42, branch=branch)
 
@@ -52,8 +52,8 @@ def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
     assert result == 42
 
 
-def test_returns_none_when_no_impl_dir_and_no_plan_backend_match(tmp_path: Path) -> None:
-    """When both resolve_impl_dir and plan_backend return nothing, returns None."""
+def test_returns_none_when_no_impl_dir_and_no_pr_backend_match(tmp_path: Path) -> None:
+    """When both resolve_impl_dir and pr_backend return nothing, returns None."""
     ctx = context_for_test(cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 

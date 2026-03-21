@@ -126,7 +126,7 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
         graphite=FakeGraphite(),
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()

@@ -77,7 +77,7 @@ def prepare_plan_for_worktree(
     Does NOT create the branch or worktree - just validates and computes names.
 
     Args:
-        plan: Plan from plan_store
+        plan: Plan from pr_store
         timestamp: Timestamp for branch name suffix
         warn_non_open: Whether to include warning for non-OPEN plans
 

@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, TypedDict, cast
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
 
 if TYPE_CHECKING:
     from typing import Any
@@ -126,7 +126,7 @@ def close_prs(ctx: click.Context) -> None:
     Processes each plan sequentially and outputs batch results.
     Top-level success is true only if ALL plans closed successfully.
     """
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Read and parse stdin

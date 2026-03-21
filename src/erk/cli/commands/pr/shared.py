@@ -34,7 +34,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.gateway.time.abc import Time
 from erk_shared.pr_store.conversion import header_str
-from erk_shared.pr_store.planned_pr_lifecycle import build_original_plan_section
+from erk_shared.pr_store.planned_pr_lifecycle import build_original_pr_section
 from erk_shared.pr_store.types import PrNotFound
 
 # ---------------------------------------------------------------------------
@@ -158,7 +158,7 @@ def maybe_advance_lifecycle_to_impl(
 
     Silently returns on any failure — lifecycle updates must never block submission.
     """
-    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PrNotFound):
         return
 
@@ -167,7 +167,7 @@ def maybe_advance_lifecycle_to_impl(
         return
 
     try:
-        ctx.plan_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})
+        ctx.pr_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})
     except RuntimeError as e:
         if not quiet:
             msg = f"   Warning: failed to update lifecycle stage: {e}"
@@ -198,7 +198,7 @@ def recover_plan_header(
     Returns None if the plan cannot be found, allowing callers to proceed
     without a plan-header (current behavior).
     """
-    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PrNotFound):
         return None
 
@@ -309,9 +309,7 @@ def assemble_pr_body(
     if plan_context is not None:
         if plan_header is not None:
             # Draft PR: use original-plan format (from lifecycle module)
-            pr_body_content = pr_body_content + build_original_plan_section(
-                plan_context.plan_content
-            )
+            pr_body_content = pr_body_content + build_original_pr_section(plan_context.plan_content)
         else:
             # Issue-based: use existing format
             pr_body_content = pr_body_content + build_plan_details_section(plan_context)

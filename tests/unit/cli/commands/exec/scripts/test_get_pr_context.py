@@ -81,7 +81,7 @@ def test_outputs_valid_json() -> None:
             prs_by_branch={"feature": pr_details},
         )
 
-        # Use a separate FakeLocalGitHub for plan_store with no prs_by_branch,
+        # Use a separate FakeLocalGitHub for pr_store with no prs_by_branch,
         # so ManagedGitHubPrBackend.get_plan_for_branch returns PrNotFound
         # (matching original intent: no plan context for "feature" branch)
         plan_github = FakeLocalGitHub()
@@ -90,7 +90,7 @@ def test_outputs_valid_json() -> None:
             git=git,
             graphite=graphite,
             github=github,
-            plan_store=ManagedGitHubPrBackend(plan_github, FakeGitHubIssues(), time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(plan_github, FakeGitHubIssues(), time=FakeTime()),
         )
 
         result = runner.invoke(get_pr_context, [], obj=ctx)

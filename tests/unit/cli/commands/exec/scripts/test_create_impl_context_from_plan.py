@@ -67,7 +67,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
         ["123"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -108,7 +108,7 @@ def test_plan_not_found_exits_with_error(tmp_path: Path) -> None:
         ["999"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -146,7 +146,7 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
         ["456"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )

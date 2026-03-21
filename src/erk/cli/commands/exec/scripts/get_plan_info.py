@@ -21,7 +21,7 @@ import json
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
 from erk_shared.pr_store.types import PrNotFound
 
 
@@ -40,7 +40,7 @@ def get_plan_info(
     include_body: bool,
 ) -> None:
     """Retrieve plan info from the appropriate backend."""
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     pr_id = str(pr_number)

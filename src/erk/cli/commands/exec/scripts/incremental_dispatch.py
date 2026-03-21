@@ -23,7 +23,7 @@ from erk_shared.context.helpers import (
     require_context,
     require_git,
     require_github,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -168,7 +168,7 @@ def incremental_dispatch(
         "branch_name": branch_name,
         "pr_number": str(pr_number),
         "base_branch": trunk,
-        "plan_backend": "planned_pr",
+        "pr_backend": "planned_pr",
         "dispatch_type": "incremental",
         **workflow_config,
     }
@@ -184,9 +184,9 @@ def incremental_dispatch(
 
     # Update PR header dispatch metadata (best-effort)
     try:
-        plan_backend = require_plan_backend(ctx)
+        pr_backend = require_pr_backend(ctx)
         write_dispatch_metadata(
-            plan_backend=plan_backend,
+            pr_backend=pr_backend,
             github=github,
             repo_root=repo_root,
             pr_number=pr_number,

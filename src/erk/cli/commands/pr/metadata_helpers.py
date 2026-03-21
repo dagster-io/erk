@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 def write_dispatch_metadata(
     *,
-    plan_backend: ManagedPrBackend,
+    pr_backend: ManagedPrBackend,
     github: LocalGitHub,
     repo_root: Path,
     pr_number: int,
@@ -41,12 +41,12 @@ def write_dispatch_metadata(
 
     # LBYL: Check plan exists before updating metadata
     pr_id = str(pr_number)
-    plan_result = plan_backend.get_managed_pr(repo_root, pr_id)
+    plan_result = pr_backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan_result, PrNotFound):
         raise RuntimeError(f"Plan #{pr_number} not found")
 
-    plan_backend.ensure_plan_header(repo_root, pr_id)
-    plan_backend.update_metadata(
+    pr_backend.ensure_plan_header(repo_root, pr_id)
+    pr_backend.update_metadata(
         repo_root,
         pr_id,
         {
@@ -82,7 +82,7 @@ def maybe_update_plan_dispatch_metadata(
         branch_name: Branch name to extract issue number from
         run_id: Workflow run ID from trigger response
     """
-    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)
+    pr_id = ctx.pr_backend.resolve_pr_number_for_branch(repo.root, branch_name)
     if pr_id is None:
         return
 
@@ -90,8 +90,8 @@ def maybe_update_plan_dispatch_metadata(
     if node_id is None:
         return
 
-    ctx.plan_backend.ensure_plan_header(repo.root, pr_id)
-    ctx.plan_backend.update_metadata(
+    ctx.pr_backend.ensure_plan_header(repo.root, pr_id)
+    ctx.pr_backend.update_metadata(
         repo.root,
         pr_id,
         {

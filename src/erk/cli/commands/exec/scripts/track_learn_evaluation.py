@@ -30,7 +30,7 @@ import click
 from erk_shared.context.helpers import (
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -157,7 +157,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     Posts a tracking comment to record that learn was invoked.
     """
     # Get dependencies from context
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     git = require_git(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)

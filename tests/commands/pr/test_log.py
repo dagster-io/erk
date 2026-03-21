@@ -121,7 +121,7 @@ def test_log_displays_timeline_chronologically() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment1, comment2, comment3]),
         )
@@ -187,7 +187,7 @@ def test_log_json_output() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment]),
         )
@@ -242,7 +242,7 @@ def test_log_with_no_events() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, []),
         )
@@ -321,7 +321,7 @@ def test_log_with_all_event_types() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, comments),
         )
@@ -345,7 +345,7 @@ def test_log_with_invalid_plan_identifier() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, _ = create_pr_backend_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=_make_fake_remote())
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "999"], obj=ctx)
@@ -409,7 +409,7 @@ def test_log_multiple_status_updates() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, comments),
         )
@@ -467,7 +467,7 @@ def test_log_json_structure() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment]),
         )

@@ -55,8 +55,8 @@ def _make_remote(
 def _make_provider(github_issues: FakeGitHubIssues) -> PrContextProvider:
     """Create a PrContextProvider with ManagedGitHubPrBackend backed by fake GitHub."""
     fake_github = FakeLocalGitHub(issues_gateway=github_issues)
-    plan_backend = ManagedGitHubPrBackend(fake_github, github_issues, time=FakeTime())
-    return PrContextProvider(plan_backend=plan_backend, remote_github=_make_remote())
+    pr_backend = ManagedGitHubPrBackend(fake_github, github_issues, time=FakeTime())
+    return PrContextProvider(pr_backend=pr_backend, remote_github=_make_remote())
 
 
 def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> None:

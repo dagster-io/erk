@@ -62,7 +62,7 @@ def test_close_prs_batch_success() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -102,7 +102,7 @@ def test_close_prs_partial_failure() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -126,7 +126,7 @@ def test_close_prs_invalid_json() -> None:
         input="not valid json",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -149,7 +149,7 @@ def test_close_prs_missing_field() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -171,7 +171,7 @@ def test_close_prs_empty_array() -> None:
         input="[]",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

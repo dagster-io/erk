@@ -5,7 +5,7 @@ This module contains:
 - Label management utilities (definitions, ensuring labels exist)
 - CreateObjectiveIssueResult: Result type shared by objective issue creation
 
-Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+Plan creation now uses create_plan_draft_pr() from pr_store.create_plan_draft_pr.
 """
 
 from dataclasses import dataclass

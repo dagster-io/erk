@@ -26,7 +26,7 @@ from dataclasses import asdict, dataclass
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
 from erk_shared.pr_store.types import PlanHeaderNotFoundError
 
@@ -140,7 +140,7 @@ def track_learn_result(
         )
 
     # Get dependencies from context
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Cast status to LearnStatusValue (already validated by click.Choice)

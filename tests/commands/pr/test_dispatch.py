@@ -25,7 +25,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
     Planned-PR plans already have a branch and PR. Dispatch should:
     - Validate the PR has the erk-plan label and is OPEN
     - Sync local branch ref to remote and commit impl-context via git plumbing
-    - Trigger workflow with plan_backend="planned_pr" in inputs
+    - Trigger workflow with pr_backend="planned_pr" in inputs
     - NOT create a new branch or PR
     """
     runner = CliRunner()
@@ -110,18 +110,18 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
 
-        # Verify: workflow was triggered with plan_backend="planned_pr"
+        # Verify: workflow was triggered with pr_backend="planned_pr"
         assert len(fake_gh.triggered_workflows) >= 1, (
             f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
             f"Output: {result.output}"
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
-        assert inputs["plan_backend"] == "planned_pr"
+        assert inputs["pr_backend"] == "planned_pr"
         assert inputs["pr_number"] == "42"
         assert inputs["branch_name"] == plan_branch
 
@@ -235,7 +235,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         # Invoke WITHOUT issue number argument
@@ -310,7 +310,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
@@ -364,7 +364,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch"], obj=ctx)
@@ -456,7 +456,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         result = runner.invoke(
@@ -532,7 +532,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
@@ -542,7 +542,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             f"Expected workflow trigger\nOutput: {result.output}"
         )
         inputs = fake_gh.triggered_workflows[0][1]
-        assert inputs["plan_backend"] == "planned_pr"
+        assert inputs["pr_backend"] == "planned_pr"
         assert inputs["branch_name"] == plan_branch
 
         # Verify: create_branch was NOT called (branch was checked out)
@@ -621,7 +621,7 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=planned_pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)

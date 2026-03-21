@@ -448,7 +448,7 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
     """Extract plan identifier from current branch name if it's a plan branch.
 
     Args:
-        ctx: ErkContext with plan_backend access
+        ctx: ErkContext with pr_backend access
 
     Returns:
         Plan identifier as string if current branch is a plan branch, else None
@@ -462,7 +462,7 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
     if current_branch is None:
         return None
 
-    return ctx.plan_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
+    return ctx.pr_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
 
 
 @dataclass(frozen=True)

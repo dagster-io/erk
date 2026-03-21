@@ -113,13 +113,13 @@ def test_returns_state_after_creating_pr(
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
-    plan_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )

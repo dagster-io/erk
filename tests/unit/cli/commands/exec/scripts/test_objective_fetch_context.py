@@ -227,7 +227,7 @@ class TestObjectiveFetchContext:
             ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -268,7 +268,7 @@ class TestObjectiveFetchContext:
             ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -335,7 +335,7 @@ class TestObjectiveFetchContext:
             ["--pr", "200", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -373,7 +373,7 @@ class TestObjectiveFetchContext:
             ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -409,7 +409,7 @@ class TestObjectiveFetchContext:
             ["--pr", "6517", "--objective", "9999", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote(),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -446,7 +446,7 @@ class TestObjectiveFetchContext:
             ["--pr", "9999", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -496,7 +496,7 @@ class TestObjectiveFetchContext:
             ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -536,7 +536,7 @@ class TestDiscoveryMode:
             ["--pr", "6517", "--objective", "6423"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -575,7 +575,7 @@ class TestDiscoveryMode:
             ["--pr", "6517", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({6423: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -618,7 +618,7 @@ class TestDiscoveryMode:
             ["--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -678,7 +678,7 @@ class TestDiscoveryMode:
             [],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({6423: objective}),
                 git=fake_git,
                 repo_root=tmp_path,
@@ -741,7 +741,7 @@ class TestDiscoveryMode:
             ["--pr", "6517", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -793,7 +793,7 @@ class TestDiscoveryMode:
             ["--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -839,7 +839,7 @@ class TestManagedGitHubPrBackend:
             ["--pr", "8002", "--objective", "7419", "--branch", "plan-draft-pr-plan"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({7419: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -885,7 +885,7 @@ class TestManagedGitHubPrBackend:
             ["--pr", "8002", "--branch", "plan-draft-pr-plan"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote({7419: objective}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -910,7 +910,7 @@ class TestManagedGitHubPrBackend:
             ["--pr", "8002", "--objective", "7419", "--branch", "plan-no-such-plan"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -942,7 +942,7 @@ class TestDirectPlanLookup:
             ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 remote_github=_make_remote({6423: objective, 6513: plan}),
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -967,7 +967,7 @@ class TestDirectPlanLookup:
             ["--pr", "6517", "--objective", "6423", "--plan", "9999"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,
@@ -998,7 +998,7 @@ class TestDirectPlanLookup:
             ["--objective", "6423", "--plan", "6513"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 git=fake_git,
                 repo_root=tmp_path,
                 cwd=tmp_path,
@@ -1049,7 +1049,7 @@ class TestObjectiveContent:
             ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 remote_github=_make_remote(
                     {6423: objective},
                     comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
@@ -1094,7 +1094,7 @@ class TestObjectiveContent:
             ["--pr", "6517", "--objective", "6423", "--branch", "plnd/some-branch-01-01-1200"],
             obj=context_for_test(
                 github=fake_github,
-                plan_store=planned_pr_backend,
+                pr_store=planned_pr_backend,
                 repo_root=tmp_path,
                 cwd=tmp_path,
                 repo_info=_TEST_REPO_INFO,

@@ -78,7 +78,7 @@ def test_plan_update_success() -> None:
         ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -125,7 +125,7 @@ def test_plan_update_display_format() -> None:
         ["--pr-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -157,7 +157,7 @@ def test_plan_update_no_plan_found() -> None:
         ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -184,7 +184,7 @@ def test_plan_update_issue_not_found() -> None:
         ["--pr-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -218,7 +218,7 @@ def test_plan_update_formats_plan_content() -> None:
         ["--pr-number", "42"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -258,7 +258,7 @@ def test_plan_update_updates_title_from_plan() -> None:
         ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -307,7 +307,7 @@ def test_plan_update_learn_plan_gets_learn_tag() -> None:
         ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -342,7 +342,7 @@ def test_plan_update_strips_plan_prefix_from_title() -> None:
         ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -375,7 +375,7 @@ def test_plan_update_display_format_shows_new_title() -> None:
         ["--pr-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -440,7 +440,7 @@ def test_plan_update_pushes_to_branch() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
-            plan_store=backend,
+            pr_store=backend,
             claude_installation=fake_store,
         ),
     )
@@ -486,7 +486,7 @@ def test_plan_update_branch_push_failure_still_succeeds() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
-            plan_store=backend,
+            pr_store=backend,
             claude_installation=fake_store,
         ),
     )
@@ -526,7 +526,7 @@ def test_plan_update_no_branch_skips_push() -> None:
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )

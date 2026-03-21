@@ -32,7 +32,7 @@ import click
 from erk_shared.context.helpers import (
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.gateway.github.parsing import parse_issue_number_from_url
@@ -100,13 +100,13 @@ def resolve_objective_ref(ctx: click.Context, ref: str) -> None:
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
 
     current_branch = git.branch.get_current_branch(cwd)
 
     def get_objective_for_branch(branch: str) -> int | None:
         try:
-            result = plan_backend.get_managed_pr_for_branch(repo_root, branch)
+            result = pr_backend.get_managed_pr_for_branch(repo_root, branch)
         except RuntimeError:
             return None
         if isinstance(result, PrNotFound):

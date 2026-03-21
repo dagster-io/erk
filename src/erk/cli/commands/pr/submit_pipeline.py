@@ -624,7 +624,7 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
         return state
 
     plan_provider = PrContextProvider(
-        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
+        pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
     )
     github_info = ctx.repo.github if not isinstance(ctx.repo, NoRepoSentinel) else None
     if github_info is None:

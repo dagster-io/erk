@@ -329,7 +329,7 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
-            plan_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)

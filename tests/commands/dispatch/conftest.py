@@ -130,7 +130,7 @@ def setup_submit_context(
         git=fake_git,
         github=fake_github,
         issues=fake_backing.issues,
-        plan_store=fake_pr_backend,
+        pr_store=fake_pr_backend,
         graphite=fake_graphite,
         repo=repo,
         global_config=global_config,

@@ -58,7 +58,7 @@ def test_close_pr_success() -> None:
         ["42", "--comment", "Closing: work is done."],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -92,7 +92,7 @@ def test_close_pr_not_found() -> None:
         ["999", "--comment", "This should fail"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -129,7 +129,7 @@ See #1234 for details."""
         ["100", "--comment", multiline_comment],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -160,7 +160,7 @@ def test_close_pr_changes_state() -> None:
         ["55", "--comment", "Done"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -187,7 +187,7 @@ def test_close_pr_requires_comment_flag() -> None:
         ["10"],  # Missing --comment
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

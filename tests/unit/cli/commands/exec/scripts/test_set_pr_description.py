@@ -206,7 +206,7 @@ def test_planned_pr_backend_preserves_metadata() -> None:
             git=git,
             graphite=graphite,
             github=github,
-            plan_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(

@@ -26,7 +26,7 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.context.types import NoRepoSentinel
@@ -169,7 +169,7 @@ def objective_fetch_context(
     erk_ctx = require_context(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
     remote = get_remote_github(erk_ctx)
 
     if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
@@ -181,7 +181,7 @@ def objective_fetch_context(
 
     # When --plan is provided, do direct plan lookup (skip branch-based discovery)
     if pr_number_arg is not None:
-        plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))
+        plan_result = pr_backend.get_managed_pr(repo_root, str(pr_number_arg))
         if isinstance(plan_result, PrNotFound):
             click.echo(_error_json(f"PR #{pr_number_arg} not found"))
             raise SystemExit(1)
@@ -197,7 +197,7 @@ def objective_fetch_context(
                 raise SystemExit(1)
 
         # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
-        plan_result = plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
+        plan_result = pr_backend.get_managed_pr_for_branch(repo_root, branch_name)
         if isinstance(plan_result, PrNotFound):
             click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)

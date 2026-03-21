@@ -46,7 +46,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
             ["--pr-id", "42", "--status", "completed_no_plan"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -86,7 +86,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
             ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -131,7 +131,7 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
             ["--pr-id", "42", "--status", "completed_with_plan"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -161,7 +161,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
             ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -196,7 +196,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
             ["--pr-id", "42", "--status", "pending_review", "--plan-pr", "789"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -237,7 +237,7 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
             ["--pr-id", "42", "--status", "pending_review"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -276,7 +276,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -315,7 +315,7 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),

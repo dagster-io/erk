@@ -37,19 +37,19 @@ After PR #8210, `context_for_test()` in `tests/fakes/tests/shared_context.py` no
 
 ```python
 @pytest.fixture(autouse=True)
-def clear_plan_backend_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def clear_pr_backend_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ERK_PLAN_BACKEND", raising=False)
 ```
 
 Use `autouse=True` in a `conftest.py` to apply across all tests in a module.
 
-### Option 2: Explicit `plan_store` in test context
+### Option 2: Explicit `pr_store` in test context
 
-Pass `plan_store` explicitly to `context_for_test()`:
+Pass `pr_store` explicitly to `context_for_test()`:
 
 ```python
 ctx = context_for_test(
-    plan_store=ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime()),
+    pr_store=ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime()),
     ...
 )
 ```

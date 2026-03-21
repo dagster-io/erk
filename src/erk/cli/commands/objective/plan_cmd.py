@@ -113,7 +113,7 @@ def _resolve_next(
     from the current branch via plan store metadata.
 
     Args:
-        ctx: ErkContext with git, issues, and plan_store
+        ctx: ErkContext with git, issues, and pr_store
         issue_ref: Optional issue reference (number or URL)
         target_repo: Optional "owner/repo" for remote operation
 
@@ -199,7 +199,7 @@ def _resolve_all_unblocked(
     from the current branch via plan store metadata.
 
     Args:
-        ctx: ErkContext with git, issues, and plan_store
+        ctx: ErkContext with git, issues, and pr_store
         issue_ref: Optional issue reference (number or URL)
         target_repo: Optional "owner/repo" for remote operation
 

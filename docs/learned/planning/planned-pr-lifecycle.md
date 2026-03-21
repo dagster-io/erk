@@ -87,7 +87,7 @@ All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
 | Function                                                         | Purpose                                                                                                                                                  |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `build_plan_stage_body(metadata_body, plan_content, *, summary)` | Build Stage 1 body: details-wrapped plan + metadata. Optional `summary: str \| None` prepends before `<details>`. Footer NOT included (needs PR number). |
-| `build_original_plan_section(plan_content)`                      | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2.                                              |
+| `build_original_pr_section(plan_content)`                        | Wrap plan content in `<details><summary>original-plan</summary>` section. Used by both Stage 1 and Stage 2.                                              |
 | `extract_plan_content(pr_body)`                                  | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. Summary is NOT included in output.           |
 | `find_metadata_block(pr_body, "plan-header")`                    | Extract metadata block for preservation during stage transitions.                                                                                        |
 

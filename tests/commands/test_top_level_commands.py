@@ -200,7 +200,7 @@ def test_top_level_close_command_works() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         store, fake_github = create_pr_backend_with_plans({"456": issue1})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_github.issues)
+        ctx = build_workspace_test_context(env, pr_store=store, issues=fake_github.issues)
 
         # Act - Use pr close command
         result = runner.invoke(cli, ["pr", "close", "456"], obj=ctx)

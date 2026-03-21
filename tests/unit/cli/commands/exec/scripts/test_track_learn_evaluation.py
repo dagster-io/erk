@@ -49,7 +49,7 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -97,7 +97,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -143,7 +143,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -175,7 +175,7 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -210,7 +210,7 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -237,7 +237,7 @@ def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -274,7 +274,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -309,7 +309,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),

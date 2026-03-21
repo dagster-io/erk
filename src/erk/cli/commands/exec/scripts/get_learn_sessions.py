@@ -38,7 +38,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.learn.extraction.get_learn_sessions_result import (
@@ -138,7 +138,7 @@ def _build_result(
 
 def _discover_sessions(
     *,
-    plan_backend,
+    pr_backend,
     claude_installation,
     git,
     repo_root: Path,
@@ -149,7 +149,7 @@ def _discover_sessions(
     """Discover all sessions for a plan.
 
     Args:
-        plan_backend: ManagedPrBackend for session discovery
+        pr_backend: ManagedPrBackend for session discovery
         claude_installation: Claude installation for session lookups
         git: Git gateway for branch operations
         repo_root: Repository root path
@@ -168,7 +168,7 @@ def _discover_sessions(
     )
 
     # Find sessions for the plan via ManagedPrBackend
-    sessions_for_plan = plan_backend.find_sessions_for_managed_pr(
+    sessions_for_plan = pr_backend.find_sessions_for_managed_pr(
         repo_root,
         pr_id,
     )
@@ -256,7 +256,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     claude_installation = require_claude_installation(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
 
     # Get current branch for local session filtering
     branch_name = git.branch.get_current_branch(cwd)
@@ -274,7 +274,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
             raise SystemExit(1)
         pr_id = str(pr_number)
     elif branch_name is not None:
-        pr_id = plan_backend.resolve_pr_number_for_branch(repo_root, branch_name)
+        pr_id = pr_backend.resolve_pr_number_for_branch(repo_root, branch_name)
 
     if pr_id is None:
         error = GetLearnSessionsErrorDict(
@@ -286,7 +286,7 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
 
     # Discover sessions
     result = _discover_sessions(
-        plan_backend=plan_backend,
+        pr_backend=pr_backend,
         claude_installation=claude_installation,
         git=git,
         repo_root=repo_root,

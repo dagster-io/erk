@@ -60,7 +60,7 @@ def test_close_pr_with_pr_number() -> None:
             issue_comments=None,
         )
         ctx = build_workspace_test_context(
-            env, plan_store=store, issues=fake_github.issues, remote_github=fake_remote
+            env, pr_store=store, issues=fake_github.issues, remote_github=fake_remote
         )
 
         # Act
@@ -89,7 +89,7 @@ def test_close_pr_not_found() -> None:
             issues={},
             issue_comments=None,
         )
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=fake_remote)
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "999"], obj=ctx)
@@ -115,7 +115,7 @@ def test_close_pr_invalid_identifier() -> None:
             issues={},
             issue_comments=None,
         )
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=fake_remote)
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=fake_remote)
 
         # Act
         result = runner.invoke(cli, ["pr", "close", "not-a-number"], obj=ctx)
@@ -141,7 +141,7 @@ def test_close_pr_invalid_url_format() -> None:
             issues={},
             issue_comments=None,
         )
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=fake_remote)
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=fake_remote)
 
         # Act - GitHub URL but pointing to pulls instead of issues
         result = runner.invoke(
@@ -201,7 +201,7 @@ def test_close_pr_with_objective_invokes_update() -> None:
         )
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_github.issues,
             prompt_executor=executor,
             remote_github=fake_remote,
@@ -266,7 +266,7 @@ def test_close_pr_without_objective_skips_update() -> None:
         )
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_github.issues,
             prompt_executor=executor,
             remote_github=fake_remote,
@@ -329,7 +329,7 @@ def test_close_pr_objective_update_failure_does_not_break_close() -> None:
         )
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_github.issues,
             prompt_executor=executor,
             remote_github=fake_remote,

@@ -30,7 +30,7 @@ def test_interactive_mode_calls_executor() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         # Interactive mode is the default (no --no-interactive flag)
         result = runner.invoke(implement, ["#42"], obj=ctx)
@@ -63,7 +63,7 @@ def test_interactive_mode_with_dangerous_flag() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
 
@@ -123,7 +123,7 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=False)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -148,7 +148,7 @@ def test_non_interactive_executes_single_command() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--no-interactive"], obj=ctx)
 
@@ -176,7 +176,7 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(
             implement,
@@ -209,7 +209,7 @@ def test_script_with_submit_includes_all_commands() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
 
@@ -234,7 +234,7 @@ def test_dry_run_shows_execution_mode() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # Test with interactive mode (default)
         result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
@@ -261,7 +261,7 @@ def test_dry_run_shows_command_sequence() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # Without --submit (single command)
         result = runner.invoke(implement, ["#42", "--dry-run", "--no-interactive"], obj=ctx)
@@ -299,7 +299,7 @@ def test_yolo_flag_sets_all_flags() -> None:
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--yolo"], obj=ctx)
 
@@ -329,7 +329,7 @@ def test_yolo_flag_in_dry_run() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--yolo", "--dry-run"], obj=ctx)
 
@@ -358,7 +358,7 @@ def test_yolo_flag_conflicts_with_script() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # --yolo sets --no-interactive, which conflicts with --script
         result = runner.invoke(implement, ["#42", "--yolo", "--script"], obj=ctx)
@@ -382,7 +382,7 @@ def test_submit_without_non_interactive_errors() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--submit"], obj=ctx)
 
@@ -402,7 +402,7 @@ def test_script_and_non_interactive_errors() -> None:
             default_branches={env.cwd: "main"},
         )
         store, _ = create_pr_backend_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--no-interactive", "--script"], obj=ctx)
 

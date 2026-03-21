@@ -32,7 +32,7 @@ import click
 
 from erk_shared.context.helpers import (
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -288,7 +288,7 @@ def push_session(
     git.remote.push_to_remote(repo_root, "origin", session_branch, set_upstream=True, force=True)
 
     # Step 7: Update plan metadata
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     pr_number_str = str(pr_number)
     metadata: dict[str, object] = {
         "last_session_branch": session_branch,

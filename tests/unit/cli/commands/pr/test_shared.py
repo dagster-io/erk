@@ -103,7 +103,7 @@ def test_recover_uses_header_fields_when_present(tmp_path: Path) -> None:
     """Returns MetadataBlock from header_fields when plan-header is intact."""
     pr = _pr_with_plan_header(number=100, author="alice", lifecycle_stage="impl")
     backend, _fg = _backend_from_pr(pr)
-    ctx = context_for_test(cwd=tmp_path, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, pr_store=backend)
 
     result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
@@ -118,7 +118,7 @@ def test_recover_constructs_minimal_header_when_destroyed(tmp_path: Path) -> Non
     """Constructs minimal plan-header from PR metadata when header is gone."""
     pr = _pr_without_plan_header(number=100, author="alice")
     backend, _fg = _backend_from_pr(pr)
-    ctx = context_for_test(cwd=tmp_path, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, pr_store=backend)
 
     result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
@@ -133,7 +133,7 @@ def test_recover_uses_unknown_when_author_empty(tmp_path: Path) -> None:
     """Falls back to 'unknown' when PR author is empty string."""
     pr = _pr_without_plan_header(number=100, author="")
     backend, _fg = _backend_from_pr(pr)
-    ctx = context_for_test(cwd=tmp_path, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, pr_store=backend)
 
     result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 

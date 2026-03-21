@@ -30,7 +30,7 @@ issue = gh.get_issue(repo_root, issue_number)
 **After (PlanBackend):**
 
 ```python
-backend = require_plan_backend(ctx)
+backend = require_pr_backend(ctx)
 plan_result = backend.get_plan(repo_root, pr_id)
 if isinstance(plan_result, PlanNotFound):
     # Handle missing plan explicitly
@@ -43,7 +43,7 @@ if isinstance(plan_result, PlanNotFound):
 Always check plan existence **before** calling mutation methods:
 
 ```python
-backend = require_plan_backend(ctx)
+backend = require_pr_backend(ctx)
 pr_id = str(issue_number)
 
 # LBYL: Check plan exists before updating
@@ -128,7 +128,7 @@ def test_my_exec_script(tmp_path: Path) -> None:
     )
 ```
 
-`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_plan_backend(ctx)` returns a working implementation.
+`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_pr_backend(ctx)` returns a working implementation.
 
 ## Known Inconsistencies
 

@@ -5,7 +5,7 @@ from erk_shared.pr_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
     PLAN_CONTENT_SEPARATOR,
-    build_original_plan_section,
+    build_original_pr_section,
     build_plan_stage_body,
     extract_plan_content,
 )
@@ -125,13 +125,13 @@ def test_extract_plan_content_ignores_footer_separator() -> None:
 
 
 # =============================================================================
-# build_original_plan_section
+# build_original_pr_section
 # =============================================================================
 
 
-def test_build_original_plan_section() -> None:
+def test_build_original_pr_section() -> None:
     """Builds a details section with original-plan summary."""
-    result = build_original_plan_section("my plan content")
+    result = build_original_pr_section("my plan content")
     assert DETAILS_OPEN in result
     assert "my plan content" in result
     assert DETAILS_CLOSE in result

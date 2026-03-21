@@ -394,7 +394,7 @@ def get_repo_identifier(ctx: click.Context) -> str | None:
     return f"{repo.github.owner}/{repo.github.repo}"
 
 
-def require_plan_backend(ctx: click.Context) -> ManagedPrBackend:
+def require_pr_backend(ctx: click.Context) -> ManagedPrBackend:
     """Get ManagedPrBackend from context, exiting with error if not initialized.
 
     Uses LBYL pattern to check context before accessing.
@@ -412,14 +412,14 @@ def require_plan_backend(ctx: click.Context) -> ManagedPrBackend:
         >>> @click.command()
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
-        ...     backend = require_plan_backend(ctx)
+        ...     backend = require_pr_backend(ctx)
         ...     result = backend.create_managed_pr(repo_root, title, content, labels, metadata)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    return ctx.obj.plan_backend
+    return ctx.obj.pr_backend
 
 
 def require_time(ctx: click.Context) -> Time:

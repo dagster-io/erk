@@ -69,12 +69,12 @@ def test_dispatch_happy_path() -> None:
     assert len(remote.added_labels) == 1
     assert remote.added_labels[0].labels == ("erk-pr",)
 
-    # Verify workflow was triggered with plan_backend=planned_pr
+    # Verify workflow was triggered with pr_backend=planned_pr
     assert len(remote.dispatched_workflows) == 1
     wf = remote.dispatched_workflows[0]
     assert wf.workflow == "one-shot.yml"
     assert wf.inputs["prompt"] == "fix the import in config.py"
-    assert wf.inputs["plan_backend"] == "planned_pr"
+    assert wf.inputs["pr_backend"] == "planned_pr"
     assert wf.inputs["plan_issue_number"] == "1"
 
 
