@@ -16,6 +16,20 @@
       "raw_size_kb": 1561,
       "xml_size_kb": 86,
       "git_branch": "master"
+    },
+    {
+      "session_id": "9a280d95-c84f-4935-b261-9b1f7b989764",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T15:30:22.829561+00:00",
+      "files": [
+        "impl-9a280d95-c84f-4935-b261-9b1f7b989764-9a280d95-c84f-4935-b261-9b1f7b989764.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 430,
+      "xml_size_kb": 54,
+      "git_branch": "plnd/show-run-data-objective-no-03-21-1524"
     }
   ]
 }
