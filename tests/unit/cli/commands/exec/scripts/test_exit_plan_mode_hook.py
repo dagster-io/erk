@@ -484,7 +484,7 @@ class TestBuildBlockingMessage:
         assert "WARNING" in message
         assert "main" in message
         assert "trunk branch" in message
-        assert "dedicated worktree" in message
+        assert "saving the plan as a PR first" in message
 
     def test_trunk_branch_master_shows_warning(self) -> None:
         """Warning shown when on master branch."""
@@ -842,7 +842,7 @@ class TestBuildBlockingMessage:
             pr_number_from_plan_ref=None,
             editor=None,
         )
-        assert '  1. "Create new branch and planned PR. Stays on current branch."' in message
+        assert '  1. "Create new branch and planned PR"' in message
         assert '  2. "Implement without saving"' in message
         assert '  3. "Make current empty branch a planned PR"' in message
         assert '  4. "View/Edit the Plan"' in message
@@ -968,7 +968,7 @@ class TestBuildBlockingMessage:
             editor=None,
         )
         # With branch_has_commits=True, should be 3 options numbered 1-3
-        assert '  1. "Create new branch and planned PR. Stays on current branch."' in message
+        assert '  1. "Create new branch and planned PR"' in message
         assert '  2. "Implement without saving"' in message
         assert '  3. "View/Edit the Plan"' in message
         # Should NOT have option 4
