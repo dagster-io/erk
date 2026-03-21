@@ -1,10 +1,10 @@
 ---
-description: Create a plan from a one-shot prompt, save it as a draft PR, and write results to .erk/impl-context/ (used by CI workflow)
+description: Create a plan from a one-shot prompt, save it as a planned PR, and write results to .erk/impl-context/ (used by CI workflow)
 ---
 
 # One-Shot Plan
 
-You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a draft PR.
+You are running autonomously in a CI workflow. Your job is to read a prompt, explore the codebase, create a detailed implementation plan, and save it as a planned PR.
 
 **Important:** You are ONLY planning, not implementing. The plan must be self-contained — a separate Claude session will implement it with no access to your exploration context.
 
@@ -59,7 +59,7 @@ erk exec plan-update --pr-number $PLAN_ISSUE_NUMBER --plan-path .erk/impl-contex
 
 Parse the JSON output. If `success` is not `true`, stop and report the error. Otherwise, use `$PLAN_ISSUE_NUMBER` as the `pr_number`. To get the `title`, extract the first `# ` heading from `.erk/impl-context/plan.md`.
 
-**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new draft PR (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
+**If `$PLAN_ISSUE_NUMBER` is not set (empty):** Fall back to creating a new planned PR (backwards compatible for direct `erk one-shot` calls without pre-created skeleton):
 
 If the `$OBJECTIVE_ISSUE` environment variable is set (non-empty), create the objective-context marker before saving:
 

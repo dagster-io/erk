@@ -5,7 +5,7 @@ argument-hint: <prompt>
 
 # One-Shot Plan Only
 
-Submit a task for remote planning only. The prompt will be dispatched to a GitHub Actions workflow where Claude autonomously explores the codebase and creates a plan as a draft PR, but does NOT implement it.
+Submit a task for remote planning only. The prompt will be dispatched to a GitHub Actions workflow where Claude autonomously explores the codebase and creates a plan as a planned PR, but does NOT implement it.
 
 ## Steps
 

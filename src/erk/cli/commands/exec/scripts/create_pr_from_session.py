@@ -1,11 +1,11 @@
-"""Extract plan from Claude session and create GitHub draft PR.
+"""Extract plan from Claude session and create a planned PR.
 
 Usage:
     erk exec create-pr-from-session --branch-slug SLUG [--session-id SESSION_ID]
 
-This command combines plan extraction from Claude session files with GitHub
-draft PR creation. It extracts the latest ExitPlanMode plan, creates a branch,
-commits the plan, and creates a draft PR.
+This command combines plan extraction from Claude session files with planned PR
+creation. It extracts the latest ExitPlanMode plan, creates a branch,
+commits the plan, and creates a planned PR.
 
 Output:
     JSON result on stdout:
@@ -13,7 +13,7 @@ Output:
     Error messages on stderr with exit code 1 on failure
 
 Exit Codes:
-    0: Success - draft PR created
+    0: Success - planned PR created
     1: Error - no plan found, gh CLI not available, or other error
 """
 
@@ -56,9 +56,9 @@ def create_pr_from_session(
     summary: str | None,
     branch_slug: str | None,
 ) -> None:
-    """Extract plan from Claude session and create GitHub draft PR.
+    """Extract plan from Claude session and create a planned PR.
 
-    Combines plan extraction with draft PR creation in a single operation.
+    Combines plan extraction with planned PR creation in a single operation.
     """
     if not branch_slug:
         click.echo(

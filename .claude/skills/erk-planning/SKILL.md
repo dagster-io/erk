@@ -5,7 +5,7 @@ description: "[REMOVED] This skill has been deleted. Plan management is now hand
 
 This skill has been removed. Use the following instead:
 
-- `/erk:plan-save` — save plan as draft PR
+- `/erk:plan-save` — save plan as a planned PR
 - `/local:plan-update` — update an existing plan
 - `/erk:replan` — replan against current codebase
 - `AGENTS.md` — ambient planning workflow documentation

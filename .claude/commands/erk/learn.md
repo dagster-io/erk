@@ -31,7 +31,7 @@ Learn pipeline for PR #<pr-number> (using preprocessed materials):
   1. Read preprocessed materials from .erk/impl-context/
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
-  4. Save plan as a draft PR
+  4. Save plan as a planned PR
 ```
 
 **When no `.erk/impl-context/`:**
@@ -41,7 +41,7 @@ Learn pipeline for PR #<pr-number>:
   1. Discover and preprocess session logs
   2. Launch analysis agents (session, diff, docs check, PR comments)
   3. Synthesize findings into a documentation plan
-  4. Save plan as a draft PR
+  4. Save plan as a planned PR
 ```
 
 ### Step 1: Validate Plan Type
@@ -698,7 +698,7 @@ Parse the JSON output:
 - If `valid: false` → Skip saving, proceed to Step 9 with `completed_no_plan`
 - If `valid: true` → Continue with save below
 
-**If plan is valid**, save it as a draft PR:
+**If plan is valid**, save it as a planned PR:
 
 ```bash
 # Build command with optional workflow run URL for backlink
@@ -723,7 +723,7 @@ Parse the JSON output to get `pr_number`, `plan_backend`, `title`, and `pr_url` 
 Display the result:
 
 ```
-Learn plan saved as draft PR #<pr-number>: <title>
+Learn plan saved as planned PR #<pr-number>: <title>
 URL: <pr-url>
 ```
 

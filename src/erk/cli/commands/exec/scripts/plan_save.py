@@ -1,4 +1,4 @@
-"""Plan save: creates a draft PR with the plan content.
+"""Plan save: creates a planned PR with the plan content.
 
 Usage:
     erk exec plan-save [OPTIONS]
@@ -563,7 +563,7 @@ def plan_save(
     session_xml_dir: Path | None,
     current_branch_flag: bool,
 ) -> None:
-    """Save plan as a draft PR."""
+    """Save plan as a planned PR."""
     _save_plan_via_planned_pr(
         ctx,
         output_format=output_format,
