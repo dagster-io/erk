@@ -35,7 +35,7 @@ Two functions need the new parameter added (both use keyword-only args):
 
 ### 3. create_plan_draft_pr.py -- Thread Through Plan Creation
 
-**File:** `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`
+**File:** `packages/erk-shared/src/erk_shared/pr_store/create_plan_draft_pr.py`
 
 Add the parameter to `create_plan_draft_pr()` and pass it through to `format_plan_header_body()`. All parameters are keyword-only. Review the existing call site to see the current parameter threading pattern.
 

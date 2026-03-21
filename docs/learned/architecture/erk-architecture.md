@@ -369,9 +369,9 @@ queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
 After PR #8210, the `PlanStore` ABC was consolidated into `ManagedPrBackend` (formerly `PlanBackend`). There is no separate read-side interface.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, ManagedPrBackend -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_store/backend.py, ManagedPrBackend -->
 
-**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/pr_store/backend.py`.
 
 ## TUI Exit-with-Command Pattern
 

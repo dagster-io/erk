@@ -74,6 +74,8 @@ Rules triggered by matching actions in code.
 
 **referencing a 'plan' field on RoadmapNode** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. The plan field was removed (PR #8128). RoadmapNode has: id, description, status, pr, depends_on, slug. Plan references are no longer tracked in the roadmap.
 
+**replacing /erk:objective-reconcile with a Python CLI reconcile** → Read [Objective Reconciliation Workflow](objective-reconciliation-workflow.md) first. Reconcile is an agent skill (.claude/commands/erk/objective-reconcile.md), not a Python CLI command. The skill runs Claude's search/verification capabilities. erk objective reconcile (Python) is the user-facing entry point.
+
 **running objective-fetch-context on master without --branch** → Read [Objective Lifecycle](objective-lifecycle.md) first. Auto-discovery fails on non-plan branches. Pass `--branch` explicitly when on master.
 
 **storing objective content directly in the issue body** → Read [Objective v2 Storage Format](objective-storage-format.md) first. Objective content goes in the first comment (objective-body block), not the issue body. The issue body holds only metadata blocks (objective-header, objective-roadmap).
@@ -85,6 +87,8 @@ Rules triggered by matching actions in code.
 **updating objective from multiple concurrent plan completions** → Read [Objective Lifecycle](objective-lifecycle.md) first. When multiple nodes in an objective complete simultaneously, concurrent updates can race. Check objective state before updating to avoid overwriting recent changes.
 
 **updating roadmap step in only one location (frontmatter or table)** → Read [Objective Lifecycle](objective-lifecycle.md) first. Must update both frontmatter AND markdown table during the dual-write migration period. Use update-objective-node which handles both atomically.
+
+**using None for allow_dangerous_override when dangerous=False** → Read [Objective Reconciliation Workflow](objective-reconciliation-workflow.md) first. None-preservation is intentional. When dangerous=False, pass allow_dangerous_override=None (not False). This preserves the user's default config rather than forcing safe mode. See plan_cmd.py:730-733.
 
 **using None/empty string interchangeably in update-objective-node parameters** → Read [Roadmap Mutation Patterns](roadmap-mutation-patterns.md) first. None=preserve existing value, empty string=clear the cell, value=set new value. Confusing these leads to accidental data loss or stale values.
 

@@ -19,6 +19,7 @@
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [github] repo in config.toml, understanding cross-repo plan closing syntax
 - **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
+- **[erk-learn-plan-dispatch.md](erk-learn-plan-dispatch.md)** — dispatching a learn plan for remote implementation, debugging why dispatch rejects a plan title, creating learn plans with the correct label
 - **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
 - **[impl-context.md](impl-context.md)** — working with .erk/impl-context/ files, debugging plan content missing from a draft-PR implementation, reviewing a PR that contains .erk/impl-context/ files, understanding how draft-PR plans transfer content to .erk/impl-context/
@@ -36,6 +37,7 @@
 - **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan metadata schema, coordinating metadata changes across files
 - **[metadata-update-patterns.md](metadata-update-patterns.md)** — writing plan dispatch metadata updates, choosing between assertive and best-effort metadata operations, working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata
+- **[multi-node-plans.md](multi-node-plans.md)** — creating a plan that covers multiple objective nodes, debugging why only the first node was marked done after landing, working with node_ids in plan-header metadata, understanding how landing updates multiple objective nodes
 - **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[objective-update-after-land.md](objective-update-after-land.md)** — modifying the land pipeline's post-merge behavior, working with objective-update-after-land exec script, understanding fail-open patterns in erk

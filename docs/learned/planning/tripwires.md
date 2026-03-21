@@ -124,6 +124,8 @@ Rules triggered by matching actions in code.
 
 **detecting plan backend by checking backend type directly** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
 
+**dispatching a plan with a title that has no [erk-pr] or [erk-learn] prefix** → Read [erk-learn Plan Dispatch](erk-learn-plan-dispatch.md) first. Both dispatch paths validate the title prefix. Plans must start with '[erk-pr] ' or '[erk-learn] ' to be dispatchable. Use erk exec plan-save --plan-type=learn for learn plans.
+
 **dispatching implementation against an existing PR** → Read [Incremental Dispatch Workflow](incremental-dispatch.md) first. Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-plan label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md.
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
@@ -202,6 +204,8 @@ Rules triggered by matching actions in code.
 
 **recovering a branch name from a PR number using UI or truncated display** → Read [Branch Name Inference](branch-name-inference.md) first. Use `gh pr view <pr-number> --json headRefName` to recover exact branch names. UI display may truncate long branch names.
 
+**relying on PR body text to determine which nodes a plan covers** → Read [Multi-Node Plans](multi-node-plans.md) first. PR body parsing for node IDs is the fallback path. Primary source is plan-header metadata `node_ids` field, written during plan creation. Read from metadata first.
+
 **relying on agent instructions as the sole enforcement for a critical operation** → Read [Workflow Reliability Patterns](reliability-patterns.md) first. Agent behavior is non-deterministic. Critical operations need a deterministic workflow step as the final safety net.
 
 **removing .erk/impl-context/ during implementation (before CI passes)** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. The folder is load-bearing during implementation — Claude reads from it. Only remove after implementation succeeds and CI passes.
@@ -263,6 +267,8 @@ Rules triggered by matching actions in code.
 **validating pr_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
+
+**writing node_ids as a list inside PlanHeaderData** → Read [Multi-Node Plans](multi-node-plans.md) first. PlanHeaderData stores node_ids as tuple[str, ...] internally. The list↔tuple conversion happens at serialization boundaries. See typed-metadata-pattern.md.
 
 **writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
 

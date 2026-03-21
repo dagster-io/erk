@@ -30,6 +30,8 @@ Rules triggered by matching actions in code.
 
 **adding --json flag to a human-facing command** → Read [Machine Command Architecture](json-command-decorator.md) first. Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a json_cli.py machine adapter in the command's subpackage.
 
+**adding --script as a visible option** → Read [--script Flag Behavior](script-flag-behavior.md) first. --script is a hidden option (visible only when show_hidden_commands=True). Use the script_option decorator from src/erk/cli/help_formatter.py, not a manual click.option().
+
 **adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
@@ -79,6 +81,8 @@ Rules triggered by matching actions in code.
 **calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
 
 **choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+
+**combining --script and --dry-run on the same command invocation** → Read [--script Flag Behavior](script-flag-behavior.md) first. --dry-run forces script=False. Dry-run produces human-readable output, not shell activation scripts. This is intentional: mixing the two modes would produce unusable output.
 
 **committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed.
 

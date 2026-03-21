@@ -34,7 +34,7 @@ The `ERK_PLAN_BACKEND` environment variable is no longer read by application cod
 
 ## Architecture
 
-PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`.
+PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/pr_store/planned_pr.py`.
 
 Key design decisions:
 

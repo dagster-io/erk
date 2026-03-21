@@ -23,7 +23,7 @@ Shared utilities for constructing PR bodies live in `src/erk/cli/commands/pr/sha
 
 <!-- Source: src/erk/cli/commands/pr/shared.py, build_plan_details_section -->
 
-**`build_plan_details_section()`** — Builds a collapsed `<details>` section embedding the plan content in the PR body. Used when a `PlanContext` is available.
+**`build_plan_details_section()`** — Builds a collapsed `<details>` section embedding the plan content in the PR body. Used when a `PrContext` is available.
 
 <!-- Source: src/erk/cli/commands/pr/shared.py, run_commit_message_generation -->
 

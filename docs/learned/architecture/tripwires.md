@@ -100,6 +100,8 @@ Rules triggered by matching actions in code.
 
 **calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script** [pattern: `PromptExecutor|generate_branch_slug|BranchSlugGenerator`] → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/\*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md.
 
+**calling \_update_plan_header() with 12+ lines of boilerplate** → Read [Typed Metadata Pattern (PlanHeaderData)](typed-metadata-pattern.md) first. \_update_plan_header() reduces update functions to 3-5 lines. Pass keyword args for fields to change; the function handles parse, merge, validate, re-render.
+
 **calling allocate_slot_for_branch without sync_pool_assignments running first** → Read [Slot Pool State Sync](slot-pool-state-sync.md) first. Pool sync must run BEFORE find_branch_assignment call. Without it, stale pool.json entries cause silent misassignment — a slot may appear free when it's actually occupied by a different branch.
 
 **calling assemble_pr_body without metadata_prefix for planned-PR plans** → Read [PR Body Assembly](pr-body-assembly.md) first. Planned PR plans require metadata_prefix from find_metadata_block(). Without it, plan-header metadata is lost on every PR rewrite.
@@ -162,6 +164,8 @@ Rules triggered by matching actions in code.
 
 **choosing between post_event and update_metadata** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
 
+**combining --script and --dry-run flags** → Read [Action Plan Pattern](action-plan-pattern.md) first. --dry-run forces human-readable output and disables --script mode. See teleport_cmd.py:115-116 for the pattern: `if dry_run: script = False`.
+
 **committing files to a branch that may be checked out in a worktree** → Read [Checked-Out Branch Handling Pattern](checked-out-branch-handling.md) first. git branch -f fails on checked-out branches. Use is_branch_checked_out() to detect, then update_local_ref() instead of create_branch(). Sync working tree with 'git checkout HEAD --'. See checked-out-branch-handling.md.
 
 **comparing git SHA to Graphite's tracked SHA for divergence detection** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches.
@@ -215,6 +219,8 @@ Rules triggered by matching actions in code.
 **expecting status to auto-update after manual PR edits** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. Only the update-objective-node command writes computed status. Manual GitHub edits or direct body mutations leave status at its current value — you must explicitly set status to '-' to enable inference on next parse.
 
 **force-updating a branch that might be currently checked out** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Git refuses to force-update the checked-out branch. Use LBYL check: compare target branch with current branch before force-update. See \_ensure_local_matches_remote() in graphite.py.
+
+**hand-constructing a metadata dict instead of using PlanHeaderData.from_dict()** → Read [Typed Metadata Pattern (PlanHeaderData)](typed-metadata-pattern.md) first. Use PlanHeaderData.from_dict() / from_issue_body() instead of manual dict construction. PlanHeaderData handles all field mapping, defaults, and serialization boundary conversions.
 
 **hand-constructing frozen dataclass instances with selective field copying** → Read [Optional Field Propagation](optional-field-propagation.md) first. Always use dataclasses.replace() to preserve all fields. Hand-construction with partial field copying silently drops optional fields (learn_status, learn_plan_issue, objective_issue, etc.).
 
@@ -336,6 +342,8 @@ Rules triggered by matching actions in code.
 
 **using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
 
+**using a boolean flag to choose between preview and execute paths** → Read [Action Plan Pattern](action-plan-pattern.md) first. Use the action plan pattern instead. Build a frozen dataclass describing what would happen, then display (dry-run) or execute. This avoids conditional logic scattered through the execution path.
+
 **using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
 
 **using bash heredocs for large agent outputs** → Read [Heredoc Quoting and Escaping in Agent-Generated Bash](bash-python-integration.md) first. heredocs fail silently with special characters; prefer the Write tool
@@ -371,6 +379,8 @@ Rules triggered by matching actions in code.
 **using monkeypatch to stub health check results in doctor tests** → Read [HealthCheckRunner Gateway Pattern](health-check-runner-gateway.md) first. Use FakeHealthCheckRunner with constructor-injected results instead. The HealthCheckRunner gateway eliminates all monkeypatch in doctor tests.
 
 **using mutable list fields directly for mutation tracking in fakes** → Read [Fake Mutation Tracking](fake-mutation-tracking.md) first. Expose mutation tracking via @property returning tuple or .copy(). Internal lists should be private. See fake-mutation-tracking.md.
+
+**using node_ids as a list inside a dataclass** → Read [Typed Metadata Pattern (PlanHeaderData)](typed-metadata-pattern.md) first. Frozen dataclasses use tuple[str, ...] for node_ids internally. Convert list→tuple in from_dict() and tuple→list in to_dict() at serialization boundaries. See PlanHeaderData:87,113-114,196.
 
 **using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code** [pattern: `os\.environ.*CLAUDE_CODE_SESSION_ID`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables.
 

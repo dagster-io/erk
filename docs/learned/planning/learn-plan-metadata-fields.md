@@ -92,7 +92,7 @@ When constructing `Plan` objects from API responses, ensure all metadata fields 
 
 ### Transformation to PlanRowData
 
-The `PlanListService` transforms `Plan` → `PlanRowData`. Metadata must be preserved through this transformation.
+The `PrListService` transforms `Plan` → `PlanRowData`. Metadata must be preserved through this transformation.
 
 ### Filtering Operations
 

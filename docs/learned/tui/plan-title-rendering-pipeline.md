@@ -57,7 +57,7 @@ Plans are filtered by:
 
 ### Stage 4: Service Transformation
 
-The `PlanListService` transforms raw `Plan` objects to `PlanRowData`:
+The `PrListService` transforms raw `Plan` objects to `PlanRowData`:
 
 - Titles may be truncated (47 chars + "...")
 - Display fields are pre-formatted

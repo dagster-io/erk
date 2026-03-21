@@ -66,7 +66,7 @@ The gate functions and their human-facing counterparts live in code with detaile
 
 | Gate (agent-facing)        | Human-facing counterpart                        | Location                                                    |
 | -------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
-| `validate_plan_title`      | `generate_filename_from_title`                  | `erk_shared/naming.py`                                      |
+| `validate_pr_title`        | `generate_filename_from_title`                  | `erk_shared/naming.py`                                      |
 | `validate_worktree_name`   | `sanitize_worktree_name`                        | `erk_shared/naming.py`                                      |
 | `validate_objective_slug`  | _(none — no silent path)_                       | `erk_shared/naming.py`                                      |
 | `validate_candidates_data` | `normalize_candidates_data` (pre-gate recovery) | `erk_shared/gateway/github/metadata/tripwire_candidates.py` |

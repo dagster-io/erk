@@ -12,11 +12,15 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding a navigation command to src/erk/cli/ instead of packages/erk-slots/** → Read [erk_slots Package Overview](erk-slots-package.md) first. Navigation commands (up, down, goto, teleport) live in packages/erk-slots/src/erk_slots/. Core navigation orchestration is in erk_slots/navigation.py; shared utilities are in src/erk/cli/commands/navigation_helpers.py.
+
 **adding a new call site that passes same_worktree** → Read [Same-Worktree Navigation](same-worktree-navigation.md) first. Use target_path.resolve() == ctx.cwd.resolve() — not string comparison. See same-worktree-navigation.md.
 
 **adding a new cleanup path in land_cmd.py without calling \_ensure_branch_not_checked_out()** → Read [Multi-Path Branch Cleanup in Land](four-path-cleanup.md) first. All cleanup paths must call \_ensure_branch_not_checked_out() before branch deletion. Git refuses to delete branches checked out in any worktree.
 
 **adding a new step to the bootstrap sequence** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. This affects ALL remote commands. The bootstrap runs on every SSH invocation, so added steps must be idempotent and fast.
+
+**adding a pool config field to LoadedConfig** → Read [Pool Config Decoupling](pool-config-decoupling.md) first. Pool config is self-contained in erk_slots. All pool-related config lives in packages/erk-slots/src/erk_slots/config.py. Do not put pool fields in LoadedConfig.
 
 **assuming dispatch_ref is project-level config** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level.
 
@@ -45,6 +49,10 @@ Rules triggered by matching actions in code.
 **passing both --ref and --ref-current to a dispatch command** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. --ref and --ref-current are mutually exclusive. resolve_dispatch_ref() raises UsageError if both are provided.
 
 **pushing to a branch that may have been updated remotely without checking for divergence** → Read [Graphite Divergence Detection](graphite-divergence-detection.md) first. The Graphite-first flow pre-checks for divergence before gt submit. Check with branch_exists_on_remote -> fetch_branch -> is_branch_diverged_from_remote.
+
+**reading pool config from LoadedConfig** → Read [erk_slots Package Overview](erk-slots-package.md) first. Pool config is no longer in LoadedConfig. Use erk_slots.config.load_pool_config(repo_root) directly. See pool-config-decoupling.md.
+
+**reading pool_size from LoadedConfig or RepoConfigSchema** → Read [Pool Config Decoupling](pool-config-decoupling.md) first. Pool fields (pool_size, pool_checkout_commands, pool_checkout_shell) were removed from LoadedConfig. Use erk_slots.config.load_pool_config(repo_root) instead.
 
 **removing uv sync --quiet from activation** → Read [Workspace Activation and Package Refresh](workspace-activation.md) first. uv sync --quiet refreshes workspace packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches.
 

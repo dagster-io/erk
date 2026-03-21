@@ -4,6 +4,7 @@
 # Architecture Documentation
 
 - **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
+- **[action-plan-pattern.md](action-plan-pattern.md)** — implementing a command with --dry-run capability, adding preview mode to a command that mutates state, replacing boolean parameter threading with typed plan objects
 - **[agent-backpressure-gates.md](agent-backpressure-gates.md)** — designing validation for agent-generated output, choosing between silent transformation and rejection of invalid input, implementing retry loops for agent-produced values, adding validation to agent-facing APIs
 - **[agent-schema-enforcement.md](agent-schema-enforcement.md)** — processing JSON output from AI agents, normalizing agent-produced data before validation, designing schemas for agent-to-tool communication, debugging tripwire candidate JSON drift
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
@@ -131,6 +132,7 @@
 - **[test-context-composition.md](test-context-composition.md)** — using build_workspace_test_context with custom fakes, debugging invisible metadata writes in tests, understanding issues_explicitly_passed flag
 - **[threading-patterns.md](threading-patterns.md)** — running blocking operations (subprocess, network) while yielding progress events, implementing daemon threads for long-running tasks, understanding the result holder + error holder pattern, testing code that uses background threads
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
+- **[typed-metadata-pattern.md](typed-metadata-pattern.md)** — adding a new field to plan-header metadata, reading or updating plan-header metadata fields, implementing parse-once/access-many for metadata, working with PlanHeaderData
 - **[unified-dispatch-pattern.md](unified-dispatch-pattern.md)** — working with launch_cmd.py dispatch handlers, adding a new workflow to erk launch, understanding how workflows are dispatched via erk
 - **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation
 - **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows

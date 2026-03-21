@@ -94,6 +94,8 @@ Rules triggered by matching actions in code.
 
 **generating TUI commands that depend on optional PlanRowData fields** → Read [Adding Commands to TUI](adding-commands.md) first. Implement three-layer validation: registry predicate, handler guard, app-level helper. Never rely on registry predicate alone.
 
+**implementing \_parse_owner_repo_from_url() or similar URL parsing helpers** → Read [TUI Graphite URL Handling](graphite-url-handling.md) first. This helper was removed because URLs can come from multiple providers (GitHub, Graphite) with different formats. Use repo_id from the location context instead.
+
 **implementing modal dismiss with an inverted key check condition** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Dismiss-on-unhandled pattern: if event.key not in (bound_keys): self.dismiss(). Using the inverted condition (if key in bound_keys: dismiss) is a common bug that dismisses on valid keys instead of unrecognized ones.
 
 **implementing on_key() in a modal without calling event.prevent_default() and event.stop()** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. Modal on_key() must call event.prevent_default() and event.stop() BEFORE any logic. Without this, keystrokes leak to the underlying view and trigger unintended actions.
@@ -101,6 +103,8 @@ Rules triggered by matching actions in code.
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
 **moving @on decorated event handlers to a mixin** → Read [TUI Architecture Overview](architecture.md) first. Textual's \_MessagePumpMeta only scans class.**dict**, not inherited methods. Event handlers on mixins are silently ignored.
+
+**parsing owner/repo from a PR URL in close_pr() or similar methods** → Read [TUI Graphite URL Handling](graphite-url-handling.md) first. URL parsing fails for Graphite URLs (different format). Use self.\_location.repo_id.owner and self.\_location.repo_id.repo instead. The structured data is always available and format-independent.
 
 **passing --no-wait in worker thread subprocess calls** → Read [Async Action Refresh Pattern](async-action-refresh-pattern.md) first. Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing.
 

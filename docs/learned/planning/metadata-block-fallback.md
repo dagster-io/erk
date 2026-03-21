@@ -32,9 +32,9 @@ Schema v2 plans split content across two GitHub API objects for a deliberate rea
 | Issue body    | `plan-header` metadata block (YAML)                           | Compact structured data for batch queries — worktree name, dispatch status, timestamps. Never contains plan text.          |
 | First comment | `plan-body` metadata block (plan markdown inside `<details>`) | Full plan content. Separating it from the body means listing/filtering issues doesn't require downloading large plan text. |
 
-<!-- Source: erk_shared/plan_store/create_plan_draft_pr.py, create_plan_draft_pr -->
+<!-- Source: erk_shared/pr_store/create_plan_draft_pr.py, create_plan_draft_pr -->
 
-The `create_plan_draft_pr()` function in `erk_shared/plan_store/create_plan_draft_pr.py` orchestrates this: it creates a draft PR with a metadata-only body, then explicitly adds the first comment with the plan content. The comment is not auto-created by GitHub — erk creates it via `add_comment()` and records the `plan_comment_id` back into the issue body for direct lookup.
+The `create_plan_draft_pr()` function in `erk_shared/pr_store/create_plan_draft_pr.py` orchestrates this: it creates a draft PR with a metadata-only body, then explicitly adds the first comment with the plan content. The comment is not auto-created by GitHub — erk creates it via `add_comment()` and records the `plan_comment_id` back into the issue body for direct lookup.
 
 ## The Fallback Chain
 

@@ -20,6 +20,8 @@ Rules triggered by matching actions in code.
 
 **creating a PR without draft=True in automated workflows** → Read [Draft PR Handling](draft-pr-handling.md) first. All automated erk PR creation uses draft mode. This gates CI costs and prevents premature review. See draft-pr-handling.md.
 
+**doing bot detection or state interpretation in the LLM skill** → Read [PR Feedback Classification Architecture](feedback-classification-architecture.md) first. Mechanical classification (bot detection, APPROVED/CHANGES_REQUESTED state, restructuring detection) belongs in the CLI stage (classify-pr-feedback). The LLM skill only handles action summaries, complexity, and ambiguous cases.
+
 **editing commit-message-prompt.md in either location** → Read [Template Synchronization](template-synchronization.md) first. Update BOTH copies: .claude/skills/erk-diff-analysis/references/commit-message-prompt.md AND packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md. CI enforces byte-equality.
 
 **investigating an automated reviewer complaint** → Read [Automated Review Handling](automated-review-handling.md) first. Determine if the tool is the authority for that concern. For formatting, prettier is the authority — if prettier passes, dismiss the bot. For type errors, ty is the authority.
@@ -27,6 +29,8 @@ Rules triggered by matching actions in code.
 **manually resolving bot comments on restructured code without checking pre_existing** → Read [Pre-Existing Bot Comment Detection](pre-existing-detection.md) first. Use the pre_existing classification from pr-feedback-classifier. Pre-existing issues in moved code are auto-resolved in Batch 0 with no code changes.
 
 **passing a flat list of thread IDs to resolve-review-threads** → Read [Resolve Review Threads JSON Format](resolve-review-threads-format.md) first. The input must be a list of objects with thread*id and comment fields, not a flat list of strings. Wrong: ["PRRT*..."] → 'Item at index 0 is not an object'. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]
+
+**putting restructuring analysis (renamed files) in the LLM skill** → Read [PR Feedback Classification Architecture](feedback-classification-architecture.md) first. Restructuring detection uses `git diff -M -C` in the CLI stage. The LLM receives a pre-built RestructuredFile list, not raw diff output.
 
 **silently catching exceptions in PR body updates** → Read [Stub PR Workflow Link](stub-pr-workflow-link.md) first. Use best-effort pattern: try/except with logger.warning(), not silent pass. See one_shot_dispatch.py for the canonical example.
 

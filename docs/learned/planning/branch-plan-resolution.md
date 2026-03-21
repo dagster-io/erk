@@ -17,7 +17,7 @@ Given a branch name, resolve which plan it belongs to.
 
 ## Methods
 
-These methods live on `PlannedPRBackend` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`, accessed via the `PlanBackend` interface.
+These methods live on `PlannedPRBackend` in `packages/erk-shared/src/erk_shared/pr_store/planned_pr.py`, accessed via the `PlanBackend` interface.
 
 ### `resolve_plan_id_for_branch()`
 
@@ -43,7 +43,7 @@ Full resolution — resolves branch name to plan via draft PR lookup, then conve
 
 ## Error Types
 
-Defined in `packages/erk-shared/src/erk_shared/plan_store/types.py`:
+Defined in `packages/erk-shared/src/erk_shared/pr_store/types.py`:
 
 - **`PlanNotFound`**: Frozen dataclass with `plan_id: str`. Returned when a plan can't be found — used as a return type, not an exception (per erk convention).
 - **`PlanHeaderNotFoundError`**: Exception inheriting from `RuntimeError`. Raised when a plan exists but has no plan-header metadata block. Distinct from "plan not found."

@@ -46,8 +46,8 @@ Backends abstract over business logic that may have multiple storage or provider
 
 | Place        | Purpose                                          | Example File                       |
 | ------------ | ------------------------------------------------ | ---------------------------------- |
-| `backend.py` | Abstract interface definition                    | `plan_store/backend.py`            |
-| `github.py`  | Provider-specific implementation                 | `plan_store/github.py`             |
+| `backend.py` | Abstract interface definition                    | `pr_store/backend.py`              |
+| `github.py`  | Provider-specific implementation                 | `pr_store/github.py`               |
 | `fake_*.py`  | Fake for testing ABC design (validates contract) | _(add when second backend exists)_ |
 
 **Key characteristics:**
@@ -57,7 +57,7 @@ Backends abstract over business logic that may have multiple storage or provider
 - To test code that uses a backend, inject fake **gateways** into the **real** backend
 - Fake backends exist only to validate the ABC contract works across different providers
 
-**Example:** `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.
+**Example:** `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/pr_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.
 
 **Testing pattern:** See [Backend Testing Composition](../testing/backend-testing-composition.md) for the full pattern (real backend + fake gateways).
 

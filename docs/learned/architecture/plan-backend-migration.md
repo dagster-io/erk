@@ -71,9 +71,9 @@ Some exec scripts still use direct GitHub CLI calls and are candidates for migra
 
 After PR #7350, plan-header YAML is parsed once in `github_issue_to_plan()` and stored in `Plan.header_fields`. Downstream consumers access pre-parsed values via typed helpers:
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/conversion.py, header_str, header_int, header_datetime -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_store/conversion.py, header_str, header_int, header_datetime -->
 
-See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`. These typed accessors replace the old `extract_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.
+See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-shared/src/erk_shared/pr_store/conversion.py`. These typed accessors replace the old `extract_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.
 
 **Key types:**
 
@@ -81,12 +81,12 @@ See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-sha
 - `Plan.metadata: dict[str, object]` — Provider-specific fields. Issue-backed: `{"number", "author"}`. PR-backed: `{"number", "owner", "repo", "author", "is_draft", "pr_state", "base_ref_name"}`
 - `header_str()`, `header_int()`, `header_datetime()` — Typed accessors with isinstance narrowing
 
-**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`
+**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/pr_store/conversion.py`
 
 ## Related Documentation
 
 - [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (4-place)
 - [Backend Testing Composition](../testing/backend-testing-composition.md) - Testing pattern
-- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
+- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/pr_store/backend.py) - Complete method reference
 - [PR Body Assembly](pr-body-assembly.md) - How `assemble_pr_body()` handles existing_pr_body for dual-backend PR body construction
 - [Draft PR Lifecycle](../planning/draft-pr-lifecycle.md) - Lifecycle stages and body format for draft-PR-backed plans
