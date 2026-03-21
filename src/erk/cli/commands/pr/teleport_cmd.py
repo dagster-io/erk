@@ -10,6 +10,7 @@ worktree slot.
 """
 
 from contextlib import nullcontext
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
@@ -32,6 +33,26 @@ from erk.core.worktree_pool import load_pool_state
 from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.github.types import PRNotFound
 from erk_slots.common import find_assignment_by_worktree, update_slot_assignment_tip
+
+
+@dataclass(frozen=True)
+class TeleportPlan:
+    """Describes what a teleport operation will do, without executing it."""
+
+    pr_number: int
+    branch_name: str
+    base_ref_name: str
+    ahead: int
+    behind: int
+    staged: list[str]
+    modified: list[str]
+    untracked: list[str]
+    is_new_slot: bool
+    branch_exists_locally: bool
+    is_graphite_managed: bool
+    trunk: str
+    sync: bool
+    has_slot: bool
 
 
 @click.command("teleport", cls=CommandWithHiddenOptions)
@@ -116,30 +137,37 @@ def pr_teleport(
         branch_name = pr.head_ref_name
         base_ref_name = pr.base_ref_name
 
+        # Build plan (what would happen)
         if new_slot:
-            _teleport_new_slot(
+            teleport_plan = _teleport_new_slot(
                 ctx,
                 repo,
                 pr_number=pr_number,
                 branch_name=branch_name,
                 base_ref_name=base_ref_name,
-                force=force,
                 sync=sync,
-                dry_run=dry_run,
                 script=script,
             )
         else:
-            _teleport_in_place(
+            teleport_plan = _teleport_in_place(
                 ctx,
                 repo,
                 pr_number=pr_number,
                 branch_name=branch_name,
                 base_ref_name=base_ref_name,
-                force=force,
                 sync=sync,
-                dry_run=dry_run,
                 script=script,
             )
+
+        # Decide: display or execute
+        if dry_run:
+            _display_dry_run_report(teleport_plan)
+            raise SystemExit(0)
+
+        if new_slot:
+            _execute_new_slot_teleport(ctx, repo, plan=teleport_plan, force=force, script=script)
+        else:
+            _execute_in_place_teleport(ctx, repo, plan=teleport_plan, force=force, script=script)
 
 
 def _navigate_to_existing_worktree(
@@ -194,12 +222,14 @@ def _teleport_in_place(
     pr_number: int,
     branch_name: str,
     base_ref_name: str,
-    force: bool,
     sync: bool,
-    dry_run: bool,
     script: bool,
-) -> None:
-    """Teleport by force-resetting the current branch to match remote."""
+) -> TeleportPlan:
+    """Build a TeleportPlan for in-place teleport (pre-checks + plan building).
+
+    May exit early via SystemExit(0) if the branch is already in sync or
+    if navigating to an existing worktree.
+    """
     cwd = ctx.cwd
     current_branch = ctx.git.branch.get_current_branch(cwd)
 
@@ -216,7 +246,7 @@ def _teleport_in_place(
     # Fetch latest remote state
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
 
-    # Compute divergence (used by both confirm and dry-run)
+    # Compute divergence
     local_branches = ctx.git.branch.list_local_branches(repo.root)
     branch_exists_locally = branch_name in local_branches
 
@@ -231,44 +261,57 @@ def _teleport_in_place(
             ctx.console.info("Branch is already in sync with remote. Nothing to teleport.")
             raise SystemExit(0)
 
-    if dry_run:
-        staged, modified, untracked = ctx.git.status.get_file_status(cwd)
-        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
-        is_graphite_managed = ctx.branch_manager.is_graphite_managed()
+    # Gather state for plan
+    staged, modified, untracked = ctx.git.status.get_file_status(cwd)
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    is_graphite_managed = ctx.branch_manager.is_graphite_managed()
 
-        # Check slot assignment
-        state = load_pool_state(repo.pool_json_path)
-        has_slot = False
-        if state is not None:
-            has_slot = find_assignment_by_worktree(state, ctx.git, cwd) is not None
+    # Check slot assignment
+    state = load_pool_state(repo.pool_json_path)
+    has_slot = False
+    if state is not None:
+        has_slot = find_assignment_by_worktree(state, ctx.git, cwd) is not None
 
-        _display_dry_run_report(
-            pr_number=pr_number,
-            branch_name=branch_name,
-            base_ref_name=base_ref_name,
-            ahead=ahead,
-            behind=behind,
-            staged=staged,
-            modified=modified,
-            untracked=untracked,
-            is_new_slot=False,
-            branch_exists_locally=branch_exists_locally,
-            is_graphite_managed=is_graphite_managed,
-            trunk=trunk,
-            sync=sync,
-            has_slot=has_slot,
-        )
-        raise SystemExit(0)
+    return TeleportPlan(
+        pr_number=pr_number,
+        branch_name=branch_name,
+        base_ref_name=base_ref_name,
+        ahead=ahead,
+        behind=behind,
+        staged=staged,
+        modified=modified,
+        untracked=untracked,
+        is_new_slot=False,
+        branch_exists_locally=branch_exists_locally,
+        is_graphite_managed=is_graphite_managed,
+        trunk=trunk,
+        sync=sync,
+        has_slot=has_slot,
+    )
+
+
+def _execute_in_place_teleport(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    plan: TeleportPlan,
+    force: bool,
+    script: bool,
+) -> None:
+    """Execute the mutations for an in-place teleport."""
+    cwd = ctx.cwd
 
     # Show divergence info and confirm (only if the branch already exists locally)
-    if branch_exists_locally and not force:
-        _confirm_overwrite(ctx, cwd=cwd, branch_name=branch_name)
+    if plan.branch_exists_locally and not force:
+        _confirm_overwrite(ctx, cwd=cwd, branch_name=plan.branch_name)
 
     # Force-reset local branch to match remote
-    ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+    ctx.git.branch.create_branch(
+        repo.root, plan.branch_name, f"origin/{plan.branch_name}", force=True
+    )
 
     # Reset working tree to match the new branch head
-    ctx.git.branch.checkout_branch(cwd, branch_name)
+    ctx.git.branch.checkout_branch(cwd, plan.branch_name)
 
     # Slot awareness: update assignment if in a managed slot (matches erk slot co)
     state = load_pool_state(repo.pool_json_path)
@@ -279,30 +322,34 @@ def _teleport_in_place(
                 repo.pool_json_path,
                 state,
                 current_assignment,
-                branch_name=branch_name,
+                branch_name=plan.branch_name,
                 now=ctx.time.now().isoformat(),
             )
 
     # Register with Graphite (track/retrack for all PRs, fetch base for stacked)
-    _register_with_graphite(ctx, repo, branch_name=branch_name, base_ref_name=base_ref_name)
+    _register_with_graphite(
+        ctx, repo, branch_name=plan.branch_name, base_ref_name=plan.base_ref_name
+    )
 
-    post_cd_commands = ["gt submit --no-interactive"] if sync else None
+    post_cd_commands = ["gt submit --no-interactive"] if plan.sync else None
 
     navigate_and_display_checkout(
         ctx,
         worktree_path=cwd,
-        branch_name=branch_name,
+        branch_name=plan.branch_name,
         script=script,
         command_name="pr-teleport",
         already_existed=False,
         existing_message="",
         new_message=(
             click.style("Teleported ", fg="green")
-            + click.style(branch_name, fg="cyan", bold=True)
-            + click.style(f" to match remote (PR #{pr_number})", fg="green")
+            + click.style(plan.branch_name, fg="cyan", bold=True)
+            + click.style(f" to match remote (PR #{plan.pr_number})", fg="green")
         ),
         script_message_existing="",
-        script_message_new=f'echo "Teleported {branch_name} to match remote (PR #{pr_number})"',
+        script_message_new=(
+            f'echo "Teleported {plan.branch_name} to match remote (PR #{plan.pr_number})"'
+        ),
         post_cd_commands=post_cd_commands,
     )
 
@@ -314,12 +361,13 @@ def _teleport_new_slot(
     pr_number: int,
     branch_name: str,
     base_ref_name: str,
-    force: bool,
     sync: bool,
-    dry_run: bool,
     script: bool,
-) -> None:
-    """Teleport into a new worktree slot, force-updating the branch."""
+) -> TeleportPlan:
+    """Build a TeleportPlan for new-slot teleport (pre-checks + plan building).
+
+    May exit early via SystemExit(0) if navigating to an existing worktree.
+    """
     # Check if branch already has a worktree — navigate to it instead of erroring
     _navigate_to_existing_worktree(
         ctx,
@@ -329,62 +377,72 @@ def _teleport_new_slot(
         script=script,
     )
 
-    if dry_run:
-        # Fetch to know remote state (read-only network call)
-        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+    # Gather state for plan (no fetch needed — execution handles that)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    branch_exists_locally = branch_name in local_branches
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    is_graphite_managed = ctx.branch_manager.is_graphite_managed()
 
-        local_branches = ctx.git.branch.list_local_branches(repo.root)
-        branch_exists_locally = branch_name in local_branches
-        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
-        is_graphite_managed = ctx.branch_manager.is_graphite_managed()
+    return TeleportPlan(
+        pr_number=pr_number,
+        branch_name=branch_name,
+        base_ref_name=base_ref_name,
+        ahead=0,
+        behind=0,
+        staged=[],
+        modified=[],
+        untracked=[],
+        is_new_slot=True,
+        branch_exists_locally=branch_exists_locally,
+        is_graphite_managed=is_graphite_managed,
+        trunk=trunk,
+        sync=sync,
+        has_slot=False,
+    )
 
-        _display_dry_run_report(
-            pr_number=pr_number,
-            branch_name=branch_name,
-            base_ref_name=base_ref_name,
-            ahead=0,
-            behind=0,
-            staged=[],
-            modified=[],
-            untracked=[],
-            is_new_slot=True,
-            branch_exists_locally=branch_exists_locally,
-            is_graphite_managed=is_graphite_managed,
-            trunk=trunk,
-            sync=sync,
-            has_slot=False,
-        )
-        raise SystemExit(0)
 
+def _execute_new_slot_teleport(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    plan: TeleportPlan,
+    force: bool,
+    script: bool,
+) -> None:
+    """Execute the mutations for a new-slot teleport."""
     # Fetch and force-update local branch to match remote
-    _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
+    _fetch_and_update_branch(ctx, repo, branch_name=plan.branch_name, pr_number=plan.pr_number)
 
     # Register with Graphite (track/retrack for all PRs, fetch base for stacked)
-    _register_with_graphite(ctx, repo, branch_name=branch_name, base_ref_name=base_ref_name)
+    _register_with_graphite(
+        ctx, repo, branch_name=plan.branch_name, base_ref_name=plan.base_ref_name
+    )
 
     # Create worktree slot
     worktree_path, _already_existed = ensure_branch_has_worktree(
-        ctx, repo, branch_name=branch_name, no_slot=False, force=force
+        ctx, repo, branch_name=plan.branch_name, no_slot=False, force=force
     )
 
-    post_cd_commands = ["gt submit --no-interactive"] if sync else None
+    post_cd_commands = ["gt submit --no-interactive"] if plan.sync else None
 
     navigate_and_display_checkout(
         ctx,
         worktree_path=worktree_path,
-        branch_name=branch_name,
+        branch_name=plan.branch_name,
         script=script,
         command_name="pr-teleport",
         already_existed=False,
         existing_message="",
         new_message=(
             click.style("Teleported ", fg="green")
-            + click.style(branch_name, fg="cyan", bold=True)
-            + click.style(f" (PR #{pr_number}) into ", fg="green")
+            + click.style(plan.branch_name, fg="cyan", bold=True)
+            + click.style(f" (PR #{plan.pr_number}) into ", fg="green")
             + "{styled_path}"
         ),
         script_message_existing="",
-        script_message_new=f'echo "Teleported {branch_name} (PR #{pr_number}) at $(pwd)"',
+        script_message_new=(
+            f'echo "Teleported {plan.branch_name} (PR #{plan.pr_number}) at $(pwd)"'
+        ),
         post_cd_commands=post_cd_commands,
     )
 
@@ -404,62 +462,46 @@ def _teleport_new_slot(
         )
 
 
-def _display_dry_run_report(
-    *,
-    pr_number: int,
-    branch_name: str,
-    base_ref_name: str,
-    ahead: int,
-    behind: int,
-    staged: list[str],
-    modified: list[str],
-    untracked: list[str],
-    is_new_slot: bool,
-    branch_exists_locally: bool,
-    is_graphite_managed: bool,
-    trunk: str,
-    sync: bool,
-    has_slot: bool,
-) -> None:
+def _display_dry_run_report(plan: TeleportPlan) -> None:
     """Display a dry-run report showing what teleport would do."""
-    click.echo(f"\nDry run: erk pr teleport {pr_number}")
+    click.echo(f"\nDry run: erk pr teleport {plan.pr_number}")
 
     # Local state section (only for in-place when there's something to report)
-    has_local_state = ahead > 0 or len(staged) > 0 or len(modified) > 0 or len(untracked) > 0
+    has_local_state = plan.ahead > 0 or plan.staged or plan.modified or plan.untracked
     if has_local_state:
         click.echo(click.style("\n  Local state that would be discarded:", bold=True))
-        if ahead > 0:
-            msg = f"    {ahead} local commit(s) ahead of remote (would be lost)"
+        if plan.ahead > 0:
+            msg = f"    {plan.ahead} local commit(s) ahead of remote (would be lost)"
             click.echo(click.style(msg, fg="yellow"))
-        if len(staged) > 0:
-            file_list = ", ".join(staged[:5])
-            suffix = f" (+{len(staged) - 5} more)" if len(staged) > 5 else ""
-            click.echo(f"    {len(staged)} staged file(s): {file_list}{suffix}")
-        if len(modified) > 0:
-            file_list = ", ".join(modified[:5])
-            suffix = f" (+{len(modified) - 5} more)" if len(modified) > 5 else ""
-            click.echo(f"    {len(modified)} modified file(s): {file_list}{suffix}")
-        if len(untracked) > 0:
-            click.echo(f"    {len(untracked)} untracked file(s)")
+        if plan.staged:
+            file_list = ", ".join(plan.staged[:5])
+            suffix = f" (+{len(plan.staged) - 5} more)" if len(plan.staged) > 5 else ""
+            click.echo(f"    {len(plan.staged)} staged file(s): {file_list}{suffix}")
+        if plan.modified:
+            file_list = ", ".join(plan.modified[:5])
+            suffix = f" (+{len(plan.modified) - 5} more)" if len(plan.modified) > 5 else ""
+            click.echo(f"    {len(plan.modified)} modified file(s): {file_list}{suffix}")
+        if plan.untracked:
+            click.echo(f"    {len(plan.untracked)} untracked file(s)")
 
     # Operations section
     click.echo(click.style("\n  Operations:", bold=True))
-    click.echo(f"    Would fetch origin/{branch_name}")
+    click.echo(f"    Would fetch origin/{plan.branch_name}")
 
-    if is_new_slot:
+    if plan.is_new_slot:
         click.echo("    Would create new worktree slot")
     else:
-        click.echo(f"    Would force-reset '{branch_name}' to match remote")
-        click.echo(f"    Would checkout '{branch_name}'")
-        if has_slot:
+        click.echo(f"    Would force-reset '{plan.branch_name}' to match remote")
+        click.echo(f"    Would checkout '{plan.branch_name}'")
+        if plan.has_slot:
             click.echo("    Would update slot assignment")
 
-    if is_graphite_managed:
-        if base_ref_name != trunk:
-            click.echo(f"    Would fetch base branch '{base_ref_name}'")
-        click.echo(f"    Would track branch with Graphite (base: {base_ref_name})")
+    if plan.is_graphite_managed:
+        if plan.base_ref_name != plan.trunk:
+            click.echo(f"    Would fetch base branch '{plan.base_ref_name}'")
+        click.echo(f"    Would track branch with Graphite (base: {plan.base_ref_name})")
 
-    if sync:
+    if plan.sync:
         click.echo("    Would run gt submit --no-interactive")
 
     click.echo(click.style("\n[DRY RUN] No changes made", fg="yellow"))
