@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "pr_number": 9314,
+  "sessions": [
+    {
+      "session_id": "b3a6c5a2-eece-47bf-a6db-6b2b59902d86",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T00:23:51.428148+00:00",
+      "files": [
+        "impl-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-part1.xml",
+        "impl-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-part2.xml",
+        "impl-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-part3.xml",
+        "impl-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-b3a6c5a2-eece-47bf-a6db-6b2b59902d86-part4.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 12,
+      "raw_size_kb": 960,
+      "xml_size_kb": 125,
+      "git_branch": "plnd/standardize-planned-pr-cop-03-20-2010"
+    }
+  ]
+}
