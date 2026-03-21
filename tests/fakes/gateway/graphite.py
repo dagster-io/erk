@@ -15,7 +15,11 @@ if TYPE_CHECKING:
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import (
+    BranchMetadata,
+    SubmitStackOutcome,
+    SubmitStackResult,
+)
 
 
 class FakeGraphite(Graphite):
@@ -32,7 +36,7 @@ class FakeGraphite(Graphite):
         track_branch_raises: Exception | None = None,
         retrack_branch_raises: Exception | None = None,
         squash_branch_raises: Exception | None = None,
-        submit_stack_raises: Exception | None = None,
+        submit_stack_result: SubmitStackOutcome | None = None,
         delete_branch_raises: Exception | None = None,
         restack_result: tuple[bool, str | None] = (True, None),
         pr_info: dict[str, PullRequestInfo] | None = None,
@@ -49,7 +53,8 @@ class FakeGraphite(Graphite):
             track_branch_raises: Exception to raise when track_branch() is called
             retrack_branch_raises: Exception to raise when retrack_branch() is called
             squash_branch_raises: Exception to raise when squash_branch() is called
-            submit_stack_raises: Exception to raise when submit_stack() is called
+            submit_stack_result: Result to return when submit_stack() is called
+                (defaults to SubmitStackResult() on success)
             delete_branch_raises: Exception to raise when delete_branch() is called
             pr_info: Mapping of branch name -> PullRequestInfo for get_prs_from_graphite()
             branches: Mapping of branch name -> BranchMetadata for get_all_branches()
@@ -62,7 +67,9 @@ class FakeGraphite(Graphite):
         self._track_branch_raises = track_branch_raises
         self._retrack_branch_raises = retrack_branch_raises
         self._squash_branch_raises = squash_branch_raises
-        self._submit_stack_raises = submit_stack_raises
+        self._submit_stack_result: SubmitStackOutcome = (
+            submit_stack_result if submit_stack_result is not None else SubmitStackResult()
+        )
         self._delete_branch_raises = delete_branch_raises
         self._restack_result = restack_result
         self._restack_calls: list[Path] = []
@@ -210,11 +217,10 @@ class FakeGraphite(Graphite):
         restack: bool,
         quiet: bool,
         force: bool,
-    ) -> None:
-        """Track submit_stack calls and optionally raise."""
+    ) -> SubmitStackOutcome:
+        """Track submit_stack calls and return configured result."""
         self._submit_stack_calls.append((repo_root, publish, restack, quiet, force))
-        if self._submit_stack_raises is not None:
-            raise self._submit_stack_raises
+        return self._submit_stack_result
 
     @property
     def squash_branch_calls(self) -> list[tuple[Path, bool]]:

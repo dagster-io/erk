@@ -8,7 +8,11 @@ from erk.cli.commands.pr.submit_pipeline import (
     enhance_with_graphite,
 )
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import (
+    BranchMetadata,
+    SubmitStackError,
+    SubmitStackNothingToSubmit,
+)
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.test_context import context_for_test
@@ -137,7 +141,7 @@ def test_skips_when_branch_not_tracked(tmp_path: Path) -> None:
 
 
 def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -> None:
-    """Non-benign RuntimeError from submit_stack => SubmitError."""
+    """SubmitStackError from submit_stack => SubmitError."""
     fake_graphite = FakeGraphite(
         branches={
             "feature": BranchMetadata(
@@ -148,7 +152,7 @@ def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -> No
                 commit_sha="abc123",
             )
         },
-        submit_stack_raises=RuntimeError("network timeout"),
+        submit_stack_result=SubmitStackError(message="network timeout"),
     )
     fake_git = FakeGit(repository_roots={tmp_path: tmp_path})
     ctx = context_for_test(
@@ -211,7 +215,7 @@ def test_benign_nothing_to_submit_returns_state(tmp_path: Path) -> None:
                 commit_sha="abc123",
             )
         },
-        submit_stack_raises=RuntimeError("nothing to submit"),
+        submit_stack_result=SubmitStackNothingToSubmit(),
     )
     fake_git = FakeGit(repository_roots={tmp_path: tmp_path})
     ctx = context_for_test(

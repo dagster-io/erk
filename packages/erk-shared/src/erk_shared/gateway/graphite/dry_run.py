@@ -5,7 +5,7 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import BranchMetadata, SubmitStackOutcome, SubmitStackResult
 
 
 class DryRunGraphite(Graphite):
@@ -66,9 +66,9 @@ class DryRunGraphite(Graphite):
         restack: bool,
         quiet: bool,
         force: bool,
-    ) -> None:
+    ) -> SubmitStackOutcome:
         """No-op for gt submit in dry-run mode."""
-        pass
+        return SubmitStackResult()
 
     def restack(self, repo_root: Path) -> tuple[bool, str | None]:
         """No-op for gt restack in dry-run mode."""

@@ -13,6 +13,7 @@ from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+from erk_shared.gateway.graphite.types import SubmitStackNothingToSubmit, SubmitStackResult
 
 
 @dataclass(frozen=True)
@@ -181,14 +182,14 @@ class GraphiteBranchManager(BranchManager):
         Returns:
             SubmitBranchResult on success, SubmitBranchError on failure.
         """
-        # submit_stack is a subprocess call (gt submit) — no LBYL alternative exists
-        try:
-            self.graphite.submit_stack(
-                repo_root, publish=False, restack=False, quiet=True, force=True
-            )
-        except RuntimeError as e:
-            return SubmitBranchError(message=str(e))
-        return SubmitBranchResult()
+        result = self.graphite.submit_stack(
+            repo_root, publish=False, restack=False, quiet=True, force=True
+        )
+        if isinstance(result, SubmitStackResult):
+            return SubmitBranchResult()
+        if isinstance(result, SubmitStackNothingToSubmit):
+            return SubmitBranchError(message="Nothing to submit")
+        return SubmitBranchError(message=result.message)
 
     def commit(self, repo_root: Path, message: str) -> None:
         """Create a commit using git.

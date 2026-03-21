@@ -25,7 +25,11 @@ from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import (
+    BranchMetadata,
+    SubmitStackError,
+    SubmitStackNothingToSubmit,
+)
 from erk_shared.gateway.time.abc import Time
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -522,13 +526,12 @@ class FakeGtKitOps:
         Returns:
             Self for chaining
         """
-        # Configure main_graphite to raise RuntimeError for submit_stack
+        # Configure main_graphite to return SubmitStackError for submit_stack
         existing_branches: dict[str, BranchMetadata] = {}
         if isinstance(self._main_graphite, FakeGraphite):
             existing_branches = self._main_graphite._branches
-        error = RuntimeError(f"gt submit failed: {stderr}")
         self._main_graphite = FakeGraphite(
-            submit_stack_raises=error,
+            submit_stack_result=SubmitStackError(message=f"gt submit failed: {stderr}"),
             branches=existing_branches,
         )
         return self
@@ -626,18 +629,12 @@ class FakeGtKitOps:
         Returns:
             Self for chaining
         """
-        # Configure main_graphite to raise RuntimeError with nothing submitted message
+        # Configure main_graphite to return SubmitStackNothingToSubmit
         existing_branches: dict[str, BranchMetadata] = {}
         if isinstance(self._main_graphite, FakeGraphite):
             existing_branches = self._main_graphite._branches
-        error = RuntimeError(
-            "gt submit failed: WARNING: This branch does not introduce any changes:\n"
-            "▸ stale-parent-branch\n"
-            "WARNING: This branch and any dependent branches will not be submitted.\n"
-            "Nothing to submit!"
-        )
         self._main_graphite = FakeGraphite(
-            submit_stack_raises=error,
+            submit_stack_result=SubmitStackNothingToSubmit(),
             branches=existing_branches,
         )
         return self

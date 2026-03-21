@@ -12,7 +12,7 @@ from pathlib import Path
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import BranchMetadata, SubmitStackError, SubmitStackOutcome
 
 
 class GraphiteDisabledReason(Enum):
@@ -89,9 +89,10 @@ class GraphiteDisabled(Graphite):
         restack: bool,
         quiet: bool,
         force: bool,
-    ) -> None:
-        """Raise error - submit_stack is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)
+    ) -> SubmitStackOutcome:
+        """Return error - submit_stack is a mutating operation."""
+        error = GraphiteDisabledError(self.reason)
+        return SubmitStackError(message=str(error))
 
     def restack(self, repo_root: Path) -> tuple[bool, str | None]:
         """Raise error - restack is a mutating operation."""

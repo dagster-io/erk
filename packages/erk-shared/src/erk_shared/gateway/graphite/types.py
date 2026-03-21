@@ -5,6 +5,45 @@ from __future__ import annotations
 import secrets
 from dataclasses import dataclass
 
+from erk_shared.non_ideal_state import EnsurableResult, NonIdealStateMixin
+
+
+@dataclass(frozen=True)
+class SubmitStackResult(EnsurableResult):
+    """Stack submitted successfully."""
+
+
+@dataclass(frozen=True)
+class SubmitStackNothingToSubmit:
+    """Benign: stack had no changes to submit. Callers may treat as success."""
+
+
+@dataclass(frozen=True)
+class SubmitStackRestackRequired(NonIdealStateMixin):
+    """Stack has conflicts requiring manual restack before submit."""
+
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "restack-required"
+
+
+@dataclass(frozen=True)
+class SubmitStackError(NonIdealStateMixin):
+    """Generic submit_stack failure (timeout, exit code, etc.)."""
+
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "submit-failed"
+
+
+SubmitStackOutcome = (
+    SubmitStackResult | SubmitStackNothingToSubmit | SubmitStackRestackRequired | SubmitStackError
+)
+
 
 @dataclass(frozen=True)
 class BranchMetadata:

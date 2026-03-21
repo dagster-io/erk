@@ -15,6 +15,7 @@ from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabledError,
     GraphiteDisabledReason,
 )
+from erk_shared.gateway.graphite.types import SubmitStackError
 from tests.fakes.gateway.git import FakeGit
 
 
@@ -133,12 +134,14 @@ def test_squash_branch_raises_error(tmp_path: Path) -> None:
         sentinel.squash_branch(tmp_path, quiet=False)
 
 
-def test_submit_stack_raises_error(tmp_path: Path) -> None:
-    """submit_stack raises GraphiteDisabledError."""
+def test_submit_stack_returns_error(tmp_path: Path) -> None:
+    """submit_stack returns SubmitStackError when disabled."""
     sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
 
-    with pytest.raises(GraphiteDisabledError):
-        sentinel.submit_stack(tmp_path, publish=False, restack=False, quiet=False, force=False)
+    result = sentinel.submit_stack(tmp_path, publish=False, restack=False, quiet=False, force=False)
+
+    assert isinstance(result, SubmitStackError)
+    assert "requires Graphite to be enabled" in result.message
 
 
 # Error message differences

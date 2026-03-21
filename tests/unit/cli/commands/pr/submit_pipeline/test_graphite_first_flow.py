@@ -10,6 +10,7 @@ from erk.cli.commands.pr.submit_pipeline import (
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.graphite.types import SubmitStackError, SubmitStackRestackRequired
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.graphite import FakeGraphite
@@ -89,9 +90,9 @@ def _pr_details(
 
 
 def test_submit_failure_returns_error(tmp_path: Path) -> None:
-    """SubmitError(error_type='graphite_submit_failed') on RuntimeError."""
+    """SubmitError(error_type='graphite_submit_failed') on SubmitStackError."""
     fake_graphite = FakeGraphite(
-        submit_stack_raises=RuntimeError("gt submit failed"),
+        submit_stack_result=SubmitStackError(message="gt submit failed"),
     )
     global_config = GlobalConfig(
         erk_root=Path("/test/erks"),
@@ -115,8 +116,8 @@ def test_submit_failure_returns_error(tmp_path: Path) -> None:
 def test_restack_error_returns_actionable_message(tmp_path: Path) -> None:
     """SubmitError(error_type='graphite_restack_required') when restack needed."""
     fake_graphite = FakeGraphite(
-        submit_stack_raises=RuntimeError(
-            "gt submit failed (exit code 1): "
+        submit_stack_result=SubmitStackRestackRequired(
+            message="gt submit failed (exit code 1): "
             "ERROR: You must restack and resolve conflicts with gt restack before submitting."
         ),
     )

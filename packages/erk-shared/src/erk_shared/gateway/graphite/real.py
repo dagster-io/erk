@@ -14,7 +14,14 @@ from erk_shared.gateway.graphite.parsing import (
     parse_graphite_pr_info,
     read_graphite_json_file,
 )
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import (
+    BranchMetadata,
+    SubmitStackError,
+    SubmitStackNothingToSubmit,
+    SubmitStackOutcome,
+    SubmitStackRestackRequired,
+    SubmitStackResult,
+)
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -229,7 +236,7 @@ class RealGraphite(Graphite):
         restack: bool,
         quiet: bool,
         force: bool,
-    ) -> None:
+    ) -> SubmitStackOutcome:
         """Submit the current stack to create or update PRs."""
         cmd = ["gt", "submit", "--no-edit", "--no-interactive"]
 
@@ -261,18 +268,27 @@ class RealGraphite(Graphite):
             if not quiet and e.stdout:
                 stdout = e.stdout if isinstance(e.stdout, str) else e.stdout.decode()
                 user_output(stdout, nl=False)
-            raise RuntimeError(
-                "gt submit timed out after 90 seconds. Check network connectivity and try again."
-            ) from e
+            return SubmitStackError(
+                message="gt submit timed out after 90 seconds. "
+                "Check network connectivity and try again."
+            )
         except subprocess.CalledProcessError as e:
             if not quiet and e.stdout:
                 user_output(e.stdout, nl=False)
-            raise RuntimeError(
-                f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
-            ) from e
+            stderr_lower = (e.stderr or "").lower()
+            if "restack" in stderr_lower:
+                return SubmitStackRestackRequired(
+                    message=f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
+                )
+            if "nothing to submit" in stderr_lower or "no changes" in stderr_lower:
+                return SubmitStackNothingToSubmit()
+            return SubmitStackError(
+                message=f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
+            )
 
         # Invalidate branches cache - gt submit modifies Graphite metadata
         self._branches_cache = None
+        return SubmitStackResult()
 
     def restack(self, repo_root: Path) -> tuple[bool, str | None]:
         """Restack the current stack using gt restack."""

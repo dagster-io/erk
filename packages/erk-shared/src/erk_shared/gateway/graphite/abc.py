@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
-from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.graphite.types import BranchMetadata, SubmitStackOutcome
 
 if TYPE_CHECKING:
     from erk_shared.gateway.gt.types import (
@@ -141,7 +141,7 @@ class Graphite(ABC):
         restack: bool,
         quiet: bool,
         force: bool,
-    ) -> None:
+    ) -> SubmitStackOutcome:
         """Submit the current stack to create or update PRs.
 
         Uses `gt submit` to push branches and create/update GitHub PRs.
@@ -155,8 +155,11 @@ class Graphite(ABC):
             quiet: If True, suppress output
             force: If True, force push (useful after squashing commits)
 
-        Raises:
-            RuntimeError: If gt submit fails or times out
+        Returns:
+            SubmitStackResult on success,
+            SubmitStackNothingToSubmit if there was nothing to submit,
+            SubmitStackRestackRequired if restack is needed before submitting,
+            SubmitStackError on other failures.
         """
         ...
 

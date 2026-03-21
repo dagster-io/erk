@@ -49,6 +49,11 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
+from erk_shared.gateway.graphite.types import (
+    SubmitStackError,
+    SubmitStackNothingToSubmit,
+    SubmitStackRestackRequired,
+)
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.prompts import truncate_diff
 from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
@@ -320,32 +325,37 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     if not state.quiet:
         click.echo(click.style("   Running gt submit...", dim=True))
     sys.stdout.flush()
-    try:
-        ctx.graphite.submit_stack(
-            state.repo_root,
-            publish=True,
-            restack=False,
-            quiet=state.quiet,
-            force=effective_force,
+    submit_result = ctx.graphite.submit_stack(
+        state.repo_root,
+        publish=True,
+        restack=False,
+        quiet=state.quiet,
+        force=effective_force,
+    )
+    if isinstance(submit_result, SubmitStackRestackRequired):
+        return SubmitError(
+            phase="push_and_create_pr",
+            error_type="graphite_restack_required",
+            message=(
+                "Your Graphite stack has conflicts that need manual resolution.\n\n"
+                "Run these commands:\n"
+                "  gt restack        # Resolve conflicts interactively\n"
+                "  erk pr submit     # Re-submit after resolving"
+            ),
+            details={},
         )
-    except RuntimeError as e:
-        error_str = str(e)
-        if "restack" in error_str.lower():
-            return SubmitError(
-                phase="push_and_create_pr",
-                error_type="graphite_restack_required",
-                message=(
-                    "Your Graphite stack has conflicts that need manual resolution.\n\n"
-                    "Run these commands:\n"
-                    "  gt restack        # Resolve conflicts interactively\n"
-                    "  erk pr submit     # Re-submit after resolving"
-                ),
-                details={},
-            )
+    if isinstance(submit_result, SubmitStackNothingToSubmit):
         return SubmitError(
             phase="push_and_create_pr",
             error_type="graphite_submit_failed",
-            message=f"Graphite submit failed: {e}",
+            message="Graphite submit failed: Nothing to submit",
+            details={},
+        )
+    if isinstance(submit_result, SubmitStackError):
+        return SubmitError(
+            phase="push_and_create_pr",
+            error_type="graphite_submit_failed",
+            message=f"Graphite submit failed: {submit_result.message}",
             details={},
         )
     if not state.quiet:
@@ -753,24 +763,22 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
 
     # Run gt submit
     sys.stdout.flush()
-    try:
-        ctx.graphite.submit_stack(
-            repo_root,
-            publish=True,
-            restack=False,
-            quiet=state.quiet,
-            force=state.force,
-        )
-    except RuntimeError as e:
-        error_msg = str(e).lower()
-        if "nothing to submit" in error_msg or "no changes" in error_msg:
-            click.echo(click.style("   PR already up to date with Graphite", fg="green"))
-            click.echo("")
-            return state
+    enhance_result = ctx.graphite.submit_stack(
+        repo_root,
+        publish=True,
+        restack=False,
+        quiet=state.quiet,
+        force=state.force,
+    )
+    if isinstance(enhance_result, SubmitStackNothingToSubmit):
+        click.echo(click.style("   PR already up to date with Graphite", fg="green"))
+        click.echo("")
+        return state
+    if isinstance(enhance_result, (SubmitStackRestackRequired, SubmitStackError)):
         return SubmitError(
             phase="enhance_with_graphite",
             error_type="graphite_enhance_failed",
-            message=f"Graphite enhancement failed: {e}",
+            message=f"Graphite enhancement failed: {enhance_result.message}",
             details={},
         )
 
