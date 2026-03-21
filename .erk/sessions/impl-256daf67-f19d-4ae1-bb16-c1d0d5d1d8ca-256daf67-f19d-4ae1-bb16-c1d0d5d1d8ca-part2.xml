@@ -1,0 +1,1009 @@
+<session>
+  <meta branch="plnd/introduce-plan-header-data-03-21-0826" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Now rewrite `create_plan_header_block` body to use `PlanHeaderData`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3069" cache_read_input_tokens="90049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3069}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YanSEpHdSbEAtmMiNa3XSc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">96</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3069" cache_read_input_tokens="90049" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3069, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YanSEpHdSbEAtmMiNa3XSc">
+    96→
+    97→def create_plan_header_block(
+    98→    *,
+    99→    created_at: str,
+   100→    created_by: str,
+   101→    worktree_name: str | None,
+   102→    branch_name: str | None,
+   103→    plan_comment_id: int | None,
+   104→    last_dispatched_run_id: str | None,
+   105→    last_dispatched_node_id: str | None,
+   106→    last_dispatched_at: str | None,
+   107→    last_local_impl_at: str | None,
+   108→    last_local_impl_event: str | None,
+   109→    last_local_impl_session: str | None,
+   110→    last_local_impl_user: str | None,
+   111→    last_remote_impl_at: str | None,
+   112→    last_remote_impl_run_id: str | None,
+   113→    last_remote_impl_session_id: str | None,
+   114→    source_repo: str | None,
+   115→    objective_issue: int | None,
+   116→    node_ids: list[str] | None,
+   117→    created_from_session: str | None,
+   118→    created_from_workflow_run_url: str | None,
+   119→    last_learn_session: str | None,
+   120→    last_learn_at: str | None,
+   121→    learn_status: LearnStatusValue | None,
+   122→    learn_plan_issue: int | None,
+   123→    learn_plan_pr: int | None,
+   124→    learned_from_issue: int | None,
+   125→    lifecycle_stage: str | None,
+
+... [120 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01E3HFiYHf3jfT1J6gtJKYtg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">    Returns:
+        MetadataBlock with plan-header schema
+    """
+    schema = PlanHeader...[truncated 2534 chars]...adata_block(
+        key=schema.get_key(),
+        data=data,
+        schema=schema,
+    )</param>
+    <param name="new_string">    Returns:
+        MetadataBlock with plan-header schema
+    """
+    from erk_shared.gat...[truncated 1283 chars]...ssue,
+        lifecycle_stage=lifecycle_stage,
+    )
+    return header.to_metadata_block()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2389" cache_read_input_tokens="93118" output_tokens="1501" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E3HFiYHf3jfT1J6gtJKYtg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01A5up3dQYpYjHzPnHonB5Aw">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1590" cache_read_input_tokens="95507" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1590}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A5up3dQYpYjHzPnHonB5Aw">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01LjYLabWAbP6uCG7khsW2kX">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1590" cache_read_input_tokens="95507" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1590}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LjYLabWAbP6uCG7khsW2kX">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016UU3JroYDnueZ7HTUNwbU6">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1590" cache_read_input_tokens="95507" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1590, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016UU3JroYDnueZ7HTUNwbU6">
+Updated task #4 status
+  </tool_result>
+  <assistant>Now rewrite all the update functions. Let me re-read the current state of the file to get accurate line numbers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="97097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 281}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YD8GmKPRXL2X3wUTZPJYHV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">330</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="97097" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 281, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YD8GmKPRXL2X3wUTZPJYHV">
+   330→            # Extract content from &lt;details&gt; structure
+   331→            # The plan-body block uses &lt;strong&gt; tags in summary (not &lt;code&gt;)
+   332→            # Accept both &lt;details&gt; and &lt;details open&gt;
+   333→            pattern = r"&lt;details(?:\s+open)?&gt;\s*&lt;summary&gt;.*?&lt;/summary&gt;\s*(.*?)\s*&lt;/details&gt;"
+   334→            match = re.search(pattern, block.body, re.DOTALL)
+   335→            if match:
+   336→                return match.group(1).strip()
+   337→
+   338→    # Fall back to old format (backward compatibility)
+   339→    pattern = r"&lt;!-- erk:plan-content --&gt;\s*(.*?)\s*&lt;!-- /erk:plan-content --&gt;"
+   340→    match = re.search(pattern, comment_body, re.DOTALL)
+   341→
+   342→    if match is None:
+   343→        return None
+   344→
+   345→    return match.group(1).strip()
+   346→
+   347→
+   348→def update_plan_header_dispatch(
+   349→    issue_body: str,
+   350→    run_id: str,
+   351→    node_id: str,
+   352→    dispatched_at: str,
+   353→) -&gt; str:
+   354→    """Update dispatch fields in plan-header metadata block.
+   355→
+   356→    Uses Python YAML parsing for robustness (not regex).
+   357→    This function reads the existing plan-header block, updates the
+   358→    dispatch fields, and re-renders the entire body.
+   359→
+
+... [90 lines omitted] ...
+
+   370→        ValueError: If plan-header block not found or invalid
+   375→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <assistant>Now I'll rewrite all the update functions. Let me do them in batches:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1724" cache_read_input_tokens="97378" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1724}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011v848KRswzFvTFVWuA2fPn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_dispatch(
+    issue_body: str,
+    run_id: str,
+    node_id: str,
+ ...[truncated 1357 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_dispatch(
+    issue_body: str,
+    run_id: str,
+    node_id: str,
+ ...[truncated 582 chars]...SPATCHED_NODE_ID: node_id,
+            LAST_DISPATCHED_AT: dispatched_at,
+        },
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1724" cache_read_input_tokens="97378" output_tokens="863" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1724, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011v848KRswzFvTFVWuA2fPn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Gkz9R5G6gpWqg6HmZ8how2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">449</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="99102" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 933, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gkz9R5G6gpWqg6HmZ8how2">
+   449→def update_plan_header_objective_issue(
+   450→    issue_body: str,
+   451→    objective_issue: int,
+   452→) -&gt; str:
+   453→    """Update objective_issue field in plan-header metadata block.
+   454→
+   455→    Used to set or update the backlink from a plan PR to its parent objective.
+   456→
+   457→    Args:
+   458→        issue_body: Current issue body containing plan-header block
+   459→        objective_issue: Parent objective issue number
+   460→
+   461→    Returns:
+   462→        Updated issue body with new objective_issue field
+   463→
+   464→    Raises:
+   465→        ValueError: If plan-header block not found or invalid
+   466→    """
+   467→    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+   468→    if block is None:
+   469→        raise ValueError("plan-header block not found in issue body")
+   470→
+   471→    updated_data = dict(block.data)
+   472→    updated_data[OBJECTIVE_ISSUE] = objective_issue
+   473→
+   474→    schema = PlanHeaderSchema()
+   475→    schema.validate(updated_data)
+   476→
+   477→    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
+   478→    new_block_content = render_metadata_block(new_block)
+
+... [120 lines omitted] ...
+
+   501→        ValueError: If plan-header block not found or invalid
+   506→        raise ValueError("plan-header block not found in issue body")
+   542→        ValueError: If plan-header block not found or invalid
+   547→        raise ValueError("plan-header block not found in issue body")
+   583→        ValueError: If plan-header block not found or invalid
+   588→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FgQXQhwf4G7aa1PpYiEHSw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_objective_issue(
+    issue_body: str,
+    objective_issue: int,
+) -...[truncated 878 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_objective_issue(
+    issue_body: str,
+    objective_issue: int,
+) -...[truncated 333 chars]...d
+    """
+    return _update_plan_header(issue_body, **{OBJECTIVE_ISSUE: objective_issue})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2007" cache_read_input_tokens="100035" output_tokens="595" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2007, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FgQXQhwf4G7aa1PpYiEHSw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011wYz9E6nC2DmQhW9QCdVyw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -&gt; str:
+   ...[truncated 1150 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -&gt; str:
+   ...[truncated 329 chars]...nvalid
+    """
+    return _update_plan_header(issue_body, **{PLAN_COMMENT_ID: comment_id})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="102042" output_tokens="682" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 665, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011wYz9E6nC2DmQhW9QCdVyw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012sFEy1TtW5sQgGKC2MStmn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_local_impl(
+    issue_body: str,
+    local_impl_at: str,
+) -&gt; str:
+...[truncated 1158 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_local_impl(
+    issue_body: str,
+    local_impl_at: str,
+) -&gt; str:
+...[truncated 344 chars]...
+    """
+    return _update_plan_header(issue_body, **{LAST_LOCAL_IMPL_AT: local_impl_at})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="102707" output_tokens="707" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 752, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012sFEy1TtW5sQgGKC2MStmn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the remaining update functions. Let me read the current state again.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="103459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 777}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01USdFtZGD9VwxSh2Y1JA9NT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">495</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="103459" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 777, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01USdFtZGD9VwxSh2Y1JA9NT">
+   495→        local_impl_at: ISO 8601 timestamp of local implementation
+   496→
+   497→    Returns:
+   498→        Updated issue body with new last_local_impl_at field
+   499→
+   500→    Raises:
+   501→        ValueError: If plan-header block not found or invalid
+   502→    """
+   503→    return _update_plan_header(issue_body, **{LAST_LOCAL_IMPL_AT: local_impl_at})
+   504→
+   505→
+   506→def update_plan_header_worktree_name(
+   507→    issue_body: str,
+   508→    worktree_name: str,
+   509→) -&gt; str:
+   510→    """Update worktree_name field in plan-header metadata block.
+   511→
+   512→    Uses Python YAML parsing for robustness (not regex).
+   513→    This function reads the existing plan-header block, updates the
+   514→    worktree_name field, and re-renders the entire body.
+   515→
+   516→    Args:
+   517→        issue_body: Current issue body containing plan-header block
+   518→        worktree_name: The actual worktree name to set
+   519→
+   520→    Returns:
+   521→        Updated issue body with new worktree_name field
+   522→
+   523→    Raises:
+   524→        ValueError: If plan-header block not found or invalid
+
+... [170 lines omitted] ...
+
+   529→        raise ValueError("plan-header block not found in issue body")
+   567→        ValueError: If plan-header block not found or invalid
+   572→        raise ValueError("plan-header block not found in issue body")
+   629→        ValueError: If plan-header block not found or invalid
+   634→        raise ValueError("plan-header block not found in issue body")
+   689→        ValueError: If plan-header block not found or invalid
+   694→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016kfLLANZed5EsbypgHFkyf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_worktree_name(
+    issue_body: str,
+    worktree_name: str,
+) -&gt; st...[truncated 2604 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_worktree_name(
+    issue_body: str,
+    worktree_name: str,
+) -&gt; st...[truncated 985 chars]...     issue_body,
+        **{WORKTREE_NAME: worktree_name, BRANCH_NAME: branch_name},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2961" cache_read_input_tokens="104236" output_tokens="1317" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2961, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016kfLLANZed5EsbypgHFkyf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KdpW7PmvDNzyqi6SmzXVEF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_local_impl_event(
+    *, issue_body: str, local_impl_at: str, event...[truncated 1613 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_local_impl_event(
+    *, issue_body: str, local_impl_at: str, event...[truncated 716 chars]...T_LOCAL_IMPL_SESSION: session_id,
+            LAST_LOCAL_IMPL_USER: user,
+        },
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1387" cache_read_input_tokens="107197" output_tokens="933" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1387, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KdpW7PmvDNzyqi6SmzXVEF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now rewrite `update_plan_header_remote_impl` and `update_plan_header_remote_impl_event`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1003" cache_read_input_tokens="108584" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1003}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019n4UrBrnYYMJNeyDyDCD5D">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">617</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1003" cache_read_input_tokens="108584" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1003, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019n4UrBrnYYMJNeyDyDCD5D">
+   617→    Uses Python YAML parsing for robustness (not regex).
+   618→    This function reads the existing plan-header block, updates the
+   619→    remote_impl_at field, and re-renders the entire body.
+   620→
+   621→    Args:
+   622→        issue_body: Current issue body containing plan-header block
+   623→        remote_impl_at: ISO 8601 timestamp of remote implementation
+   624→
+   625→    Returns:
+   626→        Updated issue body with new last_remote_impl_at field
+   627→
+   628→    Raises:
+   629→        ValueError: If plan-header block not found or invalid
+   630→    """
+   631→    # Extract existing plan-header block
+   632→    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+   633→    if block is None:
+   634→        raise ValueError("plan-header block not found in issue body")
+   635→
+   636→    # Update remote impl field
+   637→    updated_data = dict(block.data)
+   638→    updated_data[LAST_REMOTE_IMPL_AT] = remote_impl_at
+   639→
+   640→    # Validate updated data
+   641→    schema = PlanHeaderSchema()
+   642→    schema.validate(updated_data)
+   643→
+   644→    # Create new block and render
+   645→    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
+   646→    new_block_content = render_metadata_block(new_block)
+
+... [120 lines omitted] ...
+
+   735→        ValueError: If plan-header block not found or invalid
+   739→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017ZBssQoCCtLPR5Ew7X6tHa">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_remote_impl(
+    issue_body: str,
+    remote_impl_at: str,
+) -&gt; str...[truncated 1168 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_remote_impl(
+    issue_body: str,
+    remote_impl_at: str,
+) -&gt; str...[truncated 352 chars]...   """
+    return _update_plan_header(issue_body, **{LAST_REMOTE_IMPL_AT: remote_impl_at})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="109587" output_tokens="709" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017ZBssQoCCtLPR5Ew7X6tHa">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XmkZoaLAvy2sG2jjkoa5bW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_node_ids(
+    issue_body: str,
+    node_ids: list[str],
+) -&gt; str:
+ ...[truncated 760 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_node_ids(
+    issue_body: str,
+    node_ids: list[str],
+) -&gt; str:
+ ...[truncated 295 chars]...ound or invalid
+    """
+    return _update_plan_header(issue_body, **{NODE_IDS: node_ids})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="779" cache_read_input_tokens="111567" output_tokens="586" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 779, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XmkZoaLAvy2sG2jjkoa5bW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me get the remaining update functions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="112346" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K97z5aKynpd2XNLTQTQjmV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">748</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="112346" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 656, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K97z5aKynpd2XNLTQTQjmV">
+   748→
+   749→
+   750→def update_plan_header_learn_event(
+   751→    *,
+   752→    issue_body: str,
+   753→    learn_at: str,
+   754→    session_id: str | None,
+   755→) -&gt; str:
+   756→    """Update learn event fields in plan-header metadata block.
+   757→
+   758→    Updates both learn fields atomically:
+   759→    - last_learn_at (timestamp)
+   760→    - last_learn_session (Claude Code session ID)
+   761→
+   762→    Args:
+   763→        issue_body: Current issue body containing plan-header block
+   764→        learn_at: ISO 8601 timestamp of learn invocation
+   765→        session_id: Claude Code session ID (optional)
+   766→
+   767→    Returns:
+   768→        Updated issue body with new learn event fields
+   769→
+   770→    Raises:
+   771→        ValueError: If plan-header block not found or invalid
+   772→    """
+   773→    # Extract existing plan-header block
+   774→    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+   775→    if block is None:
+   776→        raise ValueError("plan-header block not found in issue body")
+   777→
+
+... [170 lines omitted] ...
+
+   883→        ValueError: If plan-header block not found or invalid
+   888→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Xgz5hLmB6tunQMsJcRUS2d">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_learn_event(
+    *,
+    issue_body: str,
+    learn_at: str,
+    ses...[truncated 1211 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_learn_event(
+    *,
+    issue_body: str,
+    learn_at: str,
+    ses...[truncated 434 chars]...    issue_body,
+        **{LAST_LEARN_AT: learn_at, LAST_LEARN_SESSION: session_id},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2580" cache_read_input_tokens="113002" output_tokens="749" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2580, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xgz5hLmB6tunQMsJcRUS2d">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NL8o6DSaWgrkSzp4Bp4S9v">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_remote_impl_event(
+    *,
+    issue_body: str,
+    run_id: str,
+   ...[truncated 1489 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_remote_impl_event(
+    *,
+    issue_body: str,
+    run_id: str,
+   ...[truncated 645 chars]...IMPL_RUN_ID: run_id,
+            LAST_REMOTE_IMPL_SESSION_ID: session_id,
+        },
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="819" cache_read_input_tokens="115582" output_tokens="900" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 819, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NL8o6DSaWgrkSzp4Bp4S9v">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the remaining update functions. Let me read the rest.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="116401" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1201}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BMFyq4voXAKM5n7XNaqgNa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">884</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1201" cache_read_input_tokens="116401" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1201, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BMFyq4voXAKM5n7XNaqgNa">
+   884→    value = block.data.get(LEARN_STATUS)
+   885→    if value is None:
+   886→        return None
+   887→    return value
+   888→
+   889→
+   890→def extract_plan_header_learn_run_id(issue_body: str) -&gt; str | None:
+   891→    """Extract learn_run_id from plan-header block.
+   892→
+   893→    Args:
+   894→        issue_body: Issue body containing plan-header block
+   895→
+   896→    Returns:
+   897→        Workflow run ID for pending learn workflow if found, None otherwise
+   898→    """
+   899→    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+   900→    if block is None:
+   901→        return None
+   902→
+   903→    return block.data.get(LEARN_RUN_ID)
+   904→
+   905→
+   906→def update_plan_header_learn_status(
+   907→    *,
+   908→    issue_body: str,
+   909→    learn_status: LearnStatusValue,
+   910→    learn_run_id: str | None = None,
+   911→) -&gt; str:
+   912→    """Update learn_status field in plan-header metadata block.
+   913→
+
+... [378 lines omitted] ...
+
+   923→        ValueError: If plan-header block not found or invalid
+   928→        raise ValueError("plan-header block not found in issue body")
+   975→        ValueError: If plan-header block not found or invalid
+   980→        raise ValueError("plan-header block not found in issue body")
+  1128→        ValueError: If plan-header block not found or invalid
+  1133→        raise ValueError("plan-header block not found in issue body")
+  1173→        ValueError: If plan-header block not found or invalid
+  1178→        raise ValueError("plan-header block not found in issue body")
+  1227→        ValueError: If plan-header block not found or invalid
+  1231→        raise ValueError("plan-header block not found in issue body")
+  1269→        comment_id: GitHub comment ID containing CI failure summaries
+  1275→        ValueError: If plan-header block not found or invalid
+  1279→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <assistant>Now I'll rewrite the remaining 5 update functions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5459" cache_read_input_tokens="117602" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5459}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RocYkcS49PeTCdYc4TsA3k">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_learn_status(
+    *,
+    issue_body: str,
+    learn_status: LearnSt...[truncated 1198 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_learn_status(
+    *,
+    issue_body: str,
+    learn_status: LearnSt...[truncated 598 chars]...updates[LEARN_RUN_ID] = learn_run_id
+    return _update_plan_header(issue_body, **updates)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5459" cache_read_input_tokens="117602" output_tokens="802" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5459, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RocYkcS49PeTCdYc4TsA3k">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PAd78WUG5PDvdsiPxwcVZU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_session_branch(
+    *,
+    issue_body: str,
+    session_branch: str...[truncated 1636 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_session_branch(
+    *,
+    issue_body: str,
+    session_branch: str...[truncated 743 chars]...    LAST_SESSION_AT: session_at,
+            LAST_SESSION_SOURCE: source,
+        },
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="872" cache_read_input_tokens="123061" output_tokens="928" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PAd78WUG5PDvdsiPxwcVZU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EqrWLGSruW6jrwx733Qy9C">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_learn_result(
+    *,
+    issue_body: str,
+    learn_status: LearnSt...[truncated 1670 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_learn_result(
+    *,
+    issue_body: str,
+    learn_status: LearnSt...[truncated 763 chars]...dates[LEARN_PLAN_PR] = learn_plan_pr
+    return _update_plan_header(issue_body, **updates)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="998" cache_read_input_tokens="123933" output_tokens="981" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 998, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EqrWLGSruW6jrwx733Qy9C">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Vqir272iNrXMtLAyhqrQpT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_learn_plan_completed(
+    *,
+    issue_body: str,
+    learn_plan_pr...[truncated 1141 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_learn_plan_completed(
+    *,
+    issue_body: str,
+    learn_plan_pr...[truncated 408 chars]...ssue_body,
+        **{LEARN_STATUS: "plan_completed", LEARN_PLAN_PR: learn_plan_pr},
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1051" cache_read_input_tokens="124931" output_tokens="713" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1051, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vqir272iNrXMtLAyhqrQpT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01A74RL9NEY9WG7uSV72dgag">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_learn_materials_branch(
+    issue_body: str,
+    learn_branch: str,...[truncated 839 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_learn_materials_branch(
+    issue_body: str,
+    learn_branch: str,...[truncated 374 chars]...  """
+    return _update_plan_header(issue_body, **{LEARN_MATERIALS_BRANCH: learn_branch})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="783" cache_read_input_tokens="125982" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 783}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A74RL9NEY9WG7uSV72dgag">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012P3cuwB9GeZRCTJzWXzUSJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">def update_plan_header_ci_summary_comment_id(
+    issue_body: str,
+    comment_id: int,
+) ...[truncated 827 chars]...eturn replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)</param>
+    <param name="new_string">def update_plan_header_ci_summary_comment_id(
+    issue_body: str,
+    comment_id: int,
+) ...[truncated 362 chars]...
+    """
+    return _update_plan_header(issue_body, **{CI_SUMMARY_COMMENT_ID: comment_id})</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="126765" output_tokens="616" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 670, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012P3cuwB9GeZRCTJzWXzUSJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if there are unused imports after the refactoring. The `_update_plan_header` helper uses `find_metadata_block`, `BlockKeys`, `PlanHeaderSchema`, `MetadataBlock`, `render_metadata_block`, `replace_metadata_block_in_body`. The `create_plan_header_block` no longer directly uses `SCHEMA_VERSION`, `create_metadata_block`, or the field constants for its body, but the field constants are still used by the update functions and extract functions. Let me verify which imports are still needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="127435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 686}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0193745B1TLtZcRQsKuZJgxB">
+    <param name="pattern">create_metadata_block</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="127435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 686}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0193745B1TLtZcRQsKuZJgxB">
+18:    create_metadata_block,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MkmFZUrvkfMeeRjFGtD3vy">
+    <param name="pattern">SCHEMA_VERSION</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="127435" output_tokens="395" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MkmFZUrvkfMeeRjFGtD3vy">
+58:    SCHEMA_VERSION,
+  </tool_result>
+  <assistant>Both `create_metadata_block` and `SCHEMA_VERSION` are now unused in plan_header.py. Let me remove them.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="128121" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 703}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017TUxioYktwaZiPfBHZdZEw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.core import (
+    create_metadata_block,
+    creat...[truncated 26 chars]...  render_metadata_block,
+    render_plan_body_block,
+    replace_metadata_block_in_body,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.core import (
+    create_plan_body_block,
+    find_metadata_block,
+    render_metadata_block,
+    render_plan_body_block,
+    replace_metadata_block_in_body,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="128121" output_tokens="326" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 703, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017TUxioYktwaZiPfBHZdZEw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GWuf8CnRz2jyzHLctjYQFe">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">    PLAN_COMMENT_ID,
+    SCHEMA_VERSION,
+    SOURCE_REPO,</param>
+    <param name="new_string">    PLAN_COMMENT_ID,
+    SOURCE_REPO,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="128824" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 396, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GWuf8CnRz2jyzHLctjYQFe">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01MgMPUR3W74Ft6iLJbk9rN4">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="129220" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MgMPUR3W74Ft6iLJbk9rN4">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01QJg5t6gY1R8MiSbYVhJQuV">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="129220" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 268, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QJg5t6gY1R8MiSbYVhJQuV">
+Updated task #5 status
+  </tool_result>
+  <assistant>Now create the test file. Let me look at how existing tests in this directory are structured.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="129488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KMEkiJb4mZvWLmNV7RXRxN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="129488" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KMEkiJb4mZvWLmNV7RXRxN">
+     1→"""Parameterized round-trip tests for all metadata block types.
+     2→
+     3→Proves that every registered block type survives render -&gt; parse -&gt; verify
+     4→correctly. Uses the block type registry to drive parameterization, ensuring
+     5→tests stay in sync with the registry automatically.
+     6→
+     7→Block categories:
+     8→- YAML blocks (13): Render as YAML in &lt;details&gt; -&gt; parse back to MetadataBlock
+     9→- CONTENT blocks (3): Render with content-specific renderers -&gt; parse back to RawMetadataBlock
+    10→"""
+    11→
+    12→import pytest
+    13→
+    14→from erk_shared.gateway.github.metadata.core import (
+    15→    create_implementation_status_block,
+    16→    create_metadata_block,
+    17→    create_objective_header_block,
+    18→    create_plan_block,
+    19→    create_plan_body_block,
+    20→    create_submission_queued_block,
+    21→    create_workflow_started_block,
+    22→    create_worktree_creation_block,
+    23→    parse_metadata_blocks,
+    24→    render_metadata_block,
+    25→    render_objective_body_block,
+    26→    render_plan_body_block,
+    27→)
+    28→from erk_shared.gateway.github.metadata.plan_header import create_plan_header_block
+    29→from erk_shared.gateway.github.metadata.registry import (
+    30→    get_all_block_types,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="129686" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011P54Nn8b68uMszhW8fqA6Z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">60</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="129686" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 964, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011P54Nn8b68uMszhW8fqA6Z">
+    60→    "objective-header": {
+    61→        "created_at": "2025-01-15T10:00:00Z",
+    62→        "created_by": "testuser",
+    63→        "objective_comment_id": None,
+    64→    },
+    65→    "erk-plan": {
+    66→        "pr_number": 42,
+    67→        "worktree_name": "test-worktree",
+    68→        "timestamp": "2025-01-15T10:00:00Z",
+    69→    },
+    70→    "erk-worktree-creation": {
+    71→        "worktree_name": "test-worktree",
+    72→        "branch_name": "plnd/test-branch",
+    73→        "timestamp": "2025-01-15T10:00:00Z",
+    74→    },
+    75→    "erk-implementation-status": {
+    76→        "status": "complete",
+    77→        "timestamp": "2025-01-15T10:00:00Z",
+    78→        "summary": "All phases completed successfully",
+    79→    },
+    80→    "workflow-started": {
+    81→        "status": "started",
+    82→        "started_at": "2025-01-15T10:00:00Z",
+    83→        "workflow_run_id": "12345678",
+    84→        "workflow_run_url": "https://github.com/owner/repo/actions/runs/12345678",
+    85→        "pr_number": 42,
+    86→    },
+    87→    "submission-queued": {
+    88→        "status": "queued",
+    89→        "queued_at": "2025-01-15T10:00:00Z",
+
+... [70 lines omitted] ...
+
+   157→    raise ValueError(f"No content renderer for key: {key}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_017awiHitHHK8jRBvuTYjHx2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">159</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1632" cache_read_input_tokens="130650" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1632, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017awiHitHHK8jRBvuTYjHx2">
+   159→
+   160→# ---------------------------------------------------------------------------
+   161→# Factory blocks for schema-backed types
+   162→# ---------------------------------------------------------------------------
+   163→
+   164→FACTORY_BLOCKS: dict[str, MetadataBlock] = {
+   165→    "erk-implementation-status": create_implementation_status_block(
+   166→        status="complete",
+   167→        timestamp="2025-01-15T10:00:00Z",
+   168→        summary="All phases completed successfully",
+   169→    ),
+   170→    "erk-worktree-creation": create_worktree_creation_block(
+   171→        worktree_name="test-worktree",
+   172→        branch_name="plnd/test-branch",
+   173→        timestamp="2025-01-15T10:00:00Z",
+   174→    ),
+   175→    "erk-plan": create_plan_block(
+   176→        pr_number=42,
+   177→        worktree_name="test-worktree",
+   178→        timestamp="2025-01-15T10:00:00Z",
+   179→    ),
+   180→    "submission-queued": create_submission_queued_block(
+   181→        queued_at="2025-01-15T10:00:00Z",
+   182→        submitted_by="testuser",
+   183→        pr_number=42,
+   184→        validation_results={"pr_is_open": True, "has_erk_pr_title": True},
+   185→        expected_workflow="implement-plan",
+   186→    ),
+   187→    "workflow-started": create_workflow_started_block(
+   188→        started_at="2025-01-15T10:00:00Z",
+
+... [145 lines omitted] ...
+
+   257→        assert not result.has_errors, f"Parse errors for {key}: {result.errors}"
+   273→        assert len(result.errors) == 0, f"Parse errors for {key}: {result.errors}"
+   287→        assert not result.has_errors, f"Parse errors for {key}: {result.errors}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2671" cache_read_input_tokens="132282" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2671}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll create the test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2671" cache_read_input_tokens="132282" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2671}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01RhvjoPoFLaJdTRzvbMZVej">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/gateways/github/metadata_blocks/test_plan_header_data.py</param>
+    <param name="content">"""Tests for PlanHeaderData frozen dataclass."""
+
+import dataclasses
+
+import pytest
+
+from ...[truncated 7954 chars]...taclasses.FrozenInstanceError):
+        header.created_at = "other"  # type: ignore[misc]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2671" cache_read_input_tokens="132282" output_tokens="3303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2671, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RhvjoPoFLaJdTRzvbMZVej">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/gateways/github/metadata_blocks/test_plan_header_data.py
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TgBz4eoJWeW8Kn74ArcyV7">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3370" cache_read_input_tokens="134953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3370}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TgBz4eoJWeW8Kn74ArcyV7">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01FpDaZ9nWds8rwbPtKTDdGr">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3370" cache_read_input_tokens="134953" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3370, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FpDaZ9nWds8rwbPtKTDdGr">
+Updated task #6 status
+  </tool_result>
+  <assistant>Now let me run the tests to see if everything works.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="138323" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01LtFhoZmgXNUkj75aD9kDCj">
+    <param name="description">Run metadata block tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the metadata blocks test directory and report all results:
+```
+uv run pytest tests/unit/gateways/github/metadata_blocks/ -x -v
+```
+Report the full output including any failures.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="138323" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LtFhoZmgXNUkj75aD9kDCj">
+pytest passed: All 159 tests in the metadata_blocks test directory passed in 0.12 seconds.
+agentId: af07db92d6fbc63cf (use SendMessage with to: 'af07db92d6fbc63cf' to continue this agent)
+&lt;usage&gt;total_tokens: 14163
+tool_uses: 1
+duration_ms: 6129&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 159 tests pass. Now let me also run the shared/github tests and type checking.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="138521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 256}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SUNdPZr5xux4LhV1Gw1qoW">
+    <param name="description">Run shared github tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the shared github tests directory and report results:
+```
+uv run pytest tests/shared/github/ -x -v
+```
+Report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="138521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 256}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0169Zz8n6TGTyKe6BHFZ5tQv">
+    <param name="description">Run ty type checker</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the type checker on the changed files and report results:
+```
+uv run ty check packages...[truncated 62 chars]...k-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+```
+Report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="138521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 256}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016bZ4rANErH5F6VYEYxMnse">
+    <param name="description">Run ruff linter</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the ruff linter on the changed files and report results:
+```
+uv run ruff check package...[truncated 131 chars].../unit/gateways/github/metadata_blocks/test_plan_header_data.py
+```
+Report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="138521" output_tokens="485" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SUNdPZr5xux4LhV1Gw1qoW">
+pytest passed: All 209 tests in tests/shared/github/ passed in 0.17s
+
+The test suite includes:
+- test_metadata_extraction.py: 24 tests
+- test_metadata_schemas.py: 34 tests
+- test_plan_header_extraction.py: 71 tests
+- test_status_history.py: 15 tests
+- test_tripwire_candidates_metadata.py: 14 tests
+agentId: a2b999c8b449d8b76 (use SendMessage with to: 'a2b999c8b449d8b76' to continue this agent)
+&lt;usage&gt;total_tokens: 13686
+tool_uses: 1
+duration_ms: 5782&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_0169Zz8n6TGTyKe6BHFZ5tQv">
+ty failed: 1 diagnostic found
+
+**Error Location:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:188:9`
+
+**Issue:** The `lifecycle_stage` parameter is being passed as `str | None`, but the `PlanHeaderData` dataclass expects `Literal["prompted", "planning", "planned", "impl"] | None`.
+
+The type checker detected a type mismatch where a string variable is being passed to a parameter that requires a specific literal union type.
+agentId: ac7ee68537564adcb (use SendMessage with to: 'ac7ee68537564adcb' to continue this agent)
+&lt;usage&gt;total_tokens: 13671
+tool_uses: 1
+duration_ms: 6785&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_016bZ4rANErH5F6VYEYxMnse">
+**ruff failed: 4 fixable linting violations found**
+
+The ruff linter found 4 unused import errors in `/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`:
+
+1. **Line 27**: `CREATED_AT` imported but unused
+2. **Line 28**: `CREATED_BY` imported but unused
+3. **Line 30**: `CREATED_FROM_WORKFLOW_RUN_URL` imported but unused
+4. **Line 53**: `LIFECYCLE_STAGE` imported but unused
+
+All 4 violations are automatically fixable with `--fix`. These are cleanup issues from the refactoring—the imports were likely part of the schema that are no longer needed with the new `PlanHeaderData` frozen dataclass.
+agentId: a4da677828960384c (use SendMessage with to: 'a4da677828960384c' to continue this agent)
+&lt;usage&gt;total_tokens: 14175
+tool_uses: 1
+duration_ms: 7956&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1195" cache_read_input_tokens="138777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1195}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me fix the type error and unused imports.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1195" cache_read_input_tokens="138777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1195}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>

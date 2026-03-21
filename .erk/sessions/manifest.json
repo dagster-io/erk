@@ -16,6 +16,22 @@
       "raw_size_kb": 1454,
       "xml_size_kb": 97,
       "git_branch": "plnd/fix-multinode-landing-node-03-21-0712"
+    },
+    {
+      "session_id": "256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T08:41:05.242362+00:00",
+      "files": [
+        "impl-256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca-256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca-part1.xml",
+        "impl-256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca-256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca-part2.xml",
+        "impl-256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca-256daf67-f19d-4ae1-bb16-c1d0d5d1d8ca-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 12,
+      "raw_size_kb": 1954,
+      "xml_size_kb": 146,
+      "git_branch": "plnd/introduce-plan-header-data-03-21-0826"
     }
   ]
 }
