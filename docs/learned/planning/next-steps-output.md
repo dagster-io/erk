@@ -33,7 +33,7 @@ The plain-text formatter (`format_plan_next_steps_plain`) produces a hierarchica
 
 The `new_wt` variants use the `source "$(erk ... --script)"` pattern because they create a new worktree and need to navigate the shell there. This is required because subprocess directory changes don't persist to the calling shell.
 
-The `current_wt` variants use a simple `&&` chain (`erk br co --for-plan N && erk implement`) since the user is already in the correct directory — no shell activation is needed.
+The `current_wt` variants use a simple `&&` chain (`erk br co --for-pr N && erk implement`) since the user is already in the correct directory — no shell activation is needed.
 
 See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full explanation.
 

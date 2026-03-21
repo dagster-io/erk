@@ -33,8 +33,8 @@ from erk_shared.plan_workflow import (
 @click.command("create", cls=CommandWithHiddenOptions)
 @click.argument("branch_name", metavar="BRANCH", required=False)
 @click.option(
-    "--for-plan",
-    "for_plan",
+    "--for-pr",
+    "for_pr",
     type=str,
     default=None,
     help="PR number or URL with erk-pr label",
@@ -75,7 +75,7 @@ from erk_shared.plan_workflow import (
 def branch_create(
     ctx: ErkContext,
     branch_name: str | None,
-    for_plan: str | None,
+    for_pr: str | None,
     no_slot: bool,
     new_slot: bool,
     force: bool,
@@ -99,19 +99,19 @@ def branch_create(
     5. Assign the branch to the slot
 
     Use --no-slot to create a branch without assigning it to a slot.
-    Use --for-plan to create a branch from a plan with erk-plan label.
+    Use --for-pr to create a branch from a plan with erk-plan label.
     Use `erk br assign` to assign an EXISTING branch to a slot.
     """
     # Mutual exclusivity validation
-    if for_plan is not None and branch_name is not None:
+    if for_pr is not None and branch_name is not None:
         user_output(
-            "Error: Cannot specify both BRANCH and --for-plan.\n"
-            "Use --for-plan to derive branch name from PR, or provide BRANCH directly."
+            "Error: Cannot specify both BRANCH and --for-pr.\n"
+            "Use --for-pr to derive branch name from PR, or provide BRANCH directly."
         )
         raise SystemExit(1) from None
 
-    if for_plan is None and branch_name is None:
-        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+    if for_pr is None and branch_name is None:
+        user_output("Error: Must provide BRANCH argument or --for-pr option.")
         raise SystemExit(1) from None
 
     if codespace and codespace_name is not None:
@@ -129,11 +129,11 @@ def branch_create(
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
-    # Plan setup - fetches plan and derives branch name if --for-plan is used
+    # Plan setup - fetches plan and derives branch name if --for-pr is used
     setup: PlanBranchSetup | None = None
 
-    if for_plan is not None:
-        pr_number = parse_issue_identifier(for_plan)
+    if for_pr is not None:
+        pr_number = parse_issue_identifier(for_pr)
         result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
         if isinstance(result, PlanNotFound):
             raise click.ClickException(f"PR #{pr_number} not found")
@@ -198,7 +198,7 @@ def branch_create(
             raise SystemExit(1) from None
         user_output(f"Created branch: {branch_name}")
 
-    # If --no-slot is specified, we're done (but warn about impl context if --for-plan was used)
+    # If --no-slot is specified, we're done (but warn about impl context if --for-pr was used)
     if no_slot:
         if setup is not None:
             user_output(
@@ -241,7 +241,7 @@ def branch_create(
         )
         user_output(click.style(f"✓ Assigned {branch_name} to {slot_result.slot_name}", fg="green"))
 
-    # Create impl folder if --for-plan was used
+    # Create impl folder if --for-pr was used
     if setup is not None:
         impl_path = create_impl_folder(
             slot_result.worktree_path,
@@ -272,7 +272,7 @@ def branch_create(
             result = ctx.script_writer.write_activation_script(
                 activation_script,
                 command_name="branch-create",
-                comment=f"branch create --for-plan {setup.pr_number}",
+                comment=f"branch create --for-pr {setup.pr_number}",
             )
             result.output_for_script_handler()
             sys.exit(0)

@@ -326,7 +326,7 @@ def test_duplicate_check_remote_no_duplicates() -> None:
     runner = CliRunner()
     result = runner.invoke(
         cli,
-        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+        ["pr", "duplicate-check", "--pr", "200", "--repo", "owner/repo"],
         obj=ctx,
     )
 
@@ -358,7 +358,7 @@ def test_duplicate_check_remote_finds_duplicate() -> None:
     runner = CliRunner()
     result = runner.invoke(
         cli,
-        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+        ["pr", "duplicate-check", "--pr", "200", "--repo", "owner/repo"],
         obj=ctx,
     )
 

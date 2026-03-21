@@ -257,11 +257,11 @@ def test_branch_checkout_already_assigned_returns_existing() -> None:
         assert "erk-slot-01" in result.output or "Switched to" in result.output
 
 
-# --- --for-plan tests ---
+# --- --for-pr tests ---
 
 
-def test_checkout_for_plan_creates_impl_folder() -> None:
-    """Test that --for-plan resolves plan, creates branch, and sets up .impl/.
+def test_checkout_for_pr_creates_impl_folder() -> None:
+    """Test that --for-pr resolves plan, creates branch, and sets up .impl/.
 
     The branch is checked out in the current worktree (no slot allocation).
     """
@@ -295,7 +295,7 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
         ctx = build_workspace_test_context(env, git=git, plan_store=plan_store)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)
+            result = runner.invoke(branch_group, ["checkout", "--for-pr", "500"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Created .erk/impl-context/ folder from PR #500" in result.output
@@ -312,11 +312,11 @@ def test_checkout_for_plan_creates_impl_folder() -> None:
         assert (impl_folder / "ref.json").exists()
 
 
-def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
-    """Test that --for-plan checkout prints activation instructions even when sync status fails.
+def test_checkout_for_pr_prints_activation_when_sync_status_fails() -> None:
+    """Test that --for-pr checkout prints activation instructions even when sync status fails.
 
     Verifies the fix where display_sync_status errors could prevent activation
-    instructions from being printed after --for-plan checkout. This happens when
+    instructions from being printed after --for-pr checkout. This happens when
     a newly-created tracking branch doesn't have upstream refs fully set up.
 
     Uses stack-in-place path (pool slot assigned) to test activation script output.
@@ -367,14 +367,14 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
         # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
         # display_sync_status catches this internally, so activation instructions still print.
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)
+            result = runner.invoke(branch_group, ["checkout", "--for-pr", "600"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Created .erk/impl-context/ folder from PR #600" in result.output
 
 
-def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
-    """Test that providing both BRANCH and --for-plan fails."""
+def test_checkout_for_pr_error_both_branch_and_for_pr() -> None:
+    """Test that providing both BRANCH and --for-pr fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -386,16 +386,14 @@ def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
         )
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(
-            branch_group, ["checkout", "my-branch", "--for-plan", "123"], obj=ctx
-        )
+        result = runner.invoke(branch_group, ["checkout", "my-branch", "--for-pr", "123"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "Cannot specify both BRANCH and --for-plan" in result.output
+        assert "Cannot specify both BRANCH and --for-pr" in result.output
 
 
-def test_checkout_for_plan_error_neither_branch_nor_for_plan() -> None:
-    """Test that providing neither BRANCH nor --for-plan fails."""
+def test_checkout_for_pr_error_neither_branch_nor_for_pr() -> None:
+    """Test that providing neither BRANCH nor --for-pr fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -410,11 +408,11 @@ def test_checkout_for_plan_error_neither_branch_nor_for_plan() -> None:
         result = runner.invoke(branch_group, ["checkout"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "Must provide BRANCH argument or --for-plan option" in result.output
+        assert "Must provide BRANCH argument or --for-pr option" in result.output
 
 
-def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
-    """--for-plan with planned_pr backend tracks with base_ref_name from plan metadata."""
+def test_checkout_for_pr_planned_pr_stacks_on_base_ref() -> None:
+    """--for-pr with planned_pr backend tracks with base_ref_name from plan metadata."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -449,7 +447,7 @@ def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -> None:
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(
-                branch_group, ["checkout", "--for-plan", "600", "--script"], obj=ctx
+                branch_group, ["checkout", "--for-pr", "600", "--script"], obj=ctx
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
@@ -514,7 +512,7 @@ def test_checkout_script_mode_success_unaffected() -> None:
         assert "return 1" not in last.content
 
 
-def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> None:
+def test_checkout_for_pr_planned_pr_falls_back_to_trunk_without_base_ref() -> None:
     """When plan metadata has no base_ref_name, falls back to trunk as parent."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -550,7 +548,7 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(
-                branch_group, ["checkout", "--for-plan", "601", "--script"], obj=ctx
+                branch_group, ["checkout", "--for-pr", "601", "--script"], obj=ctx
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
@@ -562,8 +560,8 @@ def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -> 
         assert parent == "main"
 
 
-def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
-    """--for-plan with stacked parent rebases onto parent before gt track.
+def test_checkout_for_pr_rebases_onto_stale_parent() -> None:
+    """--for-pr with stacked parent rebases onto parent before gt track.
 
     When a plan has base_ref_name pointing to a non-trunk parent branch,
     the checkout should rebase onto origin/{parent} before calling gt track.
@@ -603,7 +601,7 @@ def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(
-                branch_group, ["checkout", "--for-plan", "602", "--script"], obj=ctx
+                branch_group, ["checkout", "--for-pr", "602", "--script"], obj=ctx
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
@@ -620,8 +618,8 @@ def test_checkout_for_plan_rebases_onto_stale_parent() -> None:
         assert parent == "feature-parent"
 
 
-def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
-    """--for-plan with trunk parent does not rebase, only tracks.
+def test_checkout_for_pr_skips_rebase_for_trunk_parent() -> None:
+    """--for-pr with trunk parent does not rebase, only tracks.
 
     When a plan has no base_ref_name (defaults to trunk), there's no need
     to rebase since the branch is already based on trunk.
@@ -660,7 +658,7 @@ def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(
-                branch_group, ["checkout", "--for-plan", "603", "--script"], obj=ctx
+                branch_group, ["checkout", "--for-pr", "603", "--script"], obj=ctx
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
@@ -675,8 +673,8 @@ def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
         assert parent == "main"
 
 
-def test_checkout_for_plan_updates_stale_local_parent() -> None:
-    """--for-plan syncs stale local parent branch with origin before gt track.
+def test_checkout_for_pr_updates_stale_local_parent() -> None:
+    """--for-pr syncs stale local parent branch with origin before gt track.
 
     When the parent branch exists locally but has diverged from origin
     (e.g., after squash/rebase via gt submit), the local ref should be
@@ -720,7 +718,7 @@ def test_checkout_for_plan_updates_stale_local_parent() -> None:
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
             result = runner.invoke(
-                branch_group, ["checkout", "--for-plan", "604", "--script"], obj=ctx
+                branch_group, ["checkout", "--for-pr", "604", "--script"], obj=ctx
             )
 
         assert result.exit_code == 0, f"Failed: {result.output}"

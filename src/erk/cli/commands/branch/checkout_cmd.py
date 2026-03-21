@@ -308,7 +308,7 @@ def _setup_impl_for_plan(
     branch_name: str,
     script: bool,
 ) -> None:
-    """Create impl folder and save plan ref after checkout for --for-plan.
+    """Create impl folder and save plan ref after checkout for --for-pr.
 
     In script mode, outputs an activation script and exits. In normal mode,
     prints a confirmation message.
@@ -343,12 +343,12 @@ def _setup_impl_for_plan(
             target_subpath=None,
             post_cd_commands=None,
             final_message=f'echo "Prepared PR #{setup.pr_number} at $(pwd)"',
-            comment="erk branch checkout --for-plan activation script",
+            comment="erk branch checkout --for-pr activation script",
         )
         result = ctx.script_writer.write_activation_script(
             activation_script,
             command_name="branch-checkout",
-            comment=f"branch checkout --for-plan {setup.pr_number}",
+            comment=f"branch checkout --for-pr {setup.pr_number}",
         )
         result.output_for_script_handler()
         sys.exit(0)
@@ -417,8 +417,8 @@ def _rebase_and_track_for_plan(
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH", required=False, shell_complete=complete_branch_names)
 @click.option(
-    "--for-plan",
-    "for_plan",
+    "--for-pr",
+    "for_pr",
     type=str,
     default=None,
     help="PR number or URL with erk-pr label",
@@ -428,7 +428,7 @@ def _rebase_and_track_for_plan(
 def branch_checkout(
     ctx: ErkContext,
     branch: str | None,
-    for_plan: str | None,
+    for_pr: str | None,
     script: bool,
 ) -> None:
     """Checkout BRANCH by finding and switching to its worktree.
@@ -440,7 +440,7 @@ def branch_checkout(
     a worktree is automatically created. If the branch exists on origin but
     not locally, a tracking branch and worktree are created automatically.
 
-    Use --for-plan to resolve a PR and set up .erk/impl-context/ after checkout.
+    Use --for-pr to resolve a PR and set up .erk/impl-context/ after checkout.
 
     Examples:
 
@@ -448,7 +448,7 @@ def branch_checkout(
 
         erk br co unchecked-branch       # Auto-create worktree
 
-        erk br co --for-plan 123         # Checkout PR branch with .erk/impl-context/ setup
+        erk br co --for-pr 123           # Checkout PR branch with .erk/impl-context/ setup
 
     If multiple worktrees contain the branch, all options are shown.
     """
@@ -457,7 +457,7 @@ def branch_checkout(
         _branch_checkout_impl(
             ctx,
             branch=branch,
-            for_plan=for_plan,
+            for_pr=for_pr,
             script=script,
         )
 
@@ -466,20 +466,20 @@ def _branch_checkout_impl(
     ctx: ErkContext,
     *,
     branch: str | None,
-    for_plan: str | None,
+    for_pr: str | None,
     script: bool,
 ) -> None:
     """Implementation body for branch_checkout — separated for error wrapping."""
     # Mutual exclusivity validation
-    if for_plan is not None and branch is not None:
+    if for_pr is not None and branch is not None:
         user_output(
-            "Error: Cannot specify both BRANCH and --for-plan.\n"
-            "Use --for-plan to derive branch name from PR, or provide BRANCH directly."
+            "Error: Cannot specify both BRANCH and --for-pr.\n"
+            "Use --for-pr to derive branch name from PR, or provide BRANCH directly."
         )
         raise SystemExit(1) from None
 
-    if for_plan is None and branch is None:
-        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+    if for_pr is None and branch is None:
+        user_output("Error: Must provide BRANCH argument or --for-pr option.")
         raise SystemExit(1) from None
 
     # Use existing repo from context if available (for tests), otherwise discover
@@ -489,12 +489,12 @@ def _branch_checkout_impl(
         repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
-    # Plan setup - fetches plan and derives branch name if --for-plan is used
+    # Plan setup - fetches plan and derives branch name if --for-pr is used
     setup: PlanBranchSetup | None = None
     plan: Plan | None = None
 
-    if for_plan is not None:
-        pr_number = parse_issue_identifier(for_plan)
+    if for_pr is not None:
+        pr_number = parse_issue_identifier(for_pr)
         result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
         if isinstance(result, PlanNotFound):
             raise click.ClickException(f"PR #{pr_number} not found")
@@ -514,7 +514,7 @@ def _branch_checkout_impl(
     # At this point, branch is guaranteed to be set
     assert branch is not None
 
-    # If --for-plan, handle branch creation/tracking before checkout
+    # If --for-pr, handle branch creation/tracking before checkout
     if setup is not None:
         trunk = ctx.git.branch.detect_trunk_branch(repo.root)
         if trunk is None:
@@ -559,7 +559,7 @@ def _branch_checkout_impl(
         else:
             # Root not available or not trunk - checkout in current worktree
             # Ensure branch exists (may need to create tracking branch)
-            # Skip if --for-plan already handled branch creation
+            # Skip if --for-pr already handled branch creation
             if setup is None:
                 local_branches = ctx.git.branch.list_local_branches(repo.root)
                 if branch not in local_branches:
@@ -621,7 +621,7 @@ def _branch_checkout_impl(
         # Exactly one worktree contains this branch
         target_worktree = matching_worktrees[0]
 
-        # Set up impl folder if --for-plan was used
+        # Set up impl folder if --for-pr was used
         if setup is not None:
             _rebase_and_track_for_plan(
                 ctx,
@@ -659,7 +659,7 @@ def _branch_checkout_impl(
             # Exactly one worktree has the branch directly checked out - jump to it
             target_worktree = directly_checked_out[0]
 
-            # Set up impl folder if --for-plan was used
+            # Set up impl folder if --for-pr was used
             if setup is not None:
                 _rebase_and_track_for_plan(
                     ctx,
