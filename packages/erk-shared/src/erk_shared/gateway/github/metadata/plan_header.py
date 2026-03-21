@@ -21,6 +21,7 @@ from erk_shared.gateway.github.metadata.core import (
     render_plan_body_block,
     replace_metadata_block_in_body,
 )
+from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
 from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
     CI_SUMMARY_COMMENT_ID,
@@ -56,7 +57,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     PlanHeaderSchema,
     SessionSourceValue,
 )
-from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 
 
