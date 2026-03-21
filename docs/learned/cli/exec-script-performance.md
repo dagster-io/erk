@@ -55,7 +55,7 @@ For bulk read operations, use `PlanListService` which selects the HTTP direct pa
 
 ## Source Pointer
 
-See `src/erk/core/services/plan_list_service.py` for the canonical dual-path implementation.
+See `src/erk/core/services/pr_list_service.py` for the canonical dual-path implementation.
 
 ## Related Documentation
 

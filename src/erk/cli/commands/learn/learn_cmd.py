@@ -16,7 +16,7 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_confirm, user_output
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.types import PrNotFound
 from erk_shared.sessions.discovery import (
     find_local_sessions_for_project,
     get_readable_sessions,

@@ -39,8 +39,8 @@ from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
     extract_learn_sessions,
 )
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PrNotFound
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.types import CreatePlanResult, Plan, PlanQuery, PrNotFound
 from erk_shared.sessions.discovery import SessionsForPlan
 
 # ---------------------------------------------------------------------------

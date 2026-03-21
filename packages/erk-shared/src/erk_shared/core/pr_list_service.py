@@ -16,7 +16,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.types import Plan
 
 if TYPE_CHECKING:
     from erk_shared.gateway.http.abc import HttpClient

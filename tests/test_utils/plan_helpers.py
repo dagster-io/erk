@@ -7,12 +7,12 @@ It converts Plan objects to ManagedGitHubPrBackend backed by FakeLocalGitHub.
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
 )
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime

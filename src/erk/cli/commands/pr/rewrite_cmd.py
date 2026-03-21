@@ -25,7 +25,7 @@ from erk.cli.repo_resolution import get_remote_github
 from erk.core.command_log import get_or_generate_session_id
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext, NoRepoSentinel
-from erk.core.plan_context_provider import PlanContextProvider
+from erk.core.pr_context_provider import PrContextProvider
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.types import BodyText, PRNotFound
@@ -113,7 +113,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     # Phase 4: Generate AI title/body
     click.echo(click.style("Phase 3: Generating commit message", bold=True))
 
-    plan_provider = PlanContextProvider(
+    plan_provider = PrContextProvider(
         plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
     )
     if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:

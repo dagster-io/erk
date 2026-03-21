@@ -12,12 +12,12 @@ The plan backend has inconsistent naming across different contexts. This glossar
 
 ## Naming Map
 
-| Context                   | Name               | Example                                            |
-| ------------------------- | ------------------ | -------------------------------------------------- |
-| Provider name (API)       | `github-draft-pr`  | `plan_backend.get_provider_name()` returns this    |
-| Python class              | `PlannedPRBackend` | `from erk_shared.plan_store.planned_pr import ...` |
-| Config value (legacy)     | `planned_pr`       | Formerly `ERK_PLAN_BACKEND=planned_pr`             |
-| User-facing documentation | "planned PR"       | "Plans are stored as planned pull requests"        |
+| Context                   | Name               | Example                                          |
+| ------------------------- | ------------------ | ------------------------------------------------ |
+| Provider name (API)       | `github-draft-pr`  | `plan_backend.get_provider_name()` returns this  |
+| Python class              | `PlannedPRBackend` | `from erk_shared.pr_store.planned_pr import ...` |
+| Config value (legacy)     | `planned_pr`       | Formerly `ERK_PLAN_BACKEND=planned_pr`           |
+| User-facing documentation | "planned PR"       | "Plans are stored as planned pull requests"      |
 
 ## Key Distinctions
 

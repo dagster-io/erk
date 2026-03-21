@@ -9,6 +9,6 @@ Real implementations remain in the erk package. Test fakes are in erk_shared.
 Import from submodules:
 - erk_shared.core.prompt_executor: PromptExecutor, events
 - erk_shared.core.fakes: FakePromptExecutor, FakePrListService, etc.
-- erk_shared.core.plan_list_service: PrListService, PrListData
+- erk_shared.core.pr_list_service: PrListService, PrListData
 - erk_shared.core.script_writer: ScriptWriter, ScriptResult
 """

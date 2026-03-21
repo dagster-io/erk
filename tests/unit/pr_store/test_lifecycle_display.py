@@ -8,7 +8,7 @@ from erk_shared.gateway.plan_data_provider.lifecycle import (
     compute_status_indicators,
     format_lifecycle_with_status,
 )
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def _format_lifecycle(

@@ -67,7 +67,7 @@ class RelevanceCheckResult:
     error: str | None
 
 
-class PlanRelevanceChecker:
+class PrRelevanceChecker:
     """Checks whether a plan's work has already been implemented via recent commits.
 
     This is a concrete class (not ABC) that uses PromptExecutor for

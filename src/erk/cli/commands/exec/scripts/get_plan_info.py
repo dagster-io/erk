@@ -22,7 +22,7 @@ import json
 import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 @click.command(name="get-plan-info")

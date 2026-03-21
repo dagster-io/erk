@@ -15,7 +15,7 @@ from erk.core.services.objective_list_service import RealObjectiveListService
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import GlobalConfig, LoadedConfig, NoRepoSentinel, RepoContext
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PrListService
+from erk_shared.core.pr_list_service import PrListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
@@ -40,8 +40,8 @@ from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisab
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.core import FakeObjectiveListService, FakePrListService
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
-        plan_list_service=FakePrListService(),
+        pr_list_service=FakePrListService(),
         objective_list_service=FakeObjectiveListService(data=None),
         codespace_registry=FakeCodespaceRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
@@ -152,7 +152,7 @@ def context_for_test(
     time: Time | None = None,
     erk_installation: ErkInstallation | None = None,
     script_writer: ScriptWriter | None = None,
-    plan_list_service: PrListService | None = None,
+    pr_list_service: PrListService | None = None,
     objective_list_service: ObjectiveListService | None = None,
     codespace_registry: CodespaceRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
@@ -308,8 +308,8 @@ def context_for_test(
     if script_writer is None:
         script_writer = FakeScriptWriter()
 
-    if plan_list_service is None:
-        plan_list_service = FakePrListService()
+    if pr_list_service is None:
+        pr_list_service = FakePrListService()
 
     if objective_list_service is None:
         objective_list_service = RealObjectiveListService(github, time=time)
@@ -366,7 +366,7 @@ def context_for_test(
         time=time,
         erk_installation=erk_installation,
         script_writer=script_writer,
-        plan_list_service=plan_list_service,
+        pr_list_service=pr_list_service,
         objective_list_service=objective_list_service,
         codespace_registry=codespace_registry,
         claude_installation=claude_installation,

@@ -49,10 +49,13 @@ from erk_shared.naming import (
     validate_pr_title,
 )
 from erk_shared.output.next_steps import format_pr_next_steps_plain
-from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_utils import get_title_tag_from_labels
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_utils import (
+    extract_title_from_pr,
+    get_title_tag_from_labels,
+    resolve_plan_content,
+)
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
     create_plan_saved_branch_marker,
@@ -153,7 +156,7 @@ def _save_as_planned_pr(
     config = require_local_config(ctx)
     claude_installation = require_claude_installation(ctx)
 
-    title = extract_title_from_plan(plan_content)
+    title = extract_title_from_pr(plan_content)
 
     # Validate plan title before proceeding
     title_validation = validate_pr_title(title)
@@ -423,7 +426,7 @@ def _save_plan_via_planned_pr(
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
 
-    title = extract_title_from_plan(plan)
+    title = extract_title_from_pr(plan)
 
     # Session deduplication check (keyed by plan title)
     if session_id is not None:

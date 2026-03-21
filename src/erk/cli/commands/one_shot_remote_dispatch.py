@@ -30,7 +30,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
 )
 from erk_shared.output.output import format_duration, user_output
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 
 ONE_SHOT_WORKFLOW = "one-shot.yml"
 

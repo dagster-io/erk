@@ -5,12 +5,12 @@ Tests the shared logic for preparing plans for worktree creation.
 
 from datetime import datetime
 
-from erk_shared.plan_store.types import Plan, PlanState
 from erk_shared.plan_workflow import (
     PlanBranchSetup,
     PlanValidationFailed,
     prepare_plan_for_worktree,
 )
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def _make_plan(

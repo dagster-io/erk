@@ -6,7 +6,7 @@ from pathlib import Path
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.test_utils.test_context import context_for_test
 
 

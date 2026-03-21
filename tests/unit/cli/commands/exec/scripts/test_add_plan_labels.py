@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime

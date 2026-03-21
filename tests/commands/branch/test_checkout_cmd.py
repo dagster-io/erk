@@ -17,7 +17,7 @@ from erk.core.worktree_pool import (
 )
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.context_builders import build_workspace_test_context

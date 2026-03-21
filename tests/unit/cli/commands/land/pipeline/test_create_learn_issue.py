@@ -11,7 +11,7 @@ from erk.cli.commands.land_pipeline import (
     create_learn_pr,
 )
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues

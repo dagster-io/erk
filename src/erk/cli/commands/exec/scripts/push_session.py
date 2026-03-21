@@ -40,7 +40,7 @@ from erk_shared.learn.extraction.session_schema import (
     SessionProvenance,
     compute_session_provenance,
 )
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.types import PrNotFound
 from erk_shared.sessions.manifest import read_session_manifest
 
 

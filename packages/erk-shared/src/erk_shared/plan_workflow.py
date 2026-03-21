@@ -14,7 +14,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
     validate_worktree_name,
 )
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 _ERK_PR_TITLE_PREFIX = "[erk-pr] "
 _ERK_LEARN_TITLE_PREFIX = "[erk-learn] "

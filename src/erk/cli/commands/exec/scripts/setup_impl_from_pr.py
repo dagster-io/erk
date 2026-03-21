@@ -45,7 +45,7 @@ from erk_shared.impl_folder import (
     resolve_impl_dir,
     save_plan_ref,
 )
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.planned_pr_lifecycle import (
     IMPL_CONTEXT_DIR,
     extract_plan_content,
 )

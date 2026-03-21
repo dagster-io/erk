@@ -32,7 +32,7 @@ from erk_shared.context.helpers import (
     require_time,
 )
 from erk_shared.naming import generate_planned_pr_branch_name
-from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.pr_store.create_plan_draft_pr import create_plan_draft_pr
 
 
 @click.command(name="create-pr-from-session")

@@ -21,8 +21,8 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase, parse_roadmap
 from erk_shared.gateway.github.types import GitHubRepoId
-from erk_shared.plan_store.conversion import github_issue_to_plan
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.conversion import github_issue_to_plan
+from erk_shared.pr_store.types import Plan
 
 _SLUG_MAX_LEN = 50
 

@@ -7,7 +7,7 @@ from erk.core.commit_message_generator import (
     CommitMessageRequest,
     CommitMessageResult,
 )
-from erk.core.plan_context_provider import PrContext
+from erk.core.pr_context_provider import PrContext
 from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from tests.fakes.gateway.core import FakePromptExecutor

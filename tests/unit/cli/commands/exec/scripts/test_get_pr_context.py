@@ -7,7 +7,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from erk_shared.core.health_check_runner import HealthCheckRunner
     from erk_shared.core.objective_list_service import ObjectiveListService
 
-from erk_shared.core.plan_list_service import PrListService
+from erk_shared.core.pr_list_service import PrListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
@@ -54,7 +54,7 @@ from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import ManagedPrBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
 
 
 @dataclass(frozen=True)
@@ -101,7 +101,7 @@ class ErkContext:
     erk_installation: ErkInstallation
     script_writer: ScriptWriter
     codespace_registry: CodespaceRegistry
-    plan_list_service: PrListService
+    pr_list_service: PrListService
     objective_list_service: ObjectiveListService
 
     # Paths

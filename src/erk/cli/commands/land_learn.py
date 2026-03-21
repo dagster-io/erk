@@ -32,9 +32,9 @@ from erk_shared.learn.extraction.session_schema import (
 )
 from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.types import PrNotFound
 from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
 from erk_shared.sessions.manifest import read_session_manifest
 

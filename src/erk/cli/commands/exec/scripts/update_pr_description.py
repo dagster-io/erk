@@ -33,7 +33,7 @@ from erk.cli.commands.pr.shared import (
 from erk.cli.repo_resolution import get_remote_github
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext, NoRepoSentinel
-from erk.core.plan_context_provider import PlanContextProvider
+from erk.core.pr_context_provider import PrContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 
@@ -103,7 +103,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
     # Phase 3: Plan context
     click.echo(click.style("Phase 3: Fetching plan context", bold=True))
 
-    plan_provider = PlanContextProvider(
+    plan_provider = PrContextProvider(
         plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
     )
     if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:

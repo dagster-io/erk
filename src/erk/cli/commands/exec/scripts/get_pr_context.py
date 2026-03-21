@@ -23,7 +23,7 @@ from erk.cli.commands.pr.shared import (
     run_diff_extraction,
 )
 from erk.cli.repo_resolution import get_remote_github
-from erk.core.plan_context_provider import PlanContextProvider
+from erk.core.pr_context_provider import PrContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.types import PRNotFound
@@ -69,7 +69,7 @@ def get_pr_context(ctx: click.Context, *, debug: bool) -> None:
     commit_messages = erk_ctx.git.commit.get_commit_messages_since(cwd, discovery.parent_branch)
 
     # Plan context
-    plan_provider = PlanContextProvider(
+    plan_provider = PrContextProvider(
         plan_backend=erk_ctx.plan_backend, remote_github=get_remote_github(erk_ctx)
     )
     if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:

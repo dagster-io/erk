@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING
 import click
 
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.types import PrNotFound
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext

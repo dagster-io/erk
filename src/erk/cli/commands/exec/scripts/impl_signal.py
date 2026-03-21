@@ -54,7 +54,7 @@ from erk_shared.impl_folder import (
     resolve_impl_dir,
     write_local_run_state,
 )
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 @dataclass(frozen=True)

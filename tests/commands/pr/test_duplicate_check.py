@@ -5,9 +5,9 @@ from datetime import datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.core.plan_list_service import PrListData
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.console import FakeConsole
 from tests.fakes.gateway.core import FakePrListService
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
@@ -38,7 +38,7 @@ def _make_plan(
     )
 
 
-def _make_plan_list_service(plans: list[Plan]) -> FakePrListService:
+def _make_pr_list_service(plans: list[Plan]) -> FakePrListService:
     """Create a FakePrListService from a list of Plan objects."""
     return FakePrListService(
         data=PrListData(plans=plans, pr_linkages={}, workflow_runs={}),
@@ -71,7 +71,7 @@ def test_no_duplicates_found() -> None:
             prompt_executor=executor,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([existing]),
+            pr_list_service=_make_pr_list_service([existing]),
         )
 
         result = runner.invoke(
@@ -103,7 +103,7 @@ def test_duplicate_detected() -> None:
             prompt_executor=executor,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([existing]),
+            pr_list_service=_make_pr_list_service([existing]),
         )
 
         result = runner.invoke(
@@ -131,7 +131,7 @@ def test_no_existing_plans() -> None:
             prompt_executor=executor,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([]),
+            pr_list_service=_make_pr_list_service([]),
         )
 
         result = runner.invoke(
@@ -162,7 +162,7 @@ def test_llm_error_graceful_degradation() -> None:
             prompt_executor=executor,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([existing]),
+            pr_list_service=_make_pr_list_service([existing]),
         )
 
         result = runner.invoke(
@@ -231,7 +231,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
             prompt_executor=executor,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([plan_100, plan_200]),
+            pr_list_service=_make_pr_list_service([plan_100, plan_200]),
             remote_github=fake_remote,
         )
 
@@ -270,7 +270,7 @@ def test_progress_reporting_lists_plans() -> None:
             prompt_executor=executor,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([plan_100, plan_200]),
+            pr_list_service=_make_pr_list_service([plan_100, plan_200]),
         )
 
         result = runner.invoke(
@@ -306,7 +306,7 @@ def test_plan_flag_not_found() -> None:
             env,
             console=_non_interactive_console(),
             plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([]),
+            pr_list_service=_make_pr_list_service([]),
             remote_github=fake_remote,
         )
 

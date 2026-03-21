@@ -11,7 +11,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PrListData
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import (
@@ -20,7 +20,7 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.conversion import github_issue_to_plan
+from erk_shared.pr_store.conversion import github_issue_to_plan
 
 if TYPE_CHECKING:
     from erk_shared.gateway.http.abc import HttpClient

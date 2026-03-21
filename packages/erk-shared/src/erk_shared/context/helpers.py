@@ -25,7 +25,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import ManagedPrBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
 
 
 def require_context(ctx: click.Context) -> ErkContext:

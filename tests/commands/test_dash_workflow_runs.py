@@ -8,12 +8,12 @@ from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -113,7 +113,7 @@ Implementation details"""
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_abc123": workflow_run}
         )
         issues = FakeGitHubIssues(issues={123: plan_to_issue(plan)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={123: workflow_run},
         )
@@ -123,7 +123,7 @@ Implementation details"""
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -211,7 +211,7 @@ last_dispatched_node_id: 'WFR_def456'
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_def456": workflow_run}
         )
         issues = FakeGitHubIssues(issues={456: plan_to_issue(plan)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={456: workflow_run},
         )
@@ -221,7 +221,7 @@ last_dispatched_node_id: 'WFR_def456'
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -308,7 +308,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_ghi789": workflow_run}
         )
         issues = FakeGitHubIssues(issues={789: plan_to_issue(plan)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={789: workflow_run},
         )
@@ -318,7 +318,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -381,14 +381,14 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         # No workflow runs
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={111: plan_to_issue(plan)}, comments={})
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -457,14 +457,14 @@ def test_plan_list_handles_batch_query_failure() -> None:
         # No workflow runs configured (simulates API failure or no runs found)
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={222: plan_to_issue(plan)}, comments={})
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -600,7 +600,7 @@ last_dispatched_node_id: 'WFR_node2'
             workflow_runs_by_node_id={"WFR_node1": run1, "WFR_node2": run2},
         )
         issues = FakeGitHubIssues(issues={301: plan_to_issue(plan1), 302: plan_to_issue(plan2)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan1, plan2],
             workflow_runs={301: run1, 302: run2},
         )
@@ -610,7 +610,7 @@ last_dispatched_node_id: 'WFR_node2'
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -660,14 +660,14 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
         )
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[workflow_run])
         issues = FakeGitHubIssues(issues={999: plan_to_issue(plan)}, comments={})
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)

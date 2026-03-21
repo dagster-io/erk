@@ -111,7 +111,7 @@ The enforcement in `_execute_pr_summarize()` prevents this anti-pattern. It sugg
 | Plan context             | ✅ Yes              | ✅ Yes                        |
 | Commit message context   | ❌ No (passes None) | ✅ Yes (includes all commits) |
 
-Both commands use the same `CommitMessageGenerator` and `PlanContextProvider` classes. The difference is what happens after generation:
+Both commands use the same `CommitMessageGenerator` and `PrContextProvider` classes. The difference is what happens after generation:
 
 - `pr summarize` stops after amending
 - `pr submit` continues to push and create/update PR
@@ -129,4 +129,4 @@ Both commands use the same `CommitMessageGenerator` and `PlanContextProvider` cl
 
 - [PR Submit Phases](../../pr-operations/pr-submit-phases.md) - Full workflow for PR creation
 - [Commit Message Generation](../../pr-operations/commit-message-generation.md) - How context priority works
-- [Plan Context Integration](../../architecture/plan-context-integration.md) - How PlanContextProvider extracts plan content
+- [Plan Context Integration](../../architecture/plan-context-integration.md) - How PrContextProvider extracts plan content

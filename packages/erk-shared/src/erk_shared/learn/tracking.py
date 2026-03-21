@@ -17,7 +17,7 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.types import BlockKeys
 
 if TYPE_CHECKING:
-    from erk_shared.plan_store.backend import ManagedPrBackend
+    from erk_shared.pr_store.backend import ManagedPrBackend
 
 
 def track_learn_invocation(

@@ -63,7 +63,7 @@ from erk_shared.objective_fetch_context_result import (
     PlanInfoDict,
     PRInfoDict,
 )
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 def _error_json(error: str) -> str:

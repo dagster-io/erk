@@ -9,12 +9,12 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -77,13 +77,13 @@ last_dispatched_node_id: 'WFR_all_flag'
             pr_plan_linkages={200: [pr]},
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             pr_linkages={200: [pr]},
             workflow_runs={200: workflow_run},
         )
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Run columns always shown now

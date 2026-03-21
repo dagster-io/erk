@@ -32,12 +32,12 @@ LLMs sometimes wrap their JSON in markdown fences or add trailing commentary. Th
 
 ## Usage
 
-<!-- Source: src/erk/core/plan_duplicate_checker.py, extract_json_dict -->
+<!-- Source: src/erk/core/pr_duplicate_checker.py, extract_json_dict -->
 
 Used in two callers:
 
-- `plan_duplicate_checker.py` — parses LLM duplicate detection responses
-- `plan_relevance_checker.py` — parses LLM relevance assessment responses
+- `pr_duplicate_checker.py` — parses LLM duplicate detection responses
+- `pr_relevance_checker.py` — parses LLM relevance assessment responses
 
 ## Why raw_decode()
 

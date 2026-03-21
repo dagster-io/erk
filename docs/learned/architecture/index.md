@@ -100,7 +100,7 @@
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — implementing mode variants in multi-phase commands, designing conditional execution workflows, debugging scattered mode detection logic
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to use ManagedPrBackend, working with require_plan_backend, understanding post_event vs update_metadata, Phase 3 ManagedPrBackend consolidation
-- **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
+- **[plan-context-integration.md](plan-context-integration.md)** — using PrContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
 - **[plan-ref-architecture.md](plan-ref-architecture.md)** — working with plan-ref.json, working with PlanRef dataclass, migrating from IssueReference to PlanRef, understanding provider-agnostic plan references
 - **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer or checkout command, adding a new PR command that generates or updates PR descriptions
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages

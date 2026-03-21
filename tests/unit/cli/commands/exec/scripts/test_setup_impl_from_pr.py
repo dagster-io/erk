@@ -15,8 +15,8 @@ from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.graphite import FakeGraphite

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk.core.services.plan_list_service import ManagedPrListService
+from erk.core.services.pr_list_service import ManagedPrListService
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.http import FakeHttpClient

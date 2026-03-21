@@ -22,7 +22,7 @@ from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 from erk_shared.gateway.time.abc import Time
 
 if TYPE_CHECKING:
-    from erk.core.plan_context_provider import PrContext
+    from erk.core.pr_context_provider import PrContext
 
 logger = logging.getLogger(__name__)
 

@@ -36,13 +36,13 @@ from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import BodyText, PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.conversion import pr_details_to_plan
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.conversion import pr_details_to_plan
+from erk_shared.pr_store.planned_pr_lifecycle import (
     build_plan_stage_body,
     extract_plan_content,
 )
-from erk_shared.plan_store.types import (
+from erk_shared.pr_store.types import (
     CreatePlanResult,
     Plan,
     PlanHeaderNotFoundError,

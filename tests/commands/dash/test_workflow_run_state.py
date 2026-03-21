@@ -9,12 +9,12 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.github.types import WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -100,12 +100,12 @@ last_dispatched_node_id: 'WFR_running'
             issues_data=[plan_to_issue(queued_plan), plan_to_issue(running_plan)],
             workflow_runs_by_node_id={"WFR_queued": queued_run, "WFR_running": running_run},
         )
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [queued_plan, running_plan],
             workflow_runs={1010: queued_run, 1011: running_run},
         )
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Filter for queued workflow runs
@@ -197,12 +197,12 @@ last_dispatched_node_id: 'WFR_failed'
             issues_data=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
             workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run},
         )
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [success_plan, failed_plan],
             workflow_runs={1020: success_run, 1021: failed_run},
         )
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Filter for success workflow runs
@@ -245,9 +245,9 @@ def test_plan_list_run_state_filter_no_matches() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1030: plan_to_issue(plan)}, comments={})
         github = FakeLocalGitHub(workflow_runs=[success_run])
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Filter for "in_progress" which won't match (run is completed/success)

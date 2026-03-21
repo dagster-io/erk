@@ -23,7 +23,7 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
 from erk_shared.context.context import ErkContext
 from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.core import FakePromptExecutor
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub

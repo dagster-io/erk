@@ -9,8 +9,8 @@ from pathlib import Path
 
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.types import PrNotFound
 
 
 @dataclass(frozen=True)
@@ -28,7 +28,7 @@ class PrContext:
     objective_summary: str | None
 
 
-class PlanContextProvider:
+class PrContextProvider:
     """Provides plan context for branches linked to erk plans.
 
     This provider extracts plan content from the plan backend when a branch

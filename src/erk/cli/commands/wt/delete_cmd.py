@@ -26,8 +26,8 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.metadata.schemas import WORKTREE_NAME
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import PlanQuery, PlanState
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.types import PlanQuery, PlanState
 from erk_slots.unassign_cmd import execute_unassign
 
 

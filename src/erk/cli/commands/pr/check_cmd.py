@@ -28,7 +28,7 @@ from erk_shared.gateway.pr.submit import has_checkout_footer_for_pr
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.planned_pr_lifecycle import (
     extract_plan_content,
     has_original_plan_section,
 )

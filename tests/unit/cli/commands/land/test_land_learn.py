@@ -21,7 +21,7 @@ from erk.cli.commands.land_learn import (
 from erk.cli.commands.land_pipeline import LandState, create_learn_pr
 from erk_shared.context.types import GlobalConfig, LoadedConfig
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from erk_shared.sessions.discovery import SessionsForPlan
 from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,

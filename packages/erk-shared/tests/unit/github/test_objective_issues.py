@@ -8,7 +8,7 @@ from erk_shared.gateway.github.objective_issues import (
     CreateObjectiveIssueResult,
     create_objective_issue,
 )
-from erk_shared.plan_store.create_plan_draft_pr import (
+from erk_shared.pr_store.create_plan_draft_pr import (
     CreatePlanDraftPRResult,
     create_plan_draft_pr,
 )
@@ -622,8 +622,8 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         """Non-numeric plan_id from backend returns error result with branch_name set."""
         from unittest.mock import patch
 
-        from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-        from erk_shared.plan_store.types import CreatePlanResult
+        from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+        from erk_shared.pr_store.types import CreatePlanResult
 
         fake_issues = FakeGitHubIssues(username="testuser")
         fake_github = FakeLocalGitHub(issues_gateway=fake_issues)

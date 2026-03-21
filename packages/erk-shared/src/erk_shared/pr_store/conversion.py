@@ -12,7 +12,7 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import NODE_IDS, OBJECTIVE_ISSUE
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def _parse_node_ids(value: object) -> tuple[str, ...] | None:
