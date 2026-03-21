@@ -42,18 +42,14 @@ def load_pool_config(repo_root: Path) -> PoolConfig:
 
     # Parse [pool] section
     pool = data.get("pool", {})
-    pool_size = pool.get("max_slots")
-    if pool_size is not None:
-        pool_size = int(pool_size)
-    else:
-        pool_size = DEFAULT_POOL_SIZE
+    raw_pool_size = pool.get("max_slots")
+    pool_size = int(raw_pool_size) if raw_pool_size is not None else DEFAULT_POOL_SIZE
 
     # Parse [pool.checkout] section
     pool_checkout = pool.get("checkout", {})
-    pool_checkout_commands = [str(x) for x in pool_checkout.get("commands", [])]
-    pool_checkout_shell = pool_checkout.get("shell")
-    if pool_checkout_shell is not None:
-        pool_checkout_shell = str(pool_checkout_shell)
+    pool_checkout_commands = list(map(str, pool_checkout.get("commands", [])))
+    raw_shell = pool_checkout.get("shell")
+    pool_checkout_shell = str(raw_shell) if raw_shell is not None else None
 
     return PoolConfig(
         pool_size=pool_size,
