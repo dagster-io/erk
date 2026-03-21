@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "pr_number": 9382,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T19:33:11.992077+00:00",
+      "files": [
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part1.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part2.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part3.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part4.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part5.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part6.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part7.xml",
+        "impl--71e0ef11-6fb0-4c81-818f-4807aeadfe30-part8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 510,
+      "xml_size_kb": 101,
+      "git_branch": "plnd/add-objective-execute-plan-03-21-1924"
+    }
+  ]
+}
