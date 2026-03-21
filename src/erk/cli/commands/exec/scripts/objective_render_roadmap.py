@@ -45,6 +45,7 @@ import click
 
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
+    escape_md_table_cell,
     render_objective_roadmap_block,
     render_roadmap_block_inner,
 )
@@ -171,11 +172,10 @@ def _render_roadmap(phases: list[dict[str, Any]]) -> str:
 
             if any_has_depends_on:
                 depends_display = ", ".join(depends_on) if depends_on else "-"
-                sections.append(
-                    f"| {step_id} | {step_desc} | {depends_display} | {status} | {pr_display} |"
-                )
+                cells = [step_id, step_desc, depends_display, status, pr_display]
             else:
-                sections.append(f"| {step_id} | {step_desc} | {status} | {pr_display} |")
+                cells = [step_id, step_desc, status, pr_display]
+            sections.append("| " + " | ".join(escape_md_table_cell(c) for c in cells) + " |")
 
             all_steps.append(
                 RoadmapNode(
