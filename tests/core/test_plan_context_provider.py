@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk.core.plan_context_provider import PlanContextProvider, PrContext
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
@@ -425,8 +425,8 @@ def test_get_plan_context_supports_legacy_branch_format(tmp_path: Path) -> None:
 
 
 def test_plan_context_dataclass_frozen() -> None:
-    """Test that PlanContext is immutable (frozen dataclass)."""
-    context = PlanContext(
+    """Test that PrContext is immutable (frozen dataclass)."""
+    context = PrContext(
         pr_id="123",
         plan_content="Plan content",
         objective_summary="Objective #1: Test",

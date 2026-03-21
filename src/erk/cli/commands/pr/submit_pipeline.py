@@ -29,7 +29,7 @@ from erk.cli.ensure import UserFacingCliError
 from erk.cli.repo_resolution import get_remote_github
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext, NoRepoSentinel
-from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk.core.plan_context_provider import PlanContextProvider, PrContext
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -108,7 +108,7 @@ class SubmitState:
     base_branch: str | None
     graphite_url: str | None
     diff_file: Path | None
-    plan_context: PlanContext | None
+    plan_context: PrContext | None
     title: str | None
     body: str | None
     existing_pr_body: str

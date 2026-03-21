@@ -7,7 +7,7 @@ from erk.core.commit_message_generator import (
     CommitMessageRequest,
     CommitMessageResult,
 )
-from erk.core.plan_context_provider import PlanContext
+from erk.core.plan_context_provider import PrContext
 from erk_shared.core.prompt_executor import PromptResult
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from tests.fakes.gateway.core import FakePromptExecutor
@@ -423,7 +423,7 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
 
-    plan_context = PlanContext(
+    plan_context = PrContext(
         pr_id="123",
         plan_content="# Plan: Fix Authentication Bug\n\nFix session expiration.",
         objective_summary=None,
@@ -465,7 +465,7 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff content", encoding="utf-8")
 
-    plan_context = PlanContext(
+    plan_context = PrContext(
         pr_id="456",
         plan_content="# Plan: Add Metrics\n\nAdd usage metrics tracking.",
         objective_summary="Objective #100: Improve Observability",
@@ -505,7 +505,7 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff content", encoding="utf-8")
 
-    plan_context = PlanContext(
+    plan_context = PrContext(
         pr_id="789",
         plan_content="# Plan: Refactor API\n\nSimplify the API layer.",
         objective_summary=None,
