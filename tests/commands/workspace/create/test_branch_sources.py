@@ -109,6 +109,7 @@ def test_create_from_branch() -> None:
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},
         )
 
         test_ctx = env.build_context(git=git_ops)

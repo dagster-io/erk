@@ -1,4 +1,4 @@
-"""Unit tests for wt create-from command."""
+"""Unit tests for erk wt create --from-branch (slot allocation path)."""
 
 from click.testing import CliRunner
 
@@ -12,7 +12,7 @@ from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_create_from_assigns_local_branch(tmp_path) -> None:
+def test_create_from_branch_assigns_local_branch(tmp_path) -> None:
     """Happy path: local branch exists, allocates slot and navigates."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -37,7 +37,7 @@ def test_create_from_assigns_local_branch(tmp_path) -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create-from", "feature-auth"], obj=test_ctx, catch_exceptions=False
+            cli, ["wt", "create", "--from-branch", "feature-auth"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -53,7 +53,7 @@ def test_create_from_assigns_local_branch(tmp_path) -> None:
         assert state.assignments[0].slot_name == "erk-slot-01"
 
 
-def test_create_from_fetches_remote_branch(tmp_path) -> None:
+def test_create_from_branch_fetches_remote_branch(tmp_path) -> None:
     """Branch only on remote: creates tracking branch, then allocates."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -80,7 +80,7 @@ def test_create_from_fetches_remote_branch(tmp_path) -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create-from", "remote-feature"],
+            ["wt", "create", "--from-branch", "remote-feature"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -94,7 +94,7 @@ def test_create_from_fetches_remote_branch(tmp_path) -> None:
         assert len(git_ops.created_tracking_branches) == 1
 
 
-def test_create_from_fails_branch_not_found() -> None:
+def test_create_from_branch_fails_branch_not_found() -> None:
     """Branch doesn't exist locally or remotely: errors with suggestion."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -121,7 +121,7 @@ def test_create_from_fails_branch_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create-from", "nonexistent"],
+            ["wt", "create", "--from-branch", "nonexistent"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -131,7 +131,7 @@ def test_create_from_fails_branch_not_found() -> None:
         assert "gt create" in result.output
 
 
-def test_create_from_fails_trunk_branch() -> None:
+def test_create_from_branch_fails_trunk_branch() -> None:
     """Trunk branch: errors with appropriate message."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -156,15 +156,14 @@ def test_create_from_fails_trunk_branch() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create-from", "main"], obj=test_ctx, catch_exceptions=False
+            cli, ["wt", "create", "--from-branch", "main"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
-        assert "trunk branch" in result.output
-        assert "erk wt co root" in result.output
+        assert "cannot be used as a worktree name" in result.output
 
 
-def test_create_from_already_assigned(tmp_path) -> None:
+def test_create_from_branch_already_assigned(tmp_path) -> None:
     """Branch already assigned: reports existing assignment."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -210,14 +209,14 @@ def test_create_from_already_assigned(tmp_path) -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create-from", "feature-auth"], obj=test_ctx, catch_exceptions=False
+            cli, ["wt", "create", "--from-branch", "feature-auth"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
         assert "already assigned" in result.output
 
 
-def test_create_from_force_unassigns_oldest(tmp_path) -> None:
+def test_create_from_branch_force_unassigns_oldest(tmp_path) -> None:
     """Pool full with --force: evicts oldest, assigns new branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -265,7 +264,7 @@ def test_create_from_force_unassigns_oldest(tmp_path) -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create-from", "--force", "new-feature"],
+            ["wt", "create", "--from-branch", "new-feature", "--force"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -283,7 +282,7 @@ def test_create_from_force_unassigns_oldest(tmp_path) -> None:
         assert state.assignments[0].branch_name == "new-feature"
 
 
-def test_create_from_pool_full_non_tty_fails() -> None:
+def test_create_from_branch_pool_full_non_tty_fails() -> None:
     """Pool full without --force in non-TTY: errors with --force suggestion."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -336,7 +335,7 @@ def test_create_from_pool_full_non_tty_fails() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create-from", "new-feature"],
+            ["wt", "create", "--from-branch", "new-feature"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -344,3 +343,30 @@ def test_create_from_pool_full_non_tty_fails() -> None:
         assert result.exit_code == 1
         assert "Pool is full" in result.output
         assert "--force" in result.output
+
+
+def test_create_force_without_from_branch_fails() -> None:
+    """--force without --from-branch: errors with helpful message."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+        )
+
+        test_ctx = env.build_context(git=git_ops)
+
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--force", "my-worktree"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "--force requires --from-branch" in result.output

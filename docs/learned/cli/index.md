@@ -83,5 +83,4 @@
 - **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
 - **[workflow-run-list.md](workflow-run-list.md)** — modifying workflow run list display, working with erk workflow run list, understanding run-name format parsing, modifying workflow run display
 - **[workflow-run-management.md](workflow-run-management.md)** — cancelling a GitHub Actions workflow run, retrying a failed GitHub Actions workflow run, working with erk workflow run cancel or retry
-- **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create-from, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
-- **[wt-create-from.md](wt-create-from.md)** — setting up a local worktree for an existing branch, working with a PR branch that needs a worktree slot, understanding the difference between erk wt create and erk wt create-from
+- **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create --from-branch, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
