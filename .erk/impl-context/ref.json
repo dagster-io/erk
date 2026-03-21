@@ -1,5 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: Escape pipe characters in objective roadmap table cells",
-  "objective_id": 9324
-}
