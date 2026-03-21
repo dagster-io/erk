@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Multi-Node Objective Planning Should Mark All Selected Nodes"
+}
