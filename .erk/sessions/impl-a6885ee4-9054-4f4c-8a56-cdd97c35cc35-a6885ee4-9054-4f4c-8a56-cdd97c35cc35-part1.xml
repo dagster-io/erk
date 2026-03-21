@@ -1,0 +1,1221 @@
+<session>
+  <meta branch="plnd/fix-multinode-landing-node-03-21-0712" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="a6885ee4-9054-4f4c-8a56-cdd97c35cc35" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="a6885ee4-9054-4f4c-8a56-cdd97c35cc35" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="a6885ee4-9054-4f4c-8a56-cdd97c35cc35" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="a6885ee4-9054-4f4c-8a56-cdd97c35cc35" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15530" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15530}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15530" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15530}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MU2F2PUn6PaJDmzsJQN8Fc">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from branch/impl-context</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15530" cache_read_input_tokens="9015" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15530, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MU2F2PUn6PaJDmzsJQN8Fc">
+Found existing impl dir for PR #9326, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/impl-context/plnd--fix-multinode-landing-node-03-21-0712", "pr_number": 9326, "pr_url": "https://github.com/dagster-io/erk/pull/9326", "branch": "plnd/fix-multinode-landing-node-03-21-0712", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9326, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="24545" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018ePmvTnNtfbtYx1CYz9rYv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/impl-context/plnd--fix-multinode-landing-node-03-21-0712/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="24545" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ePmvTnNtfbtYx1CYz9rYv">
+     1→# Fix multi-node landing: store node_ids in plan-header metadata
+     2→
+     3→## Context
+     4→
+     5→When a PR covers multiple objective nodes (e.g., PR #9319 covered nodes 1.1-1.4), the landing script (`objective_apply_landed_update.py`) only marks one node as done. This is because:
+     6→
+     7→1. `/erk:objective-plan` creates a `roadmap-step.marker` with a single node ID ("1.1")
+     8→2. `plan_save.py` wraps this in `node_ids = (step_id,)` and stores it in `ref.json`
+     9→3. `objective_link_pr.py` sets `pr: '#9319'` only on node 1.1 in the roadmap
+    10→4. At landing time, auto-discovery scans for `node["pr"] == "#9319"` — finds only node 1.1
+    11→5. Nodes 1.2-1.4 are never auto-discovered
+    12→
+    13→**Root cause**: `node_ids` are stored in `ref.json` (branch-local, ephemeral) but NOT in plan-header metadata (PR body, durable). The landing script has no way to read node_ids from the plan/PR.
+    14→
+    15→**Fix**: Store `node_ids` in plan-header metadata and use them as the primary auto-discovery source in the landing script.
+    16→
+    17→## Implementation (TDD)
+    18→
+    19→### Cycle 1: Add node_ids to Plan dataclass and plan-header schema
+    20→
+    21→**Red** — Write failing tests:
+    22→- `tests/unit/plan_store/test_planned_pr_backend.py`: Test that `pr_details_to_plan` parses `node_ids` from plan-header YAML
+    23→- `tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py`: Test `test_auto_matches_nodes_from_plan_metadata` — PR has `node_ids: ["1.1", "1.2"]` in plan-header, objective roadmap has NO pr refs set on those nodes, landing auto-discovers both nodes
+    24→
+    25→**Green** — Make tests pass:
+    26→
+    27→1. **`packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`**
+    28→   - Add `NODE_IDS: Literal["node_ids"] = "node_ids"` constant (after `OBJECTIVE_ISSUE`)
+    29→   - Add `NODE_IDS` to `PlanHeaderSchema.optional_fields` set
+    30→   - Add validation: `node_ids` must be a list of strings or null
+
+... [95 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2632" cache_read_input_tokens="24980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2632}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good plan. Let me read the relevant source files to understand existing patterns before implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2632" cache_read_input_tokens="24980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2632}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01SUagXjb2QBhJwNskDwevrQ">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2632" cache_read_input_tokens="24980" output_tokens="361" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2632, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SUagXjb2QBhJwNskDwevrQ">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Dofvaai1aKqw3cSuPzpiMj">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1127" cache_read_input_tokens="27612" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1127, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dofvaai1aKqw3cSuPzpiMj">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1148" cache_read_input_tokens="28739" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1148}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the relevant source files in parallel to understand existing patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1148" cache_read_input_tokens="28739" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1148}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012YQJrn6HL3JKmmRkaDrMqe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1148" cache_read_input_tokens="28739" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1148, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012YQJrn6HL3JKmmRkaDrMqe">
+File content (10592 tokens) exceeds maximum allowed tokens (10000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PdnZzUWbxQwym1VEucXnKK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="29887" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PdnZzUWbxQwym1VEucXnKK">
+     1→"""Schema implementations for metadata blocks."""
+     2→
+     3→import warnings
+     4→from dataclasses import dataclass
+     5→from typing import Any, Literal
+     6→
+     7→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
+     8→
+     9→
+    10→def _migrate_to_pr_number(data: dict[str, Any]) -&gt; None:
+    11→    """Migrate legacy issue_number or plan_number to pr_number in-place.
+    12→
+    13→    Several metadata schemas originally used ``issue_number`` or ``plan_number``.
+    14→    This helper centralises the backward-compatibility migration so each schema's
+    15→    ``validate`` method can call it instead of duplicating the logic.
+    16→    """
+    17→    if "issue_number" in data and "pr_number" not in data:
+    18→        data["pr_number"] = data.pop("issue_number")
+    19→    if "plan_number" in data and "pr_number" not in data:
+    20→        data["pr_number"] = data.pop("plan_number")
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class ImplementationStatusSchema(MetadataBlockSchema):
+    25→    """Schema for erk-implementation-status blocks (completion status)."""
+    26→
+    27→    def validate(self, data: dict[str, Any]) -&gt; None:
+    28→        """Validate erk-implementation-status data structure."""
+    29→        required_fields = {
+    30→            "status",
+
+... [70 lines omitted] ...
+
+    37→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+    40→        valid_statuses = {"pending", "in_progress", "complete", "failed"}
+    42→            raise ValueError(
+    65→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+    70→                raise ValueError(f"{field} must be a string")
+    72→                raise ValueError(f"{field} must not be empty")
+    77→                raise ValueError("pr_number must be an integer")
+    79→                raise ValueError("pr_number must be positive")
+    84→                raise ValueError("plan_file must be a string")
+    86→                raise ValueError("plan_file must not be empty")
+    92→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N2PUgt72mWvrc7yXsc8JeJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1547" cache_read_input_tokens="30098" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1547}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N2PUgt72mWvrc7yXsc8JeJ">
+   100→    """Schema for erk-plan blocks."""
+   101→
+   102→    def validate(self, data: dict[str, Any]) -&gt; None:
+   103→        """Validate erk-plan data structure."""
+   104→        _migrate_to_pr_number(data)
+   105→
+   106→        required_fields = {"pr_number", "worktree_name", "timestamp"}
+   107→        optional_fields = {"plan_file"}
+   108→
+   109→        # Check required fields exist
+   110→        missing = required_fields - set(data.keys())
+   111→        if missing:
+   112→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   113→
+   114→        # Validate required fields
+   115→        if not isinstance(data["pr_number"], int):
+   116→            raise ValueError("pr_number must be an integer")
+   117→        if data["pr_number"] &lt;= 0:
+   118→            raise ValueError("pr_number must be positive")
+   119→
+   120→        if not isinstance(data["worktree_name"], str):
+   121→            raise ValueError("worktree_name must be a string")
+   122→        if len(data["worktree_name"]) == 0:
+   123→            raise ValueError("worktree_name must not be empty")
+   124→
+   125→        if not isinstance(data["timestamp"], str):
+   126→            raise ValueError("timestamp must be a string")
+   127→        if len(data["timestamp"]) == 0:
+   128→            raise ValueError("timestamp must not be empty")
+   129→
+
+... [753 lines omitted] ...
+
+   133→                raise ValueError("plan_file must be a string")
+   135→                raise ValueError("plan_file must not be empty")
+   141→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   168→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   172→            raise ValueError(f"Invalid status '{data['status']}'. Must be 'queued'")
+   176→            raise ValueError("queued_at must be a string")
+   178→            raise ValueError("queued_at must not be empty")
+   181→            raise ValueError("submitted_by must be a string")
+   183→            raise ValueError("submitted_by must not be empty")
+   186→            raise ValueError("expected_workflow must be a string")
+   188→            raise ValueError("expected_workflow must not be empty")
+   191→            raise ValueError("trigger_mechanism must be a string")
+   193→            raise ValueError("trigger_mechanism must not be empty")
+   197→            raise ValueError("pr_number must be an integer")
+   199→            raise ValueError("pr_number must be positive")
+   203→            raise ValueError("validation_results must be a dict")
+   229→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   233→            raise ValueError(f"Invalid status '{data['status']}'. Must be 'started'")
+   237→            raise ValueError("started_at must be a string")
+   239→            raise ValueError("started_at must not be empty")
+   242→            raise ValueError("workflow_run_id must be a string")
+   244→            raise ValueError("workflow_run_id must not be empty")
+   247→            raise ValueError("workflow_run_url must be a string")
+   249→            raise ValueError("workflow_run_url must not be empty")
+   253→            raise ValueError("pr_number must be an integer")
+   255→            raise ValueError("pr_number must be positive")
+   260→                raise ValueError("branch_name must be a string")
+   262→                raise ValueError("branch_name must not be empty")
+   266→                raise ValueError("worktree_path must be a string")
+   268→                raise ValueError("worktree_path must not be empty")
+   274→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   296→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   300→            raise ValueError("retry_timestamp must be a string")
+   302→            raise ValueError("retry_timestamp must not be empty")
+   305→            raise ValueError("triggered_by must be a string")
+   307→            raise ValueError("triggered_by must not be empty")
+   311→            raise ValueError("retry_count must be an integer")
+   313→            raise ValueError("retry_count must be at least 1")
+   318→                raise ValueError("previous_retry_timestamp must be a string")
+   320→                raise ValueError("previous_retry_timestamp must not be empty")
+   326→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   473→        ci_summary_comment_id: GitHub comment ID containing CI failure summaries (nullable)
+   545→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   549→            raise ValueError(f"Invalid schema_version '{data[SCHEMA_VERSION]}'. Must be '2'")
+   554→                raise ValueError(f"{field} must be a string")
+   556→                raise ValueError(f"{field} must not be empty")
+   561→                raise ValueError("worktree_name must be a string or null")
+   563→                raise ValueError("worktree_name must not be empty when provided")
+   568→                raise ValueError("branch_name must be a string or null")
+   570→                raise ValueError("branch_name must not be empty when provided")
+   575→                raise ValueError("plan_comment_id must be an integer or null")
+   577→                raise ValueError("plan_comment_id must be positive when provided")
+   582→                raise ValueError("ci_summary_comment_id must be an integer or null")
+   584→                raise ValueError("ci_summary_comment_id must be positive when provided")
+   590→                    warnings.warn(
+   597→                    raise ValueError("last_dispatched_run_id must be a string or null")
+   602→                    raise ValueError("last_dispatched_node_id must be a string or null")
+   607→                    raise ValueError("last_dispatched_at must be a string or null")
+   612→                    raise ValueError("last_local_impl_at must be a string or null")
+   617→                    raise ValueError("last_remote_impl_at must be a string or null")
+   623→                    warnings.warn(
+   630→                    raise ValueError("last_remote_impl_run_id must be a string or null")
+   636→                    raise ValueError("last_remote_impl_session_id must be a string or null")
+   642→                    raise ValueError("last_local_impl_event must be a string or null")
+   646→                    raise ValueError(
+   654→                    raise ValueError("last_local_impl_session must be a string or null")
+   660→                    raise ValueError("last_local_impl_user must be a string or null")
+   665→                raise ValueError("source_repo must be a string or null")
+   667→                raise ValueError("source_repo must not be empty when provided")
+   670→                raise ValueError("source_repo must be in 'owner/repo' format")
+   675→                raise ValueError("objective_issue must be an integer or null")
+   677→                raise ValueError("objective_issue must be positive when provided")
+   682→                raise ValueError("created_from_session must be a string or null")
+   684→                raise ValueError("created_from_session must not be empty when provided")
+   692→                raise ValueError("created_from_workflow_run_url must be a string or null")
+   694→                raise ValueError("created_from_workflow_run_url must not be empty when provided")
+   699→                raise ValueError("last_learn_session must be a string or null")
+   701→                raise ValueError("last_learn_session must not be empty when provided")
+   706→                raise ValueError("last_learn_at must be a string or null")
+   708→                raise ValueError("last_learn_at must not be empty when provided")
+   713→                raise ValueError("learn_status must be a string or null")
+   725→                raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
+   730→                warnings.warn(
+   736→                raise ValueError("learn_run_id must be a string or null")
+   738→                raise ValueError("learn_run_id must not be empty when provided")
+   743→                raise ValueError("last_session_branch must be a string or null")
+   745→                raise ValueError("last_session_branch must not be empty when provided")
+   750→                raise ValueError("last_session_id must be a string or null")
+   752→                raise ValueError("last_session_id must not be empty when provided")
+   757→                raise ValueError("last_session_at must be a string or null")
+   759→                raise ValueError("last_session_at must not be empty when provided")
+   764→                raise ValueError("last_session_source must be a string or null")
+   768→                raise ValueError(
+   775→                raise ValueError("learn_plan_issue must be an integer or null")
+   777→                raise ValueError("learn_plan_issue must be positive when provided")
+   782→                raise ValueError("learn_plan_pr must be an integer or null")
+   784→                raise ValueError("learn_plan_pr must be positive when provided")
+   789→                raise ValueError("learned_from_issue must be an integer or null")
+   791→                raise ValueError("learned_from_issue must be positive when provided")
+   796→                raise ValueError("learn_materials_branch must be a string or null")
+   798→                raise ValueError("learn_materials_branch must not be empty when provided")
+   803→                raise ValueError("lifecycle_stage must be a string or null")
+   815→                raise ValueError(
+   823→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   851→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   856→                raise ValueError(f"{field} must be a string")
+   858→                raise ValueError(f"{field} must not be empty")
+   863→                raise ValueError("objective_comment_id must be an integer or null")
+   865→                raise ValueError("objective_comment_id must be positive when provided")
+   870→                raise ValueError("slug must be a string")
+   872→                raise ValueError("slug must not be empty when provided")
+   878→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12204" cache_read_input_tokens="31645" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12204}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the remaining source files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12204" cache_read_input_tokens="31645" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12204}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012yM2VnUSZzwwkgA1be6otn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/plan_store/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12204" cache_read_input_tokens="31645" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12204, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012yM2VnUSZzwwkgA1be6otn">
+     1→"""Core types for provider-agnostic plan storage."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import datetime
+     5→from enum import Enum
+     6→
+     7→
+     8→class PlanState(Enum):
+     9→    """State of a plan."""
+    10→
+    11→    OPEN = "OPEN"
+    12→    CLOSED = "CLOSED"
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class Plan:
+    17→    """Provider-agnostic representation of a plan.
+    18→
+    19→    Fields:
+    20→        pr_identifier: Provider-specific ID as string
+    21→            (GitHub: "42", Jira: "PROJ-123", Linear: UUID)
+    22→        title: Plan title
+    23→        body: Plan body/description
+    24→        state: Plan state (OPEN or CLOSED)
+    25→        url: Web URL to view the plan
+    26→        labels: List of label names
+    27→        assignees: List of assignee usernames
+    28→        created_at: Creation timestamp
+    29→        updated_at: Last update timestamp
+    30→        metadata: Provider-specific fields (e.g., {"number": 42} for GitHub)
+
+... [58 lines omitted] ...
+
+    79→class PlanHeaderNotFoundError(RuntimeError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WCj7XEM2NcLKmJthkuJfhb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/plan_store/conversion.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1092" cache_read_input_tokens="43849" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1092, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WCj7XEM2NcLKmJthkuJfhb">
+     1→"""Shared conversion helpers for Plan construction from provider-specific types.
+     2→
+     3→Provides single-parse conversions that populate header_fields on Plan,
+     4→eliminating repeated YAML parsing of the plan-header metadata block.
+     5→Also provides typed accessor helpers for reading fields from header_fields.
+     6→"""
+     7→
+     8→from datetime import datetime
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueInfo
+    11→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    12→from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+    13→from erk_shared.gateway.github.metadata.types import BlockKeys
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.plan_store.types import Plan, PlanState
+    16→
+    17→
+    18→def github_issue_to_plan(issue: IssueInfo) -&gt; Plan:
+    19→    """Convert a GitHub Issue (e.g. objective) to Plan with pre-parsed header fields.
+    20→
+    21→    Parses the plan-header metadata block once and stores the result
+    22→    in header_fields, avoiding repeated YAML parsing by callers.
+    23→
+    24→    Used for GitHub Issues that carry plan-header metadata, such as
+    25→    objective issues. Not used for draft-PR-backed plans.
+    26→
+    27→    Args:
+    28→        issue: IssueInfo from GraphQL query
+    29→
+    30→    Returns:
+
+... [150 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LBeoHLtDxHJVTZyT75NEH1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2294" cache_read_input_tokens="44941" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LBeoHLtDxHJVTZyT75NEH1">
+File content (14125 tokens) exceeds maximum allowed tokens (10000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_018tWtgmst62hFiVwACHtrYZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="165" cache_read_input_tokens="47235" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 165, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018tWtgmst62hFiVwACHtrYZ">
+     1→"""Schema v2 plan header operations for erk-plan issues.
+     2→
+     3→These support the new plan issue structure where:
+     4→- Issue body contains only compact metadata (for fast querying)
+     5→- First comment contains the plan content
+     6→- last_dispatched_run_id is stored in issue body
+     7→
+     8→Optional fields (added over time, backward compatible):
+     9→- source_repo: For cross-repo plans, the repo where this plan will be
+    10→  implemented (e.g., "owner/impl-repo"). When set, the plan issue lives in
+    11→  a different repo (the plans repo) than where code changes will be made.
+    12→"""
+    13→
+    14→import re
+    15→from typing import Any
+    16→
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_metadata_block,
+    19→    create_plan_body_block,
+    20→    find_metadata_block,
+    21→    render_metadata_block,
+    22→    render_plan_body_block,
+    23→    replace_metadata_block_in_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    BRANCH_NAME,
+    27→    CI_SUMMARY_COMMENT_ID,
+    28→    CREATED_AT,
+    29→    CREATED_BY,
+    30→    CREATED_FROM_SESSION,
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DHdDepiHko9KotT5qB7sSe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">120</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1872" cache_read_input_tokens="47400" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DHdDepiHko9KotT5qB7sSe">
+   120→        learn_status: Optional learning workflow status
+   121→        learn_plan_issue: Optional issue number of generated learn plan
+   122→        learn_plan_pr: Optional PR number that implemented the learn plan
+   123→        learned_from_issue: Optional parent plan issue number (for learn plans)
+   124→        lifecycle_stage: Optional lifecycle stage for the plan
+   125→
+   126→    Returns:
+   127→        MetadataBlock with plan-header schema
+   128→    """
+   129→    schema = PlanHeaderSchema()
+   130→
+   131→    data: dict[str, Any] = {
+   132→        SCHEMA_VERSION: "2",
+   133→        CREATED_AT: created_at,
+   134→        CREATED_BY: created_by,
+   135→        PLAN_COMMENT_ID: plan_comment_id,
+   136→        LAST_DISPATCHED_RUN_ID: last_dispatched_run_id,
+   137→        LAST_DISPATCHED_NODE_ID: last_dispatched_node_id,
+   138→        LAST_DISPATCHED_AT: last_dispatched_at,
+   139→        LAST_LOCAL_IMPL_AT: last_local_impl_at,
+   140→        LAST_LOCAL_IMPL_EVENT: last_local_impl_event,
+   141→        LAST_LOCAL_IMPL_SESSION: last_local_impl_session,
+   142→        LAST_LOCAL_IMPL_USER: last_local_impl_user,
+   143→        LAST_REMOTE_IMPL_AT: last_remote_impl_at,
+   144→        LAST_REMOTE_IMPL_RUN_ID: last_remote_impl_run_id,
+   145→        LAST_REMOTE_IMPL_SESSION_ID: last_remote_impl_session_id,
+   146→    }
+   147→    # Only include worktree_name if provided
+   148→    if worktree_name is not None:
+   149→        data[WORKTREE_NAME] = worktree_name
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ay1yrboQEkaMqqwsGsufLR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">240</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1842" cache_read_input_tokens="49272" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1842, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ay1yrboQEkaMqqwsGsufLR">
+File content (11448 tokens) exceeds maximum allowed tokens (10000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KovzcqjfzVsebStmWaLJt9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">240</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="51114" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 182, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KovzcqjfzVsebStmWaLJt9">
+   240→    Args:
+   241→        created_at: ISO 8601 timestamp of plan creation
+   242→        created_by: GitHub username of plan creator
+   243→        worktree_name: Optional worktree name (set when worktree is created)
+   244→        branch_name: Optional git branch name for this plan
+   245→        plan_comment_id: Optional GitHub comment ID containing plan content
+   246→        last_dispatched_run_id: Optional workflow run ID
+   247→        last_dispatched_node_id: Optional GraphQL node ID (for batch queries)
+   248→        last_dispatched_at: Optional dispatch timestamp
+   249→        last_local_impl_at: Optional local implementation timestamp
+   250→        last_local_impl_event: Optional event type ("started" or "ended")
+   251→        last_local_impl_session: Optional Claude Code session ID
+   252→        last_local_impl_user: Optional user who ran implementation
+   253→        last_remote_impl_at: Optional remote implementation timestamp
+   254→        last_remote_impl_run_id: Optional GitHub Actions run ID for remote implementation
+   255→        last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
+   256→        source_repo: For cross-repo plans, the repo where implementation happens
+   257→        objective_issue: Optional parent objective issue number
+   258→        created_from_session: Optional session ID that created this plan
+   259→        created_from_workflow_run_url: Optional workflow run URL that created this plan
+   260→        last_learn_session: Optional session ID that last invoked learn
+   261→        last_learn_at: Optional ISO 8601 timestamp of last learn invocation
+   262→        learn_status: Optional learning workflow status
+   263→        learn_plan_issue: Optional issue number of generated learn plan
+   264→        learn_plan_pr: Optional PR number that implemented the learn plan
+   265→        learned_from_issue: Optional parent plan issue number (for learn plans)
+   266→        lifecycle_stage: Optional lifecycle stage for the plan
+   267→
+   268→    Returns:
+   269→        Issue body string with metadata block only
+
+... [90 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AzkXn5fa6n5qfQyPaBTUAE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">360</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1942" cache_read_input_tokens="51296" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1942, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AzkXn5fa6n5qfQyPaBTUAE">
+File content (10033 tokens) exceeds maximum allowed tokens (10000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CNY7AvQzUd3qhco16RzF5k">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">360</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="53238" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 293, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CNY7AvQzUd3qhco16RzF5k">
+   360→    dispatched_at: str,
+   361→) -&gt; str:
+   362→    """Update dispatch fields in plan-header metadata block.
+   363→
+   364→    Uses Python YAML parsing for robustness (not regex).
+   365→    This function reads the existing plan-header block, updates the
+   366→    dispatch fields, and re-renders the entire body.
+   367→
+   368→    Args:
+   369→        issue_body: Current issue body containing plan-header block
+   370→        run_id: Workflow run ID to set
+   371→        node_id: GraphQL node ID to set (for batch queries)
+   372→        dispatched_at: ISO 8601 timestamp of dispatch
+   373→
+   374→    Returns:
+   375→        Updated issue body with new dispatch fields
+   376→
+   377→    Raises:
+   378→        ValueError: If plan-header block not found or invalid
+   379→    """
+   380→    # Extract existing plan-header block
+   381→    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+   382→    if block is None:
+   383→        raise ValueError("plan-header block not found in issue body")
+   384→
+   385→    # Update dispatch fields
+   386→    updated_data = dict(block.data)
+   387→    updated_data[LAST_DISPATCHED_RUN_ID] = run_id
+   388→    updated_data[LAST_DISPATCHED_NODE_ID] = node_id
+   389→    updated_data[LAST_DISPATCHED_AT] = dispatched_at
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018BPvFDWCsYLHKy7F9NEsLL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">458</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1435" cache_read_input_tokens="53531" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018BPvFDWCsYLHKy7F9NEsLL">
+   458→def extract_plan_header_comment_id(issue_body: str) -&gt; int | None:
+   459→    """Extract plan_comment_id from plan-header block.
+   460→
+   461→    Args:
+   462→        issue_body: Issue body containing plan-header block
+   463→
+   464→    Returns:
+   465→        plan_comment_id if found, None if block is missing or field is unset
+   466→    """
+   467→    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+   468→    if block is None:
+   469→        return None
+   470→
+   471→    return block.data.get(PLAN_COMMENT_ID)
+   472→
+   473→
+   474→def update_plan_header_objective_issue(
+   475→    issue_body: str,
+   476→    objective_issue: int,
+   477→) -&gt; str:
+   478→    """Update objective_issue field in plan-header metadata block.
+   479→
+   480→    Used to set or update the backlink from a plan PR to its parent objective.
+   481→
+   482→    Args:
+   483→        issue_body: Current issue body containing plan-header block
+   484→        objective_issue: Parent objective issue number
+   485→
+   486→    Returns:
+   487→        Updated issue body with new objective_issue field
+
+... [968 lines omitted] ...
+
+   490→        ValueError: If plan-header block not found or invalid
+   494→        raise ValueError("plan-header block not found in issue body")
+   526→        ValueError: If plan-header block not found or invalid
+   531→        raise ValueError("plan-header block not found in issue body")
+   567→        ValueError: If plan-header block not found or invalid
+   572→        raise ValueError("plan-header block not found in issue body")
+   608→        ValueError: If plan-header block not found or invalid
+   613→        raise ValueError("plan-header block not found in issue body")
+   651→        ValueError: If plan-header block not found or invalid
+   656→        raise ValueError("plan-header block not found in issue body")
+   713→        ValueError: If plan-header block not found or invalid
+   718→        raise ValueError("plan-header block not found in issue body")
+   773→        ValueError: If plan-header block not found or invalid
+   778→        raise ValueError("plan-header block not found in issue body")
+   897→        ValueError: If plan-header block not found or invalid
+   902→        raise ValueError("plan-header block not found in issue body")
+  1009→        ValueError: If plan-header block not found or invalid
+  1014→        raise ValueError("plan-header block not found in issue body")
+  1087→        ValueError: If plan-header block not found or invalid
+  1092→        raise ValueError("plan-header block not found in issue body")
+  1139→        ValueError: If plan-header block not found or invalid
+  1144→        raise ValueError("plan-header block not found in issue body")
+  1292→        ValueError: If plan-header block not found or invalid
+  1297→        raise ValueError("plan-header block not found in issue body")
+  1337→        ValueError: If plan-header block not found or invalid
+  1342→        raise ValueError("plan-header block not found in issue body")
+  1391→        ValueError: If plan-header block not found or invalid
+  1395→        raise ValueError("plan-header block not found in issue body")
+  1433→        comment_id: GitHub comment ID containing CI failure summaries
+  1439→        ValueError: If plan-header block not found or invalid
+  1443→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12943" cache_read_input_tokens="54966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12943}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the remaining critical files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12943" cache_read_input_tokens="54966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12943}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E4KRb3NXZf9wUfEwUq6n3Z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12943" cache_read_input_tokens="54966" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12943, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E4KRb3NXZf9wUfEwUq6n3Z">
+     1→"""GitHub draft PR implementation of managed PR backend.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for managed PRs.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "[erk-pr]" title prefix identifies managed PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→import logging
+     9→from collections.abc import Mapping
+    10→from datetime import UTC
+    11→from pathlib import Path
+    12→
+    13→from erk_shared.gateway.github.abc import LocalGitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    add_metadata_block,
+    18→    find_metadata_block,
+    19→    has_metadata_block,
+    20→    render_metadata_block,
+    21→    replace_metadata_block_in_body,
+    22→)
+    23→from erk_shared.gateway.github.metadata.plan_header import (
+    24→    format_plan_header_body,
+    25→)
+    26→from erk_shared.gateway.github.metadata.schemas import (
+    27→    CREATED_FROM_SESSION,
+    28→    CREATED_FROM_WORKFLOW_RUN_URL,
+    29→    LEARNED_FROM_ISSUE,
+    30→    OBJECTIVE_ISSUE,
+
+... [50 lines omitted] ...
+
+    47→    PlanHeaderNotFoundError,
+    68→        ValueError: If value cannot be converted to int
+    76→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019dLhAdbmpj9Q1jFL5YyvzG">
+    <param name="pattern">def create_managed_pr</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1179" cache_read_input_tokens="67909" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019dLhAdbmpj9Q1jFL5YyvzG">
+254:    def create_managed_pr(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TqNtjJNowzcxcZi9VsUzQS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">254</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="69088" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 182, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TqNtjJNowzcxcZi9VsUzQS">
+   254→    def create_managed_pr(
+   255→        self,
+   256→        *,
+   257→        repo_root: Path,
+   258→        title: str,
+   259→        content: str,
+   260→        labels: tuple[str, ...],
+   261→        metadata: Mapping[str, object],
+   262→        summary: str,
+   263→    ) -&gt; CreatePlanResult:
+   264→        """Create a new plan as a draft PR.
+   265→
+   266→        Requires "branch_name" in metadata since draft PRs need an existing
+   267→        pushed branch.
+   268→
+   269→        Args:
+   270→            repo_root: Repository root directory
+   271→            title: Plan title
+   272→            content: Plan body/description
+   273→            labels: Labels to apply (immutable tuple)
+   274→            metadata: Provider-specific metadata. Required keys:
+   275→                - branch_name: str (branch for the draft PR)
+   276→              Optional keys:
+   277→                - source_repo: str | None
+   278→                - objective_issue: int | None
+   279→                - created_from_session: str | None
+   280→            summary: AI-generated summary (empty string if none)
+   281→
+   282→        Returns:
+   283→            CreatePlanResult with pr_number (PR number) and url
+
+... [90 lines omitted] ...
+
+   286→            RuntimeError: If branch_name not in metadata or creation fails
+   290→            raise RuntimeError("branch_name is required in metadata for ManagedGitHubPrBackend")
+   372→        # Add labels with retry on transient errors
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1787" cache_read_input_tokens="69270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1787}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the landing script and the plan_save.py.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1787" cache_read_input_tokens="69270" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1787}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Gsr688o7XckUVo1QtHkCW3">
+    <param name="pattern">matched_steps|auto.*discover|node_ids</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1787" cache_read_input_tokens="69270" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1787, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gsr688o7XckUVo1QtHkCW3">
+8-
+9-Usage:
+10-    erk exec objective-apply-landed-update --pr 6517 --objective 6423 --branch P6517-...
+11:    erk exec objective-apply-landed-update  # auto-discovers all arguments
+12-
+13-Output:
+14-    JSON with {success, objective, plan, pr, roadmap, node_updates,
+--
+73-
+74-def _update_nodes_in_body(
+75-    body: str,
+76:    matched_steps: list[str],
+77-    *,
+78-    pr_ref: str,
+79-) -&gt; tuple[str, list[NodeUpdateDict]]:
+--
+84-    node_updates: list[NodeUpdateDict] = []
+85-    updated_body = body
+86-
+87:    for node_id in matched_steps:
+88-        previous_pr, found = _find_node_refs(updated_body, node_id)
+89-        if not found:
+90-            continue
+--
+137-
+138-@click.command(name="objective-apply-landed-update")
+139-@click.option(
+140:    "--pr", "pr_number", type=int, default=None, help="PR number (auto-discovered if omitted)"
+141-)
+142-@click.option(
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018Fhu6K84CneCh8cYXNYCMC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py</param>
+    <param name="offset">160</param>
+    <param name="limit">115</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1172" cache_read_input_tokens="71057" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1172, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Fhu6K84CneCh8cYXNYCMC">
+   160→    help="Node ID(s) to mark as done (e.g., --node 1.1 --node 1.2)",
+   161→)
+   162→@click.option(
+   163→    "--auto-close",
+   164→    "auto_close",
+   165→    is_flag=True,
+   166→    default=False,
+   167→    help="Automatically close the objective if all nodes are complete",
+   168→)
+   169→@click.pass_context
+   170→def objective_apply_landed_update(
+   171→    ctx: click.Context,
+   172→    *,
+   173→    pr_number: int | None,
+   174→    objective_number: int | None,
+   175→    branch_name: str | None,
+   176→    node_ids: tuple[str, ...],
+   177→    auto_close: bool,
+   178→) -&gt; None:
+   179→    """Apply mechanical updates to an objective after landing a PR.
+   180→
+   181→    Fetches context, updates roadmap nodes to done, and posts an action comment
+   182→    in a single call. Returns rich JSON for the agent to use in prose reconciliation.
+   183→
+   184→    The PR number is used as the plan number (in erk, the PR IS the plan).
+   185→    """
+   186→    erk_ctx = require_context(ctx)
+   187→    github = require_github(ctx)
+   188→    repo_root = require_repo_root(ctx)
+   189→    plan_backend = require_plan_backend(ctx)
+
+... [85 lines omitted] ...
+
+   194→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   206→            click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   213→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   220→        click.echo(_error_json(f"PR #{pr_number} not found"))
+   229→            click.echo(_error_json(msg))
+   236→        click.echo(_error_json(f"Objective #{objective_number} not found"))
+   242→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <assistant>Now let me read the plan_save.py to see how node_ids are currently handled.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2517" cache_read_input_tokens="72229" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01P5oZUvKJd5Dy6VJGt7CbKL">
+    <param name="pattern">node_ids</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2517" cache_read_input_tokens="72229" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P5oZUvKJd5Dy6VJGt7CbKL">
+117-    output_format: str,
+118-    plan_file: Path | None,
+119-    learned_from_issue: int | None,
+120-    created_from_workflow_run_url: str | None,
+121-    branch_slug: str | None,
+122:    node_ids: tuple[str, ...] | None,
+123-    summary: str | None,
+124-    session_xml_dir: Path | None,
+125-    current_branch_flag: bool,
+126-) -&gt; None:
+127-    """Save plan as a planned PR.
+--
+137-        output_format: Output format (json or display)
+138-        plan_file: Original plan file path (for snapshot)
+139-        learned_from_issue: Parent plan number (for learn plans)
+140-        created_from_workflow_run_url: GitHub Actions workflow run URL
+141-        branch_slug: Pre-generated branch slug (skips LLM call when provided)
+142:        node_ids: Objective roadmap node IDs to associate with this plan
+143-        summary: AI-generated summary for the PR description (None coerced to empty string)
+144-        session_xml_dir: Directory containing session XML files to embed in the PR diff
+145-        current_branch_flag: When True, use the current branch directly
+146-            instead of creating a new one.
+147-    """
+--
+227-        "provider": "github-draft-pr",
+228-        "title": title,
+229-    }
+230-    if objective_issue is not None:
+231-        ref_data["objective_id"] = objective_issue
+232:    if node_ids is not None:
+
+... [41 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GqtX84MprSMhPyxJU7saj4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">202</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1248" cache_read_input_tokens="74746" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1248, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GqtX84MprSMhPyxJU7saj4">
+   202→        )
+   203→
+   204→        # Determine base branch: use current branch if on a feature branch, otherwise trunk
+   205→        current_branch = git.branch.get_current_branch(repo_root)
+   206→
+   207→        if (
+   208→            current_branch is not None
+   209→            and current_branch != trunk
+   210→            and not current_branch.startswith("learn/")
+   211→            and git.branch.branch_exists_on_remote(repo_root, "origin", current_branch)
+   212→        ):
+   213→            # Stack plan branch on current feature branch for natural Graphite stacking
+   214→            base_branch = current_branch
+   215→            create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+   216→        else:
+   217→            # On trunk or detached HEAD: create from origin/trunk
+   218→            base_branch = trunk
+   219→            git.remote.fetch_branch(repo_root, "origin", trunk)
+   220→            create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
+   221→        if isinstance(create_result, BranchAlreadyExists):
+   222→            click.echo(f"Error: {create_result.message}", err=True)
+   223→            raise SystemExit(1) from None
+   224→
+   225→    # Build ref.json data
+   226→    ref_data: dict[str, str | int | list[str] | None] = {
+   227→        "provider": "github-draft-pr",
+   228→        "title": title,
+   229→    }
+   230→    if objective_issue is not None:
+   231→        ref_data["objective_id"] = objective_issue
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AxUWpaVPWUYm2FAPDyXEPY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1360" cache_read_input_tokens="75994" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1360, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AxUWpaVPWUYm2FAPDyXEPY">
+   280→    if objective_issue is not None:
+   281→        metadata["objective_issue"] = objective_issue
+   282→
+   283→    if session_id is not None:
+   284→        metadata["created_from_session"] = session_id
+   285→
+   286→    if learned_from_issue is not None:
+   287→        metadata["learned_from_issue"] = learned_from_issue
+   288→
+   289→    if created_from_workflow_run_url is not None:
+   290→        metadata["created_from_workflow_run_url"] = created_from_workflow_run_url
+   291→
+   292→    # Build labels
+   293→    labels = ["erk-pr"]
+   294→    if plan_type == "learn":
+   295→        labels.append("erk-learn")
+   296→
+   297→    # Prefix title with [erk-pr] or [erk-learn] for GitHub visibility
+   298→    title_tag = get_title_tag_from_labels(labels)
+   299→    prefixed_title = f"{title_tag} {title}"
+   300→
+   301→    # Create draft PR via backend
+   302→    backend = ManagedGitHubPrBackend(github, github_issues, time=RealTime())
+   303→    result = backend.create_managed_pr(
+   304→        repo_root=repo_root,
+   305→        title=prefixed_title,
+   306→        content=plan_content,
+   307→        labels=tuple(labels),
+   308→        metadata=metadata,
+   309→        summary=summary or "",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="541" cache_read_input_tokens="77354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 541}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me create tasks and start implementing. Let me also check the existing test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="541" cache_read_input_tokens="77354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 541}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01Sf1vMqSwn3YSJMUAe7Bfef">
+    <param name="subject">Cycle 1: Add node_ids to schema, Plan type, conversion, and landing script</param>
+    <param name="description">Add NODE_IDS constant to schemas.py, add node_ids field to Plan dataclass, parse node_ids in conversion.py, and update landing script to use plan metadata for auto-discovery. Write tests first (TDD).</param>
+    <param name="activeForm">Implementing Cycle 1: schema, types, conversion, landing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="541" cache_read_input_tokens="77354" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 541, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Sf1vMqSwn3YSJMUAe7Bfef">
+Task #1 created successfully: Cycle 1: Add node_ids to schema, Plan type, conversion, and landing script
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014V3wsDy6nMyQ2VzR6JyYFT">
+    <param name="subject">Cycle 2: Write node_ids to plan-header during plan creation</param>
+    <param name="description">Add node_ids parameter to create_plan_header_block() and format_plan_header_body(), pass through from planned_pr.py and plan_save.py. Write tests first (TDD).</param>
+    <param name="activeForm">Implementing Cycle 2: write node_ids during creation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="77895" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 261, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014V3wsDy6nMyQ2VzR6JyYFT">
+Task #2 created successfully: Cycle 2: Write node_ids to plan-header during plan creation
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01WG7L1rbHjkDV5RMKZT6rbf">
+    <param name="subject">Cycle 3: Extract and update node_ids functions</param>
+    <param name="description">Add extract_plan_header_node_ids() and update_plan_header_node_ids() to plan_header.py. Write tests first (TDD).</param>
+    <param name="activeForm">Implementing Cycle 3: extract/update functions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="78156" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WG7L1rbHjkDV5RMKZT6rbf">
+Task #3 created successfully: Cycle 3: Extract and update node_ids functions
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0164cnQ4f3vuR14rD6ZuRz1g">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run tests and CI checks, fix any issues, then submit the PR.</param>
+    <param name="activeForm">Running CI and submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="78349" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0164cnQ4f3vuR14rD6ZuRz1g">
+Task #4 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PFkuseMGQ3LHahMoV3CPAp">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="133" cache_read_input_tokens="78523" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 133, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PFkuseMGQ3LHahMoV3CPAp">
+Updated task #1 status
+  </tool_result>
+</session>

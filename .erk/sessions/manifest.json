@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "pr_number": 9326,
+  "sessions": [
+    {
+      "session_id": "a6885ee4-9054-4f4c-8a56-cdd97c35cc35",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T07:34:26.113823+00:00",
+      "files": [
+        "impl-a6885ee4-9054-4f4c-8a56-cdd97c35cc35-a6885ee4-9054-4f4c-8a56-cdd97c35cc35-part1.xml",
+        "impl-a6885ee4-9054-4f4c-8a56-cdd97c35cc35-a6885ee4-9054-4f4c-8a56-cdd97c35cc35-part2.xml",
+        "impl-a6885ee4-9054-4f4c-8a56-cdd97c35cc35-a6885ee4-9054-4f4c-8a56-cdd97c35cc35-part3.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 20,
+      "raw_size_kb": 2198,
+      "xml_size_kb": 194,
+      "git_branch": "plnd/fix-multinode-landing-node-03-21-0712"
+    }
+  ]
+}
