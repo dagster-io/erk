@@ -1,7 +1,7 @@
 ---
 title: Teleport Slot Awareness
 read_when:
-  - "modifying erk pr teleport command"
+  - "modifying erk slot teleport command"
   - "understanding how teleport updates slot assignments"
   - "working with slot pool and teleport interaction"
 tripwires:
@@ -11,11 +11,11 @@ tripwires:
 
 # Teleport Slot Awareness
 
-`erk pr teleport` updates worktree slot assignments when operating in-place, matching the behavior of `erk br co` (branch checkout). This was added in PR #9225.
+`erk slot teleport` updates worktree slot assignments when operating in-place, matching the behavior of `erk br co` (branch checkout). This was added in PR #9225.
 
 ## Source
 
-`src/erk/cli/commands/pr/teleport_cmd.py` — `_teleport_in_place()` function (lines ~203-214)
+`packages/erk-slots/src/erk_slots/teleport_cmd.py` — `_teleport_in_place()` function
 
 ## When Slot Assignments Are Updated
 
@@ -23,7 +23,7 @@ tripwires:
 
 After force-resetting the branch to match remote, the command updates the slot assignment.
 
-**Source**: `src/erk/cli/commands/pr/teleport_cmd.py:203-214` — checks if in a managed slot via `load_pool_state()`, then calls `update_slot_assignment_tip()` to record the new branch name.
+**Source**: `packages/erk-slots/src/erk_slots/teleport_cmd.py` — checks if in a managed slot via `load_pool_state()`, then calls `update_slot_assignment_tip()` to record the new branch name.
 
 The slot assignment records which branch is checked out in each slot. After teleporting in-place to a new branch, the assignment must be updated so the pool knows the current branch.
 

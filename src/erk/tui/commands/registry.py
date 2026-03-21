@@ -111,12 +111,12 @@ def _display_copy_pr_checkout_plain(ctx: CommandContext) -> str:
 
 def _display_copy_teleport(ctx: CommandContext) -> str:
     """Display name for copy_teleport command."""
-    return f"erk pr teleport {ctx.row.pr_number}"
+    return f"erk slot teleport {ctx.row.pr_number}"
 
 
 def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
     """Display name for copy_teleport_new_slot command."""
-    return f"erk pr teleport {ctx.row.pr_number} --new-slot"
+    return f"erk slot teleport {ctx.row.pr_number} --new-slot"
 
 
 def _display_cmux_checkout(ctx: CommandContext) -> str:
@@ -126,7 +126,7 @@ def _display_cmux_checkout(ctx: CommandContext) -> str:
 
 def _display_cmux_teleport(ctx: CommandContext) -> str:
     """Display name for cmux_teleport command."""
-    return f"erk pr teleport {ctx.row.pr_number} --new-slot --script --sync"
+    return f"erk slot teleport {ctx.row.pr_number} --new-slot --script --sync"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -445,7 +445,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_teleport",
-            name="erk pr teleport",
+            name="erk slot teleport",
             description="teleport",
             category=CommandCategory.COPY,
             shortcut=None,
@@ -455,7 +455,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_teleport_new_slot",
-            name="erk pr teleport --new-slot",
+            name="erk slot teleport --new-slot",
             description="teleport (new slot)",
             category=CommandCategory.COPY,
             shortcut=None,

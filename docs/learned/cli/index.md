@@ -11,7 +11,7 @@
 - **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
 - **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
 - **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
-- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
+- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk slot teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
 - **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-pr flag, changing slot allocation behavior
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
@@ -76,7 +76,7 @@
 - **[slash-command-llm-turn-optimization.md](slash-command-llm-turn-optimization.md)** — writing a slash command that makes 3+ sequential tool calls to fetch data, optimizing a slash command that feels slow due to many LLM round-trips, deciding whether to bundle API calls into an exec script or keep them in the command
 - **[slot-assign-from-current-branch.md](slot-assign-from-current-branch.md)** — modifying slot assign command behavior, adding --from-current-branch to other commands, understanding branch switching after slot operations
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
-- **[teleport-slot-awareness.md](teleport-slot-awareness.md)** — modifying erk pr teleport command, understanding how teleport updates slot assignments, working with slot pool and teleport interaction
+- **[teleport-slot-awareness.md](teleport-slot-awareness.md)** — modifying erk slot teleport command, understanding how teleport updates slot assignments, working with slot pool and teleport interaction
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with user confirmations, designing commands that perform destructive mutations, adding confirmation prompts to CLI commands, deciding where to place confirmation logic in a command
 - **[upgrade-workflow.md](upgrade-workflow.md)** — modifying erk init --upgrade behavior, adding new entries to REQUIRED_GITIGNORE_ENTRIES, working with the erk doctor --check-hooks flag, understanding how erk upgrades existing repositories

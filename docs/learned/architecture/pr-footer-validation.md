@@ -54,14 +54,14 @@ Closes #123
 
 To checkout this PR in a fresh worktree and environment locally, run:
 
-erk pr teleport 1895
+erk slot teleport 1895
 ```
 
 **Key format rules:**
 
 - Footer starts after last `\n---\n` delimiter in PR body
 - Closing reference comes first (if present): `Closes #N` or `Closes owner/repo#N`
-- Teleport command uses `erk pr teleport <N>` format for quick PR checkout
+- Teleport command uses `erk slot teleport <N>` format for quick PR checkout
 - PR number in teleport command must match actual PR number (initially 0, updated after creation)
 
 **Cross-repo variation:** When `plans_repo` is set, closing reference uses `owner/repo#N` format instead of `#N`.

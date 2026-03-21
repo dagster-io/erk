@@ -255,6 +255,8 @@ def build_pr_body_footer(
     parts: list[str] = []
     parts.append("\n---\n")
 
-    parts.append(f"\nTo replicate this PR locally, run:\n\n```\nerk pr teleport {pr_number}\n```\n")
+    parts.append(
+        f"\nTo replicate this PR locally, run:\n\n```\nerk slot teleport {pr_number}\n```\n"
+    )
 
     return "\n".join(parts)

@@ -130,7 +130,7 @@ def test_cmux_open_pr_teleport_mode() -> None:
 
     assert result.exit_code == 0
     assert len(fake_cmux.create_calls) == 1
-    assert "erk pr teleport" in fake_cmux.create_calls[0].command
+    assert "erk slot teleport" in fake_cmux.create_calls[0].command
     assert "--new-slot --script --sync" in fake_cmux.create_calls[0].command
 
 

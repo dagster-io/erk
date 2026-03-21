@@ -281,7 +281,7 @@ def test_generates_footer_with_checkout_command() -> None:
 
         # Verify footer with teleport command is generated
         _, updated_body = github.updated_pr_bodies[0]
-        assert "erk pr teleport" in updated_body
+        assert "erk slot teleport" in updated_body
         # No issue closing reference (planned-PR only)
         assert "Closes #" not in updated_body
 

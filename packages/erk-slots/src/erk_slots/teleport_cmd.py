@@ -63,7 +63,7 @@ class TeleportPlan:
 @click.option("--dry-run", is_flag=True, help="Preview without making changes")
 @script_option
 @click.pass_obj
-def pr_teleport(
+def slot_teleport(
     ctx: ErkContext,
     pr_number: int,
     new_slot: bool,
@@ -98,11 +98,11 @@ def pr_teleport(
 
     \b
     Examples:
-        erk pr teleport 123              # Overwrite current branch with PR #123's remote state
-        erk pr teleport 123 -f           # Skip confirmation
-        erk pr teleport 123 --new-slot   # Create a new worktree slot for the PR
-        erk pr teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
-        erk pr teleport 123 --dry-run    # Preview what would be lost
+        erk slot teleport 123              # Overwrite current branch with PR #123's remote state
+        erk slot teleport 123 -f           # Skip confirmation
+        erk slot teleport 123 --new-slot   # Create a new worktree slot for the PR
+        erk slot teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
+        erk slot teleport 123 --dry-run    # Preview what would be lost
     """
     Ensure.gh_authenticated(ctx)
 
@@ -464,7 +464,7 @@ def _execute_new_slot_teleport(
 
 def _display_dry_run_report(plan: TeleportPlan) -> None:
     """Display a dry-run report showing what teleport would do."""
-    click.echo(f"\nDry run: erk pr teleport {plan.pr_number}")
+    click.echo(f"\nDry run: erk slot teleport {plan.pr_number}")
 
     # Local state section (only for in-place when there's something to report)
     has_local_state = plan.ahead > 0 or plan.staged or plan.modified or plan.untracked
