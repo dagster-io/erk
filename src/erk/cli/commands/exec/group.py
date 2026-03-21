@@ -21,6 +21,7 @@ from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
 from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+from erk.cli.commands.exec.scripts.classify_pr_feedback import classify_pr_feedback
 from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
 from erk.cli.commands.exec.scripts.close_pr import (
     close_pr,
@@ -198,6 +199,7 @@ exec_group.add_command(add_plan_labels, name="add-plan-labels")
 exec_group.add_command(add_pr_labels, name="add-pr-labels")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
+exec_group.add_command(classify_pr_feedback, name="classify-pr-feedback")
 exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
 exec_group.add_command(cmux_open_pr, name="cmux-open-pr")
 exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
