@@ -23,7 +23,7 @@ Plan content arrives at the PR through a multi-system chain:
 
 1. **Branch name** → `PrContextProvider` extracts the issue number from the `P{number}-{slug}` convention
 2. **GitHub API** → fetches the plan body, then the plan comment containing the actual plan markdown
-3. **Phase 2** of the submit pipeline populates `state.plan_context` (a `PlanContext` with issue number, plan markdown, and optional objective summary) — runs concurrently with diff extraction
+3. **Phase 2** of the submit pipeline populates `state.plan_context` (a `PrContext` with issue number, plan markdown, and optional objective summary) — runs concurrently with diff extraction
 4. **Phase 5** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string
 
 <!-- Source: src/erk/core/pr_context_provider.py, PrContextProvider.get_plan_context -->
