@@ -1,0 +1,345 @@
+<session>
+  <meta source="agent-a00d93f" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py`:
+
+Rename the CLI flag `--learn-plan` to `--learn-pr` and the Python variable `learn_plan` to `learn_pr`.
+
+Specifically:
+- The Click option: `"--learn-plan"` → `"--learn-pr"`
+- Python parameter `learn_plan: int | None` → `learn_pr: int | None`
+- All uses of `learn_plan` variable in the function body → `learn_pr`
+- Error message strings referencing `--learn-plan` → `--learn-pr`
+- Help text referencing `--learn-plan` → `--learn-pr`
+
+DO NOT rename:
+- `learn_plan_issue` (if it exists — that's a metadata field, not the CLI flag)
+- `--plan-pr` flag (stays as-is)
+- `plan_pr` variable (stays as-is)
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename the CLI flag and Python variable. Let me start by reading the file to see its current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6125" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6125, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EpVNxjFyKMdctX9WtVAcWi">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6125" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6125, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EpVNxjFyKMdctX9WtVAcWi">
+     1→"""Track learn workflow result on a plan.
+     2→
+     3→This exec script updates the plan-header metadata block to record the result
+     4→of a learn workflow. It sets the learn_status field and optionally records
+     5→the learn_plan_issue if a plan was created.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
+    10→
+    11→Output:
+    12→    JSON object with tracking result:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "learn_status": "completed_no_plan"
+    17→    }
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
+    22→"""
+    23→
+    24→import json
+    25→from dataclasses import asdict, dataclass
+    26→
+    27→import click
+    28→
+    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+
+... [169 lines omitted] ...
+
+    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    46→class TrackLearnResultError:
+    47→    """Error result when tracking fails."""
+    50→    error: str
+   102→        error = TrackLearnResultError(
+   104→            error="missing-learn-plan",
+   107→        click.echo(json.dumps(asdict(error)))
+   112→        error = TrackLearnResultError(
+   114→            error="unexpected-learn-plan",
+   117→        click.echo(json.dumps(asdict(error)))
+   122→        error = TrackLearnResultError(
+   124→            error="missing-plan-pr",
+   127→        click.echo(json.dumps(asdict(error)))
+   132→        error = TrackLearnResultError(
+   134→            error="unexpected-learn-plan",
+   137→        click.echo(json.dumps(asdict(error)))
+   142→        error = TrackLearnResultError(
+   144→            error="unexpected-plan-pr",
+   147→        click.echo(json.dumps(asdict(error)))
+   168→    except PlanHeaderNotFoundError:
+   169→        error = TrackLearnResultError(
+   171→            error="no-metadata-block",
+   174→        click.echo(json.dumps(asdict(error)), err=True)
+   176→    except RuntimeError as e:
+   177→        error = TrackLearnResultError(
+   179→            error="github-api-failed",
+   180→            message=f"Failed to update learn status on PR {pr_id}: {e}",
+   182→        click.echo(json.dumps(asdict(error)), err=True)
+  </tool_result>
+  <assistant>Now I'll apply all the necessary renames. I need to change:
+1. The Click option from `"--learn-plan"` to `"--learn-pr"`
+2. The parameter name from `learn_plan` to `learn_pr`
+3. All uses of `learn_plan` in the function body to `learn_pr`
+4. All error messages referencing `--learn-plan` to `--learn-pr`
+
+Let me apply these changes systematically:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3300" cache_read_input_tokens="16248" cache_creation="{'ephemeral_5m_input_tokens': 3300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UYrdoj3RdJjPeEZWaD6Rgx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">erk exec track-learn-result --plan-id 123 --status completed_no_plan
+    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456</param>
+    <param name="new_string">erk exec track-learn-result --plan-id 123 --status completed_no_plan
+    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-pr 456</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="3300" cache_read_input_tokens="16248" cache_creation="{'ephemeral_5m_input_tokens': 3300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UYrdoj3RdJjPeEZWaD6Rgx">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XKQYEBPnB7u6KWuC71hBkL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">@click.option(
+    "--learn-plan",
+    type=int,
+    help="Learn PR number (required if status is completed_with_plan)",
+)</param>
+    <param name="new_string">@click.option(
+    "--learn-pr",
+    type=int,
+    help="Learn PR number (required if status is completed_with_plan)",
+)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="385" cache_read_input_tokens="19548" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XKQYEBPnB7u6KWuC71hBkL">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RP895Sviwsob2r2Akt4eNN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">def track_learn_result(
+    ctx: click.Context,
+    *,
+    pr_id: str,
+    status: str,
+    learn_plan: int | None,
+    plan_pr: int | None,
+) -&gt; None:</param>
+    <param name="new_string">def track_learn_result(
+    ctx: click.Context,
+    *,
+    pr_id: str,
+    status: str,
+    learn_pr: int | None,
+    plan_pr: int | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="247" cache_read_input_tokens="19933" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="235" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RP895Sviwsob2r2Akt4eNN">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R6WLmjj4AhrcNAvMNsao6y">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    # Validate: completed_with_plan requires --learn-plan
+    if status == "completed_with...[truncated 195 chars]...lan'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)</param>
+    <param name="new_string">    # Validate: completed_with_plan requires --learn-pr
+    if status == "completed_with_p...[truncated 187 chars]...lan'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="287" cache_read_input_tokens="20180" cache_creation="{'ephemeral_5m_input_tokens': 287, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R6WLmjj4AhrcNAvMNsao6y">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012FpiSiqx4fisdQj8DV26j5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    # completed_no_plan should not have --learn-plan
+    if status == "completed_no_plan" ...[truncated 204 chars]...lan'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)</param>
+    <param name="new_string">    # completed_no_plan should not have --learn-pr
+    if status == "completed_no_plan" an...[truncated 196 chars]...lan'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="20467" cache_creation="{'ephemeral_5m_input_tokens': 495, 'ephemeral_1h_input_tokens': 0}" output_tokens="343" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012FpiSiqx4fisdQj8DV26j5">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HEqx4gGXqdDgfaFpY556xy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    # pending_review should not have --learn-plan
+    if status == "pending_review" and le...[truncated 195 chars]...iew'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)</param>
+    <param name="new_string">    # pending_review should not have --learn-pr
+    if status == "pending_review" and lear...[truncated 187 chars]...iew'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="395" cache_read_input_tokens="20962" cache_creation="{'ephemeral_5m_input_tokens': 395, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HEqx4gGXqdDgfaFpY556xy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01D6uBBbjXP8qv6bYtjFnBjX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">        backend.update_metadata(
+            repo_root,
+            pr_id,
+            met...[truncated 58 chars]...lan_issue": learn_plan,
+                "learn_plan_pr": plan_pr,
+            },
+        )</param>
+    <param name="new_string">        backend.update_metadata(
+            repo_root,
+            pr_id,
+            met...[truncated 56 chars]..._plan_issue": learn_pr,
+                "learn_plan_pr": plan_pr,
+            },
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="382" cache_read_input_tokens="21357" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D6uBBbjXP8qv6bYtjFnBjX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TDF52zdGpsCo5hBatvsyaz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+    <param name="old_string">    result = TrackLearnResultSuccess(
+        success=True,
+        pr_number=pr_id,
+        learn_status=status,
+        learn_plan_issue=learn_plan,
+        learn_plan_pr=plan_pr,
+    )</param>
+    <param name="new_string">    result = TrackLearnResultSuccess(
+        success=True,
+        pr_number=pr_id,
+        learn_status=status,
+        learn_plan_issue=learn_pr,
+        learn_plan_pr=plan_pr,
+    )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="408" cache_read_input_tokens="21739" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="243" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TDF52zdGpsCo5hBatvsyaz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify all changes were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="294" cache_read_input_tokens="22147" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YWtY24eWirqZJodsA43BGy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="294" cache_read_input_tokens="22147" cache_creation="{'ephemeral_5m_input_tokens': 294, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YWtY24eWirqZJodsA43BGy">
+     1→"""Track learn workflow result on a plan.
+     2→
+     3→This exec script updates the plan-header metadata block to record the result
+     4→of a learn workflow. It sets the learn_status field and optionally records
+     5→the learn_plan_issue if a plan was created.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-pr 456
+    10→
+    11→Output:
+    12→    JSON object with tracking result:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "learn_status": "completed_no_plan"
+    17→    }
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
+    22→"""
+    23→
+    24→import json
+    25→from dataclasses import asdict, dataclass
+    26→
+    27→import click
+    28→
+    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+
+... [169 lines omitted] ...
+
+    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    46→class TrackLearnResultError:
+    47→    """Error result when tracking fails."""
+    50→    error: str
+   102→        error = TrackLearnResultError(
+   104→            error="missing-learn-pr",
+   107→        click.echo(json.dumps(asdict(error)))
+   112→        error = TrackLearnResultError(
+   114→            error="unexpected-learn-pr",
+   117→        click.echo(json.dumps(asdict(error)))
+   122→        error = TrackLearnResultError(
+   124→            error="missing-plan-pr",
+   127→        click.echo(json.dumps(asdict(error)))
+   132→        error = TrackLearnResultError(
+   134→            error="unexpected-learn-pr",
+   137→        click.echo(json.dumps(asdict(error)))
+   142→        error = TrackLearnResultError(
+   144→            error="unexpected-plan-pr",
+   147→        click.echo(json.dumps(asdict(error)))
+   168→    except PlanHeaderNotFoundError:
+   169→        error = TrackLearnResultError(
+   171→            error="no-metadata-block",
+   174→        click.echo(json.dumps(asdict(error)), err=True)
+   176→    except RuntimeError as e:
+   177→        error = TrackLearnResultError(
+   179→            error="github-api-failed",
+   180→            message=f"Failed to update learn status on PR {pr_id}: {e}",
+   182→        click.echo(json.dumps(asdict(error)), err=True)
+  </tool_result>
+  <assistant>Perfect! All the changes have been successfully applied. Here's a summary of what was renamed:
+
+## Summary of Changes
+
+In `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py`:
+
+### Click Option (line 76)
+- Changed: `"--learn-plan"` → `"--learn-pr"`
+
+### Python Function Parameter (line 91)
+- Changed: `learn_plan: int | None` → `learn_pr: int | None`
+
+### Function Body - All variable uses updated:
+- Line 101: Validation condition `learn_plan is None` → `learn_pr is None`
+- Line 104: Error code `"missing-learn-plan"` → `"missing-learn-pr"`
+- Line 105: Error message `"--learn-plan is required..."` → `"--learn-pr is required..."`
+- Line 111: Validation condition `learn_plan is not None` → `learn_pr is not None`
+- Line 114: Error code `"unexpected-learn-plan"` → `"unexpected-learn-pr"`
+- Line 115: Error message `"--learn-plan should not be provided..."` → `"--learn-pr should not be provided..."`
+- Line 131: Validation condition `learn_plan is not None` → `learn_pr is not None`
+- Line 134: Error code `"unexpected-learn-plan"` → `"unexpected-learn-pr"`
+- Line 135: Error message `"--learn-plan should not be provided..."` → `"--learn-pr should not be provided..."`
+- Line 164: Metadata update `"learn_plan_issue": learn_plan` → `"learn_plan_issue": learn_pr`
+- Line 189: Result assignment `learn_plan_issue=learn_plan` → `learn_plan_issue=learn_pr`
+
+### Documentation (line 9)
+- Updated usage example: `--learn-plan 456` → `--learn-pr 456`
+
+### Preserved (as requested):
+- `learn_plan_issue` metadata field name (unchanged)
+- `--plan-pr` flag (unchanged)
+- `plan_pr` variable (unchanged)</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2633" cache_read_input_tokens="22441" cache_creation="{'ephemeral_5m_input_tokens': 2633, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

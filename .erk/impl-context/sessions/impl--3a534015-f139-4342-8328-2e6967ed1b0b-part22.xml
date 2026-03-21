@@ -1,0 +1,551 @@
+<session>
+  <meta source="agent-a9cfbd9" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Handle two test files:
+
+**File 1**: `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py`
+
+Rename `--learn-plan` to `--learn-pr` in all test invocations and assertions:
+- All `"--learn-plan"` strings in CLI invocations → `"--learn-pr"`
+- All assertion strings checking for `"learn-plan is required"` → `"learn-pr is required"` 
+- All assertion strings checking for `"learn-plan should not be provided"` → `"learn-pr should not be provided"`
+- Note: `learn_plan_issue` is a METADATA FIELD (not the CLI flag) - DO NOT rename that
+- DO NOT rename `"learn_plan_issue"`, `learn_plan_pr` metadata field references
+
+**File 2**: Create a new test file at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py`
+
+Read the existing file at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py` first.
+
+Then write the new file with these changes:
+- Module docstring: `get-plans-for-objective` → `get-prs-for-objective`
+- Import: `from erk.cli.commands.exec.scripts.get_plans_for_objective import (` → `from erk.cli.commands.exec.scripts.get_prs_for_objective import (`
+- Import: `    get_plans_for_objective,` → `    get_prs_for_objective,`
+- All `runner.invoke(get_plans_for_objective, ...)` → `runner.invoke(get_prs_for_objective, ...)`
+- All `output["plans"]` → `output["prs"]` (the JSON output key changed in the source)
+- All test function names: `test_get_plans_for_objective_*` → `test_get_prs_for_objective_*`
+- All docstrings mentioning "plans" in the context of this command → "prs"
+- `output["plans"]` access in assertions → `output["prs"]`
+- `assert "plans" in output` → `assert "prs" in output`
+- `isinstance(output["plans"], list)` → `isinstance(output["prs"], list)`
+- `plan_data = output["plans"][0]` → `pr_data = output["prs"][0]`
+- The verification of `plan_data` keys → `pr_data` keys
+
+Then delete the old file by running:
+`git rm /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py`
+
+Use Read tool to read the existing file, Write tool to create the new file, and Bash tool to run git rm.</user>
+  <assistant>I'll help you handle these two test files. Let me start by reading the files I need to work with.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6589" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6589, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BTsd9X1Suuf9tqnEhEjGg1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6589" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6589, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NMGP3q31NhqpaPUXwzf7KR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6589" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6589, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BTsd9X1Suuf9tqnEhEjGg1">
+     1→"""Unit tests for track-learn-result exec script.
+     2→
+     3→Tests learn result tracking on plans.
+     4→Uses fakes for fast, reliable testing without subprocess calls.
+     5→"""
+     6→
+     7→import json
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.track_learn_result import track_learn_result
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    15→from erk_shared.gateway.github.types import PRNotFound
+    16→from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+    17→from tests.fakes.gateway.github import FakeLocalGitHub
+    18→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    19→from tests.fakes.gateway.time import FakeTime
+    20→from tests.test_utils.github_helpers import create_test_issue
+    21→from tests.test_utils.plan_helpers import (
+    22→    format_plan_header_body_for_test,
+    23→    issue_info_to_pr_details,
+    24→)
+    25→
+    26→# ============================================================================
+    27→# Success Cases (Layer 4: Business Logic over Fakes)
+    28→# ============================================================================
+    29→
+    30→
+
+... [303 lines omitted] ...
+
+   112→# Validation Error Cases
+   117→    """Test error when completed_with_plan is missing --learn-plan."""
+   147→    """Test error when completed_no_plan has --learn-plan."""
+   223→    """Test error when pending_review is missing --plan-pr."""
+   253→    """Test error when pending_review has --learn-plan."""
+   292→    """Test error when completed_with_plan has --plan-pr."""
+  </tool_result>
+  <tool_result tool="toolu_01NMGP3q31NhqpaPUXwzf7KR">
+     1→"""Unit tests for get-plans-for-objective command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+     9→    get_plans_for_objective,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    15→
+    16→
+    17→def _make_plan_header(
+    18→    *,
+    19→    objective_id: int | None,
+    20→    use_legacy_field: bool = False,
+    21→) -&gt; str:
+    22→    """Create a plan-header metadata block."""
+    23→    # Use objective_id (new) or objective_issue (legacy)
+    24→    field_name = "objective_issue" if use_legacy_field else "objective_id"
+    25→    value = objective_id if objective_id is not None else "null"
+    26→
+    27→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    28→&lt;!-- erk:metadata-block:plan-header --&gt;
+    29→&lt;details&gt;
+    30→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+
+... [239 lines omitted] ...
+
+    88→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I'll make the necessary changes. Let me start with File 1 - editing the test_track_learn_result.py file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12451" cache_read_input_tokens="16712" cache_creation="{'ephemeral_5m_input_tokens': 12451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0162xxhLT5PeYGE5d9sFvdTi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">        result = runner.invoke(
+            track_learn_result,
+            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+            obj=ErkContext.for_test(</param>
+    <param name="new_string">        result = runner.invoke(
+            track_learn_result,
+            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],
+            obj=ErkContext.for_test(</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12451" cache_read_input_tokens="16712" cache_creation="{'ephemeral_5m_input_tokens': 12451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0162xxhLT5PeYGE5d9sFvdTi">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TaiWbzF1oEffksHkVxxsDf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert "learn-plan is required" in output["message"]</param>
+    <param name="new_string">    assert "learn-pr is required" in output["message"]</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="319" cache_read_input_tokens="29163" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TaiWbzF1oEffksHkVxxsDf">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DDYgSibqSwrZwiwixPrE5D">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">        result = runner.invoke(
+            track_learn_result,
+            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
+            obj=ErkContext.for_test(</param>
+    <param name="new_string">        result = runner.invoke(
+            track_learn_result,
+            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],
+            obj=ErkContext.for_test(</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="203" cache_read_input_tokens="29482" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DDYgSibqSwrZwiwixPrE5D">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Dtt6EtjDKMP2R81ryf6e4z">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert "should not be provided" in output["message"]</param>
+    <param name="new_string">    assert "learn-pr should not be provided" in output["message"]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="391" cache_read_input_tokens="29685" cache_creation="{'ephemeral_5m_input_tokens': 391, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dtt6EtjDKMP2R81ryf6e4z">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CMNj469Qj3M2ZVzwYmqtKz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">            [
+                "--pr-id",
+                "42",
+                "--status",...[truncated 46 chars]...              "789",
+                "--learn-plan",
+                "456",
+            ],</param>
+    <param name="new_string">            [
+                "--pr-id",
+                "42",
+                "--status",...[truncated 44 chars]...                "789",
+                "--learn-pr",
+                "456",
+            ],</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="204" cache_read_input_tokens="30076" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CMNj469Qj3M2ZVzwYmqtKz">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me create the new test file for get_prs_for_objective. First, I'll create the new file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="30280" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01HLL5VSseT2A859raXyt7oH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py</param>
+    <param name="content">"""Unit tests for get-prs-for-objective command."""
+
+import json
+from datetime import UTC,...[truncated 7023 chars]...   assert "number" in pr_data
+    assert "state" in pr_data
+    assert "title" in pr_data
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="30280" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="2517" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HLL5VSseT2A859raXyt7oH">
+File created successfully at: /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py
+  </tool_result>
+  <assistant>Now let me delete the old test file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2675" cache_read_input_tokens="30561" cache_creation="{'ephemeral_5m_input_tokens': 2675, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011ubaTgxYry6maNTCsw96su">
+    <param name="command">git -C /home/runner/work/erk/erk rm /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py</param>
+    <param name="description">Delete old test_get_plans_for_objective.py file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2675" cache_read_input_tokens="30561" cache_creation="{'ephemeral_5m_input_tokens': 2675, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ubaTgxYry6maNTCsw96su">
+rm 'tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py'
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes by checking the modified test file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="182" cache_read_input_tokens="33236" cache_creation="{'ephemeral_5m_input_tokens': 182, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KHeUVzQ1tBu12p4wYW8shE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">80</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="182" cache_read_input_tokens="33236" cache_creation="{'ephemeral_5m_input_tokens': 182, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KHeUVzQ1tBu12p4wYW8shE">
+    80→
+    81→    runner = CliRunner()
+    82→    with runner.isolated_filesystem(temp_dir=tmp_path):
+    83→        cwd = Path.cwd()
+    84→        result = runner.invoke(
+    85→            track_learn_result,
+    86→            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],
+    87→            obj=ErkContext.for_test(
+    88→                github=fake_github,
+    89→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+    90→                cwd=cwd,
+    91→                repo_root=cwd,
+    92→            ),
+    93→        )
+    94→
+    95→    assert result.exit_code == 0, result.output
+    96→    output = json.loads(result.output)
+    97→    assert output["success"] is True
+    98→    assert output["pr_number"] == "42"
+    99→    assert output["learn_status"] == "completed_with_plan"
+   100→    assert output["learn_plan_issue"] == 456
+   101→
+   102→    # Verify plan-header was updated with both status and plan
+   103→    updated_pr = fake_github.get_pr(cwd, 42)
+   104→    assert not isinstance(updated_pr, PRNotFound)
+   105→    block = find_metadata_block(updated_pr.body, "plan-header")
+   106→    assert block is not None
+   107→    assert block.data.get("learn_status") == "completed_with_plan"
+   108→    assert block.data.get("learn_plan_issue") == 456
+   109→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Hm9s94AGN2siLzAfU2FgGd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">140</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="772" cache_read_input_tokens="33418" cache_creation="{'ephemeral_5m_input_tokens': 772, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hm9s94AGN2siLzAfU2FgGd">
+   140→    assert result.exit_code == 1
+   141→    output = json.loads(result.output)
+   142→    assert output["success"] is False
+   143→    assert "learn-pr is required" in output["message"]
+   144→
+   145→
+   146→def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: Path) -&gt; None:
+   147→    """Test error when completed_no_plan has --learn-plan."""
+   148→    plan_body = format_plan_header_body_for_test(learn_status="pending")
+   149→    issue = create_test_issue(42, "Test Plan #42", plan_body)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FT1dMbVBSEhtGdUcmCrmew">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">157</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="387" cache_read_input_tokens="34190" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FT1dMbVBSEhtGdUcmCrmew">
+   157→    with runner.isolated_filesystem(temp_dir=tmp_path):
+   158→        cwd = Path.cwd()
+   159→        result = runner.invoke(
+   160→            track_learn_result,
+   161→            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],
+   162→            obj=ErkContext.for_test(
+   163→                github=fake_github,
+   164→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   165→                cwd=cwd,
+   166→                repo_root=cwd,
+   167→            ),
+   168→        )
+   169→
+   170→    assert result.exit_code == 1
+   171→    output = json.loads(result.output)
+   172→    assert output["success"] is False
+   173→    assert "learn-pr should not be provided" in output["message"]
+   174→
+   175→
+   176→# ============================================================================
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SZak4mhJ1yzAheVJX9zWmh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">265</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="475" cache_read_input_tokens="34577" cache_creation="{'ephemeral_5m_input_tokens': 475, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SZak4mhJ1yzAheVJX9zWmh">
+   265→        result = runner.invoke(
+   266→            track_learn_result,
+   267→            [
+   268→                "--pr-id",
+   269→                "42",
+   270→                "--status",
+   271→                "pending_review",
+   272→                "--plan-pr",
+   273→                "789",
+   274→                "--learn-pr",
+   275→                "456",
+   276→            ],
+   277→            obj=ErkContext.for_test(
+   278→                github=fake_github,
+   279→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   280→                cwd=cwd,
+   281→                repo_root=cwd,
+   282→            ),
+   283→        )
+   284→
+   285→    assert result.exit_code == 1
+   286→    output = json.loads(result.output)
+   287→    assert output["success"] is False
+   288→    assert "learn-plan should not be provided" in output["message"]
+   289→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I need to fix the last assertion on line 288. It should say "learn-pr should not be provided" instead of "learn-plan should not be provided":</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="583" cache_read_input_tokens="35052" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GQMFCbqb5NnP9e4GSzLK31">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output[...[truncated 68 chars]...
+
+def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) -&gt; None:</param>
+    <param name="new_string">    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output[...[truncated 66 chars]...
+
+def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="583" cache_read_input_tokens="35052" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GQMFCbqb5NnP9e4GSzLK31">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Excellent! Now let me verify the new test file was created correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="368" cache_read_input_tokens="35635" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PF34Ti5pAhSRcGrkBWnqo3">
+    <param name="command">head -30 /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py</param>
+    <param name="description">Verify new test file was created</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="368" cache_read_input_tokens="35635" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PF34Ti5pAhSRcGrkBWnqo3">
+"""Unit tests for get-prs-for-objective command."""
+
+import json
+from datetime import UTC, datetime
+
+from click.testing import CliRunner
+
+from erk.cli.commands.exec.scripts.get_prs_for_objective import (
+    get_prs_for_objective,
+)
+from erk_shared.context.context import ErkContext
+from erk_shared.gateway.github.issues.types import IssueInfo
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+
+
+def _make_plan_header(
+    *,
+    objective_id: int | None,
+    use_legacy_field: bool = False,
+) -&gt; str:
+    """Create a plan-header metadata block."""
+    # Use objective_id (new) or objective_issue (legacy)
+    field_name = "objective_issue" if use_legacy_field else "objective_id"
+    value = objective_id if objective_id is not None else "null"
+
+    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:plan-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+  </tool_result>
+  <assistant>Perfect! Let me verify the git status to confirm all changes:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="550" cache_read_input_tokens="36003" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016mLa7LiGsfEZBB8HBnVati">
+    <param name="command">git status</param>
+    <param name="description">Check git status for changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="550" cache_read_input_tokens="36003" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016mLa7LiGsfEZBB8HBnVati">
+On branch plnd/O9109-rename-cli-flags-pla-03-20-2007
+Your branch is up to date with 'origin/plnd/O9109-rename-cli-flags-pla-03-20-2007'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	deleted:    src/erk/cli/commands/exec/scripts/get_plans_for_objective.py
+	deleted:    tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   .claude/commands/erk/learn.md
+	modified:   .claude/commands/local/objective-view.md
+	modified:   .claude/skills/erk-exec/reference.md
+	modified:   docs/learned/architecture/command-boundaries.md
+	modified:   docs/learned/cli/checkout-three-path-logic.md
+	modified:   docs/learned/cli/erk-exec-commands.md
+	modified:   docs/learned/cli/index.md
+	modified:   docs/learned/cli/learn-plan-land-flow.md
+	modified:   docs/learned/planning/branch-name-inference.md
+	modified:   docs/learned/planning/learn-workflow.md
+	modified:   docs/learned/planning/next-steps-output.md
+	modified:   docs/learned/planning/plan-execution-patterns.md
+	modified:   docs/learned/planning/stacked-plan-branch-rebase.md
+	modified:   packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+	modified:   packages/erk-shared/src/erk_shared/plan_workflow.py
+	modified:   packages/erk-shared/tests/unit/github/test_objective_issues.py
+	modified:   src/erk/cli/commands/branch/checkout_cmd.py
+	modified:   src/erk/cli/commands/branch/create_cmd.py
+	modified:   src/erk/cli/commands/exec/group.py
+
+... [16 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me stage the new test file and verify the changes:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="969" cache_read_input_tokens="36553" cache_creation="{'ephemeral_5m_input_tokens': 969, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CNrJGBYCSiz7q34oyuiqxU">
+    <param name="command">git add /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py</param>
+    <param name="description">Stage the new test file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="969" cache_read_input_tokens="36553" cache_creation="{'ephemeral_5m_input_tokens': 969, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CNrJGBYCSiz7q34oyuiqxU">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TQaVP7JMGKRJFZqkiReyLq">
+    <param name="command">git add /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="description">Stage the modified test file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="240" cache_read_input_tokens="37522" cache_creation="{'ephemeral_5m_input_tokens': 240, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TQaVP7JMGKRJFZqkiReyLq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RwJbXsd3gsgH98oXip3voH">
+    <param name="command">git diff --cached tests/unit/cli/commands/exec/scripts/</param>
+    <param name="description">View staged changes in test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="133" cache_read_input_tokens="37762" cache_creation="{'ephemeral_5m_input_tokens': 133, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RwJbXsd3gsgH98oXip3voH">
+diff --git a/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py b/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py
+similarity index 70%
+rename from tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
+rename to tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py
+index c27c279f2..a31b43492 100644
+--- a/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py
++++ b/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py
+@@ -1,12 +1,12 @@
+-"""Unit tests for get-plans-for-objective command."""
++"""Unit tests for get-prs-for-objective command."""
+ 
+ import json
+ from datetime import UTC, datetime
+ 
+ from click.testing import CliRunner
+ 
+-from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+-    get_plans_for_objective,
++from erk.cli.commands.exec.scripts.get_prs_for_objective import (
++    get_prs_for_objective,
+ )
+ from erk_shared.context.context import ErkContext
+ from erk_shared.gateway.github.issues.types import IssueInfo
+@@ -74,13 +74,13 @@ def _make_issue(
+     )
+ 
+ 
+-def test_get_plans_for_objective_returns_empty_list() -&gt; None:
+-    """Test fetch with no plans linked to objective."""
++def test_get_prs_for_objective_returns_empty_list() -&gt; None:
+
+... [286 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me create a summary of the changes made:
+
+## Summary
+
+I have successfully completed both test file modifications:
+
+### File 1: `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py`
+
+**Changes made:**
+- Line 86: `"--learn-plan"` → `"--learn-pr"` in `test_track_learn_result_completed_with_plan()`
+- Line 143: `"learn-plan is required"` → `"learn-pr is required"` in assertion
+- Line 161: `"--learn-plan"` → `"--learn-pr"` in `test_track_learn_result_rejects_plan_issue_for_completed_no_plan()`
+- Line 173: `"should not be provided"` → `"learn-pr should not be provided"` in assertion
+- Line 274: `"--learn-plan"` → `"--learn-pr"` in `test_track_learn_result_pending_review_rejects_plan_issue()`
+- Line 288: `"learn-plan should not be provided"` → `"learn-pr should not be provided"` in assertion
+
+**Preserved correctly:**
+- All `learn_plan_issue` metadata field references remained unchanged (as they should be)
+- All `learn_plan_pr` metadata field references remained unchanged
+
+### File 2: New test file created at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py`
+
+**Changes from template:**
+- Module docstring: `"get-plans-for-objective command"` → `"get-prs-for-objective command"`
+- Import updated: `get_plans_for_objective` → `get_prs_for_objective`
+- All test functions renamed: `test_get_plans_for_objective_*` → `test_get_prs_for_objective_*`
+- All variable names updated: `plan_*` → `pr_*` where appropriate (e.g., `plan_linked` → `pr_linked`)
+- All JSON key references: `output["plans"]` → `output["prs"]`
+- All docstring references to "plans" updated to "prs" in command context
+- Assertion checks updated: `"plans" in output` → `"prs" in output`
+- Variable name changes in test: `plan_data` → `pr_data`
+
+### File cleanup:
+- Old file `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py` deleted via `git rm`
+
+All changes are staged and ready for commit.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="4239" cache_read_input_tokens="37895" cache_creation="{'ephemeral_5m_input_tokens': 4239, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,394 @@
+<session>
+  <meta source="agent-a0f910c" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update two files:
+
+**File 1**: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py`
+
+Rename the CLI flag `--plan` to `--pr` and variable `plan` to `pr` in the Click command:
+- The Click option: `"--plan"` → `"--pr"`, keep `"-p"` shorthand as-is
+- The `"plan"` dest parameter in the option stays or can be omitted — the parameter name `plan: str | None` → `pr: str | None`
+- All uses of `plan` variable name → `pr` within the function body (where `plan` refers to the `--plan` CLI argument, NOT to other plan-related variables like `plan_data`, `existing_plans`, etc.)
+- Update help text referencing `--plan` → `--pr`
+- Update examples in docstring: `erk pr duplicate-check --plan 200` → `erk pr duplicate-check --pr 200`
+
+DO NOT rename:
+- `plan_data` variable (a different concept)
+- `existing_plans` variable
+- `exclude_pr_id` (already named correctly)
+- `PlanDuplicateChecker`, `PlanRelevanceChecker` class names
+- `plan_list_service` attribute
+- General references to "plan" in docstrings/comments that don't refer to the `--plan` CLI flag
+- The `plan` variable in the list comprehension `for p in plan_data.plans` (the `p` shorthand)
+
+**File 2**: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+
+Around line 153, there is a Click option `"--plan"` with dest `"pr_number_arg"`. Rename:
+- `"--plan"` → `"--pr"` (just the flag name string in the decorator)
+- The dest `"pr_number_arg"` stays as-is (it already uses pr naming)
+- The help text referencing `PR number` stays as-is (it's already correct)
+
+Read both files first, then apply all edits using the Edit tool.</user>
+  <assistant>I'll read both files first to understand their structure, then apply the requested changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6397" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6397, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017Eo8L6mtSqrXXz17iWbqrk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6397" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6397, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014JK4h1JVMYWA6Q8yuksrYm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6397" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6397, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017Eo8L6mtSqrXXz17iWbqrk">
+     1→"""Command to check a plan for duplicates and commit-history relevance."""
+     2→
+     3→import sys
+     4→import tempfile
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+    14→from erk.core.plan_relevance_checker import PlanRelevanceChecker
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+    21→@click.command("duplicate-check")
+    22→@click.option(
+    23→    "--file",
+    24→    "-f",
+    25→    type=click.Path(exists=True, path_type=Path),
+    26→    help="PR file to read",
+    27→)
+    28→@click.option(
+    29→    "--plan",
+    30→    "-p",
+
+... [174 lines omitted] ...
+
+    58→        1: Duplicates found, already implemented, or error
+    78→            user_output(click.style("Error: ", fg="red") + f"PR {pr_number} not found.")
+    86→        except OSError as e:
+    87→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    92→        except OSError as e:
+    93→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+   104→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   143→        if dup_result.error is not None:
+   144→            user_output(click.style("Error: ", fg="red") + "Duplicate check failed:")
+   145→            user_output(f"  {dup_result.error}")
+   174→            if rel_result.error is not None:
+   176→                    click.style("Warning: ", fg="yellow")
+   177→                    + f"Relevance check failed: {rel_result.error}"
+  </tool_result>
+  <tool_result tool="toolu_014JK4h1JVMYWA6Q8yuksrYm">
+     1→"""Fetch all context needed for objective-update-with-landed-pr in one call.
+     2→
+     3→Bundles objective, plan, PR details, and parsed roadmap context
+     4→into a single JSON blob, eliminating multiple sequential LLM turns for data
+     5→fetching and step matching.
+     6→
+     7→Usage:
+     8→    erk exec objective-fetch-context --pr 6517 --objective 6423 --branch plnd/...
+     9→    erk exec objective-fetch-context  # auto-discovers all arguments
+    10→
+    11→Output:
+    12→    JSON with {success, objective, plan, pr, roadmap} or {success, error}
+    13→
+    14→Exit Codes:
+    15→    0: Success - all data fetched
+    16→    1: Error - missing data or invalid arguments
+    17→"""
+    18→
+    19→import json
+    20→
+    21→import click
+    22→
+    23→from erk.cli.repo_resolution import get_remote_github
+    24→from erk_shared.context.helpers import (
+    25→    require_context,
+    26→    require_cwd,
+    27→    require_git,
+    28→    require_github,
+    29→    require_plan_backend,
+    30→    require_repo_root,
+
+... [247 lines omitted] ...
+
+    53→    ObjectiveFetchContextErrorDict,
+    63→def _error_json(error: str) -&gt; str:
+    64→    result: ObjectiveFetchContextErrorDict = {"success": False, "error": error}
+   176→        click.echo(_error_json("Cannot determine owner/repo from current context"))
+   186→            click.echo(_error_json(f"PR #{pr_number_arg} not found"))
+   196→                click.echo(_error_json("Could not determine current branch (detached HEAD?)"))
+   202→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   210→            click.echo(_error_json(msg))
+   217→            click.echo(_error_json("Cannot auto-discover PR without --branch or --pr"))
+   221→            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
+   228→        click.echo(_error_json(f"Objective issue #{objective_number} not found"))
+   234→        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <assistant>Perfect! I can see both files. Now I'll apply the requested changes:
+
+**File 1**: In `duplicate_check_cmd.py`:
+- Line 29: `"--plan"` → `"--pr"`
+- Line 39: parameter `plan: str | None` → `pr: str | None`
+- Lines 52, 61-64, 66-67, 73, 96: All references to `plan` variable → `pr`
+- Help text and examples updated
+
+**File 2**: In `objective_fetch_context.py`:
+- Line 153: `"--plan"` → `"--pr"`
+
+Let me apply these edits:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018tuHmk4btKDVmZTGg4HJ7e">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--plan",
+    "-p",
+    type=str,
+    help="Existing PR ID to check (fetches body and excludes self from comparison)",
+)</param>
+    <param name="new_string">@click.option(
+    "--pr",
+    "-p",
+    type=str,
+    help="Existing PR ID to check (fetches body and excludes self from comparison)",
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01No2rsZz9Y4zMkLYaF3XgvS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">def duplicate_check_plan(
+    ctx: ErkContext,
+    file: Path | None,
+    plan: str | None,
+    *,
+    repo_id: GitHubRepoId,
+) -&gt; None:</param>
+    <param name="new_string">def duplicate_check_plan(
+    ctx: ErkContext,
+    file: Path | None,
+    pr: str | None,
+    *,
+    repo_id: GitHubRepoId,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AfkohGWnQUKfsQgSgGw4QV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">    """Check if a plan duplicates any existing open plans.
+
+    Uses LLM inference to dete...[truncated 716 chars]...te-check --plan 200 --repo owner/repo
+        cat plan.md | erk pr duplicate-check
+    """</param>
+    <param name="new_string">    """Check if a plan duplicates any existing open plans.
+
+    Uses LLM inference to dete...[truncated 710 chars]...cate-check --pr 200 --repo owner/repo
+        cat plan.md | erk pr duplicate-check
+    """</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01P9mxeLHd2ox7SXTqz6aggV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">    if plan is not None and file is not None:
+        Ensure.invariant(False, "Cannot use both --plan and --file. Choose one input mode.")</param>
+    <param name="new_string">    if pr is not None and file is not None:
+        Ensure.invariant(False, "Cannot use both --pr and --file. Choose one input mode.")</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LG8iq275qtjxVK6CCkQqwT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">    # Resolve plan content
+    exclude_pr_id: str | None = None
+    content: str
+
+    if plan is not None:
+        remote = get_remote_github(ctx)
+        pr_number = parse_issue_identifier(plan)</param>
+    <param name="new_string">    # Resolve plan content
+    exclude_pr_id: str | None = None
+    content: str
+
+    if pr is not None:
+        remote = get_remote_github(ctx)
+        pr_number = parse_issue_identifier(pr)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UJEVq3s9kivDYggjqAnjFc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="old_string">    else:
+        Ensure.invariant(False, "No input provided. Use --plan, --file, or pipe content to stdin.")</param>
+    <param name="new_string">    else:
+        Ensure.invariant(False, "No input provided. Use --pr, --file, or pipe content to stdin.")</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7356" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 7356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018tuHmk4btKDVmZTGg4HJ7e">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01No2rsZz9Y4zMkLYaF3XgvS">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AfkohGWnQUKfsQgSgGw4QV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01P9mxeLHd2ox7SXTqz6aggV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LG8iq275qtjxVK6CCkQqwT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01UJEVq3s9kivDYggjqAnjFc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the second file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2149" cache_read_input_tokens="23876" cache_creation="{'ephemeral_5m_input_tokens': 2149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GbE9FydbzmwmKezMJSpZqp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">@click.option(
+    "--plan",
+    "pr_number_arg",
+    type=int,
+    default=None,
+    help="PR number (direct lookup, skips branch-based discovery)",
+)</param>
+    <param name="new_string">@click.option(
+    "--pr",
+    "pr_number_arg",
+    type=int,
+    default=None,
+    help="PR number (direct lookup, skips branch-based discovery)",
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2149" cache_read_input_tokens="23876" cache_creation="{'ephemeral_5m_input_tokens': 2149, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GbE9FydbzmwmKezMJSpZqp">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes by reading the modified sections:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="281" cache_read_input_tokens="26025" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FvZxsNRUkudsoyJ8D66Yoz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">28</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="281" cache_read_input_tokens="26025" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0193vNCjgsA1edpxcx9DUNUf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="offset">150</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="281" cache_read_input_tokens="26025" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FvZxsNRUkudsoyJ8D66Yoz">
+    28→@click.option(
+    29→    "--pr",
+    30→    "-p",
+    31→    type=str,
+    32→    help="Existing PR ID to check (fetches body and excludes self from comparison)",
+    33→)
+    34→@resolved_repo_option
+    35→@click.pass_obj
+    36→def duplicate_check_plan(
+    37→    ctx: ErkContext,
+    38→    file: Path | None,
+    39→    pr: str | None,
+    40→    *,
+    41→    repo_id: GitHubRepoId,
+    42→) -&gt; None:
+    43→    """Check if a plan duplicates any existing open plans.
+    44→
+    45→    Uses LLM inference to detect semantic duplicates — plans that aim to
+    46→    accomplish the same functional change, even if worded differently.
+    47→
+    48→    Also checks whether the plan's work has already been implemented
+    49→    via recent commits merged to the trunk branch (local mode only).
+    50→
+    51→    Supports three input modes:
+    52→    - Plan ID: --pr ID (fetches plan body, excludes self from comparison)
+    53→    - File: --file PATH (recommended for automation)
+    54→    - Stdin: pipe content via shell (for Unix composability)
+    55→
+    56→    Exit codes:
+    57→        0: No duplicates found and not already implemented
+
+... [45 lines omitted] ...
+
+    58→        1: Duplicates found, already implemented, or error
+    78→            user_output(click.style("Error: ", fg="red") + f"PR {pr_number} not found.")
+    86→        except OSError as e:
+    87→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    92→        except OSError as e:
+    93→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+  </tool_result>
+  <tool_result tool="toolu_0193vNCjgsA1edpxcx9DUNUf">
+   150→    help="Branch name (auto-discovered if omitted)",
+   151→)
+   152→@click.option(
+   153→    "--pr",
+   154→    "pr_number_arg",
+   155→    type=int,
+   156→    default=None,
+   157→    help="PR number (direct lookup, skips branch-based discovery)",
+   158→)
+   159→@click.pass_context
+   160→def objective_fetch_context(
+   161→    ctx: click.Context,
+   162→    *,
+   163→    pr_number: int | None,
+   164→    objective_number: int | None,
+   165→    branch_name: str | None,
+   166→    pr_number_arg: int | None,
+   167→) -&gt; None:
+   168→    """Fetch all context for objective update in a single call."""
+   169→    erk_ctx = require_context(ctx)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! All changes have been successfully applied. Here's a summary of what was updated:
+
+## Summary of Changes
+
+### File 1: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py`
+
+**CLI Flag Renamed:**
+- Line 29: `"--plan"` → `"--pr"` (shorthand `-p` remains unchanged)
+
+**Function Parameter:**
+- Line 39: `plan: str | None` → `pr: str | None`
+
+**Docstring and Help Text Updates:**
+- Line 32: Help text remains focused on PR ID functionality
+- Lines 52, 61-64: Examples updated from `--plan 200` → `--pr 200`
+
+**Variable References (all `plan` → `pr` for the CLI argument):**
+- Line 66-67: Error message updated from `--plan and --file` → `--pr and --file`
+- Line 73: Condition check `if plan is not None` → `if pr is not None`
+- Line 75: Argument passed to `parse_issue_identifier(plan)` → `parse_issue_identifier(pr)`
+- Line 96: Error message updated from `--plan, --file` → `--pr, --file`
+
+**NOT renamed** (as requested):
+- `plan_data`, `existing_plans`, `exclude_pr_id` variables remain unchanged
+- Class names `PlanDuplicateChecker`, `PlanRelevanceChecker` remain unchanged
+- General "plan" references in docstrings/comments remain unchanged
+
+### File 2: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+
+**CLI Flag Renamed:**
+- Line 153: `"--plan"` → `"--pr"` 
+
+**Preserved:**
+- The destination parameter `"pr_number_arg"` remains as-is (already uses `pr` naming)
+- The help text remains unchanged (already correct)
+
+All edits follow the exact specifications provided, renaming only the CLI flags and their direct variable uses while preserving all other plan-related identifiers and documentation references.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1740" cache_read_input_tokens="26306" cache_creation="{'ephemeral_5m_input_tokens': 1740, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

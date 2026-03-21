@@ -1,0 +1,790 @@
+<session>
+  <meta source="agent-aa57c16" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Update the following documentation files, replacing CLI flag references as specified. Read each file first, then apply edits.
+
+**Files with `--for-plan` → `--for-pr`:**
+1. `/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md`
+2. `/home/runner/work/erk/erk/docs/learned/cli/index.md`
+3. `/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md`
+4. `/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md`
+5. `/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md`
+6. `/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md`
+7. `/home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md`
+8. `/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md`
+
+**Files with `--learn-plan` → `--learn-pr`:**
+9. `/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md`
+10. `/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md`
+
+**Files with `--from-plan` → `--from-pr`:**
+11. `/home/runner/work/erk/erk/docs/learned/glossary.md`
+
+For each file:
+- Read the file
+- Replace ONLY the specified flag references
+- Do NOT change `--from-plan-file`, `--keep-plan-file`, `--copy-plan` (these are out of scope)
+- Apply edits using the Edit tool
+
+Process all files, but for files that don't actually contain the target string, just skip them.</user>
+  <assistant>I'll process each file as specified, reading them first and then applying edits for the CLI flag replacements.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BoMUHDHE6QERzBM9ZzE4TL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UHmfdGXpjFWzSEX7nJkaH4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015z8SBeEUJcUi7nBPaiapAe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QQ17FLh3wNv7J2HATudX8q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0145ECJkkBHxK6Bpf3emdGBL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WgSznPEJLwaKcFwo4wskwf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014DLDUHkNG2d8avZo6uj2yK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jt9zXmQkPVRQ7aJ42xXmzr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N4rUGVf81Y6jS3UL2G4d36">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LeZ7hq91Ajoofys5dA2E26">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016kQ3NhsMMEJfv7CTVj1c6S">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6356" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6356, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BoMUHDHE6QERzBM9ZzE4TL">
+     1→---
+     2→title: Checkout Three-Path Logic
+     3→category: cli
+     4→read_when:
+     5→  - "modifying erk br co"
+     6→  - "working with --for-plan flag"
+     7→  - "changing slot allocation behavior"
+     8→last_audited: "2026-03-05 00:00 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# Checkout Three-Path Logic
+    13→
+    14→`erk br co` uses a three-path decision tree when `--for-plan` is involved, implemented in `branch/checkout_cmd.py:614-717`.
+    15→
+    16→## Decision Tree
+    17→
+    18→### Path 1: Stack in Place (`current_assignment is not None`)
+    19→
+    20→The user is in a slot-assigned worktree and the branch has a current assignment.
+    21→
+    22→- Updates assignment to new tip
+    23→- Calls `_rebase_and_track_for_plan()` if setup exists
+    24→- Calls `_setup_impl_for_plan()` if setup exists
+    25→- Calls `_perform_checkout()` with `force_script_activation=True`
+    26→- Returns early
+    27→
+    28→### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)
+    29→
+    30→The user passed `--for-plan` (so `setup is not None`) but did NOT pass `--new-slot`.
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UHmfdGXpjFWzSEX7nJkaH4">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Cli Documentation
+     5→
+     6→- **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+     7→- **[adding-json-to-commands.md](adding-json-to-commands.md)** — adding a new machine-readable JSON command, exposing a command via MCP, creating result dataclasses for JSON output, stacking @mcp_exposed and @machine_command decorators, adding a new CLI command with both human and machine output, creating a new command subpackage
+     8→- **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
+     9→- **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
+    10→- **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
+    11→- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
+    12→- **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
+    13→- **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
+    14→- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
+    15→- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
+    16→- **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
+    17→- **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
+    18→- **[click-framework-conventions.md](click-framework-conventions.md)** — adding Click options to erk CLI commands, understanding default=None convention in Click options, distinguishing 'not provided' from 'empty string' in CLI arguments
+    19→- **[click-patterns.md](click-patterns.md)** — implementing CLI options with complex behavior, creating flags that optionally accept values, designing CLI flags with default behaviors
+    20→- **[code-review-filtering.md](code-review-filtering.md)** — debugging false positives in code review, understanding keyword-only parameter exceptions, working with ABC/Protocol method validation
+    21→- **[codespace-patterns.md](codespace-patterns.md)** — implementing CLI commands that use codespaces, handling codespace name resolution with optional defaults, bypassing GitHub API endpoint bugs
+    22→- **[command-deletion-patterns.md](command-deletion-patterns.md)** — deleting a CLI command or command group, removing dead code after a feature deletion, identifying vestigial features for removal
+    23→- **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
+    24→- **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
+    25→- **[command-promotion.md](command-promotion.md)** — promoting a nested CLI command to top-level, moving a command from a group to the root CLI, reorganizing CLI command hierarchy
+    26→- **[command-rename-checklist.md](command-rename-checklist.md)** — renaming an exec script or CLI command, changing a Click command name, migrating command references across the codebase
+    27→- **[commands/pr-diverge-fix.md](commands/pr-diverge-fix.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+    28→- **[commands/pr-prepare.md](commands/pr-prepare.md)** — setting up impl-context for an existing PR, preparing a worktree for plan implementation, working with erk pr prepare
+    29→- **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
+    30→- **[commands/reconcile.md](commands/reconcile.md)** — cleaning up branches whose PRs have been merged, reconciling branches merged outside erk land, working with erk reconcile
+
+... [61 lines omitted] ...
+
+    34→- **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
+    35→- **[erk-docs-check.md](erk-docs-check.md)** — validating documentation frontmatter and structure, debugging CI failures in documentation checks, understanding how erk docs check works
+    37→- **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
+    38→- **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
+    44→- **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
+    49→- **[json-command-decorator.md](json-command-decorator.md)** — adding @machine_command decorator to a CLI command, creating structured JSON CLI output, understanding the erk json command tree, implementing output_types validation, working with MachineCommandError error handling, adding @json_command decorator to a CLI command
+    59→- **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
+    62→- **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub, working with .erk/impl-context/ folders, debugging plan execution failures
+    67→- **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
+    71→- **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
+    83→- **[workflow-run-management.md](workflow-run-management.md)** — cancelling a GitHub Actions workflow run, retrying a failed GitHub Actions workflow run, working with erk workflow run cancel or retry
+  </tool_result>
+  <tool_result tool="toolu_015z8SBeEUJcUi7nBPaiapAe">
+     1→---
+     2→title: Learn Plan Land Flow
+     3→read_when:
+     4→  - "landing PRs associated with learn plans"
+     5→  - "understanding how learn plan metadata updates parent issues"
+     6→tripwires:
+     7→  - action: "landing a PR without updating associated learn plan status"
+     8→    warning: "Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge."
+     9→last_audited: "2026-02-17 16:00 PT"
+    10→audit_result: clean
+    11→---
+    12→
+    13→# Learn Plan Land Flow
+    14→
+    15→When landing a PR from a learn plan branch, the land execution pipeline runs additional steps that update the parent plan's metadata. This document explains **why** learn plans need special handling and how the pipeline orchestrates these post-merge operations.
+    16→
+    17→## Why Learn Plans Need Special Pipeline Steps
+    18→
+    19→**The core problem**: Learn plans document insights from implementation sessions. The parent plan (the feature that was implemented) needs to track when its documentation has landed.
+    20→
+    21→**Without special handling**, these metadata updates would be manual:
+    22→
+    23→- Engineers would manually update parent issue status after landing docs
+    24→- No visibility into which plans have completed their learning cycle
+    25→
+    26→**The solution**: The execution pipeline detects learn plan branches and runs additional steps after merge:
+    27→
+    28→1. **Update parent plan metadata**: Set `learn_status = plan_completed` and record the PR number
+    29→
+    30→## How Learn Plan Detection Works
+
+... [104 lines omitted] ...
+
+    74→**Fail-open pattern**: If the parent issue doesn't exist or the `learned_from_issue` field is missing, the step silently returns. This prevents land failures when metadata is malformed or deleted.
+  </tool_result>
+  <tool_result tool="toolu_01QQ17FLh3wNv7J2HATudX8q">
+     1→---
+     2→title: Branch Name Inference
+     3→last_audited: "2026-02-08 00:00 PT"
+     4→audit_result: clean
+     5→tripwires:
+     6→  - action: "changing branch naming convention (plnd/ prefix)"
+     7→    warning: "The plnd/ prefix (planned-PR) is a cross-cutting contract used by branch creation, extraction functions, and PR recovery. Changing the prefix format requires updating all consumers. The legacy P{issue}- prefix has been fully removed."
+     8→  - action: "adding branch_name to plan-header at creation time"
+     9→    warning: "branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below."
+    10→  - action: "recovering a branch name from a PR number using UI or truncated display"
+    11→    warning: "Use `gh pr view &lt;pr-number&gt; --json headRefName` to recover exact branch names. UI display may truncate long branch names."
+    12→read_when:
+    13→  - "debugging missing branch_name in plans"
+    14→  - "implementing PR lookup from plans"
+    15→  - "modifying branch creation or naming conventions"
+    16→---
+    17→
+    18→# Branch Name Inference
+    19→
+    20→## The Temporal Gap Problem
+    21→
+    22→Plan metadata (`plan-header` block) intentionally omits `branch_name` at creation time because of a temporal gap in the plan lifecycle:
+    23→
+    24→1. **Plan saved** → GitHub issue created (no branch exists yet)
+    25→2. **Branch created** → User runs `erk br co --for-plan {issue}` (branch now exists)
+    26→3. **Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header
+    27→
+    28→The gap between steps 1 and 2 is unavoidable: the plan must exist before the branch can be named after it (the branch name contains the issue number). Attempting to set `branch_name` during save would require either predicting the branch name (fragile — the user might choose a custom name) or creating the branch immediately (wrong — the user hasn't started work yet).
+    29→
+    30→## Two-Layer Resolution
+
+... [56 lines omitted] ...
+
+    38→If Layer 1 does not produce a match, the command fails with an actionable error.
+    63→Common failure scenarios and their fixes:
+  </tool_result>
+  <tool_result tool="toolu_0145ECJkkBHxK6Bpf3emdGBL">
+     1→---
+     2→title: Next Steps Output Formatting
+     3→read_when:
+     4→  - "modifying next-steps output after plan save or submit"
+     5→  - "understanding PlanNextSteps"
+     6→  - "adding new next-steps commands to plan output"
+     7→tripwires:
+     8→  - action: "hardcoding next-steps command strings instead of using the dataclass properties"
+     9→    warning: "Use PlanNextSteps dataclass from erk_shared.output.next_steps. It is the single source of truth for command formatting."
+    10→---
+    11→
+    12→# Next Steps Output Formatting
+    13→
+    14→After saving a plan, erk displays next-steps commands to the user. The formatting is centralized in a single module with one dataclass.
+    15→
+    16→## Source
+    17→
+    18→`packages/erk-shared/src/erk_shared/output/next_steps.py`
+    19→
+    20→## Dataclass
+    21→
+    22→### `PlanNextSteps`
+    23→
+    24→Takes `pr_number: int` and `url: str`.
+    25→
+    26→Properties return pre-formatted command strings. See the source file for the full list of available properties.
+    27→
+    28→## Hierarchical Output Format
+    29→
+    30→The plain-text formatter (`format_plan_next_steps_plain`) produces a hierarchical format with three sections: "Implement plan" (with branch/worktree and dangerous variants), "Checkout plan" (branch/worktree), and "Dispatch plan".
+
+... [65 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WgSznPEJLwaKcFwo4wskwf">
+     1→---
+     2→title: Plan Execution Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "implementing a plan from a GitHub draft PR"
+     7→  - "understanding branch naming and worktree isolation"
+     8→  - "designing PR submission workflows for plans"
+     9→---
+    10→
+    11→# Plan Execution Patterns
+    12→
+    13→Patterns for executing plans: from issue preparation through PR submission.
+    14→
+    15→## Branch Naming Conventions
+    16→
+    17→Plan branches follow the pattern `plnd/&lt;slug&gt;-&lt;timestamp&gt;`:
+    18→
+    19→- `plnd/consolidated-learn-docs-01-15-1430` — slugified title with timestamp
+    20→- The `plnd/` prefix identifies planned PR branches
+    21→- `plan-ref.json` is the sole source of truth for plan-to-branch mapping
+    22→
+    23→**Legacy format:** Older plans may use the `P&lt;issue-number&gt;-&lt;slug&gt;` pattern (e.g., `P6967-consolidated-learn-docs`). The `P{issue}-` prefix is considered legacy.
+    24→
+    25→## Worktree Isolation
+    26→
+    27→Each plan implementation runs in an isolated worktree:
+    28→
+    29→1. `erk br co --for-plan &lt;issue-number&gt;` creates a new worktree from the plan
+    30→2. The worktree gets its own `.erk/impl-context/` folder with the plan content
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014DLDUHkNG2d8avZo6uj2yK">
+     1→---
+     2→title: Stacked Plan Branch Rebase
+     3→read_when:
+     4→  - "working with stacked plans that have non-trunk parents"
+     5→  - "debugging gt track failures for plan branches"
+     6→  - "understanding how plan branches integrate with Graphite stacking"
+     7→tripwires:
+     8→  - action: "calling gt track before rebasing a stacked plan branch"
+     9→    warning: "Always rebase BEFORE gt track for stacked plans (not after). gt track requires the parent branch to be an ancestor in git history."
+    10→  - action: "rebasing a plan branch when parent is trunk"
+    11→    warning: "Only rebase when parent != trunk. Trunk parents are always correctly based and don't need rebase."
+    12→---
+    13→
+    14→# Stacked Plan Branch Rebase
+    15→
+    16→When a plan is stacked on a non-trunk parent branch, the parent may have advanced since the plan was saved. `_rebase_and_track_for_plan()` rebases the plan branch onto the parent's current tip before Graphite tracking.
+    17→
+    18→## Problem
+    19→
+    20→`gt track` requires the parent branch to be an ancestor in git history for proper stacking. If the parent has advanced since the plan was created, the plan branch's history doesn't include the parent's tip, and `gt track` fails or creates incorrect stacking relationships.
+    21→
+    22→## Solution
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/branch/checkout_cmd.py, _rebase_and_track_for_plan --&gt;
+    25→
+    26→`_rebase_and_track_for_plan()` handles this in two steps:
+    27→
+    28→1. **Rebase** (only when `parent_branch != trunk`): Rebase onto `origin/{parent_branch}` to include the parent's current tip in history
+    29→2. **Track**: Register the branch with Graphite via `track_branch(repo_root, branch, parent_branch)`
+    30→
+
+... [47 lines omitted] ...
+
+    37→## Error Handling
+  </tool_result>
+  <tool_result tool="toolu_01Jt9zXmQkPVRQ7aJ42xXmzr">
+     1→---
+     2→title: Agent Command vs CLI Command Boundaries
+     3→read_when:
+     4→  - Choosing between agent vs CLI command
+     5→  - Deciding when to use .claude/commands/ vs src/erk/cli/
+     6→  - Understanding when AI capabilities are needed
+     7→last_audited: "2026-02-16 14:00 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Agent Command vs CLI Command Boundaries
+    12→
+    13→## Overview
+    14→
+    15→Erk has two types of commands:
+    16→
+    17→1. **Agent commands** (`.claude/commands/`) - Markdown files executed by Claude Code
+    18→2. **CLI commands** (`src/erk/cli/`) - Python Click commands
+    19→
+    20→This document clarifies when to use each.
+    21→
+    22→## Use Agent Commands When
+    23→
+    24→The operation requires:
+    25→
+    26→- **Natural language analysis** - Categorizing, summarizing, understanding intent
+    27→- **Code generation** - Writing new code based on context
+    28→- **Documentation extraction** - Identifying gaps, generating suggestions
+    29→- **Multi-step reasoning** - Complex decision trees based on context
+    30→- **Codebase exploration** - Understanding patterns, finding related code
+
+... [86 lines omitted] ...
+
+    93→- CLI errors reported by agent with context
+  </tool_result>
+  <tool_result tool="toolu_01N4rUGVf81Y6jS3UL2G4d36">
+     1→---
+     2→title: erk exec Commands
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "running erk exec subcommands"
+     7→  - "looking up erk exec syntax"
+     8→tripwires:
+     9→  - action: "running any erk exec subcommand"
+    10→    warning: "Check syntax with `erk exec &lt;command&gt; -h` first, or load erk-exec skill for workflow guidance."
+    11→  - action: "using erk exec commands in scripts"
+    12→    warning: "Some erk exec subcommands don't support `--format json`. Always check with `erk exec &lt;command&gt; -h` first."
+    13→  - action: "adding new exec script parameters with 'issue' in the name"
+    14→    warning: "When adding new exec script parameters, use 'plan' terminology not 'issue'. See erk-exec-commands.md Phase 5 Terminology Standardization."
+    15→---
+    16→
+    17→# erk exec Commands
+    18→
+    19→The `erk exec` command group contains utility scripts for automation and agent workflows.
+    20→
+    21→## Usage Pattern
+    22→
+    23→All erk exec commands use named options (not positional arguments for most parameters):
+    24→
+    25→```bash
+    26→# Correct
+    27→erk exec get-pr-review-comments --pr 123
+    28→
+    29→# Wrong - positional arguments don't work
+    30→erk exec get-pr-review-comments 123
+
+... [230 lines omitted] ...
+
+   109→Returns JSON with `phases`, `summary`, `next_step`, and `validation_errors`. See [Roadmap Parser](../objectives/roadmap-parser.md) for full output format.
+   202→Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
+   207→Both use frozen dataclass results with discriminated union error handling.
+   223→CLI flags and error codes were standardized from "issue" to "plan" terminology:
+   228→| `missing-plan-issue` (error code)    | `missing-learn-plan`    |
+   229→| `unexpected-plan-issue` (error code) | `unexpected-learn-plan` |
+   230→| `no-issue-reference` (error code)    | `no-plan-reference`     |
+   231→| `issue-not-found` (error code)       | `plan-not-found`        |
+   238→- `src/erk/cli/commands/exec/scripts/impl_signal.py` (error codes at lines 191, 304, 383, 408)
+  </tool_result>
+  <tool_result tool="toolu_01LeZ7hq91Ajoofys5dA2E26">
+     1→---
+     2→title: Learn Workflow
+     3→read_when:
+     4→  - "using /erk:learn skill"
+     5→  - "understanding learn status tracking"
+     6→  - "auto-updating parent plans when learn plans land"
+     7→tripwires:
+     8→  - action: "modifying learn command to add/remove/reorder agents"
+     9→    warning: "Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output."
+    10→  - action: "adding new agents to learn workflow"
+    11→    warning: "Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition."
+    12→  - action: "running /erk:learn in CI"
+    13→    warning: "CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section."
+    14→  - action: "gathering sessions for preprocessing"
+    15→    warning: "Sessions &gt;100k characters MUST be preprocessed first. Use erk exec preprocess-session for ~99% token reduction."
+    16→last_audited: "2026-02-16 14:20 PT"
+    17→audit_result: clean
+    18→---
+    19→
+    20→# Learn Workflow
+    21→
+    22→This guide explains the learn workflow in erk: how `/erk:learn` creates documentation plans, tracks status on parent plans, and enables automatic updates when learn plans are landed.
+    23→
+    24→## Overview
+    25→
+    26→The learn workflow extracts insights from implementation sessions and creates documentation plans. It's part of erk's knowledge capture system.
+    27→
+    28→**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
+    29→
+    30→**Branch naming note**: Learn plan implementations use `planned-pr-context/{pr_number}` branches for session data storage.
+
+... [387 lines omitted] ...
+
+   313→- Error resolutions
+  </tool_result>
+  <tool_result tool="toolu_016kQ3NhsMMEJfv7CTVj1c6S">
+     1→---
+     2→title: Erk Glossary
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "understanding project terminology"
+     7→  - "confused about domain-specific terms"
+     8→  - "working with worktrees, plans, or stacks"
+     9→  - "working with objectives or turns"
+    10→tripwires:
+    11→  - action: "parsing objective roadmap PR column status"
+    12→    warning: "Roadmap table uses separate Plan and PR columns: Plan `#XXXX`=in progress (plan PR), PR `#XXXX`=done (merged PR), both empty=pending. Legacy 4-col format with `plan #XXXX` in PR column is auto-migrated."
+    13→---
+    14→
+    15→# Erk Glossary
+    16→
+    17→Definitive terminology reference for the erk project.
+    18→
+    19→**Purpose**: Eliminate confusion about domain-specific terms. When in doubt about terminology, consult this document.
+    20→
+    21→---
+    22→
+    23→## Core Concepts
+    24→
+    25→### activate.sh
+    26→
+    27→A shell script at `.erk/activate.sh` in each worktree that sets up the development environment when sourced.
+    28→
+    29→**Purpose**: Opt-in shell integration. Users explicitly source this script rather than relying on automatic shell manipulation.
+    30→
+
+... [1017 lines omitted] ...
+
+   543→A sentinel class returned when a PR lookup fails, preserving lookup context (branch name, PR number). Uses `isinstance` check (LBYL) instead of exceptions.
+   564→- `style: Literal["info", "success", "warning", "error"]` - Visual style hint (default: "info")
+   716→- `tripwires`: List of action-triggered warnings
+   727→    warning: "Use .erk/scratch/&lt;session-id&gt;/ instead."
+   754→**Format**: Defined in doc frontmatter with `action` (pattern to detect) and `warning` (guidance message).
+   763→    warning: "AI workflow files belong in .erk/scratch/&lt;session-id&gt;/, NOT /tmp/."
+   841→- `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
+   947→- **EAFP**: Easier to Ask for Forgiveness than Permission (exception-based error handling)
+   948→- **LBYL**: Look Before You Leap (check-before-operation error handling)
+  1012→**Purpose**: Break large, complex goals into reviewable, implementable chunks. Instead of tackling "migrate all errors to Ensure class" in one massive PR, an objective evaluates the codebase, identifies a manageable subset of violations, and creates a plan for that subset.
+  </tool_result>
+  <assistant>Now I'll apply the edits to each file. I'll start with the files containing `--for-plan`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QjPgBxR7RbDV2hyKmvysFc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md</param>
+    <param name="old_string">`erk br co` uses a three-path decision tree when `--for-plan` is involved, implemented in `branch/checkout_cmd.py:614-717`.</param>
+    <param name="new_string">`erk br co` uses a three-path decision tree when `--for-pr` is involved, implemented in `branch/checkout_cmd.py:614-717`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016S6NqnBUqbb9DxftTfKRPs">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md</param>
+    <param name="old_string">### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)
+
+The user passed `--for-plan` (so `setup is not None`) but did NOT pass `--new-slot`.</param>
+    <param name="new_string">### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)
+
+The user passed `--for-pr` (so `setup is not None`) but did NOT pass `--new-slot`.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DpDV1XF3ugQe1Ks8V65tbW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md</param>
+    <param name="old_string">The two guards:
+
+- `setup is not None` = user passed `--for-plan` (the plan setup configuration is populated)
+- `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)</param>
+    <param name="new_string">The two guards:
+
+- `setup is not None` = user passed `--for-pr` (the plan setup configuration is populated)
+- `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KLS4fxKkmzNqfkJ1S2wQ7e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/index.md</param>
+    <param name="old_string">- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior</param>
+    <param name="new_string">- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-pr flag, changing slot allocation behavior</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012d2fh7WZNAn96ma9izpK9k">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+    <param name="old_string">**Why extract from branch name instead of PR labels?**
+
+Branch names are stable identifier...[truncated 108 chars]...an detection is deterministic—the same branch will always trigger the same pipeline steps.</param>
+    <param name="new_string">**Why extract from branch name instead of PR labels?**
+
+Branch names are stable identifier...[truncated 106 chars]...an detection is deterministic—the same branch will always trigger the same pipeline steps.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DwfUXs5iB7wWjpY5JYsAYb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md</param>
+    <param name="old_string">1. **Plan saved** → GitHub issue created (no branch exists yet)
+2. **Branch created** → Us...[truncated 43 chars]...*Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header</param>
+    <param name="new_string">1. **Plan saved** → GitHub issue created (no branch exists yet)
+2. **Branch created** → Us...[truncated 41 chars]...*Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KT7632x7hSZSJae8arx83e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md</param>
+    <param name="old_string">The `current_wt` variants use a simple `&amp;&amp;` chain (`erk br co --for-plan N &amp;&amp; erk implement`) since the user is already in the correct directory — no shell activation is needed.</param>
+    <param name="new_string">The `current_wt` variants use a simple `&amp;&amp;` chain (`erk br co --for-pr N &amp;&amp; erk implement`) since the user is already in the correct directory — no shell activation is needed.</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017dmMLPtLBb24jj3fqGpKs6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md</param>
+    <param name="old_string">Each plan implementation runs in an isolated worktree:
+
+1. `erk br co --for-plan &lt;issue-nu...[truncated 113 chars]...ntation happens entirely within the worktree
+4. After PR lands, the worktree is cleaned up</param>
+    <param name="new_string">Each plan implementation runs in an isolated worktree:
+
+1. `erk br co --for-pr &lt;issue-numb...[truncated 111 chars]...ntation happens entirely within the worktree
+4. After PR lands, the worktree is cleaned up</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013qiPc3uivEWvzvRZuLn2Dk">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md</param>
+    <param name="old_string">## Integration Points
+
+The function is called at three points in `erk br co --for-plan`:</param>
+    <param name="new_string">## Integration Points
+
+The function is called at three points in `erk br co --for-pr`:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GC53sappLAbBe91oct1QAV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md</param>
+    <param name="old_string">| `/erk:prepare`           | `erk br co --for-plan &lt;issue&gt;`    | Agent finds issue in conversation, CLI creates worktree      |</param>
+    <param name="new_string">| `/erk:prepare`           | `erk br co --for-pr &lt;issue&gt;`    | Agent finds issue in conversation, CLI creates worktree      |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="37262" cache_read_input_tokens="16479" cache_creation="{'ephemeral_5m_input_tokens': 37262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QjPgBxR7RbDV2hyKmvysFc">
+The file /home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_016S6NqnBUqbb9DxftTfKRPs">
+The file /home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DpDV1XF3ugQe1Ks8V65tbW">
+The file /home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KLS4fxKkmzNqfkJ1S2wQ7e">
+The file /home/runner/work/erk/erk/docs/learned/cli/index.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012d2fh7WZNAn96ma9izpK9k">
+The file /home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01DwfUXs5iB7wWjpY5JYsAYb">
+The file /home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KT7632x7hSZSJae8arx83e">
+The file /home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017dmMLPtLBb24jj3fqGpKs6">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013qiPc3uivEWvzvRZuLn2Dk">
+The file /home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01GC53sappLAbBe91oct1QAV">
+The file /home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md has been updated successfully.
+  </tool_result>
+  <assistant>Now I'll apply edits to the files containing `--learn-plan`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2727" cache_read_input_tokens="53741" cache_creation="{'ephemeral_5m_input_tokens': 2727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ek857SM15MWY5L3svX99rr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md</param>
+    <param name="old_string">#### Phase 5 Terminology Standardization (PR #8580)
+
+CLI flags and error codes were standa...[truncated 402 chars]...o-plan-reference`     |
+| `issue-not-found` (error code)       | `plan-not-found`        |</param>
+    <param name="new_string">#### Phase 5 Terminology Standardization (PR #8580)
+
+CLI flags and error codes were standa...[truncated 402 chars]...o-plan-reference`     |
+| `issue-not-found` (error code)       | `plan-not-found`        |</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2727" cache_read_input_tokens="53741" cache_creation="{'ephemeral_5m_input_tokens': 2727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FpskUYg7nurP9r4wY9xFxx">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md</param>
+    <param name="old_string">After creating the learn plan, the skill calls:
+
+```bash
+erk exec track-learn-result \
+    --issue &lt;parent-issue-number&gt; \
+    --status completed_with_plan \
+    --learn-plan &lt;learn-pr-number&gt;
+```</param>
+    <param name="new_string">After creating the learn plan, the skill calls:
+
+```bash
+erk exec track-learn-result \
+    --issue &lt;parent-issue-number&gt; \
+    --status completed_with_plan \
+    --learn-pr &lt;learn-pr-number&gt;
+```</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2727" cache_read_input_tokens="53741" cache_creation="{'ephemeral_5m_input_tokens': 2727, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ek857SM15MWY5L3svX99rr">
+The file /home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FpskUYg7nurP9r4wY9xFxx">
+The file /home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md has been updated successfully.
+  </tool_result>
+  <assistant>Now I'll handle the files containing `--from-plan`. Let me search in the glossary file for the exact match:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="915" cache_read_input_tokens="56468" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XjeQ3JEcpshnqDLXJnXpKo">
+    <param name="pattern">--from-plan</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/glossary.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="915" cache_read_input_tokens="56468" cache_creation="{'ephemeral_5m_input_tokens': 915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XjeQ3JEcpshnqDLXJnXpKo">
+649:**Usage**: `erk create --from-plan-file my-plan.md my-feature`
+673:erk create --from-plan-file plan.md my-feature
+  </tool_result>
+  <assistant>The glossary file doesn't contain `--from-plan` (only `--from-plan-file` which is out of scope). Let me verify all the edits have been applied correctly by checking a couple of the edited files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="192" cache_read_input_tokens="57383" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014x7VcSk7M9YnCXXNnWUDb7">
+    <param name="command">git diff docs/learned/cli/checkout-three-path-logic.md | head -40</param>
+    <param name="description">Show git diff for first edited file</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="192" cache_read_input_tokens="57383" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WqcMmR89YwCLsMSoN9mQh7">
+    <param name="command">git diff docs/learned/cli/erk-exec-commands.md | head -40</param>
+    <param name="description">Show git diff for erk-exec-commands file</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="192" cache_read_input_tokens="57383" cache_creation="{'ephemeral_5m_input_tokens': 192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WqcMmR89YwCLsMSoN9mQh7">
+diff --git a/docs/learned/cli/erk-exec-commands.md b/docs/learned/cli/erk-exec-commands.md
+index da3b7e584..382cdc75e 100644
+--- a/docs/learned/cli/erk-exec-commands.md
++++ b/docs/learned/cli/erk-exec-commands.md
+@@ -224,7 +224,7 @@ CLI flags and error codes were standardized from "issue" to "plan" terminology:
+ 
+ | Old Name                             | New Name                |
+ | ------------------------------------ | ----------------------- |
+-| `--plan-issue` (flag)                | `--learn-plan`          |
++| `--plan-issue` (flag)                | `--learn-pr`            |
+ | `missing-plan-issue` (error code)    | `missing-learn-plan`    |
+ | `unexpected-plan-issue` (error code) | `unexpected-learn-plan` |
+ | `no-issue-reference` (error code)    | `no-plan-reference`     |
+  </tool_result>
+  <tool_result tool="toolu_014x7VcSk7M9YnCXXNnWUDb7">
+diff --git a/docs/learned/cli/checkout-three-path-logic.md b/docs/learned/cli/checkout-three-path-logic.md
+index 70d8d5ff5..59fd15378 100644
+--- a/docs/learned/cli/checkout-three-path-logic.md
++++ b/docs/learned/cli/checkout-three-path-logic.md
+@@ -11,7 +11,7 @@ audit_result: clean
+ 
+ # Checkout Three-Path Logic
+ 
+-`erk br co` uses a three-path decision tree when `--for-plan` is involved, implemented in `branch/checkout_cmd.py:614-717`.
++`erk br co` uses a three-path decision tree when `--for-pr` is involved, implemented in `branch/checkout_cmd.py:614-717`.
+ 
+ ## Decision Tree
+ 
+@@ -27,7 +27,7 @@ The user is in a slot-assigned worktree and the branch has a current assignment.
+ 
+ ### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)
+ 
+-The user passed `--for-plan` (so `setup is not None`) but did NOT pass `--new-slot`.
++The user passed `--for-pr` (so `setup is not None`) but did NOT pass `--new-slot`.
+ 
+ - Checks out in current (root) worktree
+ - Calls `_rebase_and_track_for_plan()` if setup exists
+@@ -47,7 +47,7 @@ Neither condition matched — allocate a new slot for the branch.
+ 
+ The two guards:
+ 
+-- `setup is not None` = user passed `--for-plan` (the plan setup configuration is populated)
++- `setup is not None` = user passed `--for-pr` (the plan setup configuration is populated)
+ - `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)
+ 
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me verify the learn-workflow.md change as well:</assistant>
+  <usage input_tokens="295" cache_creation_input_tokens="869" cache_read_input_tokens="57575" cache_creation="{'ephemeral_5m_input_tokens': 869, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Vd3g2FEj83wDPSM888a4ar">
+    <param name="command">git diff docs/learned/planning/learn-workflow.md | grep -A 10 "track-learn-result"</param>
+    <param name="description">Show diff for learn-workflow change</param>
+  </tool_use>
+  <usage input_tokens="295" cache_creation_input_tokens="869" cache_read_input_tokens="57575" cache_creation="{'ephemeral_5m_input_tokens': 869, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vd3g2FEj83wDPSM888a4ar">
+ erk exec track-learn-result \
+     --issue &lt;parent-issue-number&gt; \
+     --status completed_with_plan \
+-    --learn-plan &lt;learn-pr-number&gt;
++    --learn-pr &lt;learn-pr-number&gt;
+ ```
+ 
+ This sets `learn_status` and `learn_plan_issue` on the parent plan.
+  </tool_result>
+  <assistant>Excellent! All edits have been applied successfully. Let me create a summary of the changes:
+
+## Summary
+
+I have successfully updated the documentation files to replace the CLI flag references as specified. Here's what was done:
+
+### Files Updated with `--for-plan` → `--for-pr` (8 files):
+
+1. **/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md**
+   - Updated 3 instances of `--for-plan` to `--for-pr`
+
+2. **/home/runner/work/erk/erk/docs/learned/cli/index.md**
+   - Updated frontmatter reference from "working with --for-plan flag" to "working with --for-pr flag"
+
+3. **/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md**
+   - Updated command reference from `erk br co --for-plan` to `erk br co --for-pr`
+
+4. **/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md**
+   - Updated command reference from `erk br co --for-plan {issue}` to `erk br co --for-pr {issue}`
+
+5. **/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md**
+   - Updated command chain from `erk br co --for-plan N` to `erk br co --for-pr N`
+
+6. **/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md**
+   - Updated command reference from `erk br co --for-plan &lt;issue-number&gt;` to `erk br co --for-pr &lt;issue-number&gt;`
+
+7. **/home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md**
+   - Updated function integration context from `erk br co --for-plan` to `erk br co --for-pr`
+
+8. **/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md**
+   - Updated command reference from `erk br co --for-plan &lt;issue&gt;` to `erk br co --for-pr &lt;issue&gt;`
+
+### Files Updated with `--learn-plan` → `--learn-pr` (2 files):
+
+9. **/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md**
+   - Updated flag reference in Phase 5 Terminology Standardization table from `--learn-plan` to `--learn-pr`
+
+10. **/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md**
+    - Updated command example from `--learn-plan &lt;learn-pr-number&gt;` to `--learn-pr &lt;learn-pr-number&gt;`
+
+### Files Skipped:
+
+11. **/home/runner/work/erk/erk/docs/learned/glossary.md**
+    - Checked but contained no `--from-plan` flag references (only `--from-plan-file` which is out of scope)
+
+All changes preserve the original formatting and context while updating only the specified flag references. Flags like `--from-plan-file`, `--keep-plan-file`, and `--copy-plan` were left unchanged as requested.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="504" cache_read_input_tokens="58444" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

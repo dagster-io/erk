@@ -1,0 +1,356 @@
+<session>
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01N6ga5TuoPNNxHU18BaBoeE">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a4d22d9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"@click.option(\n    \"--from-plan\",\n    \"from_plan\",\n    type=str,\n    help=(\n        \"Plan number or URL with erk-pr label. Fetches plan content \"\n        \"and creates worktree with impl folder and plan-ref.json metadata. \"\n        \"Worktree names are automatically suffixed with the current date (-YY-MM-DD) \"\n        \"and versioned if duplicates exist.\"\n    ),\n)","new_string":"@click.option(\n    \"--from-pr\",\n    \"from_pr\",\n    type=str,\n    help=(\n        \"Plan number or URL with erk-pr label. Fetches plan content \"\n        \"and creates worktree with impl folder and plan-ref.json metadata. \"\n        \"Worktree names are automatically suffixed with the current date (-YY-MM-DD) \"\n        \"and versioned if duplicates exist.\"\n    ),\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"def create_wt(\n    ctx: ErkContext,\n    *,\n    name: str | None,\n    branch: str | None,\n    ref: str | None,\n    no_post: bool,\n    from_plan_file: Path | None,\n    keep_plan_file: bool,\n    from_plan: str | None,\n    copy_plan: bool,\n    from_current_branch: bool,\n    from_branch: str | None,\n    script: bool,\n    output_json: bool,\n    stay: bool,\n    skip_remote_check: bool,\n) -&gt; None:","new_string":"def create_wt(\n    ctx: ErkContext,\n    *,\n    name: str | None,\n    branch: str | None,\n    ref: str | None,\n    no_post: bool,\n    from_plan_file: Path | None,\n    keep_plan_file: bool,\n    from_pr: str | None,\n    copy_plan: bool,\n    from_current_branch: bool,\n    from_branch: str | None,\n    script: bool,\n    output_json: bool,\n    stay: bool,\n    skip_remote_check: bool,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    \"\"\"Create a worktree and write a .env file.\n\n    Reads config.toml for env templates and post-create commands (if present).\n    If --from-plan-file is provided, derives name from the plan filename and creates\n    an implementation context folder in the worktree.\n    If --from-plan is provided, fetches the plan, validates the erk-pr label,\n    derives name from the plan title, and creates an impl folder with plan-ref.json metadata.\n    If --from-current-branch is provided, moves the current branch to the new worktree.\n    If --from-branch is provided, creates a worktree from an existing branch.\n\n    By default, the command checks if a branch with the same name already exists on\n    the 'origin' remote. If a conflict is detected, the command fails with an error.\n    Use --skip-remote-check to bypass this validation for offline workflows.\n    \"\"\"","new_string":"    \"\"\"Create a worktree and write a .env file.\n\n    Reads config.toml for env templates and post-create commands (if present).\n    If --from-plan-file is provided, derives name from the plan filename and creates\n    an implementation context folder in the worktree.\n    If --from-pr is provided, fetches the plan, validates the erk-pr label,\n    derives name from the plan title, and creates an impl folder with plan-ref.json metadata.\n    If --from-current-branch is provided, moves the current branch to the new worktree.\n    If --from-branch is provided, creates a worktree from an existing branch.\n\n    By default, the command checks if a branch with the same name already exists on\n    the 'origin' remote. If a conflict is detected, the command fails with an error.\n    Use --skip-remote-check to bypass this validation for offline workflows.\n    \"\"\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    # Validate mutually exclusive options\n    flags_set = sum(\n        [\n            from_current_branch,\n            from_branch is not None,\n            from_plan_file is not None,\n            from_plan is not None,\n        ]\n    )\n    Ensure.invariant(\n        flags_set &lt;= 1,\n        \"Cannot use multiple of: --from-current-branch, --from-branch, \"\n        \"--from-plan-file, --from-plan\",\n    )","new_string":"    # Validate mutually exclusive options\n    flags_set = sum(\n        [\n            from_current_branch,\n            from_branch is not None,\n            from_plan_file is not None,\n            from_pr is not None,\n        ]\n    )\n    Ensure.invariant(\n        flags_set &lt;= 1,\n        \"Cannot use multiple of: --from-current-branch, --from-branch, \"\n        \"--from-plan-file, --from-pr\",\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    # Validate --copy-plan and --from-plan-file/--from-plan are mutually exclusive\n    Ensure.invariant(\n        not (copy_plan and (from_plan_file is not None or from_plan is not None)),\n        \"--copy-plan and --from-plan-file/--from-plan are mutually exclusive. \"\n        \"Use --copy-plan to copy from current worktree OR --from-plan-file &lt;file&gt; to use a plan \"\n        \"file OR --from-plan &lt;number&gt; to use a plan.\",\n    )","new_string":"    # Validate --copy-plan and --from-plan-file/--from-pr are mutually exclusive\n    Ensure.invariant(\n        not (copy_plan and (from_plan_file is not None or from_pr is not None)),\n        \"--copy-plan and --from-plan-file/--from-pr are mutually exclusive. \"\n        \"Use --copy-plan to copy from current worktree OR --from-plan-file &lt;file&gt; to use a plan \"\n        \"file OR --from-pr &lt;number&gt; to use a plan.\",\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    # Handle --from-plan flag\n    elif from_plan:\n        Ensure.invariant(\n            not name, \"Cannot specify both NAME and --from-plan. Use one or the other.\"\n        )\n        # Parse PR number from URL or plain number - raises click.ClickException if invalid\n        pr_number_parsed = parse_issue_identifier(from_plan)\n        # Note: name will be derived from plan title after fetching\n        # Defer fetch until after repo discovery below\n        name = None  # Will be set after fetching plan","new_string":"    # Handle --from-pr flag\n    elif from_pr:\n        Ensure.invariant(\n            not name, \"Cannot specify both NAME and --from-pr. Use one or the other.\"\n        )\n        # Parse PR number from URL or plain number - raises click.ClickException if invalid\n        pr_number_parsed = parse_issue_identifier(from_pr)\n        # Note: name will be derived from plan title after fetching\n        # Defer fetch until after repo discovery below\n        name = None  # Will be set after fetching plan"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"        else:\n            name = Ensure.truthy(\n                name,\n                \"Must provide NAME or --from-plan-file or --from-branch \"\n                \"or --from-current-branch or --from-plan or --branch option.\",\n            )","new_string":"        else:\n            name = Ensure.truthy(\n                name,\n                \"Must provide NAME or --from-plan-file or --from-branch \"\n                \"or --from-current-branch or --from-pr or --branch option.\",\n            )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    # Handle plan fetching after repo discovery\n    if from_plan:\n        # Type narrowing: pr_number_parsed must be set if from_plan is True\n        assert pr_number_parsed is not None, \"pr_number_parsed must be set when from_plan is True\"","new_string":"    # Handle plan fetching after repo discovery\n    if from_pr:\n        # Type narrowing: pr_number_parsed must be set if from_pr is True\n        assert pr_number_parsed is not None, \"pr_number_parsed must be set when from_pr is True\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    # Create implementation context folder if plan provided\n    if from_plan:\n        # Type narrowing: setup must be set if from_plan is True\n        assert setup is not None, \"setup must be set when from_plan is True\"\n        assert linked_branch_name is not None, (\n            \"linked_branch_name must be set when from_plan is True\"\n        )","new_string":"    # Create implementation context folder if plan provided\n    if from_pr:\n        # Type narrowing: setup must be set if from_pr is True\n        assert setup is not None, \"setup must be set when from_pr is True\"\n        assert linked_branch_name is not None, (\n            \"linked_branch_name must be set when from_pr is True\"\n        )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","old_string":"    # Create implementation context folder if plan provided\n    if from_plan:\n        # Type narrowing: setup must be set if from_plan is True\n        assert setup is not None, \"setup must be set when from_plan is True\"\n        assert linked_branch_name is not None, (\n            \"linked_branch_name must be set when from_plan is True\"\n        )","new_string":"    # Create implementation context folder if plan provided\n    if from_pr:\n        # Type narrowing: setup must be set if from_pr is True\n        assert setup is not None, \"setup must be set when from_pr is True\"\n        assert linked_branch_name is not None, (\n            \"linked_branch_name must be set when from_pr is True\"\n        )"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","offset":451,"limit":25}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","offset":511,"limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py","offset":529,"limit":18}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01W6cVjVkVvbGBHv7j4GoqRc">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a0f910c&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"@click.option(\n    \"--plan\",\n    \"-p\",\n    type=str,\n    help=\"Existing PR ID to check (fetches body and excludes self from comparison)\",\n)","new_string":"@click.option(\n    \"--pr\",\n    \"-p\",\n    type=str,\n    help=\"Existing PR ID to check (fetches body and excludes self from comparison)\",\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"def duplicate_check_plan(\n    ctx: ErkContext,\n    file: Path | None,\n    plan: str | None,\n    *,\n    repo_id: GitHubRepoId,\n) -&gt; None:","new_string":"def duplicate_check_plan(\n    ctx: ErkContext,\n    file: Path | None,\n    pr: str | None,\n    *,\n    repo_id: GitHubRepoId,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"    \"\"\"Check if a plan duplicates any existing open plans.\n\n    Uses LLM inference to detect semantic duplicates — plans that aim to\n    accomplish the same functional change, even if worded differently.\n\n    Also checks whether the plan's work has already been implemented\n    via recent commits merged to the trunk branch (local mode only).\n\n    Supports three input modes:\n    - Plan ID: --plan ID (fetches plan body, excludes self from comparison)\n    - File: --file PATH (recommended for automation)\n    - Stdin: pipe content via shell (for Unix composability)\n\n    Exit codes:\n        0: No duplicates found and not already implemented\n        1: Duplicates found, already implemented, or error\n\n    Examples:\n        erk pr duplicate-check --plan 200\n        erk pr duplicate-check --file plan.md\n        erk pr duplicate-check --plan 200 --repo owner/repo\n        cat plan.md | erk pr duplicate-check\n    \"\"\"","new_string":"    \"\"\"Check if a plan duplicates any existing open plans.\n\n    Uses LLM inference to detect semantic duplicates — plans that aim to\n    accomplish the same functional change, even if worded differently.\n\n    Also checks whether the plan's work has already been implemented\n    via recent commits merged to the trunk branch (local mode only).\n\n    Supports three input modes:\n    - Plan ID: --pr ID (fetches plan body, excludes self from comparison)\n    - File: --file PATH (recommended for automation)\n    - Stdin: pipe content via shell (for Unix composability)\n\n    Exit codes:\n        0: No duplicates found and not already implemented\n        1: Duplicates found, already implemented, or error\n\n    Examples:\n        erk pr duplicate-check --pr 200\n        erk pr duplicate-check --file plan.md\n        erk pr duplicate-check --pr 200 --repo owner/repo\n        cat plan.md | erk pr duplicate-check\n    \"\"\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"    if plan is not None and file is not None:\n        Ensure.invariant(False, \"Cannot use both --plan and --file. Choose one input mode.\")","new_string":"    if pr is not None and file is not None:\n        Ensure.invariant(False, \"Cannot use both --pr and --file. Choose one input mode.\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"    # Resolve plan content\n    exclude_pr_id: str | None = None\n    content: str\n\n    if plan is not None:\n        remote = get_remote_github(ctx)\n        pr_number = parse_issue_identifier(plan)","new_string":"    # Resolve plan content\n    exclude_pr_id: str | None = None\n    content: str\n\n    if pr is not None:\n        remote = get_remote_github(ctx)\n        pr_number = parse_issue_identifier(pr)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"    else:\n        Ensure.invariant(False, \"No input provided. Use --plan, --file, or pipe content to stdin.\")","new_string":"    else:\n        Ensure.invariant(False, \"No input provided. Use --pr, --file, or pipe content to stdin.\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","old_string":"    else:\n        Ensure.invariant(False, \"No input provided. Use --plan, --file, or pipe content to stdin.\")","new_string":"    else:\n        Ensure.invariant(False, \"No input provided. Use --pr, --file, or pipe content to stdin.\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py","old_string":"@click.option(\n    \"--plan\",\n    \"pr_number_arg\",\n    type=int,\n    default=None,\n    help=\"PR number (direct lookup, skips branch-based discovery)\",\n)","new_string":"@click.option(\n    \"--pr\",\n    \"pr_number_arg\",\n    type=int,\n    default=None,\n    help=\"PR number (direct lookup, skips branch-based discovery)\",\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py","old_string":"@click.option(\n    \"--plan\",\n    \"pr_number_arg\",\n    type=int,\n    default=None,\n    help=\"PR number (direct lookup, skips branch-based discovery)\",\n)","new_string":"@click.option(\n    \"--pr\",\n    \"pr_number_arg\",\n    type=int,\n    default=None,\n    help=\"PR number (direct lookup, skips branch-based discovery)\",\n)"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py","offset":28,"limit":70}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py","offset":150,"limit":20}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py","offset":150,"limit":20}
+
+--- RESULT ---
+Excellent! All changes have been successfully applied. Here's a summary of what was updated:
+
+## Summary of Changes
+
+
+... [34 lines omitted] ...
+
+- Line 66-67: Error message updated from `--plan and --file` → `--pr and --file`
+- Line 96: Error message updated from `--plan, --file` → `--pr, --file`
+  </tool_result>
+  <tool_result tool="toolu_01God1M1ipLeTJiMGZDBfji1">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a00d93f&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"erk exec track-learn-result --plan-id 123 --status completed_no_plan\n    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456","new_string":"erk exec track-learn-result --plan-id 123 --status completed_no_plan\n    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-pr 456"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"@click.option(\n    \"--learn-plan\",\n    type=int,\n    help=\"Learn PR number (required if status is completed_with_plan)\",\n)","new_string":"@click.option(\n    \"--learn-pr\",\n    type=int,\n    help=\"Learn PR number (required if status is completed_with_plan)\",\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"def track_learn_result(\n    ctx: click.Context,\n    *,\n    pr_id: str,\n    status: str,\n    learn_plan: int | None,\n    plan_pr: int | None,\n) -&gt; None:","new_string":"def track_learn_result(\n    ctx: click.Context,\n    *,\n    pr_id: str,\n    status: str,\n    learn_pr: int | None,\n    plan_pr: int | None,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"    # Validate: completed_with_plan requires --learn-plan\n    if status == \"completed_with_plan\" and learn_plan is None:\n        error = TrackLearnResultError(\n            success=False,\n            error=\"missing-learn-plan\",\n            message=\"--learn-plan is required when status is 'completed_with_plan'\",\n        )\n        click.echo(json.dumps(asdict(error)))\n        raise SystemExit(1)","new_string":"    # Validate: completed_with_plan requires --learn-pr\n    if status == \"completed_with_plan\" and learn_pr is None:\n        error = TrackLearnResultError(\n            success=False,\n            error=\"missing-learn-pr\",\n            message=\"--learn-pr is required when status is 'completed_with_plan'\",\n        )\n        click.echo(json.dumps(asdict(error)))\n        raise SystemExit(1)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"    # completed_no_plan should not have --learn-plan\n    if status == \"completed_no_plan\" and learn_plan is not None:\n        error = TrackLearnResultError(\n            success=False,\n            error=\"unexpected-learn-plan\",\n            message=\"--learn-plan should not be provided when status is 'completed_no_plan'\",\n        )\n        click.echo(json.dumps(asdict(error)))\n        raise SystemExit(1)","new_string":"    # completed_no_plan should not have --learn-pr\n    if status == \"completed_no_plan\" and learn_pr is not None:\n        error = TrackLearnResultError(\n            success=False,\n            error=\"unexpected-learn-pr\",\n            message=\"--learn-pr should not be provided when status is 'completed_no_plan'\",\n        )\n        click.echo(json.dumps(asdict(error)))\n        raise SystemExit(1)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"    # pending_review should not have --learn-plan\n    if status == \"pending_review\" and learn_plan is not None:\n        error = TrackLearnResultError(\n            success=False,\n            error=\"unexpected-learn-plan\",\n            message=\"--learn-plan should not be provided when status is 'pending_review'\",\n        )\n        click.echo(json.dumps(asdict(error)))\n        raise SystemExit(1)","new_string":"    # pending_review should not have --learn-pr\n    if status == \"pending_review\" and learn_pr is not None:\n        error = TrackLearnResultError(\n            success=False,\n            error=\"unexpected-learn-pr\",\n            message=\"--learn-pr should not be provided when status is 'pending_review'\",\n        )\n        click.echo(json.dumps(asdict(error)))\n        raise SystemExit(1)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"        backend.update_metadata(\n            repo_root,\n            pr_id,\n            metadata={\n                \"learn_status\": learn_status,\n                \"learn_plan_issue\": learn_plan,\n                \"learn_plan_pr\": plan_pr,\n            },\n        )","new_string":"        backend.update_metadata(\n            repo_root,\n            pr_id,\n            metadata={\n                \"learn_status\": learn_status,\n                \"learn_plan_issue\": learn_pr,\n                \"learn_plan_pr\": plan_pr,\n            },\n        )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"    result = TrackLearnResultSuccess(\n        success=True,\n        pr_number=pr_id,\n        learn_status=status,\n        learn_plan_issue=learn_plan,\n        learn_plan_pr=plan_pr,\n    )","new_string":"    result = TrackLearnResultSuccess(\n        success=True,\n        pr_number=pr_id,\n        learn_status=status,\n        learn_plan_issue=learn_pr,\n        learn_plan_pr=plan_pr,\n    )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py","old_string":"    result = TrackLearnResultSuccess(\n        success=True,\n        pr_number=pr_id,\n        learn_status=status,\n        learn_plan_issue=learn_plan,\n        learn_plan_pr=plan_pr,\n    )","new_string":"    result = TrackLearnResultSuccess(\n        success=True,\n        pr_number=pr_id,\n        learn_status=status,\n        learn_plan_issue=learn_pr,\n        learn_plan_pr=plan_pr,\n    )"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py"}
+
+--- RESULT ---
+Perfect! All the changes have been successfully applied. Here's a summary of what was renamed:
+
+## Summary of Changes
+
+In `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py`:
+
+
+... [27 lines omitted] ...
+
+- Line 104: Error code `"missing-learn-plan"` → `"missing-learn-pr"`
+- Line 105: Error message `"--learn-plan is required..."` → `"--learn-pr is required..."`
+- Line 114: Error code `"unexpected-learn-plan"` → `"unexpected-learn-pr"`
+- Line 115: Error message `"--learn-plan should not be provided..."` → `"--learn-pr should not be provided..."`
+- Line 134: Error code `"unexpected-learn-plan"` → `"unexpected-learn-pr"`
+- Line 135: Error message `"--learn-plan should not be provided..."` → `"--learn-pr should not be provided..."`
+  </tool_result>
+  <tool_result tool="toolu_01He7pg2eaNVqQrv1QZWss1C">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aea4f45&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py","content":"\"\"\"Fetch erk-prs linked to an objective.\n\nUsage:\n    erk exec get-prs-for-objective &lt;OBJECTIVE_NUMBER&gt;\n\nOutput:\n    JSON with {success, objective_number, prs: [{number, state, title}]}\n\nExit Codes:\n    0: Success - prs fetched\n    1: Error - API error\n\"\"\"\n\nimport json\n\nimport click\n\nfrom erk_shared.context.helpers import (\n    require_issues as require_github_issues,\n)\nfrom erk_shared.context.helpers import (\n    require_repo_root,\n)\nfrom erk_shared.gateway.github.metadata.core import find_metadata_block\nfrom erk_shared.gateway.github.metadata.types import BlockKeys\n\n\n@click.command(name=\"get-prs-for-objective\")\n@click.argument(\"objective_number\", type=int)\n@click.pass_context\ndef get_prs_for_objective(ctx: click.Context, objective_number: int) -&gt; None:\n    \"\"\"Fetch erk-prs linked to an objective.\n\n    Lists all erk-pr issues with [erk-pr] title prefix, then filters\n    to those whose plan-header metadata contains objective_id matching the\n    given objective number.\n    \"\"\"\n    github = require_github_issues(ctx)\n    repo_root = require_repo_root(ctx)\n\n    try:\n        all_prs = github.list_issues(\n            repo_root=repo_root,\n            labels=[\"erk-pr\"],\n            state=\"all\",\n        )\n    except RuntimeError as e:\n        click.echo(\n            json.dumps(\n                {\n                    \"success\": False,\n                    \"error\": f\"Failed to list erk-prs: {e}\",\n                }\n            )\n        )\n        raise SystemExit(1) from e\n\n    # Filter prs that reference this objective\n    linked_prs = []\n    for pr in all_prs:\n        block = find_metadata_block(pr.body, BlockKeys.PLAN_HEADER)\n        if block is None:\n            continue\n\n        # Check both objective_id (new) and objective_issue (legacy)\n        obj_id = block.data.get(\"objective_id\") or block.data.get(\"objective_issue\")\n        if obj_id == objective_number:\n            linked_prs.append(\n                {\n                    \"number\": pr.number,\n                    \"state\": pr.state,\n                    \"title\": pr.title,\n                }\n            )\n\n    click.echo(\n        json.dumps(\n            {\n                \"success\": True,\n                \"objective_number\": objective_number,\n                \"prs\": linked_prs,\n            }\n        )\n    )\n"}
+[Tool: Write] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py","content":"\"\"\"Fetch erk-prs linked to an objective.\n\nUsage:\n    erk exec get-prs-for-objective &lt;OBJECTIVE_NUMBER&gt;\n\nOutput:\n    JSON with {success, objective_number, prs: [{number, state, title}]}\n\nExit Codes:\n    0: Success - prs fetched\n    1: Error - API error\n\"\"\"\n\nimport json\n\nimport click\n\nfrom erk_shared.context.helpers import (\n    require_issues as require_github_issues,\n)\nfrom erk_shared.context.helpers import (\n    require_repo_root,\n)\nfrom erk_shared.gateway.github.metadata.core import find_metadata_block\nfrom erk_shared.gateway.github.metadata.types import BlockKeys\n\n\n@click.command(name=\"get-prs-for-objective\")\n@click.argument(\"objective_number\", type=int)\n@click.pass_context\ndef get_prs_for_objective(ctx: click.Context, objective_number: int) -&gt; None:\n    \"\"\"Fetch erk-prs linked to an objective.\n\n    Lists all erk-pr issues with [erk-pr] title prefix, then filters\n    to those whose plan-header metadata contains objective_id matching the\n    given objective number.\n    \"\"\"\n    github = require_github_issues(ctx)\n    repo_root = require_repo_root(ctx)\n\n    try:\n        all_prs = github.list_issues(\n            repo_root=repo_root,\n            labels=[\"erk-pr\"],\n            state=\"all\",\n        )\n    except RuntimeError as e:\n        click.echo(\n            json.dumps(\n                {\n                    \"success\": False,\n                    \"error\": f\"Failed to list erk-prs: {e}\",\n                }\n            )\n        )\n        raise SystemExit(1) from e\n\n    # Filter prs that reference this objective\n    linked_prs = []\n    for pr in all_prs:\n        block = find_metadata_block(pr.body, BlockKeys.PLAN_HEADER)\n        if block is None:\n            continue\n\n        # Check both objective_id (new) and objective_issue (legacy)\n        obj_id = block.data.get(\"objective_id\") or block.data.get(\"objective_issue\")\n        if obj_id == objective_number:\n            linked_prs.append(\n                {\n                    \"number\": pr.number,\n                    \"state\": pr.state,\n                    \"title\": pr.title,\n                }\n            )\n\n    click.echo(\n        json.dumps(\n            {\n                \"success\": True,\n                \"objective_number\": objective_number,\n                \"prs\": linked_prs,\n            }\n        )\n    )\n"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py","old_string":"from erk.cli.commands.exec.scripts.get_plans_for_objective import (\n    get_plans_for_objective,\n)","new_string":"from erk.cli.commands.exec.scripts.get_prs_for_objective import (\n    get_prs_for_objective,\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py","old_string":"from erk.cli.commands.exec.scripts.get_plans_for_objective import (\n    get_plans_for_objective,\n)","new_string":"from erk.cli.commands.exec.scripts.get_prs_for_objective import (\n    get_prs_for_objective,\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py","old_string":"exec_group.add_command(get_plans_for_objective, name=\"get-plans-for-objective\")","new_string":"exec_group.add_command(get_prs_for_objective, name=\"get-prs-for-objective\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py","old_string":"exec_group.add_command(get_plans_for_objective, name=\"get-plans-for-objective\")","new_string":"exec_group.add_command(get_prs_for_objective, name=\"get-prs-for-objective\")"}
+[Tool: Bash] {"command":"git -C /home/runner/work/erk/erk rm /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py","description":"Remove old get_plans_for_objective.py file"}
+[Tool: Bash] {"command":"git -C /home/runner/work/erk/erk rm /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py","description":"Remove old get_plans_for_objective.py file"}
+
+--- RESULT ---
+Perfect! I have successfully completed all the requested steps:
+
+## Summary
+
+I have completed the file rename and edits as requested:
+
+### Step 1-2: Created new file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py`
+- Updated module docstring: `get-plans-for-objective` → `get-prs-for-objective`, `plans` → `prs`
+
+... [15 lines omitted] ...
+
+- Updated error message: `"Failed to list erk-plans"` → `"Failed to list erk-prs"`
+  </tool_result>
+  <assistant>Good progress. Phases 3, 4, 5 source files are complete. Let me update the todo list and check on the remaining agents:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16741" cache_read_input_tokens="96253" cache_creation="{'ephemeral_5m_input_tokens': 16741, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01Px5UaxuTQG3upZF5E69sJK">
+    <param name="todos">[{'content': 'Phase 1: Rename --for-plan to --for-pr (branch checkout/create + TUI)', 'sta...[truncated 1159 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16741" cache_read_input_tokens="96253" cache_creation="{'ephemeral_5m_input_tokens': 16741, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Px5UaxuTQG3upZF5E69sJK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_01LPNw5XEUPEUyFcuERy76Ye">
+    <param name="task_id">a18ad3d</param>
+    <param name="block">False</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="112994" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_016kveu67HpjWokfygw57Vy9">
+    <param name="task_id">a9cfbd9</param>
+    <param name="block">False</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="112994" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01JxMvwPrsSzpWrNUjYN1ydr">
+    <param name="task_id">a4ef8b0</param>
+    <param name="block">False</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="112994" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01DXTs7VXfMha2FUtPUaTGxH">
+    <param name="task_id">aa57c16</param>
+    <param name="block">False</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="112994" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LPNw5XEUPEUyFcuERy76Ye">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a18ad3d&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py","offset":140,"limit":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py","offset":200,"limit":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_objective_issues.py","offset":305,"limit":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_objective_issues.py","offset":305,"limit":15}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py","old_string":"    def test_copy_prepare_copies_command(self) -&gt; None:\n        \"\"\"copy_prepare copies the prepare command.\"\"\"\n        row = make_pr_row(123, \"Test\")\n        executor = FakeCommandExecutor()\n        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)\n        screen.execute_command(\"copy_prepare\")\n        assert executor.copied_texts == [\"erk br co --for-plan 123\"]\n        assert \"Copied: erk br co --for-plan 123\" in executor.notifications","new_string":"    def test_copy_prepare_copies_command(self) -&gt; None:\n        \"\"\"copy_prepare copies the prepare command.\"\"\"\n        row = make_pr_row(123, \"Test\")\n        executor = FakeCommandExecutor()\n        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)\n        screen.execute_command(\"copy_prepare\")\n        assert executor.copied_texts == [\"erk br co --for-pr 123\"]\n        assert \"Copied: erk br co --for-pr 123\" in executor.notifications"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py","old_string":"            assert clipboard.last_copied == \"erk br co --for-plan 123\"","new_string":"            assert clipboard.last_copied == \"erk br co --for-pr 123\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_objective_issues.py","old_string":"        assert \"erk br co --for-plan\" not in updated_body","new_string":"        assert \"erk br co --for-pr\" not in updated_body"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_objective_issues.py","old_string":"        assert \"erk br co --for-plan\" not in updated_body","new_string":"        assert \"erk br co --for-pr\" not in updated_body"}
+
+--- RESULT ---
+Perfect! I have successfully updated all three test files, changing `--for-plan` to `--for-pr` in the CLI command strings:
+
+## Summary of Changes
+
+**File 1**: `/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py`
+- Line 146: `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"`
+- Line 147: `"Copied: erk br co --for-plan 123"` → `"Copied: erk br co --for-pr 123"`
+
+**File 2**: `/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py`
+- Line 207: `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"`
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016kveu67HpjWokfygw57Vy9">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a9cfbd9&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py","old_string":"        result = runner.invoke(\n            track_learn_result,\n            [\"--pr-id\", \"42\", \"--status\", \"completed_with_plan\", \"--learn-plan\", \"456\"],\n            obj=ErkContext.for_test(","new_string":"        result = runner.invoke(\n            track_learn_result,\n            [\"--pr-id\", \"42\", \"--status\", \"completed_with_plan\", \"--learn-pr\", \"456\"],\n            obj=ErkContext.for_test("}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py","old_string":"    assert \"learn-plan is required\" in output[\"message\"]","new_string":"    assert \"learn-pr is required\" in output[\"message\"]"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py","old_string":"        result = runner.invoke(\n            track_learn_result,\n            [\"--pr-id\", \"42\", \"--status\", \"completed_no_plan\", \"--learn-plan\", \"456\"],\n            obj=ErkContext.for_test(","new_string":"        result = runner.invoke(\n            track_learn_result,\n            [\"--pr-id\", \"42\", \"--status\", \"completed_no_plan\", \"--learn-pr\", \"456\"],\n            obj=ErkContext.for_test("}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py","old_string":"    assert \"should not be provided\" in output[\"message\"]","new_string":"    assert \"learn-pr should not be provided\" in output[\"message\"]"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py","old_string":"            [\n                \"--pr-id\",\n                \"42\",\n                \"--status\",\n                \"pending_review\",\n                \"--plan-pr\",\n                \"789\",\n                \"--learn-plan\",\n                \"456\",\n            ],","new_string":"            [\n                \"--pr-id\",\n                \"42\",\n                \"--status\",\n                \"pending_review\",\n                \"--plan-pr\",\n                \"789\",\n                \"--learn-pr\",\n                \"456\",\n            ],"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py","old_string":"            [\n                \"--pr-id\",\n                \"42\",\n                \"--status\",\n                \"pending_review\",\n                \"--plan-pr\",\n                \"789\",\n                \"--learn-plan\",\n                \"456\",\n            ],","new_string":"            [\n                \"--pr-id\",\n                \"42\",\n                \"--status\",\n                \"pending_review\",\n                \"--plan-pr\",\n                \"789\",\n                \"--learn-pr\",\n                \"456\",\n            ],"}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01JxMvwPrsSzpWrNUjYN1ydr">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a4ef8b0&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/objective-view.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md","old_string":"| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                           |","new_string":"| `get-prs-for-objective`           | Fetch erk-plans linked to an objective.                                           |"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/skills/erk-exec/reference.md","old_string":"### get-plans-for-objective\n\nFetch erk-plans linked to an objective.\n\n**Usage:** `erk exec get-plans-for-objective` &lt;objective_number&gt;","new_string":"### get-prs-for-objective\n\nFetch erk-plans linked to an objective.\n\n**Usage:** `erk exec get-prs-for-objective` &lt;objective_number&gt;"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/erk/learn.md","old_string":"### Step 3: Get Session Information\n\nRun the exec script to get session details:\n\n```bash\nerk exec get-learn-sessions &lt;pr-number&gt;\n```","new_string":"### Step 3: Get Session Information\n\nRun the exec script to get session details:\n\n```bash\nerk exec get-learn-sessions &lt;pr-number&gt; --learn-pr\n```"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/.claude/commands/local/objective-view.md","old_string":"### Step 5: Fetch Associated Plans\n\n```bash\nerk exec get-plans-for-objective &lt;objective_number&gt;\n```\n\nParse JSON output to get plans linked to this objective. The output has format:","new_string":"### Step 5: Fetch Associated Plans\n\n```bash\nerk exec get-prs-for-objective &lt;objective_number&gt;\n```\n\nParse JSON output to get plans linked to this objective. The output has format:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py","old_string":"\"\"\"Shared workflow for preparing plans for worktree creation.\n\nThis module provides the canonical logic for preparing plans for worktree creation,\nincluding validation, branch naming, and metadata extraction. Used by both\n`erk wt create --from-plan` and `erk implement`.\"\"\"","new_string":"\"\"\"Shared workflow for preparing plans for worktree creation.\n\nThis module provides the canonical logic for preparing plans for worktree creation,\nincluding validation, branch naming, and metadata extraction. Used by both\n`erk wt create --from-pr` and `erk implement`.\"\"\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py","old_string":"\"\"\"Shared workflow for preparing plans for worktree creation.\n\nThis module provides the canonical logic for preparing plans for worktree creation,\nincluding validation, branch naming, and metadata extraction. Used by both\n`erk wt create --from-plan` and `erk implement`.\"\"\"","new_string":"\"\"\"Shared workflow for preparing plans for worktree creation.\n\nThis module provides the canonical logic for preparing plans for worktree creation,\nincluding validation, branch naming, and metadata extraction. Used by both\n`erk wt create --from-pr` and `erk implement`.\"\"\""}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py","offset":1,"limit":10}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py","offset":1,"limit":10}
+&lt;/output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01DXTs7VXfMha2FUtPUaTGxH">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aa57c16&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/erk-exec-commands.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/glossary.md"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md","old_string":"`erk br co` uses a three-path decision tree when `--for-plan` is involved, implemented in `branch/checkout_cmd.py:614-717`.","new_string":"`erk br co` uses a three-path decision tree when `--for-pr` is involved, implemented in `branch/checkout_cmd.py:614-717`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md","old_string":"### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)\n\nThe user passed `--for-plan` (so `setup is not None`) but did NOT pass `--new-slot`.","new_string":"### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)\n\nThe user passed `--for-pr` (so `setup is not None`) but did NOT pass `--new-slot`."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md","old_string":"The two guards:\n\n- `setup is not None` = user passed `--for-plan` (the plan setup configuration is populated)\n- `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)","new_string":"The two guards:\n\n- `setup is not None` = user passed `--for-pr` (the plan setup configuration is populated)\n- `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/index.md","old_string":"- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior","new_string":"- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-pr flag, changing slot allocation behavior"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md","old_string":"**Why extract from branch name instead of PR labels?**\n\nBranch names are stable identifiers (set at `erk br co --for-plan` time). PR labels can be added/removed during review. Extracting from branch name means learn plan detection is deterministic—the same branch will always trigger the same pipeline steps.","new_string":"**Why extract from branch name instead of PR labels?**\n\nBranch names are stable identifiers (set at `erk br co --for-pr` time). PR labels can be added/removed during review. Extracting from branch name means learn plan detection is deterministic—the same branch will always trigger the same pipeline steps."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/branch-name-inference.md","old_string":"1. **Plan saved** → GitHub issue created (no branch exists yet)\n2. **Branch created** → User runs `erk br co --for-plan {issue}` (branch now exists)\n3. **Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header","new_string":"1. **Plan saved** → GitHub issue created (no branch exists yet)\n2. **Branch created** → User runs `erk br co --for-pr {issue}` (branch now exists)\n3. **Implementation starts** → `impl-signal started` writes `branch_name` into the plan-header"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/next-steps-output.md","old_string":"The `current_wt` variants use a simple `&amp;&amp;` chain (`erk br co --for-plan N &amp;&amp; erk implement`) since the user is already in the correct directory — no shell activation is needed.","new_string":"The `current_wt` variants use a simple `&amp;&amp;` chain (`erk br co --for-pr N &amp;&amp; erk implement`) since the user is already in the correct directory — no shell activation is needed."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md","old_string":"Each plan implementation runs in an isolated worktree:\n\n1. `erk br co --for-plan &lt;issue-number&gt;` creates a new worktree from the plan\n2. The worktree gets its own `.erk/impl-context/` folder with the plan content\n3. Implementation happens entirely within the worktree\n4. After PR lands, the worktree is cleaned up","new_string":"Each plan implementation runs in an isolated worktree:\n\n1. `erk br co --for-pr &lt;issue-number&gt;` creates a new worktree from the plan\n2. The worktree gets its own `.erk/impl-context/` folder with the plan content\n3. Implementation happens entirely within the worktree\n4. After PR lands, the worktree is cleaned up"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/stacked-plan-branch-rebase.md","old_string":"## Integration Points\n\nThe function is called at three points in `erk br co --for-plan`:","new_string":"## Integration Points\n\nThe function is called at three points in `erk br co --for-pr`:"}
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>Good progress - I notice the `learn.md` agent made an incorrect edit (added `--learn-pr` to a command where it doesn't belong). Let me wait for the agents to complete and then verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6470" cache_read_input_tokens="113539" cache_creation="{'ephemeral_5m_input_tokens': 6470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01NRkr5hndPU2Kp4mLkYds6b">
+    <param name="task_id">ab706c2</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6470" cache_read_input_tokens="113539" cache_creation="{'ephemeral_5m_input_tokens': 6470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01RXB3bvvshEqVG16A7AcZyR">
+    <param name="task_id">a4d22d9</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6470" cache_read_input_tokens="113539" cache_creation="{'ephemeral_5m_input_tokens': 6470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01VNFRpuaQqbVjLHZscg9a5X">
+    <param name="task_id">a520139</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6470" cache_read_input_tokens="113539" cache_creation="{'ephemeral_5m_input_tokens': 6470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01Nqmff4p7Z5TgPmiqc8ady9">
+    <param name="task_id">a0c94d5</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6470" cache_read_input_tokens="113539" cache_creation="{'ephemeral_5m_input_tokens': 6470, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NRkr5hndPU2Kp4mLkYds6b">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ab706c2&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"@click.option(\n    \"--for-plan\",\n    \"for_plan\",\n    type=str,\n    default=None,\n    help=\"PR number or URL with erk-pr label\",\n)","new_string":"@click.option(\n    \"--for-pr\",\n    \"for_pr\",\n    type=str,\n    default=None,\n    help=\"PR number or URL with erk-pr label\",\n)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"def branch_checkout(\n    ctx: ErkContext,\n    branch: str | None,\n    for_plan: str | None,\n    script: bool,\n) -&gt; None:","new_string":"def branch_checkout(\n    ctx: ErkContext,\n    branch: str | None,\n    for_pr: str | None,\n    script: bool,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    \"\"\"Checkout BRANCH by finding and switching to its worktree.\n\n    Prints the activation path for the target worktree.\n\n    This command finds which worktree has the specified branch checked out\n    and switches to it. If the branch exists but isn't checked out anywhere,\n    a worktree is automatically created. If the branch exists on origin but\n    not locally, a tracking branch and worktree are created automatically.\n\n    Use --for-plan to resolve a PR and set up .erk/impl-context/ after checkout.\n\n    Examples:\n\n        erk br co feature/user-auth      # Checkout existing worktree\n\n        erk br co unchecked-branch       # Auto-create worktree\n\n        erk br co --for-plan 123         # Checkout PR branch with .erk/impl-context/ setup\n\n    If multiple worktrees contain the branch, all options are shown.\n    \"\"\"","new_string":"    \"\"\"Checkout BRANCH by finding and switching to its worktree.\n\n    Prints the activation path for the target worktree.\n\n    This command finds which worktree has the specified branch checked out\n    and switches to it. If the branch exists but isn't checked out anywhere,\n    a worktree is automatically created. If the branch exists on origin but\n    not locally, a tracking branch and worktree are created automatically.\n\n    Use --for-pr to resolve a PR and set up .erk/impl-context/ after checkout.\n\n    Examples:\n\n        erk br co feature/user-auth      # Checkout existing worktree\n\n        erk br co unchecked-branch       # Auto-create worktree\n\n        erk br co --for-pr 123           # Checkout PR branch with .erk/impl-context/ setup\n\n    If multiple worktrees contain the branch, all options are shown.\n    \"\"\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    handler = script_error_handler(ctx) if script else contextlib.nullcontext()\n    with handler:\n        _branch_checkout_impl(\n            ctx,\n            branch=branch,\n            for_plan=for_plan,\n            script=script,\n        )","new_string":"    handler = script_error_handler(ctx) if script else contextlib.nullcontext()\n    with handler:\n        _branch_checkout_impl(\n            ctx,\n            branch=branch,\n            for_pr=for_pr,\n            script=script,\n        )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"def _branch_checkout_impl(\n    ctx: ErkContext,\n    *,\n    branch: str | None,\n    for_plan: str | None,\n    script: bool,\n) -&gt; None:","new_string":"def _branch_checkout_impl(\n    ctx: ErkContext,\n    *,\n    branch: str | None,\n    for_pr: str | None,\n    script: bool,\n) -&gt; None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    \"\"\"Implementation body for branch_checkout — separated for error wrapping.\"\"\"\n    # Mutual exclusivity validation\n    if for_plan is not None and branch is not None:\n        user_output(\n            \"Error: Cannot specify both BRANCH and --for-plan.\\n\"\n            \"Use --for-plan to derive branch name from PR, or provide BRANCH directly.\"\n        )\n        raise SystemExit(1) from None\n\n    if for_plan is None and branch is None:\n        user_output(\"Error: Must provide BRANCH argument or --for-plan option.\")\n        raise SystemExit(1) from None","new_string":"    \"\"\"Implementation body for branch_checkout — separated for error wrapping.\"\"\"\n    # Mutual exclusivity validation\n    if for_pr is not None and branch is not None:\n        user_output(\n            \"Error: Cannot specify both BRANCH and --for-pr.\\n\"\n            \"Use --for-pr to derive branch name from PR, or provide BRANCH directly.\"\n        )\n        raise SystemExit(1) from None\n\n    if for_pr is None and branch is None:\n        user_output(\"Error: Must provide BRANCH argument or --for-pr option.\")\n        raise SystemExit(1) from None"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    # Plan setup - fetches plan and derives branch name if --for-plan is used\n    setup: PlanBranchSetup | None = None\n    plan: Plan | None = None\n\n    if for_plan is not None:\n        pr_number = parse_issue_identifier(for_plan)","new_string":"    # Plan setup - fetches plan and derives branch name if --for-pr is used\n    setup: PlanBranchSetup | None = None\n    plan: Plan | None = None\n\n    if for_pr is not None:\n        pr_number = parse_issue_identifier(for_pr)"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    # At this point, branch is guaranteed to be set\n    assert branch is not None\n\n    # If --for-plan, handle branch creation/tracking before checkout\n    if setup is not None:","new_string":"    # At this point, branch is guaranteed to be set\n    assert branch is not None\n\n    # If --for-pr, handle branch creation/tracking before checkout\n    if setup is not None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"            # Root not available or not trunk - checkout in current worktree\n            # Ensure branch exists (may need to create tracking branch)\n            # Skip if --for-plan already handled branch creation\n            if setup is None:","new_string":"            # Root not available or not trunk - checkout in current worktree\n            # Ensure branch exists (may need to create tracking branch)\n            # Skip if --for-pr already handled branch creation\n            if setup is None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    if len(matching_worktrees) == 1:\n        # Exactly one worktree contains this branch\n        target_worktree = matching_worktrees[0]\n\n        # Set up impl folder if --for-plan was used\n        if setup is not None:","new_string":"    if len(matching_worktrees) == 1:\n        # Exactly one worktree contains this branch\n        target_worktree = matching_worktrees[0]\n\n        # Set up impl folder if --for-pr was used\n        if setup is not None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"        if len(directly_checked_out) == 1:\n            # Exactly one worktree has the branch directly checked out - jump to it\n            target_worktree = directly_checked_out[0]\n\n            # Set up impl folder if --for-plan was used\n            if setup is not None:","new_string":"        if len(directly_checked_out) == 1:\n            # Exactly one worktree has the branch directly checked out - jump to it\n            target_worktree = directly_checked_out[0]\n\n            # Set up impl folder if --for-pr was used\n            if setup is not None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"        if len(directly_checked_out) == 1:\n            # Exactly one worktree has the branch directly checked out - jump to it\n            target_worktree = directly_checked_out[0]\n\n            # Set up impl folder if --for-plan was used\n            if setup is not None:","new_string":"        if len(directly_checked_out) == 1:\n            # Exactly one worktree has the branch directly checked out - jump to it\n            target_worktree = directly_checked_out[0]\n\n            # Set up impl folder if --for-pr was used\n            if setup is not None:"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    \"\"\"Create impl folder and save plan ref after checkout for --for-plan.\n\n    In script mode, outputs an activation script and exits. In normal mode,\n    prints a confirmation message.","new_string":"    \"\"\"Create impl folder and save plan ref after checkout for --for-pr.\n\n    In script mode, outputs an activation script and exits. In normal mode,\n    prints a confirmation message."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"    \"\"\"Create impl folder and save plan ref after checkout for --for-plan.\n\n    In script mode, outputs an activation script and exits. In normal mode,\n    prints a confirmation message.","new_string":"    \"\"\"Create impl folder and save plan ref after checkout for --for-pr.\n\n    In script mode, outputs an activation script and exits. In normal mode,\n    prints a confirmation message."}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"        activation_script = render_activation_script(\n            worktree_path=worktree_path,\n            target_subpath=None,\n            post_cd_commands=None,\n            final_message=f'echo \"Prepared PR #{setup.pr_number} at $(pwd)\"',\n            comment=\"erk branch checkout --for-plan activation script\",\n        )\n        result = ctx.script_writer.write_activation_script(\n            activation_script,\n            command_name=\"branch-checkout\",\n            comment=f\"branch checkout --for-plan {setup.pr_number}\",\n        )","new_string":"        activation_script = render_activation_script(\n            worktree_path=worktree_path,\n            target_subpath=None,\n            post_cd_commands=None,\n            final_message=f'echo \"Prepared PR #{setup.pr_number} at $(pwd)\"',\n            comment=\"erk branch checkout --for-pr activation script\",\n        )\n        result = ctx.script_writer.write_activation_script(\n            activation_script,\n            command_name=\"branch-checkout\",\n            comment=f\"branch checkout --for-pr {setup.pr_number}\",\n        )"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","old_string":"        activation_script = render_activation_script(\n            worktree_path=worktree_path,\n            target_subpath=None,\n            post_cd_commands=None,\n            final_message=f'echo \"Prepared PR #{setup.pr_number} at $(pwd)\"',\n            comment=\"erk branch checkout --for-plan activation script\",\n        )\n        result = ctx.script_writer.write_activation_script(\n            activation_script,\n            command_name=\"branch-checkout\",\n            comment=f\"branch checkout --for-plan {setup.pr_number}\",\n        )","new_string":"        activation_script = render_activation_script(\n            worktree_path=worktree_path,\n            target_subpath=None,\n            post_cd_commands=None,\n            final_message=f'echo \"Prepared PR #{setup.pr_number} at $(pwd)\"',\n            comment=\"erk branch checkout --for-pr activation script\",\n        )\n        result = ctx.script_writer.write_activation_script(\n            activation_script,\n            command_name=\"branch-checkout\",\n            comment=f\"branch checkout --for-pr {setup.pr_number}\",\n        )"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","offset":419,"limit":50}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","offset":465,"limit":30}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py","offset":495,"limit":20}
+
+... [51 lines omitted] ...
+
+4. **Error messages (lines 476-477, 482)**:
+   - `"Error: Cannot specify both BRANCH and --for-plan."` → `"Error: Cannot specify both BRANCH and --for-pr."`
+   - `"Error: Must provide BRANCH argument or --for-plan option."` → `"Error: Must provide BRANCH argument or --for-pr option."`
+  </tool_result>
+</session>

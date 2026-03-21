@@ -1,0 +1,640 @@
+<session>
+  <meta source="agent-ab706c2" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py`:
+
+Rename all occurrences of `for_plan` (Python variable/parameter) to `for_pr`, and all occurrences of `--for-plan` (CLI flag string) to `--for-pr`.
+
+This includes:
+- The Click option decorator: `"--for-plan"` → `"--for-pr"` and `"for_plan"` → `"for_pr"`
+- Function parameter `for_plan: str | None` → `for_pr: str | None`
+- All uses of `for_plan` variable throughout the file
+- Error messages referencing `--for-plan` → `--for-pr`
+- Comments referencing `--for-plan` → `--for-pr`
+- Docstring text referencing `--for-plan` → `--for-pr`
+- String literals like `"branch checkout --for-plan activation script"` → `"branch checkout --for-pr activation script"`
+- String literals like `f"branch checkout --for-plan {setup.pr_number}"` → `f"branch checkout --for-pr {setup.pr_number}"`
+
+DO NOT rename:
+- `--from-plan-file`, `--keep-plan-file`, `--copy-plan` (these are out of scope)
+- `setup` variable (which comes from plan workflow but is not named `for_plan`)
+- `plan` variable
+- Function `_setup_impl_for_plan` (keep the function name as-is since it describes internal logic)
+- Function `_rebase_and_track_for_plan` (keep as-is)
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to understand its current structure and identify all occurrences that need to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16410" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16410, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PpKcCdTiQFyaZkM1reFWV5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16410" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16410, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PpKcCdTiQFyaZkM1reFWV5">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.commands.checkout_helpers import (
+    16→    display_sync_status,
+    17→    navigate_to_worktree,
+    18→)
+    19→from erk.cli.commands.completions import complete_branch_names
+    20→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    21→from erk.cli.core import discover_repo_context
+    22→from erk.cli.github_parsing import parse_issue_identifier
+    23→from erk.cli.graphite import find_worktrees_containing_branch
+    24→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    25→from erk.core.context import ErkContext
+    26→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    27→from erk.core.worktree_utils import compute_relative_path_in_worktree
+    28→from erk_shared.cli_alias import alias
+    29→from erk_shared.core.script_error import script_error_handler
+    30→from erk_shared.gateway.git.abc import WorktreeInfo
+
+... [682 lines omitted] ...
+
+    36→    PlanValidationFailed,
+   409→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   455→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   472→    """Implementation body for branch_checkout — separated for error wrapping."""
+   476→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   482→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   500→            raise click.ClickException(f"PR #{pr_number} not found")
+   504→        if isinstance(plan_result, PlanValidationFailed):
+   505→            user_output(f"Error: {plan_result.message}")
+   511→        for warning in setup.warnings:
+   512→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   521→            user_output("Error: Could not detect trunk branch.")
+   576→                            f"Error: Branch '{branch}' does not exist.\n"
+   694→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <assistant>Now I'll identify all the occurrences that need to be renamed. Let me apply the edits systematically:
+
+1. Click option decorator (line 420-421): `"--for-plan"` → `"--for-pr"` and `"for_plan"` → `"for_pr"`
+2. Function parameter (line 431): `for_plan: str | None` → `for_pr: str | None`
+3. All uses of the variable `for_plan` throughout the file
+4. Error messages and comments referencing `--for-plan` → `--for-pr`
+5. String literals mentioning the flag
+
+Let me start with the edits:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="9770" cache_read_input_tokens="16410" cache_creation="{'ephemeral_5m_input_tokens': 9770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KQrYALdNxXRbDtJ7BcvHV6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--for-plan",
+    "for_plan",
+    type=str,
+    default=None,
+    help="PR number or URL with erk-pr label",
+)</param>
+    <param name="new_string">@click.option(
+    "--for-pr",
+    "for_pr",
+    type=str,
+    default=None,
+    help="PR number or URL with erk-pr label",
+)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="9770" cache_read_input_tokens="16410" cache_creation="{'ephemeral_5m_input_tokens': 9770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KQrYALdNxXRbDtJ7BcvHV6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01T1agmjpnzzCZp8AFUTvD6U">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">def branch_checkout(
+    ctx: ErkContext,
+    branch: str | None,
+    for_plan: str | None,
+    script: bool,
+) -&gt; None:</param>
+    <param name="new_string">def branch_checkout(
+    ctx: ErkContext,
+    branch: str | None,
+    for_pr: str | None,
+    script: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="414" cache_read_input_tokens="26180" cache_creation="{'ephemeral_5m_input_tokens': 414, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T1agmjpnzzCZp8AFUTvD6U">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015vUg2P6xzcShsFoGq7B8Ug">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    """Checkout BRANCH by finding and switching to its worktree.
+
+    Prints the activatio...[truncated 629 chars]...ntext/ setup
+
+    If multiple worktrees contain the branch, all options are shown.
+    """</param>
+    <param name="new_string">    """Checkout BRANCH by finding and switching to its worktree.
+
+    Prints the activatio...[truncated 627 chars]...ntext/ setup
+
+    If multiple worktrees contain the branch, all options are shown.
+    """</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="247" cache_read_input_tokens="26594" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015vUg2P6xzcShsFoGq7B8Ug">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EeTho4uVzj8mroN4WbZXif">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+    with h...[truncated 40 chars]...        branch=branch,
+            for_plan=for_plan,
+            script=script,
+        )</param>
+    <param name="new_string">    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+    with h...[truncated 36 chars]...            branch=branch,
+            for_pr=for_pr,
+            script=script,
+        )</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="585" cache_read_input_tokens="26841" cache_creation="{'ephemeral_5m_input_tokens': 585, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EeTho4uVzj8mroN4WbZXif">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019KY4vKbdkXSN7SmmAZvbKB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">def _branch_checkout_impl(
+    ctx: ErkContext,
+    *,
+    branch: str | None,
+    for_plan: str | None,
+    script: bool,
+) -&gt; None:</param>
+    <param name="new_string">def _branch_checkout_impl(
+    ctx: ErkContext,
+    *,
+    branch: str | None,
+    for_pr: str | None,
+    script: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="397" cache_read_input_tokens="27426" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019KY4vKbdkXSN7SmmAZvbKB">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NvXALRWbhQQUbGeYmadDNb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    """Implementation body for branch_checkout — separated for error wrapping."""
+    # Mu...[truncated 356 chars]...Must provide BRANCH argument or --for-plan option.")
+        raise SystemExit(1) from None</param>
+    <param name="new_string">    """Implementation body for branch_checkout — separated for error wrapping."""
+    # Mu...[truncated 346 chars]...: Must provide BRANCH argument or --for-pr option.")
+        raise SystemExit(1) from None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="261" cache_read_input_tokens="27823" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NvXALRWbhQQUbGeYmadDNb">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Buv5W1a3oReSKupuJ7f22f">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    # Plan setup - fetches plan and derives branch name if --for-plan is used
+    setup: P...[truncated 30 chars]... = None
+
+    if for_plan is not None:
+        pr_number = parse_issue_identifier(for_plan)</param>
+    <param name="new_string">    # Plan setup - fetches plan and derives branch name if --for-pr is used
+    setup: Pla...[truncated 24 chars]...None = None
+
+    if for_pr is not None:
+        pr_number = parse_issue_identifier(for_pr)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="447" cache_read_input_tokens="28084" cache_creation="{'ephemeral_5m_input_tokens': 447, 'ephemeral_1h_input_tokens': 0}" output_tokens="253" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Buv5W1a3oReSKupuJ7f22f">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GB2roPV8ufsZeCoPLHmrkX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    # At this point, branch is guaranteed to be set
+    assert branch is not None
+
+    # If --for-plan, handle branch creation/tracking before checkout
+    if setup is not None:</param>
+    <param name="new_string">    # At this point, branch is guaranteed to be set
+    assert branch is not None
+
+    # If --for-pr, handle branch creation/tracking before checkout
+    if setup is not None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="404" cache_read_input_tokens="28531" cache_creation="{'ephemeral_5m_input_tokens': 404, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GB2roPV8ufsZeCoPLHmrkX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014UC4ENuJqhBYh1ASZj2rJB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">            # Root not available or not trunk - checkout in current worktree
+            #...[truncated 43 chars]...        # Skip if --for-plan already handled branch creation
+            if setup is None:</param>
+    <param name="new_string">            # Root not available or not trunk - checkout in current worktree
+            #...[truncated 41 chars]...          # Skip if --for-pr already handled branch creation
+            if setup is None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="248" cache_read_input_tokens="28935" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014UC4ENuJqhBYh1ASZj2rJB">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01D4g5p4H4rNzM6NwTSNmUxA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    if len(matching_worktrees) == 1:
+        # Exactly one worktree contains this branch
+ ...[truncated 19 chars]...rees[0]
+
+        # Set up impl folder if --for-plan was used
+        if setup is not None:</param>
+    <param name="new_string">    if len(matching_worktrees) == 1:
+        # Exactly one worktree contains this branch
+ ...[truncated 17 chars]...ktrees[0]
+
+        # Set up impl folder if --for-pr was used
+        if setup is not None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="262" cache_read_input_tokens="29183" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D4g5p4H4rNzM6NwTSNmUxA">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U5T1LHBqhWt7vti9hgGJqc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">        if len(directly_checked_out) == 1:
+            # Exactly one worktree has the bran...[truncated 71 chars]...
+            # Set up impl folder if --for-plan was used
+            if setup is not None:</param>
+    <param name="new_string">        if len(directly_checked_out) == 1:
+            # Exactly one worktree has the bran...[truncated 69 chars]...]
+
+            # Set up impl folder if --for-pr was used
+            if setup is not None:</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="394" cache_read_input_tokens="29445" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U5T1LHBqhWt7vti9hgGJqc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the comment in the `_setup_impl_for_plan` function docstring:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="304" cache_read_input_tokens="29839" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TD7Zuk958eC9gsrC5cUMqV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    """Create impl folder and save plan ref after checkout for --for-plan.
+
+    In script mode, outputs an activation script and exits. In normal mode,
+    prints a confirmation message.</param>
+    <param name="new_string">    """Create impl folder and save plan ref after checkout for --for-pr.
+
+    In script mode, outputs an activation script and exits. In normal mode,
+    prints a confirmation message.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="304" cache_read_input_tokens="29839" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TD7Zuk958eC9gsrC5cUMqV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the string literals in the `_setup_impl_for_plan` function that reference the flag:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="371" cache_read_input_tokens="30143" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U4XEtUqkWttZA6dcA4ZBfw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">        activation_script = render_activation_script(
+            worktree_path=worktree_p...[truncated 336 chars]...-checkout",
+            comment=f"branch checkout --for-plan {setup.pr_number}",
+        )</param>
+    <param name="new_string">        activation_script = render_activation_script(
+            worktree_path=worktree_p...[truncated 332 chars]...ch-checkout",
+            comment=f"branch checkout --for-pr {setup.pr_number}",
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="371" cache_read_input_tokens="30143" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U4XEtUqkWttZA6dcA4ZBfw">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by reading the file again to make sure all edits were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="474" cache_read_input_tokens="30514" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011QJa8j7JswQ3Nvh6PWxRtZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">419</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="474" cache_read_input_tokens="30514" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011QJa8j7JswQ3Nvh6PWxRtZ">
+   419→@click.option(
+   420→    "--for-pr",
+   421→    "for_pr",
+   422→    type=str,
+   423→    default=None,
+   424→    help="PR number or URL with erk-pr label",
+   425→)
+   426→@script_option
+   427→@click.pass_obj
+   428→def branch_checkout(
+   429→    ctx: ErkContext,
+   430→    branch: str | None,
+   431→    for_pr: str | None,
+   432→    script: bool,
+   433→) -&gt; None:
+   434→    """Checkout BRANCH by finding and switching to its worktree.
+   435→
+   436→    Prints the activation path for the target worktree.
+   437→
+   438→    This command finds which worktree has the specified branch checked out
+   439→    and switches to it. If the branch exists but isn't checked out anywhere,
+   440→    a worktree is automatically created. If the branch exists on origin but
+   441→    not locally, a tracking branch and worktree are created automatically.
+   442→
+   443→    Use --for-pr to resolve a PR and set up .erk/impl-context/ after checkout.
+   444→
+   445→    Examples:
+   446→
+   447→        erk br co feature/user-auth      # Checkout existing worktree
+   448→
+
+... [25 lines omitted] ...
+
+   455→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+  </tool_result>
+  <tool_use name="Read" id="toolu_019qyqsNwWBVtPzJGz1fV7Ho">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">465</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="900" cache_read_input_tokens="30988" cache_creation="{'ephemeral_5m_input_tokens': 900, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019qyqsNwWBVtPzJGz1fV7Ho">
+   465→def _branch_checkout_impl(
+   466→    ctx: ErkContext,
+   467→    *,
+   468→    branch: str | None,
+   469→    for_pr: str | None,
+   470→    script: bool,
+   471→) -&gt; None:
+   472→    """Implementation body for branch_checkout — separated for error wrapping."""
+   473→    # Mutual exclusivity validation
+   474→    if for_pr is not None and branch is not None:
+   475→        user_output(
+   476→            "Error: Cannot specify both BRANCH and --for-pr.\n"
+   477→            "Use --for-pr to derive branch name from PR, or provide BRANCH directly."
+   478→        )
+   479→        raise SystemExit(1) from None
+   480→
+   481→    if for_pr is None and branch is None:
+   482→        user_output("Error: Must provide BRANCH argument or --for-pr option.")
+   483→        raise SystemExit(1) from None
+   484→
+   485→    # Use existing repo from context if available (for tests), otherwise discover
+   486→    if isinstance(ctx.repo, RepoContext):
+   487→        repo = ctx.repo
+   488→    else:
+   489→        repo = discover_repo_context(ctx, ctx.cwd)
+   490→    ensure_erk_metadata_dir(repo)
+   491→
+   492→    # Plan setup - fetches plan and derives branch name if --for-pr is used
+   493→    setup: PlanBranchSetup | None = None
+   494→    plan: Plan | None = None
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0184Sp7ZJPa6AZ72YWfJRvKF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">495</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="605" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 605, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0184Sp7ZJPa6AZ72YWfJRvKF">
+   495→
+   496→    if for_pr is not None:
+   497→        pr_number = parse_issue_identifier(for_pr)
+   498→        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+   499→        if isinstance(result, PlanNotFound):
+   500→            raise click.ClickException(f"PR #{pr_number} not found")
+   501→        plan = result
+   502→
+   503→        plan_result = prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)
+   504→        if isinstance(plan_result, PlanValidationFailed):
+   505→            user_output(f"Error: {plan_result.message}")
+   506→            raise SystemExit(1) from None
+   507→
+   508→        setup = plan_result
+   509→        branch = setup.branch_name
+   510→
+   511→        for warning in setup.warnings:
+   512→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   513→
+   514→    # At this point, branch is guaranteed to be set
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PNsvvaiuRUw8q9oxNwuCny">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">514</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="494" cache_read_input_tokens="32493" cache_creation="{'ephemeral_5m_input_tokens': 494, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PNsvvaiuRUw8q9oxNwuCny">
+   514→    # At this point, branch is guaranteed to be set
+   515→    assert branch is not None
+   516→
+   517→    # If --for-pr, handle branch creation/tracking before checkout
+   518→    if setup is not None:
+   519→        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+   520→        if trunk is None:
+   521→            user_output("Error: Could not detect trunk branch.")
+   522→            raise SystemExit(1) from None
+   523→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TJED2TcaRk9tVCd6iBBisf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">560</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="435" cache_read_input_tokens="32987" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TJED2TcaRk9tVCd6iBBisf">
+   560→            # Root not available or not trunk - checkout in current worktree
+   561→            # Ensure branch exists (may need to create tracking branch)
+   562→            # Skip if --for-pr already handled branch creation
+   563→            if setup is None:
+   564→                local_branches = ctx.git.branch.list_local_branches(repo.root)
+   565→                if branch not in local_branches:
+   566→                    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+   567→                    remote_ref = f"origin/{branch}"
+   568→                    if remote_ref in remote_branches:
+   569→                        user_output(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HSMWAq2TSZGyrcA4hwkBEm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">620</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="374" cache_read_input_tokens="33422" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HSMWAq2TSZGyrcA4hwkBEm">
+   620→    if len(matching_worktrees) == 1:
+   621→        # Exactly one worktree contains this branch
+   622→        target_worktree = matching_worktrees[0]
+   623→
+   624→        # Set up impl folder if --for-pr was used
+   625→        if setup is not None:
+   626→            _rebase_and_track_for_plan(
+   627→                ctx,
+   628→                repo_root=repo.root,
+   629→                worktree_path=target_worktree.path,
+   630→                branch=branch,
+   631→                parent_branch=parent_branch,
+   632→                trunk=trunk,
+   633→            )
+   634→            _setup_impl_for_plan(
+   635→                ctx,
+   636→                setup=setup,
+   637→                worktree_path=target_worktree.path,
+   638→                branch_name=branch,
+   639→                script=script,
+   640→            )
+   641→
+   642→        _perform_checkout(
+   643→            ctx,
+   644→            repo_root=repo.root,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_015VcZivT6FwNsrRfdXipLt8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">658</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="492" cache_read_input_tokens="33796" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015VcZivT6FwNsrRfdXipLt8">
+   658→        if len(directly_checked_out) == 1:
+   659→            # Exactly one worktree has the branch directly checked out - jump to it
+   660→            target_worktree = directly_checked_out[0]
+   661→
+   662→            # Set up impl folder if --for-pr was used
+   663→            if setup is not None:
+   664→                _rebase_and_track_for_plan(
+   665→                    ctx,
+   666→                    repo_root=repo.root,
+   667→                    worktree_path=target_worktree.path,
+   668→                    branch=branch,
+   669→                    parent_branch=parent_branch,
+   670→                    trunk=trunk,
+   671→                )
+   672→                _setup_impl_for_plan(
+   673→                    ctx,
+   674→                    setup=setup,
+   675→                    worktree_path=target_worktree.path,
+   676→                    branch_name=branch,
+   677→                    script=script,
+   678→                )
+   679→
+   680→            _perform_checkout(
+   681→                ctx,
+   682→                repo_root=repo.root,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B1aDuKDd9h311437vLHaCP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">303</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="611" cache_read_input_tokens="34288" cache_creation="{'ephemeral_5m_input_tokens': 611, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B1aDuKDd9h311437vLHaCP">
+   303→def _setup_impl_for_plan(
+   304→    ctx: ErkContext,
+   305→    *,
+   306→    setup: PlanBranchSetup,
+   307→    worktree_path: Path,
+   308→    branch_name: str,
+   309→    script: bool,
+   310→) -&gt; None:
+   311→    """Create impl folder and save plan ref after checkout for --for-pr.
+   312→
+   313→    In script mode, outputs an activation script and exits. In normal mode,
+   314→    prints a confirmation message.
+   315→
+   316→    Args:
+   317→        ctx: Erk context
+   318→        setup: Plan setup info from prepare_plan_for_worktree
+   319→        worktree_path: Path to the target worktree
+   320→        branch_name: Git branch name for scoping the impl directory
+   321→        script: Whether to output only the activation script
+   322→    """
+   323→    impl_path = create_impl_folder(
+   324→        worktree_path,
+   325→        setup.plan_content,
+   326→        branch_name=branch_name,
+   327→        overwrite=True,
+   328→    )
+   329→
+   330→    save_plan_ref(
+   331→        impl_path,
+   332→        provider="github",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! All the edits have been successfully applied. Let me create a summary of all the changes made:
+
+## Summary
+
+I have successfully renamed all occurrences of `for_plan` (Python variable/parameter) to `for_pr` and all occurrences of `--for-plan` (CLI flag string) to `--for-pr` in the file `/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py`.
+
+### Changes Made:
+
+1. **Click option decorator (lines 420-421)**: Renamed `"--for-plan"` to `"--for-pr"` and `"for_plan"` to `"for_pr"`
+
+2. **Function parameters**:
+   - `branch_checkout()` function (line 431): `for_plan: str | None` → `for_pr: str | None`
+   - `_branch_checkout_impl()` function (line 469): `for_plan: str | None` → `for_pr: str | None`
+
+3. **Variable usage throughout the file** (lines 474, 481, 496):
+   - Renamed all uses of `for_plan` variable to `for_pr`
+
+4. **Error messages (lines 476-477, 482)**:
+   - `"Error: Cannot specify both BRANCH and --for-plan."` → `"Error: Cannot specify both BRANCH and --for-pr."`
+   - `"Use --for-plan to derive..."` → `"Use --for-pr to derive..."`
+   - `"Error: Must provide BRANCH argument or --for-plan option."` → `"Error: Must provide BRANCH argument or --for-pr option."`
+
+5. **Comments and docstrings**:
+   - Line 311: `"""Create impl folder and save plan ref after checkout for --for-plan.` → `"""Create impl folder and save plan ref after checkout for --for-pr.`
+   - Line 443: Docstring usage example updated
+   - Line 451: Example updated to `erk br co --for-pr 123`
+   - Line 492: Comment updated: `if --for-plan is used` → `if --for-pr is used`
+   - Line 517: Comment updated: `If --for-plan, handle...` → `If --for-pr, handle...`
+   - Line 562: Comment updated: `Skip if --for-plan already handled` → `Skip if --for-pr already handled`
+   - Lines 624, 662: Comments updated: `if --for-plan was used` → `if --for-pr was used`
+
+6. **String literals in activation script comments (lines 346, 351)**:
+   - `"erk branch checkout --for-plan activation script"` → `"erk branch checkout --for-pr activation script"`
+   - `"branch checkout --for-plan {setup.pr_number}"` → `"branch checkout --for-pr {setup.pr_number}"`
+
+### What Was NOT Renamed (as instructed):
+
+- `_setup_impl_for_plan()` function name (internal function)
+- `_rebase_and_track_for_plan()` function name (internal function)
+- `--from-plan-file`, `--keep-plan-file`, `--copy-plan` flags
+- `setup` variable
+- `plan` variable</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1532" cache_read_input_tokens="34288" cache_creation="{'ephemeral_5m_input_tokens': 1532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

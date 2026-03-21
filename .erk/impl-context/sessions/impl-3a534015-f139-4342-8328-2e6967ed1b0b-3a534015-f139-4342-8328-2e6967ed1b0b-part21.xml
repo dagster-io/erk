@@ -1,0 +1,195 @@
+<session>
+  <meta source="agent-a98c58a" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py`:
+
+Rename all hardcoded string occurrences of `--for-plan` to `--for-pr` in the CLI command strings.
+
+Specifically, these are f-strings that generate shell commands. Change:
+- `f"erk br co --for-plan {self._row.pr_number}"` → `f"erk br co --for-pr {self._row.pr_number}"`
+- `f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'` → `f'source "$(erk br co --for-pr {self._row.pr_number} --script)"'`
+- `f"erk br co --for-plan {row.pr_number}"` → `f"erk br co --for-pr {row.pr_number}"`
+- `f'source "$(erk br co --for-plan {row.pr_number} --script)"'` → `f'source "$(erk br co --for-pr {row.pr_number} --script)"'`
+
+There are approximately 5 occurrences (some use `self._row.pr_number` and some use `row.pr_number`).
+
+DO NOT rename anything else - only the `--for-plan` in shell command strings.
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename the `--for-plan` occurrences to `--for-pr` in the plan detail screen file. Let me start by reading the file to see its current state.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16343" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16343, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011Cjw89fnvi38yUT5XzvUeK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16343" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16343, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Cjw89fnvi38yUT5XzvUeK">
+     1→"""Modal screen showing detailed plan information as an Action Hub."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from collections.abc import Callable
+     7→from pathlib import Path
+     8→from typing import TYPE_CHECKING
+     9→
+    10→from textual import work
+    11→from textual.app import ComposeResult
+    12→from textual.binding import Binding
+    13→from textual.containers import Container, Vertical
+    14→from textual.screen import ModalScreen
+    15→from textual.timer import Timer
+    16→from textual.widgets import Label
+    17→
+    18→from erk.tui.commands.provider import PlanCommandProvider
+    19→from erk.tui.commands.registry import get_copy_text
+    20→from erk.tui.commands.types import CommandContext
+    21→from erk.tui.data.types import PrRowData
+    22→from erk.tui.views.types import ViewMode
+    23→from erk.tui.widgets.clickable_link import ClickableLink
+    24→from erk.tui.widgets.command_output import CommandOutputPanel
+    25→from erk.tui.widgets.copyable_label import CopyableLabel
+    26→from erk_shared.gateway.command_executor.abc import CommandExecutor
+    27→
+    28→if TYPE_CHECKING:
+    29→    from erk_shared.gateway.browser.abc import BrowserLauncher
+    30→    from erk_shared.gateway.clipboard.abc import Clipboard
+
+... [991 lines omitted] ...
+
+   127→    .badge-failure {
+   291→        elif conclusion == "failure":
+   292→            return ("✗ Failed", "badge-failure")
+   345→                severity="warning",
+   509→        # Error boundary: catch all exceptions from HTTP operations to display
+   520→        except Exception as e:
+   521→            self.app.call_from_thread(panel.append_line, f"Error: {e}")
+   531→        Kills the process and marks the command as failed.
+   658→                    severity="warning",
+  </tool_result>
+  <assistant>Now I can see the file. I've found the following occurrences of `--for-plan` that need to be renamed to `--for-pr`:
+
+1. Line 362: `f"erk br co --for-plan {self._row.pr_number}"`
+2. Line 368: `f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'`
+3. Line 680: `f"erk br co --for-plan {row.pr_number}"`
+4. Line 686: `f'source "$(erk br co --for-plan {row.pr_number} --script)"'`
+5. Line 993: `f"erk br co --for-plan {self._row.pr_number}"`
+
+Let me apply these renames:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="15593" cache_read_input_tokens="16343" cache_creation="{'ephemeral_5m_input_tokens': 15593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NebjhoQCN6NqyaBQZajFAY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="old_string">    def action_copy_prepare(self) -&gt; None:
+        """Copy basic prepare command to clipboard."""
+        cmd = f"erk br co --for-plan {self._row.pr_number}"
+        self._copy_and_notify(cmd)</param>
+    <param name="new_string">    def action_copy_prepare(self) -&gt; None:
+        """Copy basic prepare command to clipboard."""
+        cmd = f"erk br co --for-pr {self._row.pr_number}"
+        self._copy_and_notify(cmd)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="15593" cache_read_input_tokens="16343" cache_creation="{'ephemeral_5m_input_tokens': 15593, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NebjhoQCN6NqyaBQZajFAY">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018vWzV2yiotL3ZcARbgy1fr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="old_string">    def action_copy_prepare_activate(self) -&gt; None:
+        """Copy one-liner to prepare w...[truncated 110 chars]...'
+            " &amp;&amp; erk implement --dangerous"
+        )
+        self._copy_and_notify(cmd)</param>
+    <param name="new_string">    def action_copy_prepare_activate(self) -&gt; None:
+        """Copy one-liner to prepare w...[truncated 108 chars]...'
+            " &amp;&amp; erk implement --dangerous"
+        )
+        self._copy_and_notify(cmd)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="474" cache_read_input_tokens="31936" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018vWzV2yiotL3ZcARbgy1fr">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0144vzZ35vEtbaYEDJpk6LEo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="old_string">        elif command_id == "copy_prepare":
+            cmd = f"erk br co --for-plan {row.p...[truncated 5 chars]...ecutor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}", severity=None)</param>
+    <param name="new_string">        elif command_id == "copy_prepare":
+            cmd = f"erk br co --for-pr {row.pr_...[truncated 3 chars]...ecutor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}", severity=None)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="343" cache_read_input_tokens="32410" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0144vzZ35vEtbaYEDJpk6LEo">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MewRy61Gvrk3bG32Wff4Te">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="old_string">        elif command_id == "copy_prepare_activate":
+            cmd = (
+                f'...[truncated 115 chars]...ecutor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}", severity=None)</param>
+    <param name="new_string">        elif command_id == "copy_prepare_activate":
+            cmd = (
+                f'...[truncated 113 chars]...ecutor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}", severity=None)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="289" cache_read_input_tokens="32753" cache_creation="{'ephemeral_5m_input_tokens': 289, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MewRy61Gvrk3bG32Wff4Te">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JbKzSRi4Tut7FtuTXbrXeJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="old_string">            # Prepare commands
+            prepare_cmd = f"erk br co --for-plan {self._row...[truncated 73 chars]...[1]", classes="command-key")
+                yield CopyableLabel(prepare_cmd, prepare_cmd)</param>
+    <param name="new_string">            # Prepare commands
+            prepare_cmd = f"erk br co --for-pr {self._row.p...[truncated 71 chars]...[1]", classes="command-key")
+                yield CopyableLabel(prepare_cmd, prepare_cmd)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="33042" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JbKzSRi4Tut7FtuTXbrXeJ">
+The file /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully renamed all 5 occurrences of `--for-plan` to `--for-pr` in the plan detail screen file. Let me verify the changes:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="307" cache_read_input_tokens="33485" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0112ah1kLgTZdnvUq2WDsu8q">
+    <param name="command">grep -n "erk br co --for-pr" /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="description">Verify all --for-pr occurrences in the file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="307" cache_read_input_tokens="33485" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0112ah1kLgTZdnvUq2WDsu8q">
+362:        cmd = f"erk br co --for-pr {self._row.pr_number}"
+368:            f'source "$(erk br co --for-pr {self._row.pr_number} --script)"'
+680:            cmd = f"erk br co --for-pr {row.pr_number}"
+686:                f'source "$(erk br co --for-pr {row.pr_number} --script)"'
+993:            prepare_cmd = f"erk br co --for-pr {self._row.pr_number}"
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015uZrUqCcUwhFpXMauApGaG">
+    <param name="command">grep -n "erk br co --for-plan" /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="description">Verify no --for-plan occurrences remain</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="411" cache_read_input_tokens="33792" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015uZrUqCcUwhFpXMauApGaG">
+
+  </tool_result>
+  <assistant>Excellent! All renames have been completed successfully. Here's a summary of the changes:
+
+## Summary
+
+I've successfully renamed all 5 hardcoded string occurrences of `--for-plan` to `--for-pr` in the file `/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py`:
+
+**Changes made:**
+
+1. **Line 362** - In `action_copy_prepare()`: `f"erk br co --for-plan {self._row.pr_number}"` → `f"erk br co --for-pr {self._row.pr_number}"`
+
+2. **Line 368** - In `action_copy_prepare_activate()`: `f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'` → `f'source "$(erk br co --for-pr {self._row.pr_number} --script)"'`
+
+3. **Line 680** - In `execute_command()` under `copy_prepare`: `f"erk br co --for-plan {row.pr_number}"` → `f"erk br co --for-pr {row.pr_number}"`
+
+4. **Line 686** - In `execute_command()` under `copy_prepare_activate`: `f'source "$(erk br co --for-plan {row.pr_number} --script)"'` → `f'source "$(erk br co --for-pr {row.pr_number} --script)"'`
+
+5. **Line 993** - In `compose()` for prepare commands: `f"erk br co --for-plan {self._row.pr_number}"` → `f"erk br co --for-pr {self._row.pr_number}"`
+
+No other content was modified. The verification shows all `--for-plan` occurrences have been replaced with `--for-pr` in the CLI command strings.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="146" cache_read_input_tokens="34203" cache_creation="{'ephemeral_5m_input_tokens': 146, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>

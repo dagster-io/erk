@@ -1,0 +1,334 @@
+<session>
+  <meta source="agent-a0c94d5" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py`:
+
+Rename all occurrences of `--for-plan` (CLI flag string in test invocations and assertions) to `--for-pr`.
+
+This includes:
+- All `"--for-plan"` strings passed to `runner.invoke(...)` or CLI invocations
+- All strings in `result.output` assertions like `"Cannot specify both BRANCH and --for-plan"` → `"Cannot specify both BRANCH and --for-pr"`
+- All strings like `"Must provide BRANCH argument or --for-plan option"` → `"Must provide BRANCH argument or --for-pr option"`
+- Test function names that mention `for_plan` → rename to `for_pr`
+- Docstrings in test functions that mention `--for-plan` → `--for-pr`
+- Comments that mention `--for-plan` → `--for-pr`
+
+DO NOT rename:
+- `--from-plan-file`, `--keep-plan-file`, `--copy-plan` (out of scope)
+- Any other flags
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to see what needs to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6159" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6159, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018hEpAYxT4vLvHBnD4tY4A2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6159" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6159, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018hEpAYxT4vLvHBnD4tY4A2">
+     1→"""Unit tests for branch create command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.cli.config import LoadedConfig
+     9→from erk.core.repo_discovery import RepoContext
+    10→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.plan_store.types import Plan, PlanState
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.graphite import FakeGraphite
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→from tests.test_utils.plan_helpers import create_pr_backend_with_plans
+    17→
+    18→# Fixed timestamp for test Plan objects - deterministic test data
+    19→TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    20→
+    21→
+    22→def test_branch_create_creates_new_branch_and_assignment(tmp_path) -&gt; None:
+    23→    """Test that branch create creates a new branch and assignment."""
+    24→    runner = CliRunner()
+    25→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    26→        repo_dir = env.setup_repo_structure()
+    27→
+    28→        git_ops = FakeGit(
+    29→            worktrees=env.build_worktrees("main"),
+    30→            current_branches={env.cwd: "main"},
+
+... [1033 lines omitted] ...
+
+    47→            cli, ["branch", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+    87→            cli, ["br", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+   120→            cli, ["br", "create", "--no-slot", "feature-test"], obj=test_ctx, catch_exceptions=False
+   165→            cli, ["br", "create", "feature-a"], obj=test_ctx, catch_exceptions=False
+   171→            cli, ["br", "create", "feature-b"], obj=test_ctx, catch_exceptions=False
+   209→            cli, ["br", "create", "existing-branch"], obj=test_ctx, catch_exceptions=False
+   241→            cli, ["br", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+   257→    (not add_worktree) to avoid 'fatal: already exists' error from git.
+   311→            cli, ["br", "create", "--force", "new-branch"], obj=test_ctx, catch_exceptions=False
+   395→            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+   474→            catch_exceptions=False,
+   536→            catch_exceptions=False,
+   573→            catch_exceptions=False,
+   603→        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False)
+   636→            cli, ["br", "create", "feature-child"], obj=test_ctx, catch_exceptions=False
+   706→            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+   739→            cli, ["br", "create", "new-feature"], obj=test_ctx, catch_exceptions=False
+   795→            cli, ["br", "create", "new-stacked-branch"], obj=test_ctx, catch_exceptions=False
+   838→            cli, ["br", "create", "new-feature"], obj=test_ctx, catch_exceptions=False
+   919→            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+   982→            catch_exceptions=False,
+  1041→            catch_exceptions=False,
+  </tool_result>
+  <assistant>Now I'll identify all occurrences of `--for-plan` that need to be renamed to `--for-pr`. Let me make the edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="19553" cache_read_input_tokens="16282" cache_creation="{'ephemeral_5m_input_tokens': 19553, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PfrBxCGQy4jfsK2qWd8V19">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -&gt; None:
+    """Test that --for-plan creates branch, slot, and .impl/ folder."""</param>
+    <param name="new_string">def test_branch_create_for_pr_creates_branch_and_impl_folder(tmp_path) -&gt; None:
+    """Test that --for-pr creates branch, slot, and .impl/ folder."""</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="19553" cache_read_input_tokens="16282" cache_creation="{'ephemeral_5m_input_tokens': 19553, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PfrBxCGQy4jfsK2qWd8V19">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KX8JW11ESRDARbxmvxgnS9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-pr", "123"], obj=test_ctx, catch_exceptions=False
+        )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="298" cache_read_input_tokens="35835" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KX8JW11ESRDARbxmvxgnS9">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011imBzkbCjKSALqANstPzFt">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_with_issue_url(tmp_path) -&gt; None:
+    """Test that --for-plan accepts GitHub issue URLs."""</param>
+    <param name="new_string">def test_branch_create_for_pr_with_issue_url(tmp_path) -&gt; None:
+    """Test that --for-pr accepts GitHub issue URLs."""</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="245" cache_read_input_tokens="36133" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011imBzkbCjKSALqANstPzFt">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016wJbdb5SrPsU1b6VXuprji">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan"...[truncated 8 chars]...repo/issues/456"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-pr", ...[truncated 6 chars]...repo/issues/456"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="243" cache_read_input_tokens="36378" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016wJbdb5SrPsU1b6VXuprji">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0153Az5dfaxySY6YJUj88v4J">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_with_no_slot_skips_impl() -&gt; None:
+    """Test that --for-plan with --no-slot creates branch but not .impl folder."""</param>
+    <param name="new_string">def test_branch_create_for_pr_with_no_slot_skips_impl() -&gt; None:
+    """Test that --for-pr with --no-slot creates branch but not .impl folder."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="36621" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0153Az5dfaxySY6YJUj88v4J">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ScDLHuwmLtCATpJNY7zMUB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan", "100", "--no-slot"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-pr", "100", "--no-slot"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="261" cache_read_input_tokens="37008" cache_creation="{'ephemeral_5m_input_tokens': 261, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ScDLHuwmLtCATpJNY7zMUB">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Asax6Hm3X6ZQZzYTcx9sKG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_fails_with_both_branch_and_for_plan() -&gt; None:
+    """Test that specifying both BRANCH and --for-plan fails."""</param>
+    <param name="new_string">def test_branch_create_fails_with_both_branch_and_for_pr() -&gt; None:
+    """Test that specifying both BRANCH and --for-pr fails."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="268" cache_read_input_tokens="37269" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Asax6Hm3X6ZQZzYTcx9sKG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013wMktdCfAcpYXynz47h71n">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "my-branch",...[truncated 98 chars]...exit_code == 1
+        assert "Cannot specify both BRANCH and --for-plan" in result.output</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "my-branch",...[truncated 94 chars]...t.exit_code == 1
+        assert "Cannot specify both BRANCH and --for-pr" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="352" cache_read_input_tokens="37537" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013wMktdCfAcpYXynz47h71n">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JsBfsRMLYyyAH4wPfmY8uH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_fails_without_branch_or_for_plan() -&gt; None:
+    """Test that omitting both BRANCH and --for-plan fails."""</param>
+    <param name="new_string">def test_branch_create_fails_without_branch_or_for_pr() -&gt; None:
+    """Test that omitting both BRANCH and --for-pr fails."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="328" cache_read_input_tokens="37889" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JsBfsRMLYyyAH4wPfmY8uH">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EbR5FmS7XV5cinAH1JjaUR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False...[truncated 13 chars]...e == 1
+        assert "Must provide BRANCH argument or --for-plan option" in result.output</param>
+    <param name="new_string">        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False...[truncated 11 chars]...ode == 1
+        assert "Must provide BRANCH argument or --for-pr option" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="38217" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EbR5FmS7XV5cinAH1JjaUR">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GagfArVqiBcwnA81LHSGgp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_stacks_on_current_branch() -&gt; None:
+    """Test that --for-plan stacks on current branch when not on trunk."""</param>
+    <param name="new_string">def test_branch_create_for_pr_stacks_on_current_branch() -&gt; None:
+    """Test that --for-pr stacks on current branch when not on trunk."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="386" cache_read_input_tokens="38461" cache_creation="{'ephemeral_5m_input_tokens': 386, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GagfArVqiBcwnA81LHSGgp">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QFDG6f1XeFPjXorJhkVEqk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-pr", "200"], obj=test_ctx, catch_exceptions=False
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="250" cache_read_input_tokens="38847" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QFDG6f1XeFPjXorJhkVEqk">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018z9ksULUuMhvM6fZmuMgug">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_stacks_in_place_creates_impl() -&gt; None:
+    """Test that --for-plan from assigned slot stacks in place AND creates .impl/."""</param>
+    <param name="new_string">def test_branch_create_for_pr_stacks_in_place_creates_impl() -&gt; None:
+    """Test that --for-pr from assigned slot stacks in place AND creates .impl/."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="39097" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018z9ksULUuMhvM6fZmuMgug">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ACGRx5Z3fTKpjxTpiJuVpj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-pr", "300"], obj=test_ctx, catch_exceptions=False
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="364" cache_read_input_tokens="39341" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ACGRx5Z3fTKpjxTpiJuVpj">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully completed all the renames. Let me verify the changes by reading the modified sections:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="39705" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SHfDdxxEhAU4AihtR7QjM9">
+    <param name="command">grep -n "\-\-for-plan\|\-\-for-pr" tests/unit/cli/commands/branch/test_create_cmd.py | head -20</param>
+    <param name="description">Verify all --for-plan and --for-pr occurrences in the file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="244" cache_read_input_tokens="39705" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SHfDdxxEhAU4AihtR7QjM9">
+344:    """Test that --for-pr creates branch, slot, and .impl/ folder."""
+395:            cli, ["br", "create", "--for-pr", "123"], obj=test_ctx, catch_exceptions=False
+422:    """Test that --for-pr accepts GitHub issue URLs."""
+472:            ["br", "create", "--for-pr", "https://github.com/owner/repo/issues/456"],
+483:    """Test that --for-pr with --no-slot creates branch but not .impl folder."""
+534:            ["br", "create", "--for-pr", "100", "--no-slot"],
+547:    """Test that specifying both BRANCH and --for-pr fails."""
+571:            ["br", "create", "my-branch", "--for-pr", "123"],
+577:        assert "Cannot specify both BRANCH and --for-pr" in result.output
+581:    """Test that omitting both BRANCH and --for-pr fails."""
+606:        assert "Must provide BRANCH argument or --for-pr option" in result.output
+654:    """Test that --for-pr stacks on current branch when not on trunk."""
+706:            cli, ["br", "create", "--for-pr", "200"], obj=test_ctx, catch_exceptions=False
+854:    """Test that --for-pr from assigned slot stacks in place AND creates .impl/."""
+919:            cli, ["br", "create", "--for-pr", "300"], obj=test_ctx, catch_exceptions=False
+  </tool_result>
+  <assistant>Excellent! Now let me verify that there are no remaining `--for-plan` occurrences in the file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="619" cache_read_input_tokens="39949" cache_creation="{'ephemeral_5m_input_tokens': 619, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MQEarRbTZqcGQBcuBm5LM6">
+    <param name="command">grep -c "for_plan\|for-plan" /home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py || echo "0"</param>
+    <param name="description">Check for any remaining --for-plan occurrences</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="619" cache_read_input_tokens="39949" cache_creation="{'ephemeral_5m_input_tokens': 619, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MQEarRbTZqcGQBcuBm5LM6">
+0
+0
+  </tool_result>
+  <assistant>Perfect! All renames are complete. Let me create a summary of the changes:
+
+## Summary
+
+I have successfully renamed all occurrences of `--for-plan` to `--for-pr` in `/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py`. Here's what was changed:
+
+### Test Function Names (12 renames):
+1. `test_branch_create_for_plan_creates_branch_and_impl_folder` → `test_branch_create_for_pr_creates_branch_and_impl_folder`
+2. `test_branch_create_for_plan_with_issue_url` → `test_branch_create_for_pr_with_issue_url`
+3. `test_branch_create_for_plan_with_no_slot_skips_impl` → `test_branch_create_for_pr_with_no_slot_skips_impl`
+4. `test_branch_create_fails_with_both_branch_and_for_plan` → `test_branch_create_fails_with_both_branch_and_for_pr`
+5. `test_branch_create_fails_without_branch_or_for_plan` → `test_branch_create_fails_without_branch_or_for_pr`
+6. `test_branch_create_for_plan_stacks_on_current_branch` → `test_branch_create_for_pr_stacks_on_current_branch`
+7. `test_branch_create_for_plan_stacks_in_place_creates_impl` → `test_branch_create_for_pr_stacks_in_place_creates_impl`
+
+### Docstrings (7 renames):
+- All docstrings that referenced `--for-plan` were updated to `--for-pr`
+
+### CLI Flag Invocations (5 renames):
+- Line 395: `["br", "create", "--for-plan", "123"]` → `["br", "create", "--for-pr", "123"]`
+- Line 472: `["br", "create", "--for-plan", "https://github.com/owner/repo/issues/456"]` → `["br", "create", "--for-pr", "https://github.com/owner/repo/issues/456"]`
+- Line 534: `["br", "create", "--for-plan", "100", "--no-slot"]` → `["br", "create", "--for-pr", "100", "--no-slot"]`
+- Line 571: `["br", "create", "my-branch", "--for-plan", "123"]` → `["br", "create", "my-branch", "--for-pr", "123"]`
+- Line 706: `["br", "create", "--for-plan", "200"]` → `["br", "create", "--for-pr", "200"]`
+- Line 919: `["br", "create", "--for-plan", "300"]` → `["br", "create", "--for-pr", "300"]`
+
+### Assertion Messages (3 renames):
+- Line 577: `"Cannot specify both BRANCH and --for-plan"` → `"Cannot specify both BRANCH and --for-pr"`
+- Line 606: `"Must provide BRANCH argument or --for-plan option"` → `"Must provide BRANCH argument or --for-pr option"`
+
+All changes exclude the out-of-scope flags (`--from-plan-file`, `--keep-plan-file`, `--copy-plan`), as requested. The file has been fully updated with no remaining `--for-plan` occurrences.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="167" cache_read_input_tokens="40568" cache_creation="{'ephemeral_5m_input_tokens': 167, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

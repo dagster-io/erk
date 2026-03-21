@@ -1,0 +1,414 @@
+<session>
+  <meta source="agent-a520139" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py`:
+
+Rename all occurrences of `--for-plan` (CLI flag string in test invocations and assertions) to `--for-pr`.
+
+This includes:
+- All `"--for-plan"` strings passed to `runner.invoke(...)` calls
+- All strings in `result.output` assertions like `"Cannot specify both BRANCH and --for-plan"` → `"Cannot specify both BRANCH and --for-pr"`
+- All strings like `"Must provide BRANCH argument or --for-plan option"` → `"Must provide BRANCH argument or --for-pr option"`
+- Test function names that mention `for_plan` → rename to `for_pr`
+- Docstrings in test functions that mention `--for-plan` → `--for-pr`
+- Comments that mention `--for-plan` → `--for-pr`
+- Section comments like `# --- --for-plan tests ---` → `# --- --for-pr tests ---`
+
+DO NOT rename:
+- `--from-plan-file` (out of scope)
+- `--keep-plan-file` (out of scope)
+- Any other flags
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to understand its current structure and identify all occurrences of `--for-plan` that need to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6178" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6178, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016upcE9GttYh8eanpm5cZnQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6178" cache_read_input_tokens="10123" cache_creation="{'ephemeral_5m_input_tokens': 6178, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016upcE9GttYh8eanpm5cZnQ">
+     1→"""Tests for erk br co (branch checkout) command."""
+     2→
+     3→import os
+     4→from datetime import UTC, datetime
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.cli.commands.branch import branch_group
+    11→from erk.core.repo_discovery import RepoContext
+    12→from erk.core.worktree_pool import (
+    13→    PoolState,
+    14→    SlotAssignment,
+    15→    load_pool_state,
+    16→    save_pool_state,
+    17→)
+    18→from erk_shared.gateway.git.abc import WorktreeInfo
+    19→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    20→from erk_shared.plan_store.types import Plan, PlanState
+    21→from tests.fakes.gateway.git import FakeGit
+    22→from tests.fakes.gateway.graphite import FakeGraphite
+    23→from tests.test_utils.context_builders import build_workspace_test_context
+    24→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    25→from tests.test_utils.plan_helpers import create_pr_backend_with_plans
+    26→
+    27→# Fixed timestamp for test Plan objects
+    28→TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    29→
+    30→
+
+... [711 lines omitted] ...
+
+    67→            cli, ["br", "co", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+    72→        # Should not show Graphite error
+   112→            cli, ["br", "co", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+   117→        # Should not show Graphite error
+   141→        assert result.exit_code == 0, f"Failed: {result.output}"
+   177→        assert result.exit_code == 0, f"Failed: {result.output}"
+   188→    """Test that checking out a non-existent branch fails with helpful error."""
+   253→        assert result.exit_code == 0, f"Failed: {result.output}"
+   300→        assert result.exit_code == 0, f"Failed: {result.output}"
+   318→    Verifies the fix where display_sync_status errors could prevent activation
+   348→            ahead_behind_raises=RuntimeError("upstream tracking ref not set"),
+   367→        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+   372→        assert result.exit_code == 0, f"Failed: {result.output}"
+   376→def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+   397→def test_checkout_for_plan_error_neither_branch_nor_for_plan() -&gt; None:
+   455→        assert result.exit_code == 0, f"Failed: {result.output}"
+   464→# --- Script mode error resilience tests ---
+   468→    """Regression test: --script success path is not broken by error handler."""
+   505→            catch_exceptions=False,
+   511→        # The written script should NOT be an error script
+   556→        assert result.exit_code == 0, f"Failed: {result.output}"
+   609→        assert result.exit_code == 0, f"Failed: {result.output}"
+   666→        assert result.exit_code == 0, f"Failed: {result.output}"
+   726→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I'll identify all occurrences of `--for-plan` in the file and rename them to `--for-pr`. Let me apply the edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="15885" cache_read_input_tokens="16301" cache_creation="{'ephemeral_5m_input_tokens': 15885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01F9AjYJkJP4y1TwUTP2nvdz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string"># --- --for-plan tests ---
+
+
+def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+   ...[truncated 50 chars]...mpl/.
+
+    The branch is checked out in the current worktree (no slot allocation).
+    """</param>
+    <param name="new_string"># --- --for-pr tests ---
+
+
+def test_checkout_for_pr_creates_impl_folder() -&gt; None:
+    """...[truncated 44 chars]...mpl/.
+
+    The branch is checked out in the current worktree (no slot allocation).
+    """</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="15885" cache_read_input_tokens="16301" cache_creation="{'ephemeral_5m_input_tokens': 15885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F9AjYJkJP4y1TwUTP2nvdz">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013iWGni9SngxUXK7gaxzwZJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--for-pr", "500"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="335" cache_read_input_tokens="32186" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013iWGni9SngxUXK7gaxzwZJ">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R5z3iz7a8Q1VMtgdTV7cSu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+    """Test...[truncated 306 chars]...   Uses stack-in-place path (pool slot assigned) to test activation script output.
+    """</param>
+    <param name="new_string">def test_checkout_for_pr_prints_activation_when_sync_status_fails() -&gt; None:
+    """Test t...[truncated 300 chars]...   Uses stack-in-place path (pool slot assigned) to test activation script output.
+    """</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="255" cache_read_input_tokens="32521" cache_creation="{'ephemeral_5m_input_tokens': 255, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R5z3iz7a8Q1VMtgdTV7cSu">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0134fFr5pW4modvv4Hemo6Yh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+...[truncated 136 chars]...          result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)</param>
+    <param name="new_string">        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+...[truncated 134 chars]...            result = runner.invoke(branch_group, ["checkout", "--for-pr", "600"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="391" cache_read_input_tokens="32776" cache_creation="{'ephemeral_5m_input_tokens': 391, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0134fFr5pW4modvv4Hemo6Yh">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017yhpkKrma4uZ521U6jryNk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+    """Test that prov...[truncated 549 chars]...exit_code == 1
+        assert "Cannot specify both BRANCH and --for-plan" in result.output</param>
+    <param name="new_string">def test_checkout_for_pr_error_both_branch_and_for_pr() -&gt; None:
+    """Test that providin...[truncated 539 chars]...t.exit_code == 1
+        assert "Cannot specify both BRANCH and --for-pr" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="33167" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017yhpkKrma4uZ521U6jryNk">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QeveDCbruQ2kXRcHYSqrhi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_error_neither_branch_nor_for_plan() -&gt; None:
+    """Test that p...[truncated 507 chars]...e == 1
+        assert "Must provide BRANCH argument or --for-plan option" in result.output</param>
+    <param name="new_string">def test_checkout_for_pr_error_neither_branch_nor_for_pr() -&gt; None:
+    """Test that provi...[truncated 499 chars]...ode == 1
+        assert "Must provide BRANCH argument or --for-pr option" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="623" cache_read_input_tokens="33602" cache_creation="{'ephemeral_5m_input_tokens': 623, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QeveDCbruQ2kXRcHYSqrhi">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015N9gzkPSph9YrPy5za4KYf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -&gt; None:
+    """--for-plan with planned_pr backend tracks with base_ref_name from plan metadata."""</param>
+    <param name="new_string">def test_checkout_for_pr_planned_pr_stacks_on_base_ref() -&gt; None:
+    """--for-pr with planned_pr backend tracks with base_ref_name from plan metadata."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="590" cache_read_input_tokens="34225" cache_creation="{'ephemeral_5m_input_tokens': 590, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015N9gzkPSph9YrPy5za4KYf">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019BdVUEuT1MEQ8UN8QhECYz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "600", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "600", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="358" cache_read_input_tokens="34815" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019BdVUEuT1MEQ8UN8QhECYz">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R9B5yPkwT4NSpW1tw9MRfK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+    """When plan metadata has no base_ref_name, falls back to trunk as parent."""</param>
+    <param name="new_string">def test_checkout_for_pr_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+    """When plan metadata has no base_ref_name, falls back to trunk as parent."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="270" cache_read_input_tokens="35173" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R9B5yPkwT4NSpW1tw9MRfK">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WsXpTV6uyDPCgriBCfiMaT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "601", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "601", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="260" cache_read_input_tokens="35443" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WsXpTV6uyDPCgriBCfiMaT">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UkcMtkBCWnjtzwntLyW7xK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_rebases_onto_stale_parent() -&gt; None:
+    """--for-plan with sta...[truncated 177 chars]...k.
+    This ensures gt track succeeds even if the parent advanced since plan-save.
+    """</param>
+    <param name="new_string">def test_checkout_for_pr_rebases_onto_stale_parent() -&gt; None:
+    """--for-pr with stacked...[truncated 173 chars]...k.
+    This ensures gt track succeeds even if the parent advanced since plan-save.
+    """</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="374" cache_read_input_tokens="35703" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UkcMtkBCWnjtzwntLyW7xK">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SeR4oM19vbg5sgvG8GNE4J">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "602", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "602", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="356" cache_read_input_tokens="36077" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SeR4oM19vbg5sgvG8GNE4J">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BodaTzZ1pQTQvt2smBiM6x">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_skips_rebase_for_trunk_parent() -&gt; None:
+    """--for-plan with...[truncated 74 chars]... trunk), there's no need
+    to rebase since the branch is already based on trunk.
+    """</param>
+    <param name="new_string">def test_checkout_for_pr_skips_rebase_for_trunk_parent() -&gt; None:
+    """--for-pr with tru...[truncated 70 chars]... trunk), there's no need
+    to rebase since the branch is already based on trunk.
+    """</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="270" cache_read_input_tokens="36433" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BodaTzZ1pQTQvt2smBiM6x">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WrkrkTVWjwMpuQWz4Argg9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "603", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "603", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="422" cache_read_input_tokens="36703" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WrkrkTVWjwMpuQWz4Argg9">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0135eNkrrYfSAZFp3aZpHATc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_updates_stale_local_parent() -&gt; None:
+    """--for-plan syncs s...[truncated 159 chars]...cal ref should be
+    updated to match origin so gt track sees consistent history.
+    """</param>
+    <param name="new_string">def test_checkout_for_pr_updates_stale_local_parent() -&gt; None:
+    """--for-pr syncs stale...[truncated 155 chars]...cal ref should be
+    updated to match origin so gt track sees consistent history.
+    """</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="270" cache_read_input_tokens="37125" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0135eNkrrYfSAZFp3aZpHATc">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018rxKujoHPpBChVNWNC6NRS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "604", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "604", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="344" cache_read_input_tokens="37395" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018rxKujoHPpBChVNWNC6NRS">
+The file /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully renamed all occurrences of `--for-plan` to `--for-pr` in the test file. Let me verify the changes by reading the file to confirm all updates:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="374" cache_read_input_tokens="37739" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019VoW96pJpsKq99JtnxxWSp">
+    <param name="command">grep -n "for-plan\|for-pr\|for_plan\|for_pr" /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py | head -30</param>
+    <param name="description">Verify all flag renames in the test file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="374" cache_read_input_tokens="37739" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019VoW96pJpsKq99JtnxxWSp">
+260:# --- --for-pr tests ---
+263:def test_checkout_for_pr_creates_impl_folder() -&gt; None:
+264:    """Test that --for-pr resolves plan, creates branch, and sets up .impl/.
+298:            result = runner.invoke(branch_group, ["checkout", "--for-pr", "500"], obj=ctx)
+315:def test_checkout_for_pr_prints_activation_when_sync_status_fails() -&gt; None:
+316:    """Test that --for-pr checkout prints activation instructions even when sync status fails.
+319:    instructions from being printed after --for-pr checkout. This happens when
+370:            result = runner.invoke(branch_group, ["checkout", "--for-pr", "600"], obj=ctx)
+376:def test_checkout_for_pr_error_both_branch_and_for_pr() -&gt; None:
+377:    """Test that providing both BRANCH and --for-pr fails."""
+390:            branch_group, ["checkout", "my-branch", "--for-pr", "123"], obj=ctx
+394:        assert "Cannot specify both BRANCH and --for-pr" in result.output
+397:def test_checkout_for_pr_error_neither_branch_nor_for_pr() -&gt; None:
+398:    """Test that providing neither BRANCH nor --for-pr fails."""
+413:        assert "Must provide BRANCH argument or --for-pr option" in result.output
+416:def test_checkout_for_pr_planned_pr_stacks_on_base_ref() -&gt; None:
+417:    """--for-pr with planned_pr backend tracks with base_ref_name from plan metadata."""
+452:                branch_group, ["checkout", "--for-pr", "600", "--script"], obj=ctx
+517:def test_checkout_for_pr_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+553:                branch_group, ["checkout", "--for-pr", "601", "--script"], obj=ctx
+565:def test_checkout_for_pr_rebases_onto_stale_parent() -&gt; None:
+566:    """--for-pr with stacked parent rebases onto parent before gt track.
+606:                branch_group, ["checkout", "--for-pr", "602", "--script"], obj=ctx
+623:def test_checkout_for_pr_skips_rebase_for_trunk_parent() -&gt; None:
+624:    """--for-pr with trunk parent does not rebase, only tracks.
+663:                branch_group, ["checkout", "--for-pr", "603", "--script"], obj=ctx
+678:def test_checkout_for_pr_updates_stale_local_parent() -&gt; None:
+679:    """--for-pr syncs stale local parent branch with origin before gt track.
+723:                branch_group, ["checkout", "--for-pr", "604", "--script"], obj=ctx
+  </tool_result>
+  <assistant>Excellent! All the renames have been successfully applied. Let me verify there are no leftover `--for-plan` flags or test function names with the old naming:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="875" cache_read_input_tokens="38113" cache_creation="{'ephemeral_5m_input_tokens': 875, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LGzJsypr8my24EKB7Dq1KD">
+    <param name="command">grep -E "\-\-for-plan|for_plan" /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="description">Check for any remaining --for-plan or for_plan references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="875" cache_read_input_tokens="38113" cache_creation="{'ephemeral_5m_input_tokens': 875, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LGzJsypr8my24EKB7Dq1KD">
+
+  </tool_result>
+  <assistant>Perfect! The grep command returned no results, which means there are no remaining references to `--for-plan` or `for_plan`. Let me do a final verification by checking that the `--from-plan-file` and `--keep-plan-file` flags are still intact (to ensure we didn't accidentally rename those):</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="38988" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TdEUxXccewisXLntcxU857">
+    <param name="command">grep -E "from-plan-file|keep-plan-file" /home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="description">Verify excluded flags remain unchanged</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="38988" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TdEUxXccewisXLntcxU857">
+
+  </tool_result>
+  <assistant>Good - those flags don't appear in this test file, which is correct. Now let me create a summary of all the changes made:
+
+## Summary
+
+I successfully renamed all occurrences of `--for-plan` to `--for-pr` in the file `/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py`. Here's what was changed:
+
+### Changes Made:
+
+1. **Section comment** (line 260):
+   - `# --- --for-plan tests ---` → `# --- --for-pr tests ---`
+
+2. **Test function names** (9 functions total):
+   - `test_checkout_for_plan_creates_impl_folder` → `test_checkout_for_pr_creates_impl_folder`
+   - `test_checkout_for_plan_prints_activation_when_sync_status_fails` → `test_checkout_for_pr_prints_activation_when_sync_status_fails`
+   - `test_checkout_for_plan_error_both_branch_and_for_plan` → `test_checkout_for_pr_error_both_branch_and_for_pr`
+   - `test_checkout_for_plan_error_neither_branch_nor_for_plan` → `test_checkout_for_pr_error_neither_branch_nor_for_pr`
+   - `test_checkout_for_plan_planned_pr_stacks_on_base_ref` → `test_checkout_for_pr_planned_pr_stacks_on_base_ref`
+   - `test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref` → `test_checkout_for_pr_planned_pr_falls_back_to_trunk_without_base_ref`
+   - `test_checkout_for_plan_rebases_onto_stale_parent` → `test_checkout_for_pr_rebases_onto_stale_parent`
+   - `test_checkout_for_plan_skips_rebase_for_trunk_parent` → `test_checkout_for_pr_skips_rebase_for_trunk_parent`
+   - `test_checkout_for_plan_updates_stale_local_parent` → `test_checkout_for_pr_updates_stale_local_parent`
+
+3. **Docstrings** (in all renamed functions):
+   - All references to `--for-plan` in docstrings updated to `--for-pr`
+   - Example: `"""Test that --for-plan resolves plan...` → `"""Test that --for-pr resolves plan...`
+
+4. **CLI invocations** (9 occurrences):
+   - All `["checkout", "--for-plan", ...]` calls changed to `["checkout", "--for-pr", ...]`
+
+5. **Error message assertions** (2 occurrences):
+   - `"Cannot specify both BRANCH and --for-plan"` → `"Cannot specify both BRANCH and --for-pr"`
+   - `"Must provide BRANCH argument or --for-plan option"` → `"Must provide BRANCH argument or --for-pr option"`
+
+### Excluded (as requested):
+- `--from-plan-file` - not present in this file
+- `--keep-plan-file` - not present in this file
+
+All changes have been completed and verified. No stray `--for-plan` or `for_plan` references remain in the file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="39259" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
