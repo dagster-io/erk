@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9348,
+  "sessions": [
+    {
+      "session_id": "c22af305-5603-4fc0-bec6-c5c6d90d4012",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T10:11:09.360215+00:00",
+      "files": [
+        "impl-c22af305-5603-4fc0-bec6-c5c6d90d4012-c22af305-5603-4fc0-bec6-c5c6d90d4012.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 7,
+      "raw_size_kb": 361,
+      "xml_size_kb": 54,
+      "git_branch": "plnd/fix-tui-close-graphite-url-03-21-1001"
+    }
+  ]
+}
