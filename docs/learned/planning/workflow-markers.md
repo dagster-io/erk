@@ -25,10 +25,13 @@ When creating a plan from an objective step, markers track the objective for lat
 
 ```bash
 erk exec marker create --name objective-context --value "5503"
+# Single node:
 erk exec marker create --name roadmap-step --value "1B.4"
+# Multiple nodes (comma-separated, no spaces):
+erk exec marker create --name roadmap-step --value "1B.4,1B.5,1B.6"
 ```
 
-The `plan-save` command reads `objective-context` directly to link the plan to its objective. The `roadmap-step` marker provides the specific node ID being planned.
+The `plan-save` command reads `objective-context` directly to link the plan to its objective. The `roadmap-step` marker provides the node ID(s) being planned — supports comma-separated values for multi-node planning.
 
 The `objective-context` marker is the PRIMARY mechanism for objective linking — there is no CLI flag alternative. It must be created before entering plan mode (step 5 of objective-plan), before gathering code context. If missing, plan-save cannot call update-objective-node, and the objective roadmap table silently fails to update.
 

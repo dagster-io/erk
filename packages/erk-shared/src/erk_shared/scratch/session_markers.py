@@ -130,6 +130,33 @@ def read_roadmap_step_marker(session_id: str, repo_root: Path) -> str | None:
     return content
 
 
+def read_roadmap_step_markers(session_id: str, repo_root: Path) -> tuple[str, ...] | None:
+    """Read all roadmap node IDs from session's roadmap-step marker.
+
+    Supports comma-separated node IDs for multi-node planning
+    (e.g., "3.1,3.2,3.3" returns ("3.1", "3.2", "3.3")).
+    Falls back gracefully to single-node format.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        Tuple of node ID strings if marker exists and is non-empty, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "roadmap-step.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    if not content:
+        return None
+    node_ids = tuple(part.strip() for part in content.split(",") if part.strip())
+    if not node_ids:
+        return None
+    return node_ids
+
+
 def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -> None:
     """Create marker file storing the branch name of the saved plan.
 
