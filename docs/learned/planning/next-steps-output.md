@@ -39,10 +39,10 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 ## Format Functions
 
-| Function                         | Context                         | Output format |
-| -------------------------------- | ------------------------------- | ------------- |
-| `format_pr_next_steps_plain()`   | CLI output, exit-plan-mode-hook | Plain text    |
-| `format_next_steps_markdown()`   | PR body                         | Markdown      |
+| Function                       | Context                         | Output format |
+| ------------------------------ | ------------------------------- | ------------- |
+| `format_pr_next_steps_plain()` | CLI output, exit-plan-mode-hook | Plain text    |
+| `format_next_steps_markdown()` | PR body                         | Markdown      |
 
 Note: The `format_pr_next_steps_plain()` function takes `pr_number`, `branch_name`, and `url` as parameters.
 
