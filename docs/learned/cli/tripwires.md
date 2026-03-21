@@ -132,7 +132,7 @@ Rules triggered by matching actions in code.
 
 **launching Claude for conflict resolution without showing conflicted files first** → Read [Resolve Conflicts Workflow](rebase-confirmation-workflow.md) first. Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md.
 
-**making 5+ sequential gh api subprocess calls in an exec script** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PlanListService.
+**making 5+ sequential gh api subprocess calls in an exec script** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PrListService.
 
 **making LLM fetch data sequentially when it could be bundled** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Extract 3+ mechanical sequential calls into an exec script. Each tool call costs a full LLM round-trip.
 
