@@ -222,13 +222,13 @@ These commands were renamed from issue-oriented to PR-oriented terminology:
 
 CLI flags and error codes were standardized from "issue" to "plan" terminology:
 
-| Old Name                             | New Name                |
-| ------------------------------------ | ----------------------- |
-| `--plan-issue` (flag)                | `--learn-pr`            |
-| `missing-plan-issue` (error code)    | `missing-learn-pr`      |
-| `unexpected-plan-issue` (error code) | `unexpected-learn-pr`   |
-| `no-issue-reference` (error code)    | `no-plan-reference`     |
-| `issue-not-found` (error code)       | `plan-not-found`        |
+| Old Name                             | New Name              |
+| ------------------------------------ | --------------------- |
+| `--plan-issue` (flag)                | `--learn-pr`          |
+| `missing-plan-issue` (error code)    | `missing-learn-pr`    |
+| `unexpected-plan-issue` (error code) | `unexpected-learn-pr` |
+| `no-issue-reference` (error code)    | `no-plan-reference`   |
+| `issue-not-found` (error code)       | `plan-not-found`      |
 
 YAML schema fields (e.g., `learn_plan_issue`) were NOT renamed for stability.
 

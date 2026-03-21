@@ -552,8 +552,7 @@ def create_wt(
     )
     Ensure.invariant(
         flags_set <= 1,
-        "Cannot use multiple of: --from-current-branch, --from-branch, "
-        "--from-pr-file, --from-pr",
+        "Cannot use multiple of: --from-current-branch, --from-branch, --from-pr-file, --from-pr",
     )
 
     # Validate --json and --script are mutually exclusive
@@ -620,9 +619,7 @@ def create_wt(
 
     # Handle --from-pr flag
     elif from_pr:
-        Ensure.invariant(
-            not name, "Cannot specify both NAME and --from-pr. Use one or the other."
-        )
+        Ensure.invariant(not name, "Cannot specify both NAME and --from-pr. Use one or the other.")
         # Parse PR number from URL or plain number - raises click.ClickException if invalid
         pr_number_parsed = parse_issue_identifier(from_pr)
         # Note: name will be derived from plan title after fetching
@@ -911,9 +908,7 @@ def create_wt(
     if from_pr:
         # Type narrowing: setup must be set if from_pr is True
         assert setup is not None, "setup must be set when from_pr is True"
-        assert linked_branch_name is not None, (
-            "linked_branch_name must be set when from_pr is True"
-        )
+        assert linked_branch_name is not None, "linked_branch_name must be set when from_pr is True"
 
         # Create implementation context folder in new worktree
         # Use overwrite=False since fresh worktree should not have impl folder

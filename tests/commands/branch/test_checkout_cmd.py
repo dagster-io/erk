@@ -386,9 +386,7 @@ def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:
         )
         ctx = build_workspace_test_context(env, git=git)
 
-        result = runner.invoke(
-            branch_group, ["checkout", "my-branch", "--for-pr", "123"], obj=ctx
-        )
+        result = runner.invoke(branch_group, ["checkout", "my-branch", "--for-pr", "123"], obj=ctx)
 
         assert result.exit_code == 1
         assert "Cannot specify both BRANCH and --for-pr" in result.output
