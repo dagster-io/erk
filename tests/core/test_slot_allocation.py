@@ -20,7 +20,7 @@ from erk.core.worktree_pool import (
     save_pool_state,
 )
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.slots.naming import DEFAULT_POOL_SIZE, extract_slot_number
+from erk_shared.slots.naming import DEFAULT_POOL_SIZE
 from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.test_context import context_for_test
 
