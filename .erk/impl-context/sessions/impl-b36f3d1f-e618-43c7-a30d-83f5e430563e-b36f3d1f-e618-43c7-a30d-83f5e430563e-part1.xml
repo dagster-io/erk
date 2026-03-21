@@ -1,0 +1,1256 @@
+<session>
+  <meta branch="plnd/allow-learn-prefix-03-20-1707" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9292&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9292` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9292. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11355" cache_read_input_tokens="17494" cache_creation="{'ephemeral_5m_input_tokens': 11355, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017xXMFaKohZebPZYCBkMVfo">
+    <param name="command">erk exec setup-impl --issue 9292 2&gt;&amp;1</param>
+    <param name="description">Set up implementation for plan #9292</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11355" cache_read_input_tokens="17494" cache_creation="{'ephemeral_5m_input_tokens': 11355, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017xXMFaKohZebPZYCBkMVfo">
+Already on PR branch 'plnd/allow-learn-prefix-03-20-1707', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--allow-learn-prefix-03-20-1707", "pr_number": 9292, "pr_url": "https://github.com/dagster-io/erk/pull/9292", "branch": "plnd/allow-learn-prefix-03-20-1707", "pr_title": "[erk-pr] Plan: Allow [erk-learn] title prefix in dispatch and implement", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9292, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_011b2d4DryaawyrLiHEBy53p">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--allow-learn-prefix-03-20-1707/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="28849" cache_creation="{'ephemeral_5m_input_tokens': 333, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011b2d4DryaawyrLiHEBy53p">
+     1→# Plan: Allow [erk-learn] title prefix in dispatch and implement
+     2→
+     3→## Context
+     4→
+     5→When a plan has the `[erk-learn]` label, `plan-save` correctly sets the title prefix to `[erk-learn]`. But dispatch and implement commands reject it because they only accept `[erk-pr]`. This forces a manual title edit before dispatching learn plans.
+     6→
+     7→## Approach
+     8→
+     9→Add a helper function `has_plan_title_prefix(title: str) -&gt; bool` in constants.py that accepts either `[erk-pr]` or `[erk-learn]` prefix, then use it in all 4 validation sites.
+    10→
+    11→### Files to modify
+    12→
+    13→1. **`src/erk/cli/constants.py`** — Add `ERK_LEARN_TITLE_PREFIX = "[erk-learn] "` and `has_plan_title_prefix()` that checks both
+    14→2. **`src/erk/cli/commands/pr/dispatch_cmd.py`** (lines 167, 410) — Replace `startswith(ERK_PR_TITLE_PREFIX)` with `has_plan_title_prefix()`
+    15→3. **`src/erk/cli/commands/implement.py`** (line 174) — Replace `startswith("[erk-pr]")` with `has_plan_title_prefix()`
+    16→4. **`packages/erk-shared/src/erk_shared/plan_workflow.py`** (line 80) — Replace `startswith("[erk-pr]")` with `has_plan_title_prefix()`
+    17→
+    18→Update error messages from "does not have '[erk-pr]' title prefix" to "does not have a valid plan title prefix ([erk-pr] or [erk-learn])".
+    19→
+    20→### Also check
+    21→
+    22→- `src/erk/cli/commands/pr/duplicate_check_cmd.py` line 125 — filters plans by `[erk-pr]` prefix; may need to include `[erk-learn]` plans too
+    23→
+    24→## Verification
+    25→
+    26→- Run existing tests for dispatch, implement, and plan_workflow
+    27→- Verify `has_plan_title_prefix("[erk-pr] Foo")` and `has_plan_title_prefix("[erk-learn] Bar")` both return True
+    28→- Verify `has_plan_title_prefix("Random title")` returns False
+    29→
+
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll signal that implementation has started, then create todos and implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="29182" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qn4Zksb55ymkpaNGzbM3w6">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="830" cache_read_input_tokens="29182" cache_creation="{'ephemeral_5m_input_tokens': 830, 'ephemeral_1h_input_tokens': 0}" output_tokens="114" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qn4Zksb55ymkpaNGzbM3w6">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01PAHiXtdRzTAJqoQxKVyzjQ">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'pending', 'activeF...[truncated 630 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="30012" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PAHiXtdRzTAJqoQxKVyzjQ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XvYV4ERWF6sTQzyvYYTiag">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'in_progress', 'act...[truncated 634 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="30200" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="289" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XvYV4ERWF6sTQzyvYYTiag">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01K9P82PeTEmLEUgguRsAoVG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="30529" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0112cTuvC1JZSSPrQHFeCHeP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">160</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="30529" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K9P82PeTEmLEUgguRsAoVG">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# Title prefix for erk-pr issues (with trailing space for easy stripping)
+     4→ERK_PR_TITLE_PREFIX = "[erk-pr] "
+     5→
+     6→# Plan markdown heading prefix (with trailing space for easy stripping)
+     7→PLAN_HEADING_PREFIX = "Plan: "
+     8→
+     9→# PR title prefix for plan-originated PRs
+    10→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    11→
+    12→# GitHub Actions workflow for remote implementation dispatch
+    13→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    14→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    15→
+    16→# GitHub Actions workflow for remote rebase with conflict resolution
+    17→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    18→
+    19→# GitHub Actions workflow for remote PR comment addressing
+    20→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    23→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    24→
+    25→# GitHub Actions workflow for one-shot autonomous execution
+    26→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    27→
+    28→# GitHub Actions workflow for consolidating learn plans
+    29→CONSOLIDATE_LEARN_PLANS_WORKFLOW_NAME = "consolidate-learn-plans.yml"
+    30→
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0112cTuvC1JZSSPrQHFeCHeP">
+   160→    """
+   161→    pr_result = ctx.github.get_pr(repo.root, pr_number)
+   162→    if isinstance(pr_result, PRNotFound):
+   163→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   164→        raise SystemExit(1)
+   165→
+   166→    # Validate: must have [erk-pr] title prefix
+   167→    if not pr_result.title.startswith(ERK_PR_TITLE_PREFIX):
+   168→        user_output(
+   169→            click.style("Error: ", fg="red")
+   170→            + f"PR #{pr_number} does not have '[erk-pr]' title prefix\n\n"
+   171→            "Cannot dispatch non-plan PRs for automated implementation."
+   172→        )
+   173→        raise SystemExit(1)
+   174→
+   175→    # Validate: must be OPEN
+   176→    if pr_result.state != "OPEN":
+   177→        user_output(
+   178→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {pr_result.state}\n\n"
+   179→            "Cannot dispatch closed PRs for automated implementation."
+   180→        )
+   181→        raise SystemExit(1)
+   182→
+   183→    return ValidatedPlannedPR(
+   184→        number=pr_number,
+   185→        title=pr_result.title,
+   186→        url=pr_result.url,
+   187→        branch_name=pr_result.head_ref_name,
+   188→    )
+   189→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AhVvLxc9A3rrMn8c5mRPUU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">400</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1708" cache_read_input_tokens="30860" cache_creation="{'ephemeral_5m_input_tokens': 1708, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011iSh1K4KoedNZXrPhLDQc6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="offset">165</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1708" cache_read_input_tokens="30860" cache_creation="{'ephemeral_5m_input_tokens': 1708, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Uf7iqrsL2cvx8LsJEZjmKV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="offset">72</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1708" cache_read_input_tokens="30860" cache_creation="{'ephemeral_5m_input_tokens': 1708, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AhVvLxc9A3rrMn8c5mRPUU">
+   400→
+   401→    Raises:
+   402→        SystemExit: If PR doesn't exist, missing title prefix, not OPEN,
+   403→            or branch name cannot be determined.
+   404→    """
+   405→    issue = remote.get_issue(owner=owner, repo=repo_name, number=pr_number)
+   406→    if isinstance(issue, IssueNotFound):
+   407→        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+   408→        raise SystemExit(1)
+   409→
+   410→    if not issue.title.startswith(ERK_PR_TITLE_PREFIX):
+   411→        user_output(
+   412→            click.style("Error: ", fg="red")
+   413→            + f"PR #{pr_number} does not have '[erk-pr]' title prefix\n\n"
+   414→            "Cannot dispatch non-plan PRs for automated implementation."
+   415→        )
+   416→        raise SystemExit(1)
+   417→
+   418→    if issue.state != "OPEN":
+   419→        user_output(
+   420→            click.style("Error: ", fg="red") + f"PR #{pr_number} is {issue.state}\n\n"
+   421→            "Cannot dispatch closed PRs for automated implementation."
+   422→        )
+   423→        raise SystemExit(1)
+   424→
+   425→    # Extract branch name from plan-header metadata in the PR body
+   426→    branch_name = extract_plan_header_branch_name(issue.body) if issue.body else None
+   427→    if branch_name is None:
+   428→        user_output(
+   429→            click.style("Error: ", fg="red")
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011iSh1K4KoedNZXrPhLDQc6">
+   165→    # Fetch plan from GitHub
+   166→    ctx.console.info("Fetching plan from GitHub...")
+   167→    result = ctx.plan_store.get_managed_pr(repo.root, pr_number)
+   168→    if isinstance(result, PlanNotFound):
+   169→        user_output(click.style("Error: ", fg="red") + f"Plan #{pr_number} not found")
+   170→        raise SystemExit(1)
+   171→    plan = result
+   172→
+   173→    # Validate erk-pr title prefix
+   174→    if not plan.title.startswith("[erk-pr]"):
+   175→        user_output(
+   176→            click.style("Error: ", fg="red")
+   177→            + f"Plan #{pr_number} does not have the '[erk-pr]' title prefix.\n"
+   178→            "Create a plan using 'erk pr create' to ensure correct formatting."
+   179→        )
+   180→        raise SystemExit(1) from None
+   181→
+   182→    ctx.console.info(f"Plan: {plan.title}")
+   183→
+   184→    # Create dry-run description
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Uf7iqrsL2cvx8LsJEZjmKV">
+    72→        plan: Plan from plan_store
+    73→        timestamp: Timestamp for branch name suffix
+    74→        warn_non_open: Whether to include warning for non-OPEN plans
+    75→
+    76→    Returns:
+    77→        PlanBranchSetup on success, PlanValidationFailed on validation failure
+    78→    """
+    79→    # Validate erk-pr title prefix
+    80→    if not plan.title.startswith("[erk-pr]"):
+    81→        return PlanValidationFailed(
+    82→            f"Plan #{plan.pr_identifier} must have '[erk-pr]' title prefix.\n"
+    83→            f"Create a plan using 'erk pr create' to ensure correct formatting."
+    84→        )
+    85→
+    86→    # Validate plan_identifier can be converted to int (LBYL)
+    87→    if not plan.pr_identifier.isdigit():
+    88→        return PlanValidationFailed(
+    89→            f"Plan identifier '{plan.pr_identifier}' is not a valid plan number. "
+    90→            "Expected a numeric GitHub issue number."
+    91→        )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Lxc4dfjYefSbsYZc3fxPzf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">118</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1662" cache_read_input_tokens="32568" cache_creation="{'ephemeral_5m_input_tokens': 1662, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lxc4dfjYefSbsYZc3fxPzf">
+   118→        location=location,
+   119→        labels=["erk-pr"],
+   120→        state="open",
+   121→        skip_workflow_runs=True,
+   122→        http_client=http_client,
+   123→    )
+   124→    # Filter to plans only (title prefix check)
+   125→    existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-pr]")]
+   126→
+   127→    if exclude_pr_id is not None:
+   128→        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_pr_id]
+   129→
+   130→    if not existing_plans:
+   131→        user_output("No existing open PRs to compare against.")
+   132→    else:
+   133→        user_output(f"Checking against {len(existing_plans)} open PR(s):")
+   134→        for p in existing_plans:
+   135→            user_output(f"  #{p.pr_identifier}: {p.title}")
+   136→        user_output("")
+   137→        user_output("Analyzing for semantic duplicates...")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I now have all the context I need. Let me also check the imports in dispatch_cmd.py to understand what's already imported.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="34230" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RZ2h2L6gfW6gJcJR2c44MV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="34230" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019gbYrgjyfAzZcAptHcPTAq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="34230" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017LQ1GsVojFZsdJMkecCw77">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="34230" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RZ2h2L6gfW6gJcJR2c44MV">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PR_TITLE_PREFIX,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    22→from erk.core.context import ErkContext
+    23→from erk.core.repo_discovery import RepoContext
+    24→from erk_shared.context.types import NoRepoSentinel
+    25→from erk_shared.gateway.git.remote_ops.types import PushError
+    26→from erk_shared.gateway.github.issues.types import IssueNotFound
+    27→from erk_shared.gateway.github.metadata.core import (
+    28→    create_submission_queued_block,
+    29→    render_erk_issue_event,
+    30→)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019gbYrgjyfAzZcAptHcPTAq">
+     1→"""Command to implement features from plans or plan files.
+     2→
+     3→This command runs implementation in the current directory using Claude.
+     4→It creates an impl folder (under .erk/impl-context/&lt;branch&gt;/) with the plan
+     5→content and invokes Claude for execution.
+     6→
+     7→Usage:
+     8→- Plan number mode: erk implement 123 or erk implement &lt;URL&gt;
+     9→- Plan file mode: erk implement path/to/plan.md
+    10→- Auto-detect mode: erk implement (on plan branch with plan-ref.json)
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.completions import complete_plan_files
+    18→from erk.cli.commands.implement_shared import (
+    19→    PlanSource,
+    20→    build_claude_args,
+    21→    build_command_sequence,
+    22→    detect_target_type,
+    23→    execute_interactive_mode,
+    24→    execute_non_interactive_mode,
+    25→    extract_plan_from_current_branch,
+    26→    implement_common_options,
+    27→    normalize_model_name,
+    28→    output_activation_instructions,
+    29→    prepare_plan_source_from_file,
+    30→    validate_flags,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017LQ1GsVojFZsdJMkecCw77">
+     1→"""Shared workflow for preparing plans for worktree creation.
+     2→
+     3→This module provides the canonical logic for preparing plans for worktree creation,
+     4→including validation, branch naming, and metadata extraction. Used by both
+     5→`erk wt create --from-plan` and `erk implement`.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from datetime import datetime
+    10→
+    11→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    12→from erk_shared.naming import (
+    13→    InvalidWorktreeName,
+    14→    sanitize_worktree_name,
+    15→    validate_worktree_name,
+    16→)
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→
+    19→
+    20→@dataclass(frozen=True)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Also need to check what's imported in implement.py around line 30-50 area:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="34956" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UmN7EtoQ8kpWvmNHcJgYQp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="offset">30</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1902" cache_read_input_tokens="34956" cache_creation="{'ephemeral_5m_input_tokens': 1902, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UmN7EtoQ8kpWvmNHcJgYQp">
+    30→    validate_flags,
+    31→)
+    32→from erk.cli.core import discover_repo_context
+    33→from erk.cli.ensure import Ensure
+    34→from erk.cli.help_formatter import CommandWithHiddenOptions
+    35→from erk.core.context import ErkContext
+    36→from erk.core.prompt_executor import PromptExecutor
+    37→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    38→from erk_shared.cli_alias import alias
+    39→from erk_shared.context.types import RepoContext
+    40→from erk_shared.impl_folder import create_impl_folder, get_impl_dir, resolve_impl_dir, save_plan_ref
+    41→from erk_shared.output.output import user_output
+    42→from erk_shared.plan_store.types import PlanNotFound
+    43→
+    44→
+    45→def _execute(
+    46→    ctx: ErkContext,
+    47→    *,
+    48→    repo: RepoContext,
+    49→    submit: bool,
+    50→    dangerous: bool,
+    51→    script: bool,
+    52→    no_interactive: bool,
+    53→    verbose: bool,
+    54→    model: str | None,
+    55→    executor: PromptExecutor,
+    56→) -&gt; None:
+    57→    """Execute implementation in current directory (impl-context must already exist).
+    58→
+    59→    Callers must handle dry-run before calling this function.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have all the info. Let me proceed with the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="615" cache_read_input_tokens="36858" cache_creation="{'ephemeral_5m_input_tokens': 615, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01RxfPw8x6Cwcrrif84Y1E64">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'completed', 'activ...[truncated 636 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="615" cache_read_input_tokens="36858" cache_creation="{'ephemeral_5m_input_tokens': 615, 'ephemeral_1h_input_tokens': 0}" output_tokens="304" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RxfPw8x6Cwcrrif84Y1E64">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0182XSc6DfB5cdnFGXU2uJxf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+    <param name="old_string"># Title prefix for erk-pr issues (with trailing space for easy stripping)
+ERK_PR_TITLE_PREFIX = "[erk-pr] "</param>
+    <param name="new_string"># Title prefix for erk-pr issues (with trailing space for easy stripping)
+ERK_PR_TITLE_PRE...[truncated 249 chars]...  return title.startswith(ERK_PR_TITLE_PREFIX) or title.startswith(ERK_LEARN_TITLE_PREFIX)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="37473" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="296" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0182XSc6DfB5cdnFGXU2uJxf">
+The file /home/runner/work/erk/erk/src/erk/cli/constants.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Vx8JkM21b4WRgQdcbPpa9X">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'completed', 'activ...[truncated 638 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="37819" cache_creation="{'ephemeral_5m_input_tokens': 337, 'ephemeral_1h_input_tokens': 0}" output_tokens="289" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vx8JkM21b4WRgQdcbPpa9X">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update dispatch_cmd.py - first update the import to include the new function, then update the 2 validation sites:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="38156" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RwF7xgTFzoZ6jsHUzFiWfs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">from erk.cli.constants import (
+    DISPATCH_WORKFLOW_METADATA_NAME,
+    DISPATCH_WORKFLOW_NAME,
+    ERK_PR_TITLE_PREFIX,
+)</param>
+    <param name="new_string">from erk.cli.constants import (
+    DISPATCH_WORKFLOW_METADATA_NAME,
+    DISPATCH_WORKFLOW_NAME,
+    ERK_PR_TITLE_PREFIX,
+    has_plan_title_prefix,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="38156" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RwF7xgTFzoZ6jsHUzFiWfs">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the first validation site (line 167):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="38487" cache_creation="{'ephemeral_5m_input_tokens': 292, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KJtLA2Linq5X22U8wTbkup">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    # Validate: must have [erk-pr] title prefix
+    if not pr_result.title.startswith(ERK_...[truncated 223 chars]...       raise SystemExit(1)
+
+    # Validate: must be OPEN
+    if pr_result.state != "OPEN":</param>
+    <param name="new_string">    # Validate: must have [erk-pr] or [erk-learn] title prefix
+    if not has_plan_title_p...[truncated 257 chars]...       raise SystemExit(1)
+
+    # Validate: must be OPEN
+    if pr_result.state != "OPEN":</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="38487" cache_creation="{'ephemeral_5m_input_tokens': 292, 'ephemeral_1h_input_tokens': 0}" output_tokens="408" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJtLA2Linq5X22U8wTbkup">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the second validation site (line 410):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="455" cache_read_input_tokens="38779" cache_creation="{'ephemeral_5m_input_tokens': 455, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AyFUs6F1GeiFvVK7LSXwXz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    if not issue.title.startswith(ERK_PR_TITLE_PREFIX):
+        user_output(
+            c...[truncated 107 chars]...dispatch non-plan PRs for automated implementation."
+        )
+        raise SystemExit(1)</param>
+    <param name="new_string">    if not has_plan_title_prefix(issue.title):
+        user_output(
+            click.styl...[truncated 126 chars]...dispatch non-plan PRs for automated implementation."
+        )
+        raise SystemExit(1)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="455" cache_read_input_tokens="38779" cache_creation="{'ephemeral_5m_input_tokens': 455, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyFUs6F1GeiFvVK7LSXwXz">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if ERK_PR_TITLE_PREFIX is still used in dispatch_cmd.py (or if we can remove it from the import):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="597" cache_read_input_tokens="39234" cache_creation="{'ephemeral_5m_input_tokens': 597, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013Yyz9NuGZPkWWJ7kUhMcSA">
+    <param name="pattern">ERK_PR_TITLE_PREFIX</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="597" cache_read_input_tokens="39234" cache_creation="{'ephemeral_5m_input_tokens': 597, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Yyz9NuGZPkWWJ7kUhMcSA">
+17:    ERK_PR_TITLE_PREFIX,
+  </tool_result>
+  <assistant>`ERK_PR_TITLE_PREFIX` is no longer used in dispatch_cmd.py - only imported. Remove it from the import:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="39831" cache_creation="{'ephemeral_5m_input_tokens': 182, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q7PRcggGyGeHCQAUwC57KE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">from erk.cli.constants import (
+    DISPATCH_WORKFLOW_METADATA_NAME,
+    DISPATCH_WORKFLOW_NAME,
+    ERK_PR_TITLE_PREFIX,
+    has_plan_title_prefix,
+)</param>
+    <param name="new_string">from erk.cli.constants import (
+    DISPATCH_WORKFLOW_METADATA_NAME,
+    DISPATCH_WORKFLOW_NAME,
+    has_plan_title_prefix,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="39831" cache_creation="{'ephemeral_5m_input_tokens': 182, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q7PRcggGyGeHCQAUwC57KE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GobnNjGzZQgMvpJ5nWdfSh">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'completed', 'activ...[truncated 640 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="40013" cache_creation="{'ephemeral_5m_input_tokens': 527, 'ephemeral_1h_input_tokens': 0}" output_tokens="289" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GobnNjGzZQgMvpJ5nWdfSh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update implement.py - need to add the import and update the validation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="40540" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011e6ncY94VFghhSWxMZZBsm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">from erk.cli.core import discover_repo_context</param>
+    <param name="new_string">from erk.cli.constants import has_plan_title_prefix
+from erk.cli.core import discover_repo_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="40540" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011e6ncY94VFghhSWxMZZBsm">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EccHJqJsg2AcQfHbgDvz9P">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="old_string">    # Validate erk-pr title prefix
+    if not plan.title.startswith("[erk-pr]"):
+        u...[truncated 154 chars]... pr create' to ensure correct formatting."
+        )
+        raise SystemExit(1) from None</param>
+    <param name="new_string">    # Validate plan title prefix
+    if not has_plan_title_prefix(plan.title):
+        use...[truncated 176 chars]... pr create' to ensure correct formatting."
+        )
+        raise SystemExit(1) from None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="40871" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EccHJqJsg2AcQfHbgDvz9P">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/implement.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GwMQMwxbHmjmgubYvECUQR">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'completed', 'activ...[truncated 642 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="372" cache_read_input_tokens="41086" cache_creation="{'ephemeral_5m_input_tokens': 372, 'ephemeral_1h_input_tokens': 0}" output_tokens="289" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GwMQMwxbHmjmgubYvECUQR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update plan_workflow.py in erk-shared. This package can't import from `erk.cli.constants` (different package). Let me check if there's an `erk_shared` constants file or how to add this there:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="41458" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019zC64jLZogbFd2awKye9Nj">
+    <param name="pattern">packages/erk-shared/src/erk_shared/constants*</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="41458" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017aeRvZsr6PP9RxrBzXcDDd">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="41458" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017aeRvZsr6PP9RxrBzXcDDd">
+     1→"""Shared workflow for preparing plans for worktree creation.
+     2→
+     3→This module provides the canonical logic for preparing plans for worktree creation,
+     4→including validation, branch naming, and metadata extraction. Used by both
+     5→`erk wt create --from-plan` and `erk implement`.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from datetime import datetime
+    10→
+    11→from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+    12→from erk_shared.naming import (
+    13→    InvalidWorktreeName,
+    14→    sanitize_worktree_name,
+    15→    validate_worktree_name,
+    16→)
+    17→from erk_shared.plan_store.types import Plan, PlanState
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class PlanBranchSetup:
+    22→    """Result of successfully preparing a plan for worktree creation.
+    23→
+    24→    Attributes:
+    25→        branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
+    26→        worktree_name: Sanitized directory name for the worktree
+    27→        plan_content: Plan body to use as plan.md content
+    28→        pr_number: Plan number
+    29→        issue_url: Full GitHub issue URL
+    30→        issue_title: Issue title for reference
+
+... [104 lines omitted] ...
+
+    32→        warnings: List of warning messages (e.g., non-OPEN plan)
+    42→    warnings: tuple[str, ...] = ()
+    46→class PlanValidationFailed:
+    50→        message: User-facing error message explaining the failure
+    57→PreparePlanResult = PlanBranchSetup | PlanValidationFailed
+    74→        warn_non_open: Whether to include warning for non-OPEN plans
+    77→        PlanBranchSetup on success, PlanValidationFailed on validation failure
+    81→        return PlanValidationFailed(
+    88→        return PlanValidationFailed(
+    94→    # Collect warnings
+    95→    warnings: list[str] = []
+    97→        warnings.append(f"Plan #{plan.pr_identifier} is {plan.state.value}. Proceeding anyway...")
+   102→        return PlanValidationFailed(
+   114→        return PlanValidationFailed(
+   115→            f"Generated worktree name failed validation.\n{wt_validation.format_message()}"
+   127→        warnings=tuple(warnings),
+  </tool_result>
+  <tool_result tool="toolu_019zC64jLZogbFd2awKye9Nj">
+No files found
+  </tool_result>
+  <assistant>`plan_workflow.py` is in `erk_shared` package, so I can't import from `erk.cli.constants`. I'll add the helper function directly in this file or define the constants locally. The cleanest approach is to add the constants and function to `erk_shared` or just inline the check. Looking at the plan, it says to use `has_plan_title_prefix()` from `constants.py`, but since this is a different package, I'll define the helper in plan_workflow.py itself (or I could put the prefixes in erk_shared).
+
+Let me check if there's a better place in erk_shared:</assistant>
+  <usage input_tokens="1794" cache_creation_input_tokens="250" cache_read_input_tokens="41789" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012CmD2JrSDiijMXbQiNyrwb">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/ 2&gt;&amp;1 | head -30</param>
+    <param name="description">List erk-shared package contents</param>
+  </tool_use>
+  <usage input_tokens="1794" cache_creation_input_tokens="250" cache_read_input_tokens="41789" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012CmD2JrSDiijMXbQiNyrwb">
+__init__.py
+__pycache__
+agentclick
+cli_alias.py
+cli_group.py
+config
+context
+core
+debug.py
+debug_timing.py
+entity_store
+env.py
+gateway
+hooks
+impl_context.py
+impl_folder.py
+learn
+naming.py
+non_ideal_state.py
+objective_apply_landed_update_result.py
+objective_fetch_context_result.py
+output
+plan_store
+plan_utils.py
+plan_workflow.py
+scratch
+sessions
+shell_utils
+stack
+subprocess_utils.py
+  </tool_result>
+  <assistant>The simplest approach is to define the title prefixes directly in `plan_workflow.py` since there's no shared constants module in erk_shared. I'll just add the helper there:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2199" cache_read_input_tokens="42039" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MUei2UdRVfoP4ewsjSBonp">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+from erk_shared.naming ...[truncated 37 chars]...ame,
+    validate_worktree_name,
+)
+from erk_shared.plan_store.types import Plan, PlanState</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
+from erk_shared.naming ...[truncated 341 chars]...return title.startswith(_ERK_PR_TITLE_PREFIX) or title.startswith(_ERK_LEARN_TITLE_PREFIX)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2199" cache_read_input_tokens="42039" cache_creation="{'ephemeral_5m_input_tokens': 2199, 'ephemeral_1h_input_tokens': 0}" output_tokens="432" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MUei2UdRVfoP4ewsjSBonp">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the validation in `prepare_plan_for_worktree`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="44238" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017GRtu7ZpM5oiziyqEooquJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py</param>
+    <param name="old_string">    # Validate erk-pr title prefix
+    if not plan.title.startswith("[erk-pr]"):
+        r...[truncated 87 chars]...            f"Create a plan using 'erk pr create' to ensure correct formatting."
+        )</param>
+    <param name="new_string">    # Validate plan title prefix
+    if not _has_plan_title_prefix(plan.title):
+        re...[truncated 118 chars]...            f"Create a plan using 'erk pr create' to ensure correct formatting."
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="44238" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="316" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017GRtu7ZpM5oiziyqEooquJ">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01AmS4pJrfHNLZRWoGLrvJLD">
+    <param name="todos">[{'content': 'Read source files to understand current code', 'status': 'completed', 'activ...[truncated 644 chars]...}, {'content': 'Run tests to verify', 'status': 'pending', 'activeForm': 'Running tests'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="44953" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AmS4pJrfHNLZRWoGLrvJLD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now check duplicate_check_cmd.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="45319" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qrg7iZTUorvatRUSrCYWCB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">100</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="45319" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qrg7iZTUorvatRUSrCYWCB">
+   100→    has_problems = False
+   101→
+   102→    http_client = ctx.http_client
+   103→    if http_client is None:
+   104→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   105→        raise SystemExit(1)
+   106→
+   107→    # Determine location root (local vs remote)
+   108→    if not isinstance(ctx.repo, NoRepoSentinel):
+   109→        root = ctx.repo.root
+   110→    else:
+   111→        root = Path(tempfile.gettempdir()) / "erk-remote"
+   112→
+   113→    location = GitHubRepoLocation(
+   114→        root=root,
+   115→        repo_id=repo_id,
+   116→    )
+   117→    plan_data = ctx.plan_list_service.get_plan_list_data(
+   118→        location=location,
+   119→        labels=["erk-pr"],
+   120→        state="open",
+   121→        skip_workflow_runs=True,
+   122→        http_client=http_client,
+   123→    )
+   124→    # Filter to plans only (title prefix check)
+   125→    existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-pr]")]
+   126→
+   127→    if exclude_pr_id is not None:
+   128→        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_pr_id]
+   129→
+
+... [25 lines omitted] ...
+
+   143→        if dup_result.error is not None:
+   144→            user_output(click.style("Error: ", fg="red") + "Duplicate check failed:")
+   145→            user_output(f"  {dup_result.error}")
+  </tool_result>
+  <assistant>The duplicate check at line 119 queries with `labels=["erk-pr"]` and then filters by `[erk-pr]` title prefix. The plan says this "may need to include [erk-learn] plans too". Let me check what the duplicate check is actually for - it's checking if a new plan is a semantic duplicate of existing plans. 
+
+For learn plans, we should also check for duplicates against other learn plans. The query uses `labels=["erk-pr"]` which means it only fetches plans with the `erk-pr` label - it won't find `erk-learn` labeled plans. Let me read more context to understand when this check is called:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="916" cache_read_input_tokens="45650" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012zmcFGnpPnrB7bGrgLNxaQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="916" cache_read_input_tokens="45650" cache_creation="{'ephemeral_5m_input_tokens': 916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012zmcFGnpPnrB7bGrgLNxaQ">
+     1→"""Command to check a plan for duplicates and commit-history relevance."""
+     2→
+     3→import sys
+     4→import tempfile
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+    14→from erk.core.plan_relevance_checker import PlanRelevanceChecker
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+    21→@click.command("duplicate-check")
+    22→@click.option(
+    23→    "--file",
+    24→    "-f",
+    25→    type=click.Path(exists=True, path_type=Path),
+    26→    help="PR file to read",
+    27→)
+    28→@click.option(
+    29→    "--plan",
+    30→    "-p",
+
+... [75 lines omitted] ...
+
+    58→        1: Duplicates found, already implemented, or error
+    78→            user_output(click.style("Error: ", fg="red") + f"PR {pr_number} not found.")
+    86→        except OSError as e:
+    87→            user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
+    92→        except OSError as e:
+    93→            user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
+  </tool_result>
+  <assistant>The duplicate check command at line 119 uses `labels=["erk-pr"]` to fetch plans. The plan says this "may need to include [erk-learn] plans too". However, the plan says this is just "also check" - it's advisory. 
+
+Looking at this more carefully: the duplicate check is for checking if a new plan is a semantic duplicate. For learn plans specifically, the question is whether it makes sense to also check against learn plans. The filter at line 125 `p.title.startswith("[erk-pr]")` would filter out any erk-learn plans even if they happened to have the `erk-pr` label.
+
+The plan says this "may need to include [erk-learn] plans too" - let's update this to also include learn plans using `has_plan_title_prefix`. We need to also update the label query to include `erk-learn` labeled plans:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1721" cache_read_input_tokens="46566" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CigJDXfsa2iStCwDGtDXhq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">113</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1721" cache_read_input_tokens="46566" cache_creation="{'ephemeral_5m_input_tokens': 1721, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CigJDXfsa2iStCwDGtDXhq">
+   113→    location = GitHubRepoLocation(
+   114→        root=root,
+   115→        repo_id=repo_id,
+   116→    )
+   117→    plan_data = ctx.plan_list_service.get_plan_list_data(
+   118→        location=location,
+   119→        labels=["erk-pr"],
+   120→        state="open",
+   121→        skip_workflow_runs=True,
+   122→        http_client=http_client,
+   123→    )
+   124→    # Filter to plans only (title prefix check)
+   125→    existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-pr]")]
+   126→
+   127→    if exclude_pr_id is not None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me check how `get_plan_list_data` handles labels - does it support multiple labels?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="841" cache_read_input_tokens="48287" cache_creation="{'ephemeral_5m_input_tokens': 841, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DM28xMU6HXJPxnviKvY4qN">
+    <param name="pattern">get_plan_list_data</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="841" cache_read_input_tokens="48287" cache_creation="{'ephemeral_5m_input_tokens': 841, 'ephemeral_1h_input_tokens': 0}" output_tokens="137" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DM28xMU6HXJPxnviKvY4qN">
+Found 3 files
+src/erk/tui/data/real_provider.py
+src/erk/core/services/plan_list_service.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Bq1HUbNyaTK4nTHQZwDi6h">
+    <param name="pattern">def get_plan_list_data</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/services/plan_list_service.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="49128" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bq1HUbNyaTK4nTHQZwDi6h">
+55-            time: Time gateway for monotonic timing
+56-        """
+57-        self._github = github
+58-        self._time = time
+59-
+60:    def get_plan_list_data(
+61-        self,
+62-        *,
+63-        location: GitHubRepoLocation,
+64-        labels: list[str],
+65-        state: IssueFilterState = "open",
+--
+346-        """
+347-        self._github = github
+348-        self._github_issues = github_issues
+349-        self._time = time
+350-
+351:    def get_plan_list_data(
+352-        self,
+353-        *,
+354-        location: GitHubRepoLocation,
+355-        labels: list[str],
+356-        state: IssueFilterState = "open",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SxY35FiqKdnBMxvdSAioom">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/services/plan_list_service.py</param>
+    <param name="offset">60</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="49334" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SxY35FiqKdnBMxvdSAioom">
+    60→    def get_plan_list_data(
+    61→        self,
+    62→        *,
+    63→        location: GitHubRepoLocation,
+    64→        labels: list[str],
+    65→        state: IssueFilterState = "open",
+    66→        limit: int | None = None,
+    67→        skip_workflow_runs: bool = False,
+    68→        creator: str | None = None,
+    69→        exclude_labels: list[str] | None = None,
+    70→        http_client: HttpClient,
+    71→    ) -&gt; PlanListData:
+    72→        """Fetch plan list data from draft PRs via direct HTTP calls.
+    73→
+    74→        Args:
+    75→            location: GitHub repository location
+    76→            labels: Labels to filter by
+    77→            state: Filter by state
+    78→            limit: Maximum number of results
+    79→            skip_workflow_runs: If True, skip fetching workflow runs
+    80→            creator: Filter by PR author username
+    81→            exclude_labels: Labels to exclude from results
+    82→            http_client: HTTP client for direct API calls
+    83→
+    84→        Returns:
+    85→            PlanListData with plans from draft PRs
+    86→        """
+    87→        return self._get_plan_list_data_http(
+    88→            http_client,
+    89→            location=location,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The `labels` parameter filters by labels. If I pass `["erk-pr"]`, it only returns plans with `erk-pr` label. GitHub's PR label filtering with multiple labels returns PRs that have ALL of those labels, not any of them. So I'd need to make two separate calls if I want to include both erk-pr and erk-learn labeled plans.
+
+Given the plan's guidance says "may need to include [erk-learn] plans too", I need to make a judgment call. The duplicate check is checking for semantic duplicates before creating a new plan. If we're creating an erk-learn plan, we should also be checking for duplicates against other erk-learn plans.
+
+However, this would require two separate API calls and merging results. That's a more substantial change than the primary focus of this plan. The plan says "may need to include" which is advisory. Let me just update the title prefix filter to use `has_plan_title_prefix` to be consistent, since the query already uses `labels=["erk-pr"]` (which will only return erk-pr labeled plans anyway), so the title filter is just a defensive check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="49923" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CpU4BRCcEy2hfHEPvBJFRU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="49923" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CpU4BRCcEy2hfHEPvBJFRU">
+     1→"""Command to check a plan for duplicates and commit-history relevance."""
+     2→
+     3→import sys
+     4→import tempfile
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.github_parsing import parse_issue_identifier
+    11→from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
+    12→from erk.core.context import ErkContext
+    13→from erk.core.plan_duplicate_checker import PlanDuplicateChecker
+    14→from erk.core.plan_relevance_checker import PlanRelevanceChecker
+    15→from erk_shared.context.types import NoRepoSentinel
+    16→from erk_shared.gateway.github.issues.types import IssueNotFound
+    17→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I'll update duplicate_check_cmd.py to use `has_plan_title_prefix` in the filter and also add erk-learn to the labels query:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="974" cache_read_input_tokens="50482" cache_creation="{'ephemeral_5m_input_tokens': 974, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
