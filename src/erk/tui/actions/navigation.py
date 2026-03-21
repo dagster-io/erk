@@ -339,7 +339,7 @@ class NavigationActionsMixin:
         # Determine which command to use
         if row.worktree_branch is not None:
             # Local worktree exists - use branch checkout
-            cmd = f"erk br co {row.worktree_branch}"
+            cmd = f"erk slot co {row.worktree_branch}"
         elif row.pr_number is not None:
             # No local worktree but PR exists - use PR checkout
             cmd = f"erk pr co {row.pr_number}"

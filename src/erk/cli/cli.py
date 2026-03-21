@@ -218,7 +218,7 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
 
     cli.add_command(docs_group)
 if importlib.util.find_spec("erk_slots") is not None:
-    from erk_slots import slot_group
+    from erk_slots.group import slot_group
 
     cli.add_command(slot_group)
 cli.add_command(exec_group)

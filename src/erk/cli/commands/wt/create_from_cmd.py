@@ -11,8 +11,8 @@ from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_w
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
-from erk.core.slot_allocation import allocate_slot_for_branch
 from erk_shared.output.output import user_output
+from erk_slots.common import allocate_slot_for_branch
 
 
 @click.command("create-from", cls=CommandWithHiddenOptions)

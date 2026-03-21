@@ -17,7 +17,6 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.core.slot_allocation import allocate_slot_for_branch, update_slot_assignment_tip
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
@@ -28,6 +27,7 @@ from erk_shared.plan_workflow import (
     PlanValidationFailed,
     prepare_plan_for_worktree,
 )
+from erk_slots.common import allocate_slot_for_branch, update_slot_assignment_tip
 
 
 @click.command("create", cls=CommandWithHiddenOptions)

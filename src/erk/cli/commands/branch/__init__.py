@@ -18,7 +18,7 @@ def branch_group() -> None:
 
 
 # Register subcommands
+register_with_aliases(branch_group, branch_checkout)
 branch_group.add_command(branch_create)
 branch_group.add_command(branch_delete)
-register_with_aliases(branch_group, branch_checkout)
 register_with_aliases(branch_group, branch_list)
