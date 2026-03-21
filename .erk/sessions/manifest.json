@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "pr_number": 9361,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T15:35:46.119848+00:00",
+      "files": [
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part1.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part10.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part11.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part12.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part13.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part2.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part3.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part4.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part5.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part6.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part7.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part8.xml",
+        "impl--0a79fde7-b4e9-4a6c-b883-fb8beceb26fb-part9.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 10,
+      "raw_size_kb": 1238,
+      "xml_size_kb": 192,
+      "git_branch": "plnd/reopen-contested-threads-03-21-1520"
+    }
+  ]
+}
