@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9388,
+  "sessions": [
+    {
+      "session_id": "eac7640d-f7a0-4f2f-b5df-851b2aed39a6",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T18:48:50.519180+00:00",
+      "files": [
+        "impl-eac7640d-f7a0-4f2f-b5df-851b2aed39a6-eac7640d-f7a0-4f2f-b5df-851b2aed39a6.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 8,
+      "raw_size_kb": 345,
+      "xml_size_kb": 57,
+      "git_branch": "plnd/predictable-obj-update-out-03-21-1838"
+    }
+  ]
+}
