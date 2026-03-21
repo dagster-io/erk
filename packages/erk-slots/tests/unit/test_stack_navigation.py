@@ -53,7 +53,9 @@ def test_up_with_existing_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         if result.exit_code != 0:
             print(f"stderr: {result.stderr}")
@@ -89,7 +91,7 @@ def test_up_at_top_of_stack() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Already at the top of the stack" in result.stderr
@@ -134,7 +136,9 @@ def test_up_child_has_no_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should succeed and create worktree
         assert result.exit_code == 0
@@ -181,7 +185,9 @@ def test_down_with_existing_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         # Should generate script for feature-1
@@ -225,7 +231,9 @@ def test_down_to_trunk_root() -> None:
         )
 
         # Switch down from feature-1 to root (main)
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         # Should generate script for root
@@ -254,7 +262,7 @@ def test_down_at_trunk() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Already at the bottom of the stack" in result.stderr
@@ -301,7 +309,9 @@ def test_down_parent_has_no_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should succeed and create worktree
         assert result.exit_code == 0
@@ -327,14 +337,14 @@ def test_up_down_graphite_not_enabled() -> None:
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
         # Try 'erk up'
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "requires Graphite to be enabled" in result.stderr
         assert "erk config set use_graphite true" in result.stderr
 
         # Try 'erk down'
-        result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "requires Graphite to be enabled" in result.stderr
@@ -355,7 +365,7 @@ def test_up_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Not currently on a branch" in result.stderr
@@ -422,7 +432,9 @@ def test_up_with_mismatched_worktree_name() -> None:
         # Navigate up from feature/db to feature/db-tests using 'erk up'
         # This would fail before the fix because it would try to find a worktree named
         # "feature/db-tests" instead of resolving to "db-tests-implementation"
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         if result.exit_code != 0:
             print(f"stderr: {result.stderr}")
@@ -493,7 +505,9 @@ def test_down_with_mismatched_worktree_name() -> None:
         # Navigate down from feature/api-v2 to feature/api using 'erk down'
         # This would fail before the fix because it would try to find a worktree named
         # "feature/api" instead of resolving to "api-work"
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         if result.exit_code != 0:
             print(f"stderr: {result.stderr}")

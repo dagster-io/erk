@@ -123,8 +123,8 @@ def test_command_hidden_options_visible_when_config_enabled() -> None:
         ),
     )
 
-    # Test the 'up' command which uses CommandWithHiddenOptions with @script_option
-    result = runner.invoke(cli, ["up", "--help"], obj=ctx)
+    # Test the 'slot up' command which uses CommandWithHiddenOptions with @script_option
+    result = runner.invoke(cli, ["slot", "up", "--help"], obj=ctx)
 
     assert result.exit_code == 0
     # Should have "Hidden Options" section with --script
@@ -147,8 +147,8 @@ def test_command_hidden_options_hidden_when_config_disabled() -> None:
         ),
     )
 
-    # Test the 'up' command which uses CommandWithHiddenOptions with @script_option
-    result = runner.invoke(cli, ["up", "--help"], obj=ctx)
+    # Test the 'slot up' command which uses CommandWithHiddenOptions with @script_option
+    result = runner.invoke(cli, ["slot", "up", "--help"], obj=ctx)
 
     assert result.exit_code == 0
     # Should NOT have "Hidden Options" section
@@ -182,8 +182,8 @@ def test_script_option_help_text_clarifies_not_dry_run() -> None:
         ),
     )
 
-    # Test the 'up' command
-    result = runner.invoke(cli, ["up", "--help"], obj=ctx)
+    # Test the 'slot up' command
+    result = runner.invoke(cli, ["slot", "up", "--help"], obj=ctx)
 
     assert result.exit_code == 0
     # The help text should clarify this is NOT a dry run

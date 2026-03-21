@@ -650,17 +650,17 @@ def test_graphite_command_hidden_when_help_shown_without_ctx_obj_and_config_disa
 
 
 def test_real_up_command_is_graphite_command() -> None:
-    """Verify the real 'up' command uses GraphiteCommandWithHiddenOptions."""
-    from erk.cli.commands.up import up_cmd
+    """Verify the real 'slot up' command uses GraphiteCommandWithHiddenOptions."""
+    from erk_slots.up_cmd import slot_up
 
-    assert _requires_graphite(up_cmd)
+    assert _requires_graphite(slot_up)
 
 
 def test_real_down_command_is_graphite_command() -> None:
-    """Verify the real 'down' command uses GraphiteCommandWithHiddenOptions."""
-    from erk.cli.commands.down import down_cmd
+    """Verify the real 'slot down' command uses GraphiteCommandWithHiddenOptions."""
+    from erk_slots.down_cmd import slot_down
 
-    assert _requires_graphite(down_cmd)
+    assert _requires_graphite(slot_down)
 
 
 def test_real_list_stack_command_is_graphite_command() -> None:

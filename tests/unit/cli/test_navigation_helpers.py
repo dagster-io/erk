@@ -10,9 +10,6 @@ from erk.cli.commands.completions import complete_branch_names, complete_plan_fi
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     delete_branch_and_worktree,
-    get_slot_name_for_worktree,
-    render_deferred_deletion_commands,
-    unallocate_worktree_and_branch,
     validate_for_deletion,
 )
 from erk.cli.ensure import UserFacingCliError
@@ -20,6 +17,11 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_slots.navigation import (
+    get_slot_name_for_worktree,
+    render_deferred_deletion_commands,
+    unallocate_worktree_and_branch,
+)
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.tests.script_writer import FakeScriptWriter
 from tests.test_utils.test_context import context_for_test

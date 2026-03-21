@@ -1,9 +1,11 @@
+"""Slot up command - navigate to child branch in worktree stack."""
+
 import click
 
-from erk.cli.commands.navigation_helpers import execute_stack_navigation
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option
 from erk.core.context import ErkContext
+from erk_slots.navigation import execute_stack_navigation
 
 
 @click.command("up", cls=GraphiteCommandWithHiddenOptions)
@@ -22,14 +24,14 @@ from erk.core.context import ErkContext
     help="Force deletion even if marker exists or PR is open (prompts)",
 )
 @click.pass_obj
-def up_cmd(ctx: ErkContext, count: int, script: bool, delete_current: bool, force: bool) -> None:
+def slot_up(ctx: ErkContext, count: int, script: bool, delete_current: bool, force: bool) -> None:
     """Move to child branch in worktree stack.
 
     Navigate up COUNT levels (default: 1).
 
     Navigate to target worktree:
-      source <(erk up --script)
-      source <(erk up 3 --script)
+      source <(erk slot up --script)
+      source <(erk slot up 3 --script)
 
     Requires Graphite: 'erk config set use_graphite true'
     """

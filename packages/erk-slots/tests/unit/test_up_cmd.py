@@ -75,7 +75,9 @@ def test_up_with_existing_worktree() -> None:
         )
 
         # Navigate up from feature-1 to feature-2
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         if result.exit_code != 0:
             print(f"stderr: {result.stderr}")
@@ -120,7 +122,7 @@ def test_up_at_top_of_stack() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Already at the top of the stack")
 
@@ -164,7 +166,9 @@ def test_up_child_has_no_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should succeed and allocate a slot
         assert result.exit_code == 0
@@ -203,7 +207,7 @@ def test_up_graphite_not_enabled() -> None:
         graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled, repo=repo)
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
@@ -238,7 +242,7 @@ def test_up_graphite_not_installed() -> None:
         graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled, repo=repo)
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
@@ -272,7 +276,7 @@ def test_up_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 
@@ -314,7 +318,9 @@ def test_up_script_flag() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         # Output should be a script path (verify in-memory)
@@ -363,7 +369,7 @@ def test_up_multiple_children_fails_explicitly() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
@@ -439,7 +445,9 @@ def test_up_with_mismatched_worktree_name() -> None:
         # Navigate up from feature/auth to feature/auth-tests
         # This would fail before the fix because it would try to find a worktree named
         # "feature/auth-tests" instead of resolving to "auth-tests-work"
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         if result.exit_code != 0:
             print(f"stderr: {result.stderr}")
@@ -1076,7 +1084,9 @@ def test_up_count_moves_multiple_levels() -> None:
         )
 
         # Navigate up 2 levels from feature-1 to feature-3
-        result = runner.invoke(cli, ["up", "2", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "2", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
@@ -1118,7 +1128,9 @@ def test_up_count_1_is_default_behavior() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "1", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "1", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
@@ -1157,7 +1169,9 @@ def test_up_count_zero_fails() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "0", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "0", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert_cli_error(result, 1, "Count must be at least 1")
 
@@ -1199,7 +1213,9 @@ def test_up_count_exceeds_stack_fails() -> None:
         )
 
         # From f1, up 3 should fail (only 1 child level exists: f2 has no children)
-        result = runner.invoke(cli, ["up", "3", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "3", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert_cli_error(result, 1, "Already at the top of the stack")
 
@@ -1419,7 +1435,9 @@ def test_up_worktree_branch_mismatch() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "up", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
