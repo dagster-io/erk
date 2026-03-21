@@ -56,6 +56,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     PlanHeaderSchema,
     SessionSourceValue,
 )
+from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 
 
@@ -152,8 +153,6 @@ def create_plan_header_block(
     Returns:
         MetadataBlock with plan-header schema
     """
-    from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
-
     header = PlanHeaderData(
         created_at=created_at,
         created_by=created_by,
