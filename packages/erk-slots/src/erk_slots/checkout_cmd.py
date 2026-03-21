@@ -38,7 +38,7 @@ def slot_checkout(ctx: ErkContext, branch: str, force: bool, script: bool) -> No
     If the branch already has a slot, navigates to it. Otherwise,
     allocates a new slot and checks out the branch there.
 
-    The branch must already exist. Use `erk branch create` to create
+    The branch must already exist. Use `gt create` to create
     a new branch.
 
     Navigate to target slot:
@@ -109,8 +109,7 @@ def _slot_checkout_body(ctx: ErkContext, *, branch: str, force: bool, script: bo
             ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
         else:
             user_output(
-                f"Error: Branch '{branch}' does not exist.\n"
-                f"Use `erk branch create` to create a new branch."
+                f"Error: Branch '{branch}' does not exist.\nUse `gt create` to create a new branch."
             )
             raise SystemExit(1) from None
 

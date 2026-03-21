@@ -59,7 +59,7 @@ def create_from_wt(ctx: ErkContext, branch: str, force: bool, script: bool) -> N
             user_output(
                 f"Error: Branch '{branch}' does not exist.\n"
                 f"To create a new branch, use:\n"
-                f"  erk br create {branch}"
+                f"  gt create {branch}"
             )
             raise SystemExit(1) from None
 

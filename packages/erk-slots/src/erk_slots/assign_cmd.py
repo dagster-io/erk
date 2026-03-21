@@ -36,7 +36,7 @@ def slot_assign(
     Use --from-current-branch to move the current branch to a slot,
     switching the current worktree to the parent or trunk branch.
 
-    Use `erk branch create` to create a NEW branch and assign it.
+    Use `gt create` to create a NEW branch.
     """
     # Validate mutually exclusive arguments
     if from_current_branch and branch_name is not None:
@@ -86,7 +86,7 @@ def slot_assign(
     if branch_name not in local_branches:
         user_output(
             f"Error: Branch '{branch_name}' does not exist.\n"
-            "Use `erk branch create` to create a new branch."
+            "Use `gt create` to create a new branch."
         )
         raise SystemExit(1) from None
 
