@@ -74,13 +74,15 @@ def address(ctx: ErkContext, *, dangerous: bool, safe: bool) -> None:
         )
     else:
         # Default: edits mode, allow dangerous when live_dangerously is set
+        if ctx.global_config is not None and not ctx.global_config.live_dangerously:
+            allow_dangerous_override = None
+        else:
+            allow_dangerous_override = True
         config = ia_config.with_overrides(
             permission_mode_override="edits",
             model_override=None,
             dangerous_override=None,
-            allow_dangerous_override=True
-            if (ctx.global_config.live_dangerously if ctx.global_config is not None else True)
-            else None,
+            allow_dangerous_override=allow_dangerous_override,
         )
 
     # Replace current process with Claude
