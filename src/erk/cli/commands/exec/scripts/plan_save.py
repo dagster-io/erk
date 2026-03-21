@@ -46,7 +46,7 @@ from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import (
     InvalidPrTitle,
     generate_planned_pr_branch_name,
-    validate_plan_title,
+    validate_pr_title,
 )
 from erk_shared.output.next_steps import format_pr_next_steps_plain
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
@@ -156,7 +156,7 @@ def _save_as_planned_pr(
     title = extract_title_from_plan(plan_content)
 
     # Validate plan title before proceeding
-    title_validation = validate_plan_title(title)
+    title_validation = validate_pr_title(title)
     if isinstance(title_validation, InvalidPrTitle):
         if output_format == "display":
             click.echo(f"Error: {title_validation.message}", err=True)

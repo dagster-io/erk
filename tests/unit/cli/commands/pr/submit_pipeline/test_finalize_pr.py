@@ -9,7 +9,7 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     finalize_pr,
 )
-from erk.core.plan_context_provider import PlanContext
+from erk.core.plan_context_provider import PrContext
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -49,7 +49,7 @@ def _make_state(
     base_branch: str | None = "main",
     graphite_url: str | None = None,
     diff_file: Path | None = None,
-    plan_context: PlanContext | None = None,
+    plan_context: PrContext | None = None,
     title: str | None = "My PR Title",
     body: str | None = "My PR body",
     existing_pr_body: str = "",
@@ -227,7 +227,7 @@ def test_cleans_up_diff_file(tmp_path: Path) -> None:
 def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
     """Plan context embedded in PR body but NOT in commit message."""
     plan_content = "# My Plan\n\nSome implementation details"
-    plan_ctx = PlanContext(
+    plan_ctx = PrContext(
         pr_id="1234",
         plan_content=plan_content,
         objective_summary=None,
@@ -435,7 +435,7 @@ def test_skip_description_returns_state_unchanged(tmp_path: Path) -> None:
 
 
 def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
-    """finalize_pr with a PlanContext triggers lifecycle update to 'impl'."""
+    """finalize_pr with a PrContext triggers lifecycle update to 'impl'."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,
@@ -463,7 +463,7 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
         cwd=tmp_path,
     )
 
-    plan_ctx = PlanContext(
+    plan_ctx = PrContext(
         pr_id="321",
         plan_content="# Plan\n\nImplement the thing.",
         objective_summary=None,

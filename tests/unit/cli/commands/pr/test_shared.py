@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.shared import assemble_pr_body, recover_plan_header
-from erk.core.plan_context_provider import PlanContext
+from erk.core.plan_context_provider import PrContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails
@@ -225,9 +225,9 @@ def test_no_header_no_recovery_produces_no_plan_header() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _plan_context(*, objective_summary: str | None = None) -> PlanContext:
-    """Create a minimal PlanContext for objective link tests."""
-    return PlanContext(
+def _plan_context(*, objective_summary: str | None = None) -> PrContext:
+    """Create a minimal PrContext for objective link tests."""
+    return PrContext(
         pr_id="100",
         plan_content="# Plan\n\nDo the thing.",
         objective_summary=objective_summary,

@@ -20,7 +20,7 @@ from erk.core.commit_message_generator import (
     CommitMessageResult,
 )
 from erk.core.context import ErkContext
-from erk.core.plan_context_provider import PlanContext
+from erk.core.plan_context_provider import PrContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_AT,
@@ -120,7 +120,7 @@ def run_diff_extraction(
 # ---------------------------------------------------------------------------
 
 
-def echo_plan_context_status(plan_context: PlanContext | None) -> None:
+def echo_plan_context_status(plan_context: PrContext | None) -> None:
     """Echo plan context status to the CLI."""
     if plan_context is not None:
         click.echo(
@@ -243,7 +243,7 @@ def cleanup_diff_file(diff_file: Path | None) -> None:
 # ---------------------------------------------------------------------------
 
 
-def build_plan_details_section(plan_context: PlanContext) -> str:
+def build_plan_details_section(plan_context: PrContext) -> str:
     """Build a collapsed <details> section embedding the plan in the PR body."""
     issue_num = plan_context.pr_id
     parts = [
@@ -277,7 +277,7 @@ def _insert_objective_link(body: str, objective_summary: str) -> str:
 def assemble_pr_body(
     *,
     body: str,
-    plan_context: PlanContext | None,
+    plan_context: PrContext | None,
     pr_number: int,
     header: str,
     existing_pr_body: str,
@@ -369,7 +369,7 @@ def run_commit_message_generation(
     current_branch: str,
     parent_branch: str,
     commit_messages: list[str] | None,
-    plan_context: PlanContext | None,
+    plan_context: PrContext | None,
     debug: bool,
     time: Time,
 ) -> CommitMessageResult:

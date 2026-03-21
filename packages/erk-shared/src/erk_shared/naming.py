@@ -131,7 +131,7 @@ class InvalidPrTitle:
         )
 
 
-def validate_plan_title(title: str) -> ValidPrTitle | InvalidPrTitle:
+def validate_pr_title(title: str) -> ValidPrTitle | InvalidPrTitle:
     """Validate a plan title against minimum content requirements.
 
     Agent-facing validation gate. Ensures plan titles have enough meaningful
@@ -149,17 +149,17 @@ def validate_plan_title(title: str) -> ValidPrTitle | InvalidPrTitle:
         bypassing this gate entirely.
 
     Args:
-        title: The plan title string to validate.
+        title: The PR title string to validate.
 
     Returns:
         ValidPrTitle if valid, InvalidPrTitle if invalid.
 
     Examples:
-        >>> validate_plan_title("Add User Authentication")
+        >>> validate_pr_title("Add User Authentication")
         ValidPrTitle(title='Add User Authentication')
-        >>> validate_plan_title("")
+        >>> validate_pr_title("")
         InvalidPrTitle(raw_title='', reason='...')
-        >>> validate_plan_title("🚀🎉")
+        >>> validate_pr_title("🚀🎉")
         InvalidPrTitle(raw_title='🚀🎉', reason='...')
     """
     stripped = title.strip()
@@ -506,10 +506,10 @@ def generate_filename_from_title(title: str) -> str:
 
     Human-facing silent transformation. Accepts arbitrary input (including
     emoji-only or accent-heavy strings) and produces a usable filename.
-    This is the counterpart to ``validate_plan_title``, which is the
+    This is the counterpart to ``validate_pr_title``, which is the
     agent-facing gate that rejects titles lacking meaningful content.
 
-    ``validate_plan_title`` calls this function internally: if the result
+    ``validate_pr_title`` calls this function internally: if the result
     is ``"plan.md"`` (the fallback), the title has no usable content and
     the gate rejects it.
 

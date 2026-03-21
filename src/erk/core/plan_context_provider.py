@@ -14,8 +14,8 @@ from erk_shared.plan_store.types import PrNotFound
 
 
 @dataclass(frozen=True)
-class PlanContext:
-    """Context from an erk plan for PR generation.
+class PrContext:
+    """Context from an erk PR for PR generation.
 
     Attributes:
         pr_id: The PR identifier (e.g., "123" for PR numbers)
@@ -49,7 +49,7 @@ class PlanContextProvider:
         branch_name: str,
         owner: str,
         repo: str,
-    ) -> PlanContext | None:
+    ) -> PrContext | None:
         """Get plan context for a branch, if available.
 
         Attempts to fetch plan context by:
@@ -69,7 +69,7 @@ class PlanContextProvider:
             objective_id=result.objective_id,
         )
 
-        return PlanContext(
+        return PrContext(
             pr_id=result.pr_identifier,
             plan_content=result.body,
             objective_summary=objective_summary,
