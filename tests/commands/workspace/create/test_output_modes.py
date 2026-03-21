@@ -313,7 +313,7 @@ def test_create_default_behavior_generates_script() -> None:
         result = runner.invoke(cli, ["wt", "create", "test-feature", "--script"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Should generate script path in output
-        assert "/tmp/" in result.output or "erk-" in result.output
+        # Should output script content (not path) for process substitution
+        assert "#!/bin/bash" in result.output
         # Verify worktree was created
         repo_dir / "test-feature"

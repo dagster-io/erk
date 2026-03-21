@@ -98,7 +98,7 @@ def _display_copy_checkout(ctx: CommandContext) -> str:
 def _display_copy_pr_checkout_script(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout_script command."""
     if ctx.row.pr_number:
-        return f'source "$(erk pr checkout {ctx.row.pr_number} --script)"'
+        return f"source <(erk pr checkout {ctx.row.pr_number} --script)"
     return "checkout"
 
 
@@ -131,7 +131,7 @@ def _display_cmux_teleport(ctx: CommandContext) -> str:
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
     """Display name for copy_implement_local command."""
-    return f'source "$(erk pr checkout {ctx.row.pr_number} --script)" && erk implement --dangerous'
+    return f"source <(erk pr checkout {ctx.row.pr_number} --script) && erk implement --dangerous"
 
 
 def _display_copy_dispatch(ctx: CommandContext) -> str:

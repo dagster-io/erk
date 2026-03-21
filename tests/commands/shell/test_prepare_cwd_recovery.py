@@ -59,9 +59,8 @@ def test_prepare_cwd_recovery_outputs_script(tmp_path: Path) -> None:
         os.chdir(original_cwd)
 
     assert result.exit_code == 0
-    script_path = Path(result.output.strip())
-    # Verify script was written to in-memory fake
-    assert ctx.script_writer.get_script_content(script_path) is not None
+    # Verify script content was output
+    assert result.output.strip()
 
 
 def test_prepare_cwd_recovery_no_repo(tmp_path: Path) -> None:

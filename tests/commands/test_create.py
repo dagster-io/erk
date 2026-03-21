@@ -1,7 +1,5 @@
 """Tests for erk create command output behavior."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -58,10 +56,8 @@ def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
             "but should be written to stdout via machine_output()."
         )
 
-        # Assert: Script path is a valid path to activation script
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None, "Script path should reference a valid script"
+        # Assert: Script content was output
+        script_content = result.stdout
 
         # Assert: Script contains cd command to new worktree
         expected_worktree_path = repo_dir / "worktrees" / "my-feature"

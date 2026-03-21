@@ -365,7 +365,7 @@ class PlanDetailScreen(ModalScreen):
     def action_copy_prepare_activate(self) -> None:
         """Copy one-liner to prepare worktree and start implementation."""
         cmd = (
-            f'source "$(erk br co --for-pr {self._row.pr_number} --script)"'
+            f"source <(erk br co --for-pr {self._row.pr_number} --script)"
             " && erk implement --dangerous"
         )
         self._copy_and_notify(cmd)
@@ -374,7 +374,7 @@ class PlanDetailScreen(ModalScreen):
         """Copy one-liner to checkout PR and start local implementation."""
         if self._row.pr_number is not None:
             cmd = (
-                f'source "$(erk pr checkout {self._row.pr_number} --script)"'
+                f"source <(erk pr checkout {self._row.pr_number} --script)"
                 " && erk implement --dangerous"
             )
             self._copy_and_notify(cmd)
@@ -683,7 +683,7 @@ class PlanDetailScreen(ModalScreen):
 
         elif command_id == "copy_prepare_activate":
             cmd = (
-                f'source "$(erk br co --for-pr {row.pr_number} --script)"'
+                f"source <(erk br co --for-pr {row.pr_number} --script)"
                 " && erk implement --dangerous"
             )
             executor.copy_to_clipboard(cmd)

@@ -215,9 +215,8 @@ def test_script_with_submit_includes_all_commands() -> None:
 
         assert result.exit_code == 0
 
-        # Script should be created (output contains script path)
-        assert "erk-implement-" in result.output
-        assert ".sh" in result.output
+        # Script content should be output
+        assert "#!/bin/bash" in result.output
 
 
 # Dry-Run Tests

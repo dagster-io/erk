@@ -674,7 +674,7 @@ def _write_stack_activation_script_if_needed(
         command_name="land",
         comment="no-op",
     )
-    machine_output(str(script_result.path), nl=False)
+    machine_output(script_result.content, nl=False)
 
 
 def _format_partial_failure(

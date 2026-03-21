@@ -1,7 +1,5 @@
 """Tests for model flag integration in implement command."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -138,13 +136,7 @@ def test_model_flag_in_script_mode() -> None:
 
         assert result.exit_code == 0
 
-        # Verify script path is output
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-
-        # Verify script file exists and read its content
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.stdout
 
         # Verify --model flag is present in the generated command
         assert "--model sonnet" in script_content

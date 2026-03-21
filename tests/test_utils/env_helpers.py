@@ -1189,10 +1189,9 @@ def erk_inmem_env(
                 )
                 result = runner.invoke(cli, ["checkout", "feature", "--script"], obj=ctx)
 
-                # Verify script content in-memory
-                script_path = Path(result.stdout.strip())
-                content = env.script_writer.get_script_content(script_path)
-                assert content is not None
+                # Verify script content from stdout
+                script_content = result.stdout
+                assert "feature" in script_content
         ```
     """
     from tests.test_utils.paths import sentinel_path

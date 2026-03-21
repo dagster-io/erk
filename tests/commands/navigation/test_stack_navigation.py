@@ -1,7 +1,5 @@
 """Tests for erk up and erk down navigation."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -62,9 +60,7 @@ def test_up_with_existing_worktree() -> None:
             print(f"stdout: {result.stdout}")
         assert result.exit_code == 0
         # Should generate script for feature-2 (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-2") in script_content
 
 
@@ -189,9 +185,7 @@ def test_down_with_existing_worktree() -> None:
 
         assert result.exit_code == 0
         # Should generate script for feature-1
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
 
@@ -235,9 +229,7 @@ def test_down_to_trunk_root() -> None:
 
         assert result.exit_code == 0
         # Should generate script for root
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(env.cwd) in script_content
         assert "root" in script_content.lower()
 
@@ -438,9 +430,7 @@ def test_up_with_mismatched_worktree_name() -> None:
         assert result.exit_code == 0
 
         # Should generate script for db-tests-implementation (not feature/db-tests)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "db-tests-implementation") in script_content
 
 
@@ -511,7 +501,5 @@ def test_down_with_mismatched_worktree_name() -> None:
         assert result.exit_code == 0
 
         # Should generate script for api-work (not feature/api)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(repo_dir / "api-work") in script_content

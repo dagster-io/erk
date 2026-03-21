@@ -24,7 +24,6 @@ def test_land_by_number() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -111,9 +110,7 @@ def test_land_by_number() -> None:
         assert 123 not in github_ops.merged_prs
 
         # Verify script was generated with correct parameters
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # Script uses shell variables (passed as arguments to source command)
         assert '--pr-number="$PR_NUMBER"' in script_content
@@ -128,7 +125,6 @@ def test_land_by_url() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -215,9 +211,7 @@ def test_land_by_url() -> None:
         assert 456 not in github_ops.merged_prs
 
         # Verify script was generated with correct parameters
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # Script uses shell variables (passed as arguments to source command)
         assert '--pr-number="$PR_NUMBER"' in script_content
@@ -232,7 +226,6 @@ def test_land_by_branch_name() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -318,9 +311,7 @@ def test_land_by_branch_name() -> None:
         assert 123 not in github_ops.merged_prs
 
         # Verify script was generated with correct parameters
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # Script uses shell variables (passed as arguments to source command)
         assert '--pr-number="$PR_NUMBER"' in script_content
@@ -335,7 +326,6 @@ def test_land_fork_pr() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", repo_dir=repo_dir),
@@ -409,9 +399,7 @@ def test_land_fork_pr() -> None:
 
         # Verify script was generated with correct parameters
         # For fork PRs, the branch name is "pr/{number}"
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # Script uses shell variables (passed as arguments to source command)
         assert '--pr-number="$PR_NUMBER"' in script_content

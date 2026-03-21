@@ -1,7 +1,5 @@
 """Tests for submit and dangerous flags in implement command."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -34,9 +32,8 @@ def test_implement_with_submit_flag_from_issue() -> None:
         assert result.exit_code == 0
         assert "✓ Created impl folder" in result.output
 
-        # Script should be created
-        assert "erk-implement-" in result.output
-        assert ".sh" in result.output
+        # Script content should be output
+        assert "#!/bin/bash" in result.output
 
 
 def test_implement_with_submit_flag_from_file() -> None:
@@ -59,9 +56,8 @@ def test_implement_with_submit_flag_from_file() -> None:
         assert result.exit_code == 0
         assert "✓ Created impl folder" in result.output
 
-        # Script should be created
-        assert "erk-implement-" in result.output
-        assert ".sh" in result.output
+        # Script content should be output
+        assert "#!/bin/bash" in result.output
 
         # Verify plan file was preserved (not deleted)
         assert plan_file.exists()
@@ -86,9 +82,8 @@ def test_implement_without_submit_uses_default_command() -> None:
         assert result.exit_code == 0
         assert "✓ Created impl folder" in result.output
 
-        # Verify script has only implement-plan command (not CI/submit)
-        assert "erk-implement-" in result.output
-        assert ".sh" in result.output
+        # Verify script content is output
+        assert "#!/bin/bash" in result.output
 
 
 def test_implement_submit_in_script_mode() -> None:
@@ -109,13 +104,7 @@ def test_implement_submit_in_script_mode() -> None:
 
         assert result.exit_code == 0
 
-        # Verify script path is output
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-
-        # Verify script file exists and read its content
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.stdout
 
         # Verify script content contains chained commands
         assert "/erk:plan-implement" in script_content
@@ -180,13 +169,7 @@ def test_implement_with_dangerous_flag_in_script_mode() -> None:
 
         assert result.exit_code == 0
 
-        # Verify script path is output
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-
-        # Verify script file exists and read its content
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.stdout
 
         # Verify --dangerously-skip-permissions flag is present
         assert "--dangerously-skip-permissions" in script_content
@@ -215,13 +198,7 @@ def test_implement_with_safe_flag_in_script_mode() -> None:
 
         assert result.exit_code == 0
 
-        # Verify script path is output
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-
-        # Verify script file exists and read its content
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.stdout
 
         # Verify --dangerously-skip-permissions flag is NOT present
         assert "--dangerously-skip-permissions" not in script_content
@@ -247,13 +224,7 @@ def test_implement_with_dangerous_and_submit_flags() -> None:
 
         assert result.exit_code == 0
 
-        # Verify script path is output
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-
-        # Verify script file exists and read its content
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.stdout
 
         # Verify all three commands have the dangerous flag
         assert script_content.count("--dangerously-skip-permissions") == 3
@@ -351,13 +322,7 @@ def test_implement_plan_file_with_dangerous_flag() -> None:
 
         assert result.exit_code == 0
 
-        # Verify script path is output
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-
-        # Verify script file exists and read its content
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.stdout
 
         # Verify dangerous flag is present
         assert "--dangerously-skip-permissions" in script_content
@@ -386,9 +351,6 @@ def test_implement_with_dangerous_shows_in_script_content() -> None:
         assert result.exit_code == 0
         assert "✓ Created impl folder" in result.output
 
-        # Verify dangerous flag shown in script file
-        assert result.stdout
-        script_path = Path(result.stdout.strip())
-        assert script_path.exists()
-        script_content = script_path.read_text(encoding="utf-8")
+        # Verify dangerous flag shown in script content
+        script_content = result.stdout
         assert "--dangerously-skip-permissions" in script_content

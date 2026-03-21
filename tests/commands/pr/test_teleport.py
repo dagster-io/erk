@@ -1,7 +1,5 @@
 """Tests for erk pr teleport command."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
@@ -352,9 +350,8 @@ def test_teleport_new_slot_existing_worktree_script_mode() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github)
         result = runner.invoke(pr_group, ["teleport", "301", "--new-slot", "--script"], obj=ctx)
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert str(other_worktree_path) in script_content
         assert "gt submit --no-interactive" not in script_content
 
@@ -385,9 +382,8 @@ def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
         )
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" in script_content
 
 
@@ -415,9 +411,8 @@ def test_teleport_new_slot_script_mode_without_sync_omits_gt_submit() -> None:
         result = runner.invoke(pr_group, ["teleport", "201", "--new-slot", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" not in script_content
 
 
@@ -445,9 +440,8 @@ def test_teleport_in_place_script_mode_with_sync_includes_gt_submit() -> None:
         )
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" in script_content
 
 
