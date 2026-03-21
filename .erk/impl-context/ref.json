@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Implementation Plan: Node 1.6 \u2014 Decouple Pool Config from Core",
+  "objective_id": 9272,
+  "node_ids": [
+    "1.6"
+  ]
+}
