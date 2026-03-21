@@ -1,0 +1,1285 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-name&gt;/plan&lt;/command-name&gt;
+            &lt;command-message&gt;plan&lt;/command-message&gt;
+            &lt;command-args&gt;9324&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Enabled plan mode&lt;/local-command-stdout&gt;</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;command-message&gt;erk:objective-plan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-plan&lt;/command-name&gt;
+&lt;command-args&gt;9324&lt;/command-args&gt;</user>
+  <user># /erk:objective-plan
+
+Create an implementation plan for a specific node in an objective's dependency graph.
+
+## Usage
+
+```bash
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for objective reference
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `9324` for `--node &lt;node-id&gt;`. If `--node` is present along with an issue number:
+
+**Invoke the inner skill immediately** via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Resolve Objective Reference
+
+Strip `--node` from `9324` if present, then run:
+
+```bash
+erk exec resolve-objective-ref 9324
+```
+
+**Interpret the JSON result:**
+
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
+
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup &lt;objective-number&gt; --session-id "93e3b5ed-3e70-4b4f-9f66-53bf439977cc"
+```
+
+**Interpret the JSON result:**
+
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 3: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 4: Display Roadmap and Prompt User
+
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
+
+Then use AskUserQuestion to ask which node to plan:
+
+```
+Which node should I create a plan for?
+- Node 1A.1: &lt;description&gt; (Recommended) ← first pending node without plan in progress
+- Node 1A.2: &lt;description&gt;
+- Node 2B.1: &lt;description&gt; (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
+```
+
+**Filtering rules (based on node `status` field from phases):**
+
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
+
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
+
+If all nodes are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5: Invoke Inner Skill
+
+After the user selects a node, invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;selected-node-id&gt;
+```
+
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+---
+
+## Output Format
+
+- **Start:** "Loading objective #&lt;number&gt;..."
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node &lt;step-id&gt;: &lt;description&gt;"
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="12217" cache_read_input_tokens="15209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12217}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Loading objective #9324...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12217" cache_read_input_tokens="15209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12217}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ScA6MQL28eCPjdMQk4QAzx">
+    <param name="command">erk exec resolve-objective-ref 9324</param>
+    <param name="description">Resolve objective reference</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12217" cache_read_input_tokens="15209" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12217, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ScA6MQL28eCPjdMQk4QAzx">
+{"resolved": true, "objective_number": 9324, "source": "argument"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BUwXWq66aa4rMdF9rydh1F">
+    <param name="command">erk exec objective-plan-setup 9324 --session-id "93e3b5ed-3e70-4b4f-9f66-53bf439977cc"</param>
+    <param name="description">Fetch objective and set up context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="27426" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BUwXWq66aa4rMdF9rydh1F">
+{"success": true, "objective": {"number": 9324, "title": "Objective: Eliminate Exceptions as Control Flow from Gateway Methods", "state": "OPEN", "labels": ["erk-objective"]}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "node-eaee1c42", "description": "Define SubmitStackResult | SubmitStackError discriminated union types", "status": "pending", "pr": null, "depends_on": [], "comment": null}, {"id": "1.2", "slug": "node-6f7a762c", "description": "Update Graphite ABC, Real, and Fake to return union instead of raising", "status": "pending", "pr": null, "depends_on": ["1.1"], "comment": null}, {"id": "1.3", "slug": "node-2938340d", "description": "Migrate 2 call sites in submit_pipeline.py from try/except to isinstance()", "status": "pending", "pr": null, "depends_on": ["1.2"], "comment": null}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "node-052d76d4", "description": "Define discriminated union types for update_metadata, post_event, add_comment, close_managed_pr, add_label, update_managed_pr_content, update_managed_pr_title, update_plan_header", "status": "pending", "pr": null, "depends_on": ["1.3"], "comment": null}, {"id": "2.2", "slug": "node-fe2da4a2", "description": "Update ManagedPrBackend ABC, Real, and Fake implementations", "status": "pending", "pr": null, "depends_on": ["2.1"], "comment": null}, {"id": "2.3", "slug": "node-71fd69e2", "description": "Migrate ~12 call sites in exec scripts (impl_signal, track_learn_result, handle_no_changes, close_pr, close_prs, add_plan_labels, plan_update, update_plan_header, pr/shared, objective_helpers, resolve_objective_ref)", "status": "pending", "pr": null, "depends_on": ["2.2"], "comment": null}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "slug": "node-be14f993", "description": "Define discriminated union types for get_pr_diff, update_pr, get_pr_changed_files, add_review_thread_reply, resolve_review_thread, get_pr_review_threads, post_pr_review_comment, get_pr_commits, get_workflow_runs_by_node_ids", "status": "pending", "pr": null, "depends_on": ["2.3"], "comment": null}, {"id": "3.2", "slug": "node-4093be4d", "description": "Update LocalGitHub/PrService ABC, Real, and Fake implementations", "status": "pending", "pr": null, "depends_on": ["3.1"], "comment": null}, {"id": "3.3", "slug": "node-8ec063c2", "description": "Migrate ~10 call sites in exec scripts and services (ci_update_pr_body, discover_reviews, resolve_review_thread, get_pr_review_comments, post_pr_inline_comment, get_pr_commits, plan_list_service, objective_list_service)", "status": "pending", "pr": null, "depends_on": ["3.2"], "comment": null}]}, {"number": 4, "suffix": "", "name": "Phase 4", "nodes": [{"id": "4.1", "slug": "node-1d5639ce", "description": "Define discriminated union types for GitHubIssues.add_comment, GitHubIssues.list_issues, and RemoteGitHub.add_issue_comment", "status": "pending", "pr": null, "depends_on": ["3.3"], "comment": null}, {"id": "4.2", "slug": "node-11b7d794", "description": "Update ABCs, Real, and Fake implementations (note: RemoteGitHub uses HttpError, not RuntimeError)", "status": "pending", "pr": null, "depends_on": ["4.1"], "comment": null}, {"id": "4.3", "slug": "node-20d9969a", "description": "Migrate ~7 call sites (close_pr, close_prs, reply_to_discussion_comment, get_prs_for_objective, one_shot_remote_dispatch, consolidate_learn_plans_dispatch)", "status": "pending", "pr": null, "depends_on": ["4.2"], "comment": null}]}, {"number": 5, "suffix": "", "name": "Phase 5", "nodes": [{"id": "5.1", "slug": "node-3313cb5e", "description": "Define discriminated union types for get_ahead_behind (AheadBehind | AheadBehindUnavailable), fetch_branch and pull_branch (FetchResult | FetchError, already have PullRebaseResult), rebase_abort (AbortResult | AbortError)", "status": "pending", "pr": null, "depends_on": ["4.3"], "comment": null}, {"id": "5.2", "slug": "node-baa2d662", "description": "Update Git sub-gateway ABCs, Real, and Fake implementations", "status": "pending", "pr": null, "depends_on": ["5.1"], "comment": null}, {"id": "5.3", "slug": "node-e4e560e6", "description": "Migrate ~6 call sites (checkout_helpers, teleport_cmd, land_stack x3, plus BranchManager.delete_branch in wt/delete_cmd)", "status": "pending", "pr": null, "depends_on": ["5.2"], "comment": null}]}], "summary": {"total_nodes": 15, "pending": 15, "planning": 0, "done": 0, "in_progress": 0, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.1", "slug": "node-eaee1c42", "description": "Define SubmitStackResult | SubmitStackError discriminated union types", "phase": "Phase 1", "status": "pending"}, "all_complete": false}, "validation": {"passed": true, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "PR references use '#' prefix"}, {"passed": true, "description": "Roadmap table in sync with YAML"}]}, "marker_created": true, "warnings": []}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1927" cache_read_input_tokens="27633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Objective #9324: Eliminate Exceptions as Control Flow from Gateway Methods**
+
+### Roadmap
+
+| Phase | Node | Description | Status |
+|-------|------|-------------|--------|
+| Phase 1 | 1.1 | Define SubmitStackResult \| SubmitStackError discriminated union types | pending |
+| Phase 1 | 1.2 | Update Graphite ABC, Real, and Fake to return union instead of raising | pending |
+| Phase 1 | 1.3 | Migrate 2 call sites in submit_pipeline.py from try/except to isinstance() | pending |
+| Phase 2 | 2.1 | Define discriminated union types for update_metadata, post_event, add_comment, close_managed_pr, add_label, update_managed_pr_content, update_managed_pr_title, update_plan_header | pending |
+| Phase 2 | 2.2 | Update ManagedPrBackend ABC, Real, and Fake implementations | pending |
+| Phase 2 | 2.3 | Migrate ~12 call sites in exec scripts | pending |
+| Phase 3 | 3.1 | Define discriminated union types for get_pr_diff, update_pr, etc. | pending |
+| Phase 3 | 3.2 | Update LocalGitHub/PrService ABC, Real, and Fake implementations | pending |
+| Phase 3 | 3.3 | Migrate ~10 call sites in exec scripts and services | pending |
+| Phase 4 | 4.1 | Define discriminated union types for GitHubIssues and RemoteGitHub methods | pending |
+| Phase 4 | 4.2 | Update ABCs, Real, and Fake implementations | pending |
+| Phase 4 | 4.3 | Migrate ~7 call sites | pending |
+| Phase 5 | 5.1 | Define discriminated union types for git sub-gateway methods | pending |
+| Phase 5 | 5.2 | Update Git sub-gateway ABCs, Real, and Fake implementations | pending |
+| Phase 5 | 5.3 | Migrate ~6 call sites | pending |
+
+Progress: 0/15 nodes complete</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1927" cache_read_input_tokens="27633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01MTDr86t6MwjvChpkFP3i89">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1927" cache_read_input_tokens="27633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MTDr86t6MwjvChpkFP3i89">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01L4n3iSLhyg19fx4EbGmNvr">
+    <param name="questions">[{'question': 'Which node should I create a plan for?', 'header': 'Node', 'options': [{'la...[truncated 296 chars]...it_pipeline.py from try/except to isinstance() (depends on 1.2)'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2007" cache_read_input_tokens="29560" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2007, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L4n3iSLhyg19fx4EbGmNvr">
+User has answered your questions: "Which node should I create a plan for?"="node 1.1-1.3" user notes: node 1.1-1.3. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="31567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The user wants to plan all of Phase 1 (nodes 1.1–1.3) together. Let me explore the codebase to understand the current patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="31567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PzyY81gbzHB9DN2QNQja4c">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore Graphite gateway submit_stack</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 633 chars]...d if it exists.
+
+For each file found, report the full file path and relevant line numbers.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="31567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 271}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QZmymdRFzXg53LQXbn6TYi">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore existing discriminated union patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 771 chars]...tes? (isinstance checks?)
+
+Report full file paths and line numbers for all examples found.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="31567" output_tokens="996" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QZmymdRFzXg53LQXbn6TYi">
+Perfect! I now have comprehensive understanding of the discriminated union pattern in erk. Let me compile my findings:
+
+## Summary of Discriminated Union Result Types in Erk
+
+Based on my search of the codebase and documentation, here are the established patterns:
+
+### Documentation Foundation
+
+**File**: `/workspaces/erk/docs/learned/architecture/discriminated-union-error-handling.md`
+
+This is the canonical reference for the entire pattern. Key principles:
+- Use discriminated unions when callers **branch on error outcomes**
+- Use exceptions when callers just terminate identically
+- Type signatures are **self-documenting** for humans and AI agents (critical advantage over exceptions)
+
+---
+
+### Result Type Naming Conventions
+
+| Pattern | Example | When to Use |
+|---------|---------|------------|
+| `&lt;Operation&gt;Error` | `PushError`, `MergeError` | Operation failed |
+| `&lt;Operation&gt;Result` | `PushResult`, `MergeResult` | Operation succeeded |
+| `&lt;Resource&gt;NotFound` | `PRNotFound`, `IssueNotFound` | Lookup returned nothing |
+| `&lt;Resource&gt;Created` | `BranchCreated` | Resource created successfully |
+| `&lt;Resource&gt;Exists` | `BranchAlreadyExists` | Resource already exists (LBYL) |
+
+---
+
+### Concrete Examples Found
+
+... [328 lines omitted] ...
+
+    """Error: branch already exists. Implements NonIdealState."""
+    def error_type(self) -&gt; str:
+    log.warning(f"Branch {create_result.branch_name} already exists")
+class PushError:
+    """Error result from pushing to remote. Implements NonIdealState."""
+    def error_type(self) -&gt; str:
+        return "push-failed"
+class PullRebaseError:
+    """Error result from pull --rebase. Implements NonIdealState."""
+    def error_type(self) -&gt; str:
+        return "pull-rebase-failed"
+if isinstance(push_result, PushError):
+    raise UserFacingCliError(push_result.message)
+class MergeError:
+    """Error result from merging a PR. Implements NonIdealState."""
+    def error_type(self) -&gt; str:
+        return "merge-failed"
+    in T | GitHubAPIFailed union return types.
+#### Error Types (NonIdealState Protocol)
+    def error_type(self) -&gt; str: ...  # Machine-readable classification
+        """Raise NonIdealStateError with this state's details."""
+        raise NonIdealStateError(self)
+#### Special Case: Field-based Error Types
+    Use this mixin instead (e.g., GitHubAPIFailed).
+        raise NonIdealStateError(self)
+class GitHubAPIFailed(NonIdealStateMixin):
+    """GitHub API call failed with an error."""
+    def error_type(self) -&gt; str:
+        return "github-api-failed"
+class LandError:
+    """Error result from a pipeline step."""
+    error_type: str      # Machine-readable error classification
+    details: dict[str, str]  # Structured error context
+LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+def run_pipeline(ctx: ErkContext, state: State) -&gt; State | Error:
+    """Run all steps, short-circuit on first error."""
+        if isinstance(result, Error):
+if isinstance(result, ErrorType):
+    handle_error(result.message)
+# One-liner: raises if error, returns value if success
+if isinstance(result, Error):
+2. **Error types carry `message: str` + `error_type` property** - for consistent error handling
+3. **Additional fields for domain context** - e.g., `pr_number`, `branch`, `reason` for better error messages
+6. **Uniform `.ensure()` method** - Both success and error sides implement it for chainable unwrapping
+  </tool_result>
+  <tool_result tool="toolu_01PzyY81gbzHB9DN2QNQja4c">
+Perfect! Now I have all the information I need. Let me compile the comprehensive report:
+
+## Summary: Graphite Gateway's `submit_stack` Method and Exception Control Flow
+
+Based on my comprehensive exploration of the codebase, here's the complete picture of how `submit_stack` works and how exceptions are used as control flow:
+
+### 1. **Graphite ABC Definition**
+**File:** `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` (lines 136-161)
+
+The abstract method signature declares `submit_stack` with this signature:
+```python
+@abstractmethod
+def submit_stack(
+    self,
+    repo_root: Path,
+    *,
+    publish: bool,
+    restack: bool,
+    quiet: bool,
+    force: bool,
+) -&gt; None:
+```
+
+**Key design detail:** Returns `None`, raises `RuntimeError` on failure. This follows the "exceptions are better" pattern from the discriminated union documentation because all callers have the same behavior: they catch `RuntimeError`, inspect the message string, map it to a specific error type, and return a `SubmitError`.
+
+---
+
+### 2. **Real Implementation**
+**File:** `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py` (lines 224-276)
+
+
+... [239 lines omitted] ...
+
+        raise RuntimeError(
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
+**Exception pattern:** Converts subprocess exceptions to `RuntimeError` with descriptive messages.
+Simple test double with configurable failure:
+**Purpose:** Tracks calls for test assertions and can inject any exception for failure testing.
+Raises a custom exception when Graphite is disabled:
+    """Raise error - submit_stack is a mutating operation."""
+    raise GraphiteDisabledError(self.reason)
+### 6. **Exception as Control Flow: Call Sites**
+except RuntimeError as e:
+    error_str = str(e)
+    if "restack" in error_str.lower():
+        return SubmitError(
+            error_type="graphite_restack_required",
+    return SubmitError(
+        error_type="graphite_submit_failed",
+        message=f"Graphite submit failed: {e}",
+**Pattern:** Exception message string parsing using `if "restack" in error_str.lower()` to distinguish error types.
+except RuntimeError as e:
+    error_msg = str(e).lower()
+    if "nothing to submit" in error_msg or "no changes" in error_msg:
+    return SubmitError(
+        error_type="graphite_enhance_failed",
+        message=f"Graphite enhancement failed: {e}",
+**Pattern:** Catches "benign" errors (`"nothing to submit"`, `"no changes"`) and treats them as success cases.
+except RuntimeError as e:
+    return SubmitBranchError(message=str(e))
+**Pattern:** Converts `RuntimeError` to `SubmitBranchError` (discriminated union).
+### 7. **Why Exceptions Are Used As Control Flow Here**
+Per the documentation (`discriminated-union-error-handling.md`), exceptions are better for `submit_stack` because:
+1. **All callers terminate on error** - No caller continues with branching logic
+2. **No field inspection beyond `message`** - Callers just stringify the exception
+3. **Simple message-based dispatch** - Some callers inspect the message string (`"restack"`, `"nothing to submit"`) but still exit with an error
+&gt; "Worktree add/remove failures are _expected_ (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating"
+The pattern demonstrates that erk deliberately uses exceptions as control flow for operations where all callers have the same error handling strategy (catch, stringify, return error), rather than designing a complex discriminated union with multiple error variants.
+  </tool_result>
+  <usage input_tokens="3645" cache_creation_input_tokens="3837" cache_read_input_tokens="31838" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to verify the details before creating the plan.</assistant>
+  <usage input_tokens="3645" cache_creation_input_tokens="3837" cache_read_input_tokens="31838" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RyzfoGB6Vq34rYpe7XYvua">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py</param>
+    <param name="offset">130</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3645" cache_creation_input_tokens="3837" cache_read_input_tokens="31838" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RyzfoGB6Vq34rYpe7XYvua">
+   130→        Raises:
+   131→            RuntimeError: If gt squash fails
+   132→        """
+   133→        ...
+   134→
+   135→    @abstractmethod
+   136→    def submit_stack(
+   137→        self,
+   138→        repo_root: Path,
+   139→        *,
+   140→        publish: bool,
+   141→        restack: bool,
+   142→        quiet: bool,
+   143→        force: bool,
+   144→    ) -&gt; None:
+   145→        """Submit the current stack to create or update PRs.
+   146→
+   147→        Uses `gt submit` to push branches and create/update GitHub PRs.
+   148→        This differs from submit_branch() which only pushes a single branch
+   149→        without PR creation.
+   150→
+   151→        Args:
+   152→            repo_root: Repository root directory
+   153→            publish: If True, mark PRs as ready for review (not draft)
+   154→            restack: If True, restack before submitting
+   155→            quiet: If True, suppress output
+   156→            force: If True, force push (useful after squashing commits)
+   157→
+   158→        Raises:
+   159→            RuntimeError: If gt submit fails or times out
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KHK4JRp2GhKZRZUVtfx44p">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">315</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="3645" cache_creation_input_tokens="3837" cache_read_input_tokens="31838" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KHK4JRp2GhKZRZUVtfx44p">
+   315→            )
+   316→        if is_plan_impl and not state.force and divergence.behind &gt; 0:
+   317→            if not state.quiet:
+   318→                click.echo(click.style("   Auto-forcing: plan implementation branch", dim=True))
+   319→
+   320→    if not state.quiet:
+   321→        click.echo(click.style("   Running gt submit...", dim=True))
+   322→    sys.stdout.flush()
+   323→    try:
+   324→        ctx.graphite.submit_stack(
+   325→            state.repo_root,
+   326→            publish=True,
+   327→            restack=False,
+   328→            quiet=state.quiet,
+   329→            force=effective_force,
+   330→        )
+   331→    except RuntimeError as e:
+   332→        error_str = str(e)
+   333→        if "restack" in error_str.lower():
+   334→            return SubmitError(
+   335→                phase="push_and_create_pr",
+   336→                error_type="graphite_restack_required",
+   337→                message=(
+   338→                    "Your Graphite stack has conflicts that need manual resolution.\n\n"
+   339→                    "Run these commands:\n"
+   340→                    "  gt restack        # Resolve conflicts interactively\n"
+   341→                    "  erk pr submit     # Re-submit after resolving"
+   342→                ),
+   343→                details={},
+   344→            )
+
+... [15 lines omitted] ...
+
+   345→        return SubmitError(
+   347→            error_type="graphite_submit_failed",
+   348→            message=f"Graphite submit failed: {e}",
+  </tool_result>
+  <tool_use name="Read" id="toolu_015fYrRYenKZKwFKt7wsB3yd">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">748</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="3645" cache_creation_input_tokens="3837" cache_read_input_tokens="31838" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3837}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015fYrRYenKZKwFKt7wsB3yd">
+   748→            )
+   749→        click.echo("")
+   750→        return state
+   751→
+   752→    repo_root = state.repo_root
+   753→
+   754→    # Run gt submit
+   755→    sys.stdout.flush()
+   756→    try:
+   757→        ctx.graphite.submit_stack(
+   758→            repo_root,
+   759→            publish=True,
+   760→            restack=False,
+   761→            quiet=state.quiet,
+   762→            force=state.force,
+   763→        )
+   764→    except RuntimeError as e:
+   765→        error_msg = str(e).lower()
+   766→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   767→            click.echo(click.style("   PR already up to date with Graphite", fg="green"))
+   768→            click.echo("")
+   769→            return state
+   770→        return SubmitError(
+   771→            phase="enhance_with_graphite",
+   772→            error_type="graphite_enhance_failed",
+   773→            message=f"Graphite enhancement failed: {e}",
+   774→            details={},
+   775→        )
+   776→
+   777→    # Get Graphite URL
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NPKTZ3zEfQPQHmvSpJgNFD">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="offset">178</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="3645" cache_creation_input_tokens="3837" cache_read_input_tokens="31838" output_tokens="810" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3837, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NPKTZ3zEfQPQHmvSpJgNFD">
+   178→            repo_root: Repository root directory
+   179→            branch: Branch name to submit (unused - Graphite submits current stack)
+   180→
+   181→        Returns:
+   182→            SubmitBranchResult on success, SubmitBranchError on failure.
+   183→        """
+   184→        # submit_stack is a subprocess call (gt submit) — no LBYL alternative exists
+   185→        try:
+   186→            self.graphite.submit_stack(
+   187→                repo_root, publish=False, restack=False, quiet=True, force=True
+   188→            )
+   189→        except RuntimeError as e:
+   190→            return SubmitBranchError(message=str(e))
+   191→        return SubmitBranchResult()
+   192→
+   193→    def commit(self, repo_root: Path, message: str) -&gt; None:
+   194→        """Create a commit using git.
+   195→
+   196→        Commits are not Graphite-specific, so we delegate to git.
+   197→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6483" cache_read_input_tokens="35675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6483}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check if a types module already exists in the graphite gateway package.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6483" cache_read_input_tokens="35675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6483}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01K6G72b1HEF5GdBd1uhGStn">
+    <param name="pattern">packages/erk-shared/src/erk_shared/gateway/graphite/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6483" cache_read_input_tokens="35675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6483}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K6G72b1HEF5GdBd1uhGStn">
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/types.py
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/__init__.py
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RSAw5XM3ntMbFu1F93iExV">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py</param>
+    <param name="offset">220</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6483" cache_read_input_tokens="35675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6483}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RSAw5XM3ntMbFu1F93iExV">
+   220→            stdout=DEVNULL if quiet else sys.stdout,
+   221→            stderr=subprocess.PIPE,
+   222→        )
+   223→
+   224→    def submit_stack(
+   225→        self,
+   226→        repo_root: Path,
+   227→        *,
+   228→        publish: bool,
+   229→        restack: bool,
+   230→        quiet: bool,
+   231→        force: bool,
+   232→    ) -&gt; None:
+   233→        """Submit the current stack to create or update PRs."""
+   234→        cmd = ["gt", "submit", "--no-edit", "--no-interactive"]
+   235→
+   236→        if publish:
+   237→            cmd.append("--publish")
+   238→        if restack:
+   239→            cmd.append("--restack")
+   240→        if force:
+   241→            cmd.append("--force")
+   242→
+   243→        # Use 90-second timeout to leave headroom before Bash tool's 120s timeout.
+   244→        # Capture stdout so Python controls when output is written to the pipe,
+   245→        # preventing loss of all output when the process is killed externally.
+   246→        try:
+   247→            result = subprocess.run(
+   248→                cmd,
+   249→                cwd=repo_root,
+
+... [30 lines omitted] ...
+
+   264→            raise RuntimeError(
+   267→        except subprocess.CalledProcessError as e:
+   270→            raise RuntimeError(
+   271→                f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Lgojvmh4npuwgg5Zr6pKW8">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/non_ideal_state.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6483" cache_read_input_tokens="35675" output_tokens="327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6483, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lgojvmh4npuwgg5Zr6pKW8">
+     1→"""Non-ideal state types for operations that can fail gracefully.
+     2→
+     3→This module provides:
+     4→- NonIdealState: Marker interface for error states (Protocol)
+     5→- NonIdealStateError: Exception raised by NonIdealState.ensure()
+     6→- Specific error classes: BranchDetectionFailed, NoPRForBranch, etc.
+     7→
+     8→The NonIdealState pattern allows functions to return T | NonIdealState,
+     9→letting callers decide how to handle errors (exit, log, retry, etc.)
+    10→rather than forcing early exit.
+    11→
+    12→Usage:
+    13→    from erk_shared.non_ideal_state import NonIdealState, BranchDetectionFailed
+    14→
+    15→    # Check if result is a non-ideal state
+    16→    result = some_operation()
+    17→    if isinstance(result, NonIdealState):
+    18→        print(f"Error: {result.message}")
+    19→
+    20→    # Or raise immediately
+    21→    result = some_operation()
+    22→    if isinstance(result, NonIdealState):
+    23→        result.ensure()
+    24→"""
+    25→
+    26→from __future__ import annotations
+    27→
+    28→from dataclasses import dataclass
+    29→from typing import NoReturn, Protocol, Self, runtime_checkable
+    30→
+
+... [20 lines omitted] ...
+
+    32→class NonIdealStateError(Exception):
+    36→        self.error_type = state.error_type
+    49→        raise NonIdealStateError(self)  # type: ignore[arg-type]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SP1J3Yap3YWRDHkLTFfdXn">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1982" cache_read_input_tokens="42158" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1982}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SP1J3Yap3YWRDHkLTFfdXn">
+     1→"""Branch metadata dataclass for Graphite integration."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import secrets
+     6→from dataclasses import dataclass
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class BranchMetadata:
+    11→    """Metadata for a single gt-tracked branch.
+    12→
+    13→    This is used by the gt commands to provide machine-readable branch information.
+    14→
+    15→    Attributes:
+    16→        name: Branch name
+    17→        parent: Parent branch name, or None for trunk
+    18→        children: List of child branch names
+    19→        is_trunk: True if this is the trunk branch (main/master)
+    20→        commit_sha: Actual git commit SHA from git branch head
+    21→        tracked_revision: Graphite's cached branchRevision from .graphite_cache_persist
+    22→            (may differ from commit_sha after rebase/restack)
+    23→    """
+    24→
+    25→    name: str
+    26→    parent: str | None
+    27→    children: list[str]
+    28→    is_trunk: bool
+    29→    commit_sha: str | None
+    30→    tracked_revision: str | None = None
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N4Xu7FVtp1RTQXPL1hDf8j">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/non_ideal_state.py</param>
+    <param name="offset">50</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1982" cache_read_input_tokens="42158" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1982, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N4Xu7FVtp1RTQXPL1hDf8j">
+    50→
+    51→
+    52→class EnsurableResult:
+    53→    """Mixin that provides ensure() for success types in T | NonIdealState unions.
+    54→
+    55→    Enables one-liner unwrapping: result = operation_returning_union().ensure()
+    56→    - If result is an EnsurableResult (success): returns self (the value)
+    57→    - If result is a NonIdealState (error): raises NonIdealStateError
+    58→
+    59→    Usage:
+    60→        @dataclass(frozen=True)
+    61→        class MyResult(EnsurableResult):
+    62→            value: str
+    63→    """
+    64→
+    65→    def ensure(self) -&gt; Self:
+    66→        return self
+    67→
+    68→
+    69→@runtime_checkable
+    70→class NonIdealState(Protocol):
+    71→    """Marker interface for non-ideal states.
+    72→
+    73→    All NonIdealState implementations must provide error_type and message
+    74→    properties for consistent error handling.
+    75→    """
+    76→
+    77→    @property
+    78→    def error_type(self) -&gt; str: ...
+    79→
+
+... [20 lines omitted] ...
+
+    84→        """Raise NonIdealStateError with this state's details."""
+    85→        raise NonIdealStateError(self)
+    89→class BranchDetectionFailed(NonIdealState):
+    93→    def error_type(self) -&gt; str:
+    94→        return "branch-detection-failed"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1898" cache_read_input_tokens="44140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the fake and the existing tests for submit_stack.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1898" cache_read_input_tokens="44140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Vexpk7MXH6k7Kmb6HtYVTL">
+    <param name="file_path">/workspaces/erk/tests/fakes/gateway/graphite.py</param>
+    <param name="offset">195</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1898" cache_read_input_tokens="44140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vexpk7MXH6k7Kmb6HtYVTL">
+   195→        This property is for test assertions only.
+   196→        """
+   197→        return self._check_auth_status_calls
+   198→
+   199→    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+   200→        """Track squash_branch calls and optionally raise."""
+   201→        self._squash_branch_calls.append((repo_root, quiet))
+   202→        if self._squash_branch_raises is not None:
+   203→            raise self._squash_branch_raises
+   204→
+   205→    def submit_stack(
+   206→        self,
+   207→        repo_root: Path,
+   208→        *,
+   209→        publish: bool,
+   210→        restack: bool,
+   211→        quiet: bool,
+   212→        force: bool,
+   213→    ) -&gt; None:
+   214→        """Track submit_stack calls and optionally raise."""
+   215→        self._submit_stack_calls.append((repo_root, publish, restack, quiet, force))
+   216→        if self._submit_stack_raises is not None:
+   217→            raise self._submit_stack_raises
+   218→
+   219→    @property
+   220→    def squash_branch_calls(self) -&gt; list[tuple[Path, bool]]:
+   221→        """Get the list of squash_branch() calls.
+   222→
+   223→        Returns list of (repo_root, quiet) tuples.
+   224→        """
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017PSFQ9tsHkkhCfx3E1vQB3">
+    <param name="pattern">submit_stack</param>
+    <param name="path">/workspaces/erk/tests</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1898" cache_read_input_tokens="44140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017PSFQ9tsHkkhCfx3E1vQB3">
+Found 9 files limit: 20, offset: 0
+tests/commands/pr/test_rewrite.py
+tests/commands/pr/test_submit.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+tests/fakes/gateway/graphite.py
+tests/unit/gateways/graphite/test_graphite_disabled.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/gateways/gt/test_quick_submit.py
+tests/real/test_real_graphite.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R7RANsHomGJMqreRv1Le7a">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py</param>
+    <param name="offset">80</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1898" cache_read_input_tokens="44140" output_tokens="336" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1898, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R7RANsHomGJMqreRv1Le7a">
+    80→    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+    81→        """Raise error - squash_branch is a mutating operation."""
+    82→        raise GraphiteDisabledError(self.reason)
+    83→
+    84→    def submit_stack(
+    85→        self,
+    86→        repo_root: Path,
+    87→        *,
+    88→        publish: bool,
+    89→        restack: bool,
+    90→        quiet: bool,
+    91→        force: bool,
+    92→    ) -&gt; None:
+    93→        """Raise error - submit_stack is a mutating operation."""
+    94→        raise GraphiteDisabledError(self.reason)
+    95→
+    96→    def restack(self, repo_root: Path) -&gt; tuple[bool, str | None]:
+    97→        """Raise error - restack is a mutating operation."""
+    98→        raise GraphiteDisabledError(self.reason)
+    99→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4079" cache_read_input_tokens="46038" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4079}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the fake's `_submit_stack_raises` is initialized and how tests configure it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4079" cache_read_input_tokens="46038" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4079}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014v7MEtBEpCR9hjJRv69uwZ">
+    <param name="pattern">submit_stack_raises</param>
+    <param name="path">/workspaces/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4079" cache_read_input_tokens="46038" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4079}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014v7MEtBEpCR9hjJRv69uwZ">
+tests/fakes/gateway/graphite.py:35:        submit_stack_raises: Exception | None = None,
+tests/fakes/gateway/graphite.py:52:            submit_stack_raises: Exception to raise when submit_stack() is called
+tests/fakes/gateway/graphite.py:65:        self._submit_stack_raises = submit_stack_raises
+tests/fakes/gateway/graphite.py:216:        if self._submit_stack_raises is not None:
+tests/fakes/gateway/graphite.py:217:            raise self._submit_stack_raises
+tests/unit/gateways/graphite/test_graphite_disabled.py:136:def test_submit_stack_raises_error(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:94:        submit_stack_raises=RuntimeError("gt submit failed"),
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:118:        submit_stack_raises=RuntimeError(
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:151:        submit_stack_raises=RuntimeError("network timeout"),
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:214:        submit_stack_raises=RuntimeError("nothing to submit"),
+tests/unit/gateways/gt/fake_ops.py:531:            submit_stack_raises=error,
+tests/unit/gateways/gt/fake_ops.py:640:            submit_stack_raises=error,
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PfAeVCiruaqtLruNjMLd8J">
+    <param name="file_path">/workspaces/erk/tests/fakes/gateway/graphite.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4079" cache_read_input_tokens="46038" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4079}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PfAeVCiruaqtLruNjMLd8J">
+     1→"""Fake Graphite operations for testing.
+     2→
+     3→FakeGraphite is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→if TYPE_CHECKING:
+    13→    from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
+    14→
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    17→from erk_shared.gateway.graphite.abc import Graphite
+    18→from erk_shared.gateway.graphite.types import BranchMetadata
+    19→
+    20→
+    21→class FakeGraphite(Graphite):
+    22→    """In-memory fake implementation of Graphite operations.
+    23→
+    24→    This class has NO public setup methods. All state is provided via constructor
+    25→    using keyword arguments with sensible defaults (empty dicts).
+    26→    """
+    27→
+    28→    def __init__(
+    29→        self,
+    30→        *,
+
+... [20 lines omitted] ...
+
+    31→        submit_branch_raises: Exception | None = None,
+    32→        track_branch_raises: Exception | None = None,
+    33→        retrack_branch_raises: Exception | None = None,
+    34→        squash_branch_raises: Exception | None = None,
+    35→        submit_stack_raises: Exception | None = None,
+    36→        delete_branch_raises: Exception | None = None,
+    48→            submit_branch_raises: Exception to raise when submit_branch() is called
+    49→            track_branch_raises: Exception to raise when track_branch() is called
+    50→            retrack_branch_raises: Exception to raise when retrack_branch() is called
+  </tool_result>
+  <tool_use name="Read" id="toolu_016qYRkpJSfhppYM4DGJpTCx">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py</param>
+    <param name="offset">55</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4079" cache_read_input_tokens="46038" output_tokens="350" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4079, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016qYRkpJSfhppYM4DGJpTCx">
+    55→        return self._wrapped.check_auth_status()
+    56→
+    57→    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+    58→        """No-op for gt squash in dry-run mode."""
+    59→        pass
+    60→
+    61→    def submit_stack(
+    62→        self,
+    63→        repo_root: Path,
+    64→        *,
+    65→        publish: bool,
+    66→        restack: bool,
+    67→        quiet: bool,
+    68→        force: bool,
+    69→    ) -&gt; None:
+    70→        """No-op for gt submit in dry-run mode."""
+    71→        pass
+    72→
+    73→    def restack(self, repo_root: Path) -&gt; tuple[bool, str | None]:
+    74→        """No-op for gt restack in dry-run mode."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1863" cache_read_input_tokens="50117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1863}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me create the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1863" cache_read_input_tokens="50117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1863}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01RV8Ppiow1swvKW8wQgBfro">
+    <param name="file_path">/home/vscode/.claude/plans/cheeky-floating-hamming.md</param>
+    <param name="content"># Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)
+
+## C...[truncated 7003 chars]...5. Run `uv run ty check` — type checker passes
+6. Run `uv run ruff check` — linter passes
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1863" cache_read_input_tokens="50117" output_tokens="5490" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1863, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RV8Ppiow1swvKW8wQgBfro">
+File created successfully at: /home/vscode/.claude/plans/cheeky-floating-hamming.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01DUp8RsW8uwtrXPPP9Lju4p">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5455" cache_read_input_tokens="51980" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DUp8RsW8uwtrXPPP9Lju4p">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Q3dbCsehGAjsxhLk7doVo3">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run type checker with ty'}, {'tool': 'Bash', 'prompt': 'run linter with ruff'}]</param>
+    <param name="plan"># Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)
+
+## C...[truncated 7003 chars]...5. Run `uv run ty check` — type checker passes
+6. Run `uv run ruff check` — linter passes
+</param>
+    <param name="planFilePath">/home/vscode/.claude/plans/cheeky-floating-hamming.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="57435" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q3dbCsehGAjsxhLk7doVo3">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/cheeky-floating-hamming.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Save plan as a draft PR on a new branch. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan as a PR first.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 93e3b5ed-3e70-4b4f-9f66-53bf439977cc \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)
+
+## Context
+
+Objective #9324 aims to eliminate exceptions as control flow from gateway methods. Phase 1 targets `submit_stack` in the Graphite gateway — the method currently raises `RuntimeError` on failure, and callers parse error message strings to distinguish failure modes (restack required, nothing to submit, generic failure). This is fragile and not self-documenting.
+
+## Node 1.1: Define Discriminated Union Types
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/graphite/types.py`
+
+Define 4 types to eliminate all string parsing at call sites:
+- `SubmitStackResult(EnsurableResult)` — success
+- `SubmitStackNothingToSubmit` — benign no-op
+- `SubmitStackRestackRequired(NonIdealStateMixin)` — needs manual restack
+- `SubmitStackError(NonIdealStateMixin)` — generic failure
+
+**Why 4 types instead of 2:** Call sites branch on 3 distinct outcomes beyond success via string parsing. Separate types make these branches type-safe.
+
+## Node 1.2: Update ABC, Real, Fake, DryRun, Disabled
+
+- **ABC**: Change return type from `None` to `SubmitStackOutcome`
+- **Real**: Convert subprocess exceptions to return values (timeout, restack, nothing-to-submit, generic)
+- **Fake**: Replace `submit_stack_raises: Exception` with `submit_stack_result: SubmitStackOutcome`
+- **DryRun**: Return `SubmitStackResult()`
+- **Disabled**: Return `SubmitStackError(...)` instead of raising
+
+## Node 1.3: Migrate Call Sites
+
+- **push_and_create_pr** (submit_pipeline.py:323): `isinstance` checks for `RestackRequired` vs `Error`
+- **enhance_with_graphite** (submit_pipeline.py:756): `isinstance` check for `NothingToSubmit` (treat as success)
+- **branch_manager/graphite.py:184**: Convert try/except to isinstance
+
+## 12 files to modify across types, gateway implementations, call sites, and tests
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="58173" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 763}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01NpzmcDorqeatBn6pUSuDX6">
+    <param name="questions">[{'question': 'Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, P...[truncated 413 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="58173" output_tokens="777" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 763, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NpzmcDorqeatBn6pUSuDX6">
+User has answered your questions: "Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_014Q8RoWtPeYJPFedPCqRKFZ">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2177" cache_read_input_tokens="58936" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014Q8RoWtPeYJPFedPCqRKFZ">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="93e3b5ed-3e70-4b4f-9f66-53bf439977cc" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="93e3b5ed-3e70-4b4f-9f66-53bf439977cc" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "93e3b5ed-3e70-4b4f-9f66-53bf439977cc" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "93e3b5ed-3e70-4b4f-9f66-53bf439977cc" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "93e3b5ed-3e70-4b4f-9f66-53bf439977cc" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "93e3b5ed-3e70-4b4f-9f66-53bf439977cc" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `submit-stack-discriminated-union`
+
+**Plan summary:** Replaces RuntimeError exceptions in the Graphite submit_stack gateway method with a 4-variant discriminated union (SubmitStackResult, SubmitStackNothingToSubmit, SubmitStackRestackRequired, SubmitStackError), eliminating fragile string parsing at all 3 call sites. This is Phase 1 of objective #9324 to eliminate exceptions as control flow from gateway methods.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="61113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2290}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KMBRLnfrSKBBTivxyXKPMs">
+    <param name="command">erk exec plan-save --format json --session-id="93e3b5ed-3e70-4b4f-9f66-53bf439977cc" --bra...[truncated 306 chars]...s Phase 1 of objective 9324 to eliminate exceptions as control flow from gateway methods."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2290" cache_read_input_tokens="61113" output_tokens="354" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KMBRLnfrSKBBTivxyXKPMs">
+Linked to objective #9324 from session context
+{"success": true, "pr_number": 9333, "pr_url": "https://github.com/dagster-io/erk/pull/9333", "title": "[erk-pr] Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)", "branch_name": "plnd/O9324-submit-stack-discrim-03-21-1132", "plan_backend": "planned_pr", "objective_issue": 9324, "archived_to": "/workspaces/erk/.erk/scratch/sessions/93e3b5ed-3e70-4b4f-9f66-53bf439977cc/plan_snapshots/000001-120cbfe0"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #9333. Now verifying the objective link.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="63403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
