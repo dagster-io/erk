@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `source <(erk ... --script)` outputs path instead of content"
+}
