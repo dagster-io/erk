@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix multi-node landing: store node_ids in plan-header metadata"
+}
