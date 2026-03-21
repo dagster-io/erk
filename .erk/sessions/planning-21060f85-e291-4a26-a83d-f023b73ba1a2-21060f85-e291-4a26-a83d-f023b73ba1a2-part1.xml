@@ -1,0 +1,1057 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>this screen show display a state when the pr in question is associated with a run. "n" should also navigate to it</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15985" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15985}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the TUI code for the objective nodes screen and understand how PR run data is fetched and displayed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15985" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15985}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011XuhsSySzUDrjTZgb3VJxE">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore objective nodes TUI</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 667 chars]...r keybindings especially "n" 
+
+Be thorough - check multiple files and trace the data flow.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15985" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15985}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01YbGo51xGfBHMwvgbFSTcho">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore PR run data model</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 659 chars]...c/erk/gateway/ for GitHub API interactions
+- Look for any "run" or "workflow" related code</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15985" cache_read_input_tokens="9015" output_tokens="789" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15985, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011XuhsSySzUDrjTZgb3VJxE">
+Perfect! Now I have all the information. Let me create a comprehensive summary document:
+
+## Summary: TUI Objective Nodes Screen - Complete Analysis
+
+I've thoroughly explored the TUI objective nodes screen and traced the complete data flow. Here are your answers:
+
+### 1. The TUI Screen Widget Location
+
+**File:** `/Users/schrockn/code/erk/src/erk/tui/screens/objective_nodes_screen.py`
+
+This is a `ModalScreen` that displays objective node breakdown. Key component:
+- Uses a `DataTable` widget with 11 columns: `id`, `sts`, `description`, `pr`, `stage`, `sts`, `branch`, `run-id`, `run`, `chks`, `author`
+- Displays phases as separators (gray rows) with nodes grouped underneath
+- Shows PR data for each node when available
+
+### 2. PR Data Fetching for Objective Nodes
+
+**Data Flow (lines 582-621):**
+
+The objective nodes screen calls `self._provider.fetch_prs_by_ids(pr_numbers)` which:
+
+1. **Provider:** `RealPrDataProvider.fetch_prs_by_ids()` at `/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py:370-406`
+   - Accepts a set of PR IDs from the objective roadmap
+   - Fetches issues and PR linkages via `self._ctx.github.get_issues_by_numbers_with_pr_linkages()`
+   - Converts to Plan objects
+   - Calls `_build_row_data()` for each plan
+
+2. **PR Row Data:** All PR fields (run-id, run, chks) come from `PrRowData` frozen dataclass at `/Users/schrockn/code/erk/src/erk/tui/data/types.py:13-149`
+
+Key fields populated in `_build_row_data()`:
+
+... [92 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01YbGo51xGfBHMwvgbFSTcho">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary document:
+
+## Summary: GitHub Actions Run Data Association in Erk
+
+I've thoroughly explored the erk codebase and can now provide you with a comprehensive understanding of how GitHub Actions run data is associated with PRs. Here are my findings:
+
+### 1. **Data Models for Run Data**
+
+#### **WorkflowRun Class** (`packages/erk-shared/src/erk_shared/gateway/github/types.py`)
+- **Location**: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py` (lines 293-425)
+- **Type**: Immutable class (using `__slots__` for performance)
+- **Key Properties**:
+  - `run_id: str` - The GitHub Actions workflow run ID
+  - `node_id: str | None` - GraphQL node ID for batch queries
+  - `status: WorkflowRunStatus` - One of: "completed", "in_progress", "queued", "unknown"
+  - `conclusion: WorkflowRunConclusion | None` - One of: "success", "failure", "cancelled", "skipped", or None if in progress
+  - `branch: str` - The branch the run executed on (NOT available from GraphQL nodes() queries)
+  - `head_sha: str` - The commit SHA
+  - `display_title: str | None` - The workflow run display title (NOT available from GraphQL nodes() queries)
+  - `created_at: datetime | None` - When the run was created
+  - `workflow_path: str | None` - Workflow file path (e.g., `.github/workflows/plan-implement.yml`)
+
+#### **PrListData Dataclass** (`packages/erk-shared/src/erk_shared/core/pr_list_service.py`)
+- **Location**: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/pr_list_service.py` (lines 25-45)
+- **Key Attributes**:
+  - `workflow_runs: dict[int, WorkflowRun | None]` - **Maps PR number → most relevant WorkflowRun**
+  - `plans: list[Plan]` - The plan/issue objects
+  - `pr_linkages: dict[int, list[PullRequestInfo]]` - Maps plan number to its linked PRs
+  - Performance metrics: `api_ms`, `plan_parsing_ms`, `workflow_runs_ms`
+
+
+... [154 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5175" cache_read_input_tokens="25000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to understand the current implementation gaps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5175" cache_read_input_tokens="25000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015hf7ffravvAYuHZP4pfLRa">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/screens/objective_nodes_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5175" cache_read_input_tokens="25000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SgDWYe76SyrcCzNMjRyDZ7">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">350</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5175" cache_read_input_tokens="25000" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SgDWYe76SyrcCzNMjRyDZ7">
+   350→
+   351→            commits = self._ctx.git.branch.get_branch_commits_with_authors(
+   352→                self._location.root,
+   353→                row.worktree_branch,
+   354→                trunk,
+   355→                limit=1,
+   356→            )
+   357→
+   358→            if commits:
+   359→                timestamp_str = commits[0]["timestamp"]
+   360→                commit_at = datetime.fromisoformat(timestamp_str)
+   361→                result[row.pr_number] = BranchActivity(
+   362→                    last_commit_at=commit_at,
+   363→                    last_commit_author=commits[0]["author"],
+   364→                )
+   365→            else:
+   366→                result[row.pr_number] = BranchActivity.empty()
+   367→
+   368→        return result
+   369→
+   370→    def fetch_prs_by_ids(self, pr_ids: set[int]) -&gt; list[PrRowData]:
+   371→        """Fetch specific plans by their GitHub numbers.
+   372→
+   373→        Args:
+   374→            pr_ids: Set of plan numbers to fetch (issue or PR numbers)
+   375→
+   376→        Returns:
+   377→            List of PrRowData objects sorted by pr_number
+   378→        """
+   379→        if not pr_ids:
+
+... [70 lines omitted] ...
+
+   449→        except Exception:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BjDL8ABeQZGwuj8NTfnDiR">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="offset">270</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5175" cache_read_input_tokens="25000" output_tokens="526" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BjDL8ABeQZGwuj8NTfnDiR">
+   270→                if self._status_bar is not None:
+   271→                    self._status_bar.set_message("No PR linked to this plan")
+   272→
+   273→    def action_open_run(self: ErkDashApp) -&gt; None:
+   274→        """Open selected workflow run in browser."""
+   275→        # Runs tab: open the run URL directly
+   276→        run_row = self._get_selected_run_row()
+   277→        if run_row is not None:
+   278→            if run_row.run_url is not None:
+   279→                self._service.browser.launch(run_row.run_url)
+   280→                if self._status_bar is not None:
+   281→                    self._status_bar.set_message(f"Opened run {run_row.run_id}")
+   282→            return
+   283→
+   284→        row = self._get_selected_row()
+   285→        if row is None:
+   286→            return
+   287→
+   288→        if row.run_url is not None:
+   289→            self._service.browser.launch(row.run_url)
+   290→            if self._status_bar is not None:
+   291→                run_id = row.run_url.rsplit("/", 1)[-1]
+   292→                self._status_bar.set_message(f"Opened run {run_id}")
+   293→        else:
+   294→            if self._status_bar is not None:
+   295→                self._status_bar.set_message("No workflow run linked to this plan")
+   296→
+   297→    def action_show_implement(self: ErkDashApp) -&gt; None:
+   298→        """Show implement command in status bar."""
+   299→        row = self._get_selected_row()
+  </tool_result>
+  <tool_result tool="toolu_015hf7ffravvAYuHZP4pfLRa">
+     1→"""Modal screen displaying objective node breakdown with PR status."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from rich.text import Text
+     8→from textual import work
+     9→from textual.app import ComposeResult
+    10→from textual.binding import Binding
+    11→from textual.containers import Container, Vertical
+    12→from textual.screen import ModalScreen
+    13→from textual.widgets import DataTable, Label
+    14→
+    15→from erk.core.display_utils import strip_rich_markup
+    16→from erk.tui.commands.provider import NodeCommandProvider
+    17→from erk.tui.commands.registry import get_copy_text
+    18→from erk.tui.commands.types import CommandContext
+    19→from erk.tui.data.types import PrRowData
+    20→from erk.tui.screens.launch_screen import LaunchScreen
+    21→from erk.tui.views.types import ViewMode
+    22→from erk_shared.gateway.github.metadata.dependency_graph import (
+    23→    _STATUS_SYMBOLS,
+    24→    ObjectiveNode,
+    25→    parse_graph,
+    26→)
+    27→from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
+    28→from erk_shared.gateway.plan_data_provider.abc import PrDataProvider
+    29→from erk_shared.gateway.pr_service.abc import PrService
+    30→
+
+... [642 lines omitted] ...
+
+   236→    #nodes-error {
+   237→        color: $error;
+   585→        error: str | None = None
+   593→                error = "No roadmap found in objective body"
+   595→                graph, phases, _errors = result
+   618→        except Exception as e:
+   619→            error = str(e)
+   621→        self.app.call_from_thread(self._on_nodes_loaded, table_rows, node_rows, pr_lookup, error)
+   628→        error: str | None,
+   636→            error: Error message if fetch failed, or None
+   643→        if error is not None:
+   644→            container.mount(Label(f"Error: {error}", id="nodes-error"))
+   648→            container.mount(Label("(No nodes found)", id="nodes-error"))
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <usage input_tokens="1797" cache_creation_input_tokens="11760" cache_read_input_tokens="30175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11760}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read more of the real_provider to see how `fetch_prs` fetches workflow runs vs `fetch_prs_by_ids`.</assistant>
+  <usage input_tokens="1797" cache_creation_input_tokens="11760" cache_read_input_tokens="30175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11760}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BamRb346FAMHN4p4jcjkrY">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="limit">180</param>
+  </tool_use>
+  <usage input_tokens="1797" cache_creation_input_tokens="11760" cache_read_input_tokens="30175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11760}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BamRb346FAMHN4p4jcjkrY">
+     1→"""Real implementation of PrDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import UTC, datetime
+     5→
+     6→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_submission_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→    strip_rich_markup,
+    15→)
+    16→from erk.core.pr_utils import select_display_pr
+    17→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    18→from erk.tui.data.provider_abc import PrDataProvider
+    19→from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
+    20→from erk.tui.sorting.types import BranchActivity
+    21→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    22→from erk_shared.gateway.github.metadata.core import (
+    23→    extract_objective_slug,
+    24→)
+    25→from erk_shared.gateway.github.metadata.dependency_graph import (
+    26→    _TERMINAL_STATUSES,
+    27→    build_graph,
+    28→    build_state_sparkline,
+    29→    compute_graph_summary,
+    30→    find_graph_next_node,
+
+... [150 lines omitted] ...
+
+   171→            warnings=plan_data.warnings,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XgXcbTpQqYvCnzSZeguLss">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1797" cache_creation_input_tokens="11760" cache_read_input_tokens="30175" output_tokens="459" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11760, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XgXcbTpQqYvCnzSZeguLss">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import dataclasses
+     6→from dataclasses import dataclass
+     7→from datetime import datetime
+     8→from typing import Any
+     9→
+    10→from erk_shared.gateway.github.types import IssueFilterState
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class PrRowData:
+    15→    """Row data for displaying a plan in the TUI table.
+    16→
+    17→    Contains pre-formatted display strings and raw data needed for actions.
+    18→    Immutable to ensure table state consistency.
+    19→
+    20→    **Display vs Raw convention:** Many data points have both a raw field (for
+    21→    logic/predicates) and a display field (for table rendering). Raw fields are
+    22→    often nullable (None when absent), while display fields are always strings
+    23→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    24→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    25→
+    26→    Attributes:
+    27→
+    28→        pr_number: GitHub issue/PR number (e.g., 123). Never None.
+    29→        pr_url: URL to PR (GitHub or Graphite), None if unavailable.
+    30→        full_title: Complete untruncated title. Empty string possible.
+
+... [261 lines omitted] ...
+
+    55→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   162→        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+   216→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9193" cache_read_input_tokens="41935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check how workflow runs are fetched in the pr_list_service and the provider ABC.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9193" cache_read_input_tokens="41935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DXwE9cQBhjasaGAchD5s8r">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/provider_abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9193" cache_read_input_tokens="41935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DXwE9cQBhjasaGAchD5s8r">
+     1→"""TUI data provider ABC for plan table display assembly."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
+     6→from erk.tui.sorting.types import BranchActivity
+     7→
+     8→
+     9→class PrDataProvider(ABC):
+    10→    """Abstract base class for TUI plan data assembly.
+    11→
+    12→    Contains only the methods that produce TUI-specific types
+    13→    (PrRowData, FetchTimings, BranchActivity). Domain operations
+    14→    (close_pr, dispatch, fetch_content, etc.) live in PrService.
+    15→    """
+    16→
+    17→    @abstractmethod
+    18→    def fetch_prs(self, filters: PrFilters) -&gt; tuple[list[PrRowData], FetchTimings | None]:
+    19→        """Fetch plans matching the given filters.
+    20→
+    21→        Args:
+    22→            filters: Filter options for the query
+    23→
+    24→        Returns:
+    25→            Tuple of (list of PrRowData for display, optional FetchTimings breakdown)
+    26→        """
+    27→        ...
+    28→
+    29→    @abstractmethod
+    30→    def fetch_prs_by_ids(self, pr_ids: set[int]) -&gt; list[PrRowData]:
+
+... [43 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UsqVGaDQe6myPTMoMuybZD">
+    <param name="pattern">_fetch_workflow_runs</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9193" cache_read_input_tokens="41935" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UsqVGaDQe6myPTMoMuybZD">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016EdDVdFweUHLMBhXBPJoEA">
+    <param name="pattern">_fetch_workflow_runs|fetch_workflow_runs|get_pr_list_data</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1287" cache_read_input_tokens="51128" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016EdDVdFweUHLMBhXBPJoEA">
+Found 1 file
+packages/erk-shared/src/erk_shared/core/pr_list_service.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015pDWYTrLvwCbraKhGvmBKT">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/pr_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="52415" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015pDWYTrLvwCbraKhGvmBKT">
+     1→"""PR list service abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface for efficiently fetching PR list data.
+     4→The real implementation remains in erk.core.services.plan_list_service.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from dataclasses import dataclass
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.github.types import (
+    14→    GitHubRepoLocation,
+    15→    IssueFilterState,
+    16→    PullRequestInfo,
+    17→    WorkflowRun,
+    18→)
+    19→from erk_shared.pr_store.types import Plan
+    20→
+    21→if TYPE_CHECKING:
+    22→    from erk_shared.gateway.http.abc import HttpClient
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class PrListData:
+    27→    """Combined data for PR listing.
+    28→
+    29→    Attributes:
+    30→        plans: List of Plan objects with enriched metadata
+
+... [56 lines omitted] ...
+
+    36→        warnings: User-facing warnings about degraded data quality
+    45→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01WtJL7P8zuj5Z4RazAnYdrc">
+    <param name="pattern">def get_pr_list_data|def _fetch_workflow_runs|extract_plan_header_dispatch_info|node_id_to_plan</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/core/services</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1174" cache_read_input_tokens="52592" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WtJL7P8zuj5Z4RazAnYdrc">
+src/erk/core/services/objective_list_service.py:16:from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+src/erk/core/services/objective_list_service.py:71:                _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+src/erk/core/services/pr_list_service.py:21:from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+src/erk/core/services/pr_list_service.py:60:    def get_pr_list_data(
+src/erk/core/services/pr_list_service.py:168:        plans, node_id_to_plan = self._parse_pr_details(pr_details_list)
+src/erk/core/services/pr_list_service.py:173:            http_client, node_id_to_plan, skip_workflow_runs=skip_workflow_runs
+src/erk/core/services/pr_list_service.py:244:    def _fetch_workflow_runs_http(
+src/erk/core/services/pr_list_service.py:247:        node_id_to_plan: dict[str, int],
+src/erk/core/services/pr_list_service.py:253:        if skip_workflow_runs or not node_id_to_plan:
+src/erk/core/services/pr_list_service.py:257:            node_ids = list(node_id_to_plan.keys())
+src/erk/core/services/pr_list_service.py:264:                workflow_runs[node_id_to_plan[node_id]] = run
+src/erk/core/services/pr_list_service.py:276:        node_id_to_plan: dict[str, int] = {}
+src/erk/core/services/pr_list_service.py:285:            _, node_id, _ = extract_plan_header_dispatch_info(pr_details.body)
+src/erk/core/services/pr_list_service.py:287:                node_id_to_plan[node_id] = pr_details.number
+src/erk/core/services/pr_list_service.py:289:        return (plans, node_id_to_plan)
+src/erk/core/services/pr_list_service.py:291:    def _fetch_workflow_runs_subprocess(
+src/erk/core/services/pr_list_service.py:294:        node_id_to_plan: dict[str, int],
+src/erk/core/services/pr_list_service.py:300:        if not skip_workflow_runs and node_id_to_plan:
+src/erk/core/services/pr_list_service.py:304:                    list(node_id_to_plan.keys()),
+src/erk/core/services/pr_list_service.py:307:                    workflow_runs[node_id_to_plan[node_id]] = run
+src/erk/core/services/pr_list_service.py:351:    def get_pr_list_data(
+src/erk/core/services/pr_list_service.py:401:                _, node_id, _ = extract_plan_header_dispatch_info(issue.body)
+  </tool_result>
+  <assistant>Now let me read the workflow run fetching logic from the pr_list_service to understand how to reuse it in `fetch_prs_by_ids`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="983" cache_read_input_tokens="53766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 983}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jq9dtx92xtNW4eH7NpGeC8">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/services/pr_list_service.py</param>
+    <param name="offset">240</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="983" cache_read_input_tokens="53766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 983}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jq9dtx92xtNW4eH7NpGeC8">
+   240→            if node is not None:
+   241→                result[pr_num] = node
+   242→        return result
+   243→
+   244→    def _fetch_workflow_runs_http(
+   245→        self,
+   246→        http_client: HttpClient,
+   247→        node_id_to_plan: dict[str, int],
+   248→        *,
+   249→        skip_workflow_runs: bool,
+   250→    ) -&gt; dict[int, WorkflowRun | None]:
+   251→        """Fetch workflow runs via HttpClient.graphql()."""
+   252→        workflow_runs: dict[int, WorkflowRun | None] = {}
+   253→        if skip_workflow_runs or not node_id_to_plan:
+   254→            return workflow_runs
+   255→
+   256→        try:
+   257→            node_ids = list(node_id_to_plan.keys())
+   258→            response = http_client.graphql(
+   259→                query=GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+   260→                variables={"nodeIds": node_ids},
+   261→            )
+   262→            runs_by_node_id = parse_workflow_runs_nodes_response(response, node_ids)
+   263→            for node_id, run in runs_by_node_id.items():
+   264→                workflow_runs[node_id_to_plan[node_id]] = run
+   265→        except Exception as e:
+   266→            logging.warning("Failed to fetch workflow runs via HTTP: %s", e)
+   267→
+   268→        return workflow_runs
+   269→
+
+... [50 lines omitted] ...
+
+   308→            except RuntimeError as e:
+   309→                logging.warning("Failed to fetch workflow runs: %s", e)
+   313→def _build_enrichment_warnings(unenriched_count: int, total_count: int) -&gt; tuple[str, ...]:
+   314→    """Build warning messages for degraded GraphQL enrichment data.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JCUS8ctqjaHSufRyYRuDD5">
+    <param name="pattern">extract_plan_header_dispatch_info</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="983" cache_read_input_tokens="53766" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 983, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCUS8ctqjaHSufRyYRuDD5">
+365:def extract_plan_header_dispatch_info(
+366-    issue_body: str,
+367-) -&gt; tuple[str | None, str | None, str | None]:
+368-    """Extract dispatch info from plan-header block.
+369-
+370-    Args:
+371-        issue_body: Issue body containing plan-header block
+372-
+373-    Returns:
+374-        Tuple of (last_dispatched_run_id, last_dispatched_node_id, last_dispatched_at)
+375-        All are None if block not found or fields not present
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1752" cache_read_input_tokens="54749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1752}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read `_build_row_data` to see how it uses the workflow_run parameter.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1752" cache_read_input_tokens="54749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1752}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TktLLAaqUWcfJJG4K8ZYz8">
+    <param name="pattern">def _build_row_data</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1752" cache_read_input_tokens="54749" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1752, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TktLLAaqUWcfJJG4K8ZYz8">
+476:    def _build_row_data(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KSenC5absaRTUH8F61LwG1">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">476</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="56501" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 330, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KSenC5absaRTUH8F61LwG1">
+   476→    def _build_row_data(
+   477→        self,
+   478→        *,
+   479→        plan: Plan,
+   480→        pr_number: int,
+   481→        pr_linkages: dict[int, list[PullRequestInfo]],
+   482→        workflow_run: WorkflowRun | None,
+   483→        worktree_by_pr_number: dict[int, tuple[str, str | None]],
+   484→        use_graphite: bool,
+   485→    ) -&gt; PrRowData:
+   486→        """Build a single PrRowData from plan and related data."""
+   487→        full_title = plan.title
+   488→
+   489→        # Worktree info
+   490→        worktree_name = ""
+   491→        worktree_branch: str | None = None
+   492→        exists_locally = False
+   493→
+   494→        if pr_number in worktree_by_pr_number:
+   495→            worktree_name, worktree_branch = worktree_by_pr_number[pr_number]
+   496→            exists_locally = True
+   497→
+   498→        # Extract from pre-parsed header fields
+   499→        local_impl_str: str | None = None
+   500→        remote_impl_str: str | None = None
+   501→        learn_status: str | None = None
+   502→        learn_plan_issue: int | None = None
+   503→        learn_plan_pr: int | None = None
+   504→        learn_run_id: str | None = None
+   505→        if plan.header_fields:
+
+... [170 lines omitted] ...
+
+   666→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CpWAjsBtkfTSTZ7ePpdpcA">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">676</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3191" cache_read_input_tokens="56831" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3191, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CpWAjsBtkfTSTZ7ePpdpcA">
+   676→                    objective_next_node_display = next_node["id"]
+   677→                    min_status = graph.min_dep_status(next_node["id"])
+   678→                    if min_status is None or min_status in _TERMINAL_STATUSES:
+   679→                        objective_deps_display = "ready"
+   680→                    else:
+   681→                        objective_deps_display = min_status.replace("_", " ")
+   682→
+   683→                    target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
+   684→                    if target is not None and target.depends_on:
+   685→                        node_map = {n.id: n for n in graph.nodes}
+   686→                        for dep_id in target.depends_on:
+   687→                            if dep_id in node_map:
+   688→                                dep = node_map[dep_id]
+   689→                                if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
+   690→                                    num = dep.pr.lstrip("#")
+   691→                                    repo_id = self._location.repo_id
+   692→                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+   693→                                    objective_deps_plans.append((dep.pr, url))
+   694→
+   695→                    if (
+   696→                        target is not None
+   697→                        and target.pr is not None
+   698→                        and target.status not in _TERMINAL_STATUSES
+   699→                    ):
+   700→                        existing_prs = {pr_ref for pr_ref, _ in objective_deps_plans}
+   701→                        if target.pr not in existing_prs:
+   702→                            num = target.pr.lstrip("#")
+   703→                            repo_id = self._location.repo_id
+   704→                            url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+   705→                            objective_deps_plans.append((target.pr, url))
+
+... [70 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a complete understanding. Let me also check what the fake provider looks like to ensure I plan for test updates.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1736" cache_read_input_tokens="60022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1736}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FmMYMUN7GZVakiETjQWvGz">
+    <param name="pattern">fetch_prs_by_ids</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1736" cache_read_input_tokens="60022" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1736, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FmMYMUN7GZVakiETjQWvGz">
+Found 3 files
+tests/tui/data/test_provider.py
+tests/fakes/tests/tui_plan_data_provider.py
+tests/fakes/gateway/plan_data_provider.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0185LBdc6ufHXbsuuCrXw5iN">
+    <param name="pattern">def fetch_prs_by_ids</param>
+    <param name="path">/Users/schrockn/code/erk/tests/fakes/gateway/plan_data_provider.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="61758" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0185LBdc6ufHXbsuuCrXw5iN">
+209:    def fetch_prs_by_ids(self, pr_ids: set[int]) -&gt; list[PrRowData]:
+210-        """Fake plans-by-ids fetch implementation.
+211-
+212-        Filters the stored plans list by pr_number.
+213-
+214-        Args:
+215-            pr_ids: Set of plan issue numbers to fetch
+216-
+217-        Returns:
+218-            List of PrRowData matching the given plan IDs, sorted by pr_number
+219-        """
+220-        return sorted(
+221-            [p for p in self._plans if p.pr_number in pr_ids],
+222-            key=lambda r: r.pr_number,
+223-        )
+224-
+  </tool_result>
+  <assistant>Now I have all the information needed. Let me now launch a Plan agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="62056" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 329}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_018AY9sAXffzTRtwPjtvq5Gv">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Plan run data + n key</param>
+    <param name="prompt">## Task
+
+The objective nodes screen in the erk TUI (`src/erk/tui/screens/objective_nodes_s...[truncated 3181 chars]...w run fetching to `fetch_prs_by_ids()`
+2. Adding "n" key binding to `ObjectiveNodesScreen`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="62056" output_tokens="1192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 329, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018AY9sAXffzTRtwPjtvq5Gv">
+I now have all the context needed to design the implementation plan. Let me synthesize everything.
+
+---
+
+## Implementation Plan
+
+### Summary
+
+Two changes are needed:
+
+1. **`fetch_prs_by_ids()` must fetch workflow run data** -- currently always passes `workflow_run=None` to `_build_row_data()`, causing run-id, run, and chks columns to show `-` in the ObjectiveNodesScreen.
+
+2. **ObjectiveNodesScreen needs an "n" key binding** to open the selected node's workflow run URL in the browser, matching the main dashboard's `Binding("n", "open_run", "Run")` pattern.
+
+---
+
+### Change 1: Add workflow run fetching to `fetch_prs_by_ids()`
+
+**File:** `/Users/schrockn/code/erk/src/erk/tui/data/real_provider.py`
+
+**Approach:** After converting issues to plans (line 387), extract `last_dispatched_node_id` from each plan's `header_fields` dict, build a `node_id_to_plan` mapping, then call the GraphQL batch query via `self._http_client.graphql()` and parse the response -- exactly mirroring the pattern in `PrListService._fetch_workflow_runs_http()`.
+
+**Step-by-step:**
+
+1. **Add imports** at the top of `real_provider.py`:
+   - `from erk_shared.gateway.github.metadata.schemas import LAST_DISPATCHED_NODE_ID` (add to existing schemas import)
+   - `from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY`
+   - `from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response`
+
+2. **Extract node IDs from plans** after the `plans = [github_issue_to_plan(issue) for issue in issues]` line. Since `github_issue_to_plan` already parses the plan-header block into `header_fields`, the `LAST_DISPATCHED_NODE_ID` value is already available as `plan.header_fields.get(LAST_DISPATCHED_NODE_ID)`. Build a `node_id_to_plan: dict[str, int]` mapping:
+
+... [146 lines omitted] ...
+
+       except Exception as e:
+           logger.warning("Failed to fetch workflow runs in fetch_prs_by_ids: %s", e)
+6. **Add a test for GraphQL failure**: when the HTTP client raises, workflow runs should gracefully degrade to `None` (the `except Exception` catch).
+**Error handling:** Following the established pattern, GraphQL failures are caught with `except Exception` and logged as warnings. The screen will still display all other data; only the run columns will show `-`.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3828" cache_read_input_tokens="62385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3828}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a couple of details before finalizing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3828" cache_read_input_tokens="62385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3828}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016nYunnwNEPjpPqiwiSLwXA">
+    <param name="pattern">LAST_DISPATCHED_NODE_ID</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3828" cache_read_input_tokens="62385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3828}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016nYunnwNEPjpPqiwiSLwXA">
+385:LAST_DISPATCHED_NODE_ID: Literal["last_dispatched_node_id"] = "last_dispatched_node_id"
+517:            LAST_DISPATCHED_NODE_ID,
+603:        if LAST_DISPATCHED_NODE_ID in data:
+604:            if data[LAST_DISPATCHED_NODE_ID] is not None:
+605:                if not isinstance(data[LAST_DISPATCHED_NODE_ID], str):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01S9Z3XFYJcej7ncyv2svzpZ">
+    <param name="pattern">last_dispatched_node_id</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3828" cache_read_input_tokens="62385" output_tokens="386" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3828, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S9Z3XFYJcej7ncyv2svzpZ">
+packages/erk-shared/src/erk_shared/pr_store/planned_pr.py:340:            last_dispatched_node_id=None,
+packages/erk-shared/src/erk_shared/pr_store/planned_pr.py:665:            last_dispatched_node_id=None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header_data.py:76:    last_dispatched_node_id: str | None = None
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header_data.py:124:            last_dispatched_node_id=data.get(LAST_DISPATCHED_NODE_ID),
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header_data.py:185:            (LAST_DISPATCHED_NODE_ID, self.last_dispatched_node_id),
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:344:    "last_dispatched_node_id",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:385:LAST_DISPATCHED_NODE_ID: Literal["last_dispatched_node_id"] = "last_dispatched_node_id"
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:606:                    raise ValueError("last_dispatched_node_id must be a string or null")
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:94:    last_dispatched_node_id: str | None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:125:        last_dispatched_node_id: Optional GraphQL node ID (set by workflow, for batch queries)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:157:        last_dispatched_node_id=last_dispatched_node_id,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:190:    last_dispatched_node_id: str | None,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:224:        last_dispatched_node_id: Optional GraphQL node ID (for batch queries)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:256:        last_dispatched_node_id=last_dispatched_node_id,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:374:        Tuple of (last_dispatched_run_id, last_dispatched_node_id, last_dispatched_at)
+  </tool_result>
+  <assistant>Good - `LAST_DISPATCHED_NODE_ID` exists and is already imported in `schemas.py`. Now let me also verify that `github_issue_to_plan` parses header_fields from the issue body, since the plan depends on `header_str(plan.header_fields, LAST_DISPATCHED_NODE_ID)`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2588" cache_read_input_tokens="66213" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2588}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UkoYMAbCSh4inBDbAVzrey">
+    <param name="pattern">def github_issue_to_plan</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/pr_store/conversion.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2588" cache_read_input_tokens="66213" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UkoYMAbCSh4inBDbAVzrey">
+34:def github_issue_to_plan(issue: IssueInfo) -&gt; Plan:
+35-    """Convert a GitHub Issue (e.g. objective) to Plan with pre-parsed header fields.
+36-
+37-    Parses the plan-header metadata block once and stores the result
+38-    in header_fields, avoiding repeated YAML parsing by callers.
+39-
+40-    Used for GitHub Issues that carry plan-header metadata, such as
+41-    objective issues. Not used for draft-PR-backed plans.
+42-
+43-    Args:
+44-        issue: IssueInfo from GraphQL query
+45-
+46-    Returns:
+47-        Plan with header_fields populated from plan-header block
+48-    """
+49-    state = PlanState.OPEN if issue.state == "OPEN" else PlanState.CLOSED
+50-
+51-    header_fields: dict[str, object] = {}
+52-    block = find_metadata_block(issue.body, BlockKeys.PLAN_HEADER)
+53-    if block is not None:
+54-        header_fields = dict(block.data)
+55-
+56-    objective_id: int | None = None
+57-    raw_objective = header_fields.get(OBJECTIVE_ISSUE)
+58-    if isinstance(raw_objective, int):
+59-        objective_id = raw_objective
+60-
+61-    node_ids = _parse_node_ids(header_fields.get(NODE_IDS))
+62-
+63-    return Plan(
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>`github_issue_to_plan` does parse the plan-header block and stores it in `header_fields`. The `LAST_DISPATCHED_NODE_ID` will be available via `header_str(plan.header_fields, LAST_DISPATCHED_NODE_ID)`.
+
+Let me also verify the imports needed for the GraphQL query and parsing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="68801" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DqSSfjy13Pg4rShg4Htems">
+    <param name="pattern">GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="68801" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 620}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DqSSfjy13Pg4rShg4Htems">
+Found 3 files
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+src/erk/core/services/pr_list_service.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014CuwtMnnUVWYAwwAdmKdXG">
+    <param name="pattern">parse_workflow_runs_nodes_response</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="68801" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 620, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014CuwtMnnUVWYAwwAdmKdXG">
+Found 4 files
+packages/erk-shared/src/erk_shared/gateway/github/real.py
+src/erk/core/services/pr_list_service.py
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py
+tests/core/test_pr_data_parsing.py
+  </tool_result>
+  <assistant>Now I have all the information needed. Let me write the final plan and exit plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="69421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 606}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <user>[Request interrupted by user]</user>
+  <user>continue</user>
+  <usage input_tokens="3" cache_creation_input_tokens="61273" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 61273}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Bsv3yxLxCsHTJCViSsvU4u">
+    <param name="file_path">/Users/schrockn/.claude/plans/wild-imagining-lerdorf.md</param>
+    <param name="content"># Show Workflow Run Data in Objective Nodes Screen
+
+## Context
+
+The objective nodes screen...[truncated 3320 chars]...ub Actions in browser
+4. Press "n" on a node without a run — should do nothing (no crash)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="61273" cache_read_input_tokens="9015" output_tokens="1293" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 61273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bsv3yxLxCsHTJCViSsvU4u">
+File created successfully at: /Users/schrockn/.claude/plans/wild-imagining-lerdorf.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01HhkvfSr6HebPmbHxqTADNG">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1334" cache_read_input_tokens="70288" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HhkvfSr6HebPmbHxqTADNG">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01MxKjCyktX6mBtoR45biGaT">
+    <param name="plan"># Show Workflow Run Data in Objective Nodes Screen
+
+## Context
+
+The objective nodes screen...[truncated 3320 chars]...ub Actions in browser
+4. Press "n" on a node without a run — should do nothing (no crash)
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/wild-imagining-lerdorf.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="71622" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MxKjCyktX6mBtoR45biGaT">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/wild-imagining-lerdorf.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Show Workflow Run Data in Objective Nodes Screen
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Create a new branch and save plan as a planned PR. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without creating a planned PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider creating a planned PR instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 21060f85-e291-4a26-a83d-f023b73ba1a2 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CXmaxYAzkrFsyFWT7oLLht">
+    <param name="file_path">/Users/schrockn/.claude/plans/wild-imagining-lerdorf.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="72360" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 679, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CXmaxYAzkrFsyFWT7oLLht">
+     1→# Show Workflow Run Data in Objective Nodes Screen
+     2→
+     3→## Context
+     4→
+     5→The objective nodes screen (`erk dash` → select objective → nodes view) displays PR data for each node but the `run-id`, `run`, and `chks` columns always show `-`. This is because `fetch_prs_by_ids()` passes `workflow_run=None` to `_build_row_data()` for every plan, unlike `fetch_prs()` which fetches workflow runs via GraphQL. Additionally, the "n" key (open run in browser) is not bound in this screen.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Fetch workflow runs in `fetch_prs_by_ids()`
+    10→
+    11→**File:** `src/erk/tui/data/real_provider.py` (lines 370-406)
+    12→
+    13→After converting issues to plans (line 387), extract `last_dispatched_node_id` from each plan's `header_fields`, batch-query workflow runs via GraphQL, and pass them to `_build_row_data()`.
+    14→
+    15→**Add imports:**
+    16→- `LAST_DISPATCHED_NODE_ID` — add to existing `from erk_shared.gateway.github.metadata.schemas import ...` line
+    17→- `from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY`
+    18→- `from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response`
+    19→
+    20→**Add after line 387** (`plans = [github_issue_to_plan(issue) for issue in issues]`):
+    21→
+    22→```python
+    23→# Extract dispatch node IDs for workflow run lookup
+    24→node_id_to_plan: dict[str, int] = {}
+    25→for plan in plans:
+    26→    node_id = header_str(plan.header_fields, LAST_DISPATCHED_NODE_ID)
+    27→    if node_id is not None:
+    28→        node_id_to_plan[node_id] = int(plan.pr_identifier)
+    29→
+    30→# Batch fetch workflow runs via GraphQL
+
+... [49 lines omitted] ...
+
+    42→    except Exception as e:
+    43→        logger.warning("Failed to fetch workflow runs in fetch_prs_by_ids: %s", e)
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01UvDgSJuMEdpjDLrp5bUtea">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1712" cache_read_input_tokens="73039" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1712, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UvDgSJuMEdpjDLrp5bUtea">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01JdtY8faf9W7zKK8rE8mp3j">
+    <param name="questions">[{'question': '📋 Show Workflow Run Data in Objective Nodes Screen\nCurrent context: (wt:er...[truncated 420 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="74751" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JdtY8faf9W7zKK8rE8mp3j">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>After converting issues to plans
+
+what does this mean? this doesn't make sense</user>
+  <usage input_tokens="3" cache_creation_input_tokens="3912" cache_read_input_tokens="76084" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3912}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>You're right, that's confusing language in the plan. Here's what's actually happening in the code:
+
+`fetch_prs_by_ids()` at `real_provider.py:382` calls `get_issues_by_numbers_with_pr_linkages()` which fetches GitHub issues by number. Then at line 387, it wraps each into a `Plan` dataclass via `github_issue_to_plan()` — that function parses the plan-header metadata block from the issue body into `header_fields`.
+
+The point is: after that line 387 call, each `Plan` object already has `header_fields` containing `last_dispatched_node_id` (if present). So we can extract those node IDs and batch-query GitHub for the workflow runs — no extra API call to get the node IDs, they're already parsed.
+
+Want me to rewrite the plan with clearer language, or is the approach itself what you're questioning?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3912" cache_read_input_tokens="76084" output_tokens="683" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3912, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>get_issues_by_numbers_with_pr_linkages
+
+is this for objecitves or for planned prs</user>
+  <usage input_tokens="3" cache_creation_input_tokens="861" cache_read_input_tokens="79996" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 861}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>For planned PRs. The objective nodes screen parses the objective's roadmap to get PR numbers from each node (e.g., `#9376`), then calls `fetch_prs_by_ids({9376, ...})` to get the details for those planned PR issues. Those planned PRs are the ones that may have `last_dispatched_node_id` in their plan-header (set when dispatched via `erk exec plan-dispatch`).</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="861" cache_read_input_tokens="79996" output_tokens="385" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 861, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>"_with_pr_linkages" is maybe what threw me. that sounds like legacy from when plans were issues</user>
+  <usage input_tokens="3" cache_creation_input_tokens="565" cache_read_input_tokens="80857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 565}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Right — plans *are* still GitHub issues. The "pr_linkages" part refers to finding the actual pull requests (code PRs) that close those plan issues. So it fetches the plan issues + discovers which PRs are linked to them. The naming is accurate but admittedly not the most obvious.
+
+Anyway, the approach is sound — those plan issues have `last_dispatched_node_id` in their plan-header, so we can extract it and batch-query workflow runs. Want me to save this as a planned PR, or implement directly?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="565" cache_read_input_tokens="80857" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 565, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>no they are not. plans are embedded in planned prs. where are you getting this notion?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="544" cache_read_input_tokens="81422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 544}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>You're right, I misspoke. Plans are embedded in planned PRs (draft PRs), not issues. The function name `github_issue_to_plan` / `get_issues_by_numbers_with_pr_linkages` likely works because GitHub's API treats PRs as issues at the API level, but the domain model is planned PRs containing plans.
+
+The approach still holds — those planned PRs have `last_dispatched_node_id` in their plan-header metadata, and we can extract it to batch-query workflow runs.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="544" cache_read_input_tokens="81422" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 544}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01DSQZguyP5sMGyyj1ewg1ek">
+    <param name="plan"># Show Workflow Run Data in Objective Nodes Screen
+
+## Context
+
+The objective nodes screen...[truncated 3320 chars]...ub Actions in browser
+4. Press "n" on a node without a run — should do nothing (no crash)
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/wild-imagining-lerdorf.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="544" cache_read_input_tokens="81422" output_tokens="713" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 544, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DSQZguyP5sMGyyj1ewg1ek">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/wild-imagining-lerdorf.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Show Workflow Run Data in Objective Nodes Screen
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Create a new branch and save plan as a planned PR. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without creating a planned PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider creating a planned PR instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 21060f85-e291-4a26-a83d-f023b73ba1a2 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+# Show Workflow Run Data in Objective Nodes Screen
+
+## Context
+
+The objective nodes screen (`erk dash` → select objective → nodes view) displays PR data for each node but the `run-id`, `run`, and `chks` columns always show `-`. This is because `fetch_prs_by_ids()` passes `workflow_run=None` to `_build_row_data()` for every plan, unlike `fetch_prs()` which fetches workflow runs via GraphQL. Additionally, the "n" key (open run in browser) is not bound in this screen.
+
+## Changes
+
+### 1. Fetch workflow runs in `fetch_prs_by_ids()`
+
+**File:** `src/erk/tui/data/real_provider.py` (lines 370-406)
+
+Extract `last_dispatched_node_id` from each plan's `header_fields`, batch-query workflow runs via GraphQL, and pass them to `_build_row_data()`.
+
+### 2. Add "n" key binding to ObjectiveNodesScreen
+
+**File:** `src/erk/tui/screens/objective_nodes_screen.py`
+
+- Add `Binding("n", "open_run", "Run", show=False)` to `BINDINGS`
+- Add `action_open_run` method (same pattern as `action_open_pr`)
+- Update footer hint to include `n: run`
+
+## Verification
+
+1. Run existing tests: `pytest tests/tui/data/test_provider.py`
+2. Run `erk dash -i`, navigate to an objective with dispatched PRs, verify columns populate
+3. Press "n" on a node with a run — should open GitHub Actions in browser</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1343" cache_read_input_tokens="81966" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1343}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_013MDrFPfZy4R8PWKFfVqK7t">
+    <param name="questions">[{'question': '📋 Show Workflow Run Data in Objective Nodes Screen\nCurrent context: (wt:er...[truncated 420 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1343" cache_read_input_tokens="81966" output_tokens="634" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1343, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MDrFPfZy4R8PWKFfVqK7t">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>i want this refactored to be more clear. if we are fetching prs we should call them prs</user>
+</session>
