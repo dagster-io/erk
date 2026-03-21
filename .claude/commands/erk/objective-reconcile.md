@@ -1,15 +1,15 @@
 ---
-description: Audit an objective against current codebase and propose updates
+description: Audit an objective against current codebase and reconcile stale references
 ---
 
-# /local:objective-reevaluate
+# /erk:objective-reconcile
 
 Audits an open objective against the current codebase state, identifies stale references, already-done work, and outdated prose, then proposes and applies updates with user confirmation.
 
 ## Usage
 
 ```bash
-/local:objective-reevaluate <issue-number>
+/erk:objective-reconcile <issue-number>
 ```
 
 ---
@@ -22,7 +22,7 @@ Parse `$ARGUMENTS` for the issue number. If no issue number provided:
 
 ```
 Error: Issue number required.
-Usage: /local:objective-reevaluate <issue_number>
+Usage: /erk:objective-reconcile <issue_number>
 ```
 
 Fetch the objective issue:
@@ -124,7 +124,7 @@ Classify each reference:
 Present a structured findings table to the user:
 
 ```markdown
-## Reevaluation Findings for Objective #<number>
+## Reconciliation Findings for Objective #<number>
 
 ### Summary
 
@@ -244,7 +244,7 @@ With JSON structure:
   "date": "<YYYY-MM-DD>",
   "pr_number": null,
   "phase_step": "<affected node IDs, comma-separated>",
-  "title": "Objective reevaluation",
+  "title": "Objective reconciliation",
   "what_was_done": ["Audited objective against current codebase", "Updated stale references: ...", "Marked nodes as done: ..."],
   "lessons_learned": ["<any insights discovered>"],
   "roadmap_updates": ["Node X.Y: pending -> done", ...],
@@ -257,7 +257,7 @@ Set `pr_number` to `null` (or `0`) since this is an audit action, not a PR landi
 **Report completion:**
 
 ```
-Reevaluation complete for objective #<number>:
+Reconciliation complete for objective #<number>:
 - <N> stale references updated
 - <N> nodes marked as done
 - <N> items flagged for manual review
@@ -281,5 +281,5 @@ View objective: <objective URL>
 - This is a judgment-heavy skill: interpreting whether a reference is stale requires codebase understanding. Use Grep and Glob liberally.
 - Never auto-mutate. Always present findings and get user approval before making changes.
 - Updates both the issue body (prose/metadata) AND node statuses (via exec scripts).
-- For `pr_number` in the action comment: use `null` or `0` when the reevaluation is not tied to a specific PR.
+- For `pr_number` in the action comment: use `null` or `0` when the reconciliation is not tied to a specific PR.
 - Reuses existing exec scripts: `get-issue-body`, `update-objective-node`, `update-issue-body`, `objective-post-action-comment`.
