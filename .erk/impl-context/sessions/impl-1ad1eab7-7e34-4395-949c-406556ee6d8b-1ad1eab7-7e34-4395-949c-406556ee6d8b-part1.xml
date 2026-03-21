@@ -1,0 +1,1067 @@
+<session>
+  <meta branch="plnd/O9318-rename-plan-store-pr-03-21-1544" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9365&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9365` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9365. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11356" cache_read_input_tokens="17495" cache_creation="{'ephemeral_5m_input_tokens': 11356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012Nksyi6QHr3P4KgecYvs2V">
+    <param name="command">erk exec setup-impl --issue 9365</param>
+    <param name="description">Set up implementation for plan #9365</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11356" cache_read_input_tokens="17495" cache_creation="{'ephemeral_5m_input_tokens': 11356, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Nksyi6QHr3P4KgecYvs2V">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O9318-rename-plan-store-pr-03-21-1544", "pr_number": 9365, "pr_url": "https://github.com/dagster-io/erk/pull/9365", "branch": "plnd/O9318-rename-plan-store-pr-03-21-1544", "pr_title": "[erk-pr] Phase 3 \u2014 Rename plan_store/plan_backend properties and helper functions", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9365, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on PR branch 'plnd/O9318-rename-plan-store-pr-03-21-1544', teleporting from remote...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DXpdKat2m4UjKxPrAJb3gs">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9318-rename-plan-store-pr-03-21-1544/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28851" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="97" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DXpdKat2m4UjKxPrAJb3gs">
+     1→# Plan: Phase 3 — Rename plan_store/plan_backend properties and helper functions
+     2→
+     3→**Part of Objective #9318, Nodes 3.1–3.5**
+     4→
+     5→## Context
+     6→
+     7→Objective #9318 is systematically renaming "plan" terminology to "PR" across the codebase. Phases 1-2 renamed types, classes, and module files. Phase 3 renames context properties and standalone helper functions — the next layer in the dependency chain.
+     8→
+     9→**Node 3.4 is already complete** — `extract_title_from_plan()` was renamed to `extract_title_from_pr()` in PR #9352. Will be marked done as part of this PR.
+    10→
+    11→## Scope
+    12→
+    13→| Node | Rename | Definition | Src Sites | Test Sites |
+    14→|------|--------|-----------|-----------|------------|
+    15→| 3.1 | `plan_store` → `pr_store` (field) | `erk_shared/context/context.py:90` | ~12 | ~334 |
+    16→| 3.2 | `plan_backend` → `pr_backend` (property) | `erk_shared/context/context.py:176` | ~100 | ~93 |
+    17→| 3.2 | `require_plan_backend()` → `require_pr_backend()` | `erk_shared/context/helpers.py` | ~25 exec scripts | tests |
+    18→| 3.3 | Delete `extract_plan_number()` (replacement exists) | `src/erk/cli/commands/run/shared.py:26` | 0 callers | 1 test file |
+    19→| 3.4 | *Already done* | — | — | — |
+    20→| 3.5 | `build_original_plan_section()` → `build_original_pr_section()` | `erk_shared/pr_store/planned_pr_lifecycle.py:111` | ~4 | ~4 |
+    21→
+    22→## Implementation Steps
+    23→
+    24→### Step 1: Rename `plan_store` field → `pr_store` (Node 3.1)
+    25→
+    26→**Definition** — `packages/erk-shared/src/erk_shared/context/context.py:90`:
+    27→- Rename field `plan_store: ManagedPrBackend` → `pr_store: ManagedPrBackend`
+    28→- Update constructor param at `__init__` (if present) and any docstrings referencing `plan_store`
+    29→
+    30→**Call sites** — Replace `ctx.plan_store` / `self.plan_store` across:
+
+... [91 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me signal GitHub that implementation has started and create todo entries.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2737" cache_read_input_tokens="28958" cache_creation="{'ephemeral_5m_input_tokens': 2737, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FvgmqfC5vtPT5FExvjiDkb">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2737" cache_read_input_tokens="28958" cache_creation="{'ephemeral_5m_input_tokens': 2737, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FvgmqfC5vtPT5FExvjiDkb">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Dzuq8tXHYQ3cTEEJ22kRQJ">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1104 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="31695" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dzuq8tXHYQ3cTEEJ22kRQJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XWmQgMjZ916kjcttHCQ1Wq">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1108 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="31881" cache_creation="{'ephemeral_5m_input_tokens': 521, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XWmQgMjZ916kjcttHCQ1Wq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me first understand the scope of changes needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="32402" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NGgiYnsneGUrsNHHFkrYZW">
+    <param name="command">grep -r "plan_store" --include="*.py" -l | grep -v __pycache__ | sort</param>
+    <param name="description">Find all files with plan_store references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="32402" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="127" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NGgiYnsneGUrsNHHFkrYZW">
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py
+packages/erk-shared/src/erk_shared/plan_workflow.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/core/context.py
+tests/commands/branch/test_checkout_cmd.py
+tests/commands/dispatch/conftest.py
+tests/commands/implement/test_execution_modes.py
+tests/commands/implement/test_flags.py
+tests/commands/implement/test_issue_mode.py
+tests/commands/implement/test_model_flag.py
+tests/commands/pr/test_close.py
+tests/commands/pr/test_dispatch.py
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_log.py
+tests/commands/pr/test_rewrite.py
+tests/commands/pr/test_view.py
+tests/commands/test_top_level_commands.py
+tests/commands/workspace/test_delete.py
+tests/fakes/tests/shared_context.py
+tests/test_utils/test_context.py
+tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Task" id="toolu_01EQx1Fz777KLqYZzADKh4VH">
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="description">Rename plan_store to pr_store across all Python files</param>
+    <param name="prompt">Perform a bulk rename of `plan_store` → `pr_store` across the entire Python codebase.
+
+Thi...[truncated 1241 chars]...ner/work/erk/erk`.
+
+Do NOT change any other identifiers - only `plan_store` → `pr_store`.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1234" cache_read_input_tokens="32925" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="637" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EQx1Fz777KLqYZzADKh4VH">
+Perfect! The bulk rename has been completed successfully. Let me create a final summary:
+
+## Summary
+
+Successfully performed a bulk rename of `plan_store` → `pr_store` across the entire Python codebase.
+
+### Results
+
+- **Files modified**: 61 Python files
+- **Total replacements**: 401 occurrences renamed
+- **Verification**: No `plan_store` occurrences remain in Python files
+- **New occurrences**: 530 `pr_store` occurrences (includes pre-existing uses)
+
+### Key Files Updated
+
+**Core source files:**
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` (8 replacements)
+- `/home/runner/work/erk/erk/src/erk/core/context.py` (3 replacements)
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py` (1 replacement)
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py` (1 replacement)
+
+**CLI command files:**
+- `/home/runner/work/erk/erk/src/erk/cli/commands/implement.py` (2 replacements)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py` (2 replacements)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py` (2 replacements)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/delete_cmd.py` (2 replacements)
+- And others (checkout_cmd, plan_cmd, close_cmd, dispatch_cmd, land_learn)
+
+**Test files:**
+- 48 test files updated across `tests/unit/`, `tests/commands/`, and `tests/fakes/`
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Step 1 complete. Now let me do Step 2 for `plan_backend` and `require_plan_backend`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1369" cache_read_input_tokens="34159" cache_creation="{'ephemeral_5m_input_tokens': 1369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_013JomKxgQyoGZx9HB6LoYNf">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1110 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1369" cache_read_input_tokens="34159" cache_creation="{'ephemeral_5m_input_tokens': 1369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013JomKxgQyoGZx9HB6LoYNf">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011U4Ji3ngLEDZiNnC6uBByG">
+    <param name="command">grep -r "plan_backend\|require_plan_backend" --include="*.py" -l | grep -v __pycache__ | sort</param>
+    <param name="description">Find all files with plan_backend references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="552" cache_read_input_tokens="35528" cache_creation="{'ephemeral_5m_input_tokens': 552, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011U4Ji3ngLEDZiNnC6uBByG">
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/context/helpers.py
+packages/erk-shared/src/erk_shared/learn/tracking.py
+src/erk/cli/commands/exec/scripts/add_plan_label.py
+src/erk/cli/commands/exec/scripts/add_plan_labels.py
+src/erk/cli/commands/exec/scripts/close_pr.py
+src/erk/cli/commands/exec/scripts/close_prs.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+src/erk/cli/commands/exec/scripts/handle_no_changes.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/track_learn_result.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/commands/land_cmd.py
+
+... [27 lines omitted] ...
+  </tool_result>
+  <tool_use name="Task" id="toolu_01Lbx7uD7y4ovipStJBnNKbM">
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="description">Rename plan_backend and require_plan_backend across Python files</param>
+    <param name="prompt">Perform a bulk rename of two identifiers across the Python codebase:
+
+1. `plan_backend` → ...[truncated 3923 chars]...s - only:
+- `plan_backend` → `pr_backend`
+- `require_plan_backend` → `require_pr_backend`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1188" cache_read_input_tokens="36080" cache_creation="{'ephemeral_5m_input_tokens': 1188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1668" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lbx7uD7y4ovipStJBnNKbM">
+Excellent! All occurrences have been correctly renamed. Let me create a final summary:
+
+## Summary
+
+I've successfully completed the bulk rename of two identifiers across the Python codebase:
+
+### Renamed Identifiers
+1. **`plan_backend` → `pr_backend`** (property/attribute name)
+2. **`require_plan_backend` → `require_pr_backend`** (function name)
+
+### Statistics
+- **110 files modified**
+- **559 lines changed**
+- **263 total replacements** across:
+  - 57 implementation files
+  - 53 test files
+
+### Key Files Modified
+
+**Core Context Files:**
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` - Property definition
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py` - Helper function definition
+
+**CLI Command Files:**
+- All exec scripts in `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/`
+- Command implementations in `/home/runner/work/erk/erk/src/erk/cli/commands/`
+- PR operations in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/`
+
+**Test Files:**
+- All corresponding test files in `/home/runner/work/erk/erk/tests/`
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also update the property body in context.py to use `self.pr_store` instead of `self.plan_store` (if not already done):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2147" cache_read_input_tokens="37268" cache_creation="{'ephemeral_5m_input_tokens': 2147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cj8CSZRvDhni1Dz6yRLNHc">
+    <param name="command">grep -n "plan_store\|plan_backend\|require_plan_backend" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="description">Check context.py for any remaining old references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2147" cache_read_input_tokens="37268" cache_creation="{'ephemeral_5m_input_tokens': 2147, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cj8CSZRvDhni1Dz6yRLNHc">
+
+  </tool_result>
+  <assistant>Good, no remaining old references. Now let me do Step 3 - delete `extract_plan_number()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="39415" cache_creation="{'ephemeral_5m_input_tokens': 191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01PV4SzJTakCkoHbTJ4izVtV">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1112 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="39415" cache_creation="{'ephemeral_5m_input_tokens': 191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PV4SzJTakCkoHbTJ4izVtV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Wq6bnRWooHfGvxoG8ZvRcV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="39606" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wq6bnRWooHfGvxoG8ZvRcV">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_015TgU3uCgoGW31661njfEzA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="40155" cache_creation="{'ephemeral_5m_input_tokens': 755, 'ephemeral_1h_input_tokens': 0}" output_tokens="76" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015TgU3uCgoGW31661njfEzA">
+     1→"""Unit tests for run command shared utilities.
+     2→
+     3→Tests the extract_plan_number and extract_pr_number helper functions
+     4→for parsing display_title formats.
+     5→"""
+     6→
+     7→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+     8→
+     9→
+    10→def test_extract_plan_number_new_format() -&gt; None:
+    11→    """Test parsing new format: '123:abc456' → 123."""
+    12→    assert extract_plan_number("123:abc456") == 123
+    13→    assert extract_plan_number("1:x") == 1
+    14→    assert extract_plan_number("999:distinct-id-here") == 999
+    15→
+    16→
+    17→def test_extract_plan_number_old_format_returns_none() -&gt; None:
+    18→    """Test old format: 'Issue title [abc123]' → None."""
+    19→    # Old format has title first, then distinct_id in brackets
+    20→    assert extract_plan_number("Add user authentication [abc123]") is None
+    21→    assert extract_plan_number("Fix bug in parser [xyz789]") is None
+    22→
+    23→
+    24→def test_extract_plan_number_with_colon_in_title_returns_none() -&gt; None:
+    25→    """Test titles with colons but non-numeric prefix → None."""
+    26→    # These look like they have colons but the prefix isn't a number
+    27→    assert extract_plan_number("Feature: Add caching [abc]") is None
+    28→    assert extract_plan_number("Bug fix: memory leak [xyz]") is None
+    29→
+    30→
+
+... [81 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll delete the `extract_plan_number()` function from shared.py and remove its tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1787" cache_read_input_tokens="40910" cache_creation="{'ephemeral_5m_input_tokens': 1787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GZ8jLYPPmcwxoPvoS6Nk8j">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+    <param name="old_string">
+
+def extract_plan_number(display_title: str | None) -&gt; int | None:
+    """Extract plan nu...[truncated 541 chars]...0].strip()
+    if not first_part.isdigit():
+        return None
+    return int(first_part)</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1787" cache_read_input_tokens="40910" cache_creation="{'ephemeral_5m_input_tokens': 1787, 'ephemeral_1h_input_tokens': 0}" output_tokens="368" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GZ8jLYPPmcwxoPvoS6Nk8j">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test file to remove `extract_plan_number` tests and fix the import:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="42697" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01BYdnDcEHZ1bXvaZSoNPFYD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/run/test_shared.py</param>
+    <param name="content">"""Unit tests for run command shared utilities.
+
+Tests the extract_pr_number helper functi...[truncated 1967 chars]...e."""
+    assert extract_pr_number(None) is None
+    assert extract_pr_number("") is None
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="42697" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="816" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BYdnDcEHZ1bXvaZSoNPFYD">
+The file /home/runner/work/erk/erk/tests/commands/run/test_shared.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Unit tests for run command shared utilities.
+     2→
+     3→Tests the extract_pr_number helper function for parsing display_title formats.
+     4→"""
+     5→
+     6→from erk.cli.commands.run.shared import extract_pr_number
+     7→
+     8→
+     9→# --- extract_pr_number tests ---
+    10→
+    11→
+    12→def test_extract_pr_number_pr_address_format() -&gt; None:
+    13→    """Test pr-address format: 'pr-address:#456:abc123' → 456."""
+    14→    assert extract_pr_number("pr-address:#456:abc123") == 456
+    15→
+    16→
+    17→def test_extract_pr_number_plan_implement_old_format() -&gt; None:
+    18→    """Test old plan-implement format: '8559:#460:abc123' → 460."""
+    19→    assert extract_pr_number("8559:#460:abc123") == 460
+    20→    assert extract_pr_number("142:#460:abc456") == 460
+    21→
+    22→
+    23→def test_extract_pr_number_plan_implement_new_format() -&gt; None:
+    24→    """Test new plan-implement format: 'branch-name (#460):abc456' → 460."""
+    25→    assert extract_pr_number("plnd/fix-auth-bug-01-15-1430 (#460):abc456") == 460
+    26→    assert extract_pr_number("plnd/add-feature (#8559):xyz123") == 8559
+    27→
+    28→
+    29→def test_extract_pr_number_one_shot_format() -&gt; None:
+
+... [31 lines omitted] ...
+  </tool_result>
+  <assistant>Now check if there's a doc reference to update for `extract_plan_number`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2110" cache_read_input_tokens="43110" cache_creation="{'ephemeral_5m_input_tokens': 2110, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HPRxHDw8Af9sHPyc35zMUA">
+    <param name="command">grep -r "extract_plan_number" --include="*.md" -l 2&gt;/dev/null | grep -v __pycache__ | head -20</param>
+    <param name="description">Find doc files mentioning extract_plan_number</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2110" cache_read_input_tokens="43110" cache_creation="{'ephemeral_5m_input_tokens': 2110, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HPRxHDw8Af9sHPyc35zMUA">
+.erk/impl-context/plan.md
+.erk/impl-context/plnd--O9318-rename-plan-store-pr-03-21-1544/plan.md
+docs/learned/cli/workflow-run-list.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01143PMNxHN6YaX3x5w5mGpy">
+    <param name="command">grep -n "extract_plan_number" /home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+    <param name="description">Check extract_plan_number references in doc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="203" cache_read_input_tokens="45220" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="112" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01143PMNxHN6YaX3x5w5mGpy">
+44:Formats without `#` return None and fall back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FXUAPXP2ijnm5sKNJiq8FH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+    <param name="offset">38</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="45423" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="112" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FXUAPXP2ijnm5sKNJiq8FH">
+    38→- `"one-shot:#458:abc123"` -&gt; 458
+    39→- `"rebase:#456:abc123"` -&gt; 456
+    40→- `"plnd/fix-auth-bug-01-15-1430 (#460):abc456"` -&gt; 460 (plan-implement branch-name format)
+    41→
+    42→The plan-implement workflow uses a `run-name` template of `"${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"`, which includes the branch name for easier identification. The `#(\d+)` regex works with both old and new formats because it matches the `#NNN` pattern regardless of surrounding context.
+    43→
+    44→Formats without `#` return None and fall back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.
+    45→
+    46→## Workflow Source Column
+    47→
+    48→&lt;!-- Source: src/erk/cli/commands/run/list_cmd.py:42-45 --&gt;
+    49→
+    50→Iterates `WORKFLOW_COMMAND_MAP` (maps command names to .yml filenames) and tags each run with its source workflow.
+    51→
+    52→## Constants
+    53→
+    54→&lt;!-- Source: src/erk/cli/commands/run/list_cmd.py:27-29 --&gt;
+    55→
+    56→| Constant              | Value | Purpose                      |
+    57→| --------------------- | ----- | ---------------------------- |
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BEoSLQFMVWNrLzjKQe6GuG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+    <param name="old_string">Formats without `#` return None and fall back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.</param>
+    <param name="new_string">Formats without `#` return None.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="965" cache_read_input_tokens="45536" cache_creation="{'ephemeral_5m_input_tokens': 965, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BEoSLQFMVWNrLzjKQe6GuG">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XqnazG8L2HCANfC2zsjKMc">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1114 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="46501" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XqnazG8L2HCANfC2zsjKMc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015ic7pTg1m8gjPDpK77EztN">
+    <param name="command">erk exec update-objective-node 9318 --node 3.4 --status done --pr "#9352" 2&gt;&amp;1</param>
+    <param name="description">Mark Node 3.4 as done in objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="46705" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015ic7pTg1m8gjPDpK77EztN">
+{"success": true, "issue_number": 9318, "node_id": "3.4", "previous_pr": "#9352", "new_pr": "#9352", "url": "https://github.com/dagster-io/erk/issues/9318", "backlink_set": false, "backlink_skip": "no plan-header block"}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012ujwQfwG7sNMuEqT1B4RoX">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1116 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="47228" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="481" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012ujwQfwG7sNMuEqT1B4RoX">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Step 5 - rename `build_original_plan_section()` → `build_original_pr_section()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="47436" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01J5gvBCNbNCUYHkUcYinFYH">
+    <param name="command">grep -rn "build_original_plan_section" --include="*.py" | grep -v __pycache__</param>
+    <param name="description">Find all build_original_plan_section references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="47436" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J5gvBCNbNCUYHkUcYinFYH">
+tests/unit/pr_store/test_planned_pr_lifecycle.py:8:    build_original_plan_section,
+tests/unit/pr_store/test_planned_pr_lifecycle.py:128:# build_original_plan_section
+tests/unit/pr_store/test_planned_pr_lifecycle.py:132:def test_build_original_plan_section() -&gt; None:
+tests/unit/pr_store/test_planned_pr_lifecycle.py:134:    result = build_original_plan_section("my plan content")
+packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py:111:def build_original_plan_section(plan_content: str) -&gt; str:
+src/erk/cli/commands/pr/shared.py:37:from erk_shared.pr_store.planned_pr_lifecycle import build_original_plan_section
+src/erk/cli/commands/pr/shared.py:312:            pr_body_content = pr_body_content + build_original_plan_section(
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:62:    build_original_plan_section,
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:280:        original_plan_section = build_original_plan_section(plan_content)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PDaDtVfFVXHBarjBQR26uC">
+    <param name="command">grep -n "build_original_plan_section" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py</param>
+    <param name="description">Find function definition in planned_pr_lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="47959" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PDaDtVfFVXHBarjBQR26uC">
+111:def build_original_plan_section(plan_content: str) -&gt; str:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Lb7sXvHAcRZTndySQ7fwiF">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py</param>
+    <param name="offset">108</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="159" cache_read_input_tokens="48440" cache_creation="{'ephemeral_5m_input_tokens': 159, 'ephemeral_1h_input_tokens': 0}" output_tokens="124" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lb7sXvHAcRZTndySQ7fwiF">
+   108→    return plan_section + "\n\n" + metadata_body
+   109→
+   110→
+   111→def build_original_plan_section(plan_content: str) -&gt; str:
+   112→    """Build the ``&lt;details&gt;&lt;summary&gt;original-plan&lt;/summary&gt;`` section.
+   113→
+   114→    Used by both Stage 1 (plan creation) and Stage 2 (implementation)
+   115→    to wrap the original plan content in a collapsible section.
+   116→
+   117→    Args:
+   118→        plan_content: Plan markdown content
+   119→
+   120→    Returns:
+   121→        Details-wrapped plan section
+   122→    """
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I'll rename in all 4 files using the Edit tool:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="48599" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CDvTnEDhQ4Qf37iz94VVpg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py</param>
+    <param name="old_string">def build_original_plan_section(plan_content: str) -&gt; str:</param>
+    <param name="new_string">def build_original_pr_section(plan_content: str) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="48599" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="176" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CDvTnEDhQ4Qf37iz94VVpg">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EvuAo3F4shqRKpGiSkbUnT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">from erk_shared.pr_store.planned_pr_lifecycle import build_original_plan_section</param>
+    <param name="new_string">from erk_shared.pr_store.planned_pr_lifecycle import build_original_pr_section</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="560" cache_read_input_tokens="48982" cache_creation="{'ephemeral_5m_input_tokens': 560, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EvuAo3F4shqRKpGiSkbUnT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UMZinkY56diCPx4WG85JFP">
+    <param name="command">grep -n "build_original_plan_section" /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="description">Find remaining usage in pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="49542" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UMZinkY56diCPx4WG85JFP">
+312:            pr_body_content = pr_body_content + build_original_plan_section(
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019FLodvcgsaV7P5Bc9wQkmE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">            pr_body_content = pr_body_content + build_original_plan_section(</param>
+    <param name="new_string">            pr_body_content = pr_body_content + build_original_pr_section(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="49748" cache_creation="{'ephemeral_5m_input_tokens': 150, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019FLodvcgsaV7P5Bc9wQkmE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PTzaV1SHcknHPZ5MAAZr8P">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="offset">59</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="49898" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PTzaV1SHcknHPZ5MAAZr8P">
+    59→from erk_shared.gateway.github.types import BodyText, PRNotFound
+    60→from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
+    61→from erk_shared.pr_store.planned_pr_lifecycle import (
+    62→    build_original_plan_section,
+    63→    extract_plan_content,
+    64→)
+    65→
+    66→
+    67→@dataclass(frozen=True)
+    68→class UpdateSuccess:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DdGZFq52AxDMXP1yJcNaq9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">    build_original_plan_section,</param>
+    <param name="new_string">    build_original_pr_section,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="50428" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DdGZFq52AxDMXP1yJcNaq9">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XYAEf7mXc77UwnXrn2nU3c">
+    <param name="command">grep -n "build_original_plan_section" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="description">Find remaining usage in ci_update_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="50770" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="127" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XYAEf7mXc77UwnXrn2nU3c">
+280:        original_plan_section = build_original_plan_section(plan_content)
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RJCEnk1yczUMnQXcxoN6FZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py</param>
+    <param name="old_string">        original_plan_section = build_original_plan_section(plan_content)</param>
+    <param name="new_string">        original_plan_section = build_original_pr_section(plan_content)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="50964" cache_creation="{'ephemeral_5m_input_tokens': 487, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RJCEnk1yczUMnQXcxoN6FZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="51451" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wpj469NqtWzPH3CQbTS19r">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_lifecycle.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="51451" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wpj469NqtWzPH3CQbTS19r">
+     1→"""Tests for draft PR lifecycle build/parse functions."""
+     2→
+     3→from erk_shared.pr_store.planned_pr_lifecycle import (
+     4→    _LEGACY_DETAILS_OPEN,
+     5→    DETAILS_CLOSE,
+     6→    DETAILS_OPEN,
+     7→    PLAN_CONTENT_SEPARATOR,
+     8→    build_original_plan_section,
+     9→    build_plan_stage_body,
+    10→    extract_plan_content,
+    11→)
+    12→
+    13→# =============================================================================
+    14→# build_plan_stage_body
+    15→# =============================================================================
+    16→
+    17→
+    18→def test_build_plan_stage_body() -&gt; None:
+    19→    """Stage 1 body contains metadata + details-wrapped plan, no separator."""
+    20→    result = build_plan_stage_body("metadata block", "plan content", summary="")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MJM4f7cafahKvCx7MEe6Du">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_lifecycle.py</param>
+    <param name="old_string">    build_original_plan_section,</param>
+    <param name="new_string">    build_original_pr_section,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="51663" cache_creation="{'ephemeral_5m_input_tokens': 777, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MJM4f7cafahKvCx7MEe6Du">
+The file /home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HnJV8CY6D6FJ3U5sU2HLqy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_lifecycle.py</param>
+    <param name="offset">125</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="184" cache_read_input_tokens="52440" cache_creation="{'ephemeral_5m_input_tokens': 184, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HnJV8CY6D6FJ3U5sU2HLqy">
+   125→
+   126→
+   127→# =============================================================================
+   128→# build_original_plan_section
+   129→# =============================================================================
+   130→
+   131→
+   132→def test_build_original_plan_section() -&gt; None:
+   133→    """Builds a details section with original-plan summary."""
+   134→    result = build_original_plan_section("my plan content")
+   135→    assert DETAILS_OPEN in result
+   136→    assert "my plan content" in result
+   137→    assert DETAILS_CLOSE in result
+   138→    assert result.startswith("\n\n")
+   139→
+   140→
+   141→# =============================================================================
+   142→# Roundtrip
+   143→# =============================================================================
+   144→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012hJzdJ7Kig16iFLWM86gxc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_lifecycle.py</param>
+    <param name="old_string"># =============================================================================
+# build_or...[truncated 162 chars]...with original-plan summary."""
+    result = build_original_plan_section("my plan content")</param>
+    <param name="new_string"># =============================================================================
+# build_or...[truncated 156 chars]...n with original-plan summary."""
+    result = build_original_pr_section("my plan content")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="52624" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012hJzdJ7Kig16iFLWM86gxc">
+The file /home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_lifecycle.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_015dut5nEoKrZpnZDnvJJ9GK">
+    <param name="todos">[{'content': 'Step 1: Rename plan_store field → pr_store (Node 3.1) across all files', 'st...[truncated 1118 chars]...ke all-ci'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="53020" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="481" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015dut5nEoKrZpnZDnvJJ9GK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now Step 6 - update documentation references. Let me check which docs need updates:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="53640" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Q4bxk6VQzNGrsPSfE6APkH">
+    <param name="command">grep -rn "plan_backend\|require_plan_backend\|plan_store\|extract_plan_number\|build_original_plan_section" --include="*.md" docs/ | grep -v ".erk/" | grep -v __pycache__ | head -50</param>
+    <param name="description">Find doc files with old terminology</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="53640" cache_creation="{'ephemeral_5m_input_tokens': 523, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q4bxk6VQzNGrsPSfE6APkH">
+docs/learned/testing/tripwires.md:73:**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+docs/learned/testing/cli-testing.md:334:    fake_backend, _ = create_plan_store_with_plans({})
+docs/learned/testing/cli-testing.md:494:    """Test that plan_backend and direct issue operations share state."""
+docs/learned/testing/dual-backend-testing.md:23:### `create_plan_store_with_plans()`
+docs/learned/testing/dual-backend-testing.md:27:&lt;!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans --&gt;
+docs/learned/testing/dual-backend-testing.md:29:See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for the full signature. Returns `tuple[ManagedGitHubPrBackend, FakeLocalGitHub]` — the backend and its backing fake for assertions.
+docs/learned/testing/dual-backend-testing.md:33:After PR #8210, only the ManagedGitHubPrBackend exists. Use `create_plan_store_with_plans()` for all new tests.
+docs/learned/testing/dual-backend-testing.md:37:`context_for_test()` in `tests/test_utils/test_context.py` accepts an optional `plan_store` parameter, allowing tests to inject the backend.
+docs/learned/testing/dual-backend-testing.md:43:&lt;!-- Source: tests/test_utils/plan_helpers.py, create_plan_store_with_plans --&gt;
+docs/learned/testing/dual-backend-testing.md:45:See `create_plan_store_with_plans()` in `tests/test_utils/plan_helpers.py` for usage examples. For mutation tracking assertion patterns (e.g., `fake.created_prs`), see [Backend Testing Composition](backend-testing-composition.md).
+docs/learned/testing/environment-variable-isolation.md:10:    warning: "Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911."
+docs/learned/testing/environment-variable-isolation.md:18:&gt; **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"planned_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
+docs/learned/testing/environment-variable-isolation.md:40:def clear_plan_backend_env(monkeypatch: pytest.MonkeyPatch) -&gt; None:
+docs/learned/testing/environment-variable-isolation.md:46:### Option 2: Explicit `plan_store` in test context
+docs/learned/testing/environment-variable-isolation.md:48:Pass `plan_store` explicitly to `context_for_test()`:
+docs/learned/testing/environment-variable-isolation.md:52:    plan_store=ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime()),
+docs/learned/cli/index.md:11:- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
+docs/learned/cli/backend-aware-display.md:6:  - "understanding how plan_backend affects CLI output"
+docs/learned/cli/backend-aware-display.md:35:Use this in exec scripts where `require_plan_backend()` is already in scope.
+docs/learned/objectives/exec-command-consolidation.md:51:2. **Plan** — If `--plan` is provided, use it directly (direct lookup). Otherwise, discover via `plan_backend.get_plan_for_branch()`
+docs/learned/planning/backend-naming-conventions.md:17:| Provider name (API)       | `github-draft-pr`  | `plan_backend.get_provider_name()` returns this  |
+docs/learned/planning/planned-pr-lifecycle.md:85:All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
+docs/learned/planning/planned-pr-lifecycle.md:90:| `build_original_plan_section(plan_content)`                      | Wrap plan content in `&lt;details&gt;&lt;summary&gt;original-plan&lt;/summary&gt;` section. Used by both Stage 1 and Stage 2.                                              |
+docs/learned/planning/planned-pr-lifecycle.md:107:&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py --&gt;
+docs/learned/planning/planned-pr-lifecycle.md:120:**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
+docs/learned/planning/plan-backend-migration.md:33:backend = require_plan_backend(ctx)
+docs/learned/planning/plan-backend-migration.md:46:backend = require_plan_backend(ctx)
+docs/learned/planning/plan-backend-migration.md:131:`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_plan_backend(ctx)` returns a working implementation.
+docs/learned/planning/plan-backend-migration.md:143:Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):
+docs/learned/planning/plan-backend-migration.md:157:The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>The docs have many references to the old naming. The plan calls out specific docs to update. Let me check those specific files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3184" cache_read_input_tokens="54163" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LKfr93qt2iL2wHbYgPWzBv">
+    <param name="command">grep -n "plan_backend\|require_plan_backend" /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md | head -30</param>
+    <param name="description">Check architecture plan-backend-migration doc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3184" cache_read_input_tokens="54163" cache_creation="{'ephemeral_5m_input_tokens': 3184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LKfr93qt2iL2wHbYgPWzBv">
+5:  - "working with require_plan_backend"
+10:    warning: "Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers."
+40:1. `from erk_shared.context.helpers import require_plan_backend`
+41:2. `backend = require_plan_backend(ctx)`
+57:1. **Extract backend:** `backend = require_plan_backend(ctx)` with `SystemExit` catch
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Me2SLu6XnwhzYacozNGFxW">
+    <param name="command">grep -n "plan_backend\|require_plan_backend" /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md | head -30</param>
+    <param name="description">Check planning plan-backend-migration doc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="57347" cache_creation="{'ephemeral_5m_input_tokens': 273, 'ephemeral_1h_input_tokens': 0}" output_tokens="120" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Me2SLu6XnwhzYacozNGFxW">
+33:backend = require_plan_backend(ctx)
+46:backend = require_plan_backend(ctx)
+131:`ErkContext.for_test(github_issues=fake_gh)` automatically creates a `PlanBackend` backed by the fake, so `require_plan_backend(ctx)` returns a working implementation.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RJdC4rP1VyhKuGu8HRcb2j">
+    <param name="command">grep -n "plan_backend\|require_plan_backend" /home/runner/work/erk/erk/docs/learned/cli/backend-aware-display.md | head -20</param>
+    <param name="description">Check cli backend-aware-display doc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="57620" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="120" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RJdC4rP1VyhKuGu8HRcb2j">
+6:  - "understanding how plan_backend affects CLI output"
+25:Commands that operate on plan metadata should use the `plan_backend` abstract interface without checking the type. Both backends implement the same methods. See `src/erk/cli/commands/learn/learn_cmd.py` for an example of interface delegation without backend branching.
+35:Use this in exec scripts where `require_plan_backend()` is already in scope.
+41:The TUI command palette uses the `_is_github_backend()` predicate in [`registry.py`](../../../src/erk/tui/commands/registry.py), which compares `ctx.plan_backend` directly against the `"github"` string. Use this for availability filtering where you need a boolean check.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Vy89TF6sCPv33S7ktJJy4A">
+    <param name="command">grep -n "require_plan_backend" /home/runner/work/erk/erk/docs/learned/ci/exec-script-environment-requirements.md 2&gt;/dev/null | head -20</param>
+    <param name="description">Check ci exec-script-environment-requirements doc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="632" cache_read_input_tokens="57826" cache_creation="{'ephemeral_5m_input_tokens': 632, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vy89TF6sCPv33S7ktJJy4A">
+59:    backend = require_plan_backend(ctx)      # needs GH_TOKEN
+  </tool_result>
+  <assistant>Now let me update all 4 docs mentioned in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="58458" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S9pjj8GTqP7wsW9uX3cLWz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="58458" cache_creation="{'ephemeral_5m_input_tokens': 157, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
