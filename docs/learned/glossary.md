@@ -646,7 +646,7 @@ Wraps real implementation, prints messages instead of executing destructive oper
 
 A `.erk/impl-context/` folder containing implementation plans and progress tracking for a feature.
 
-**Usage**: `erk create --from-plan-file my-plan.md my-feature`
+**Usage**: `erk create --from-pr-file my-plan.md my-feature`
 
 **Behavior**:
 
@@ -670,7 +670,7 @@ A `.erk/impl-context/` folder containing implementation plans and progress track
 echo "## Implementation Plan\n1. Step 1\n2. Step 2" > plan.md
 
 # Create worktree from plan file
-erk create --from-plan-file plan.md my-feature
+erk create --from-pr-file plan.md my-feature
 
 # Plan structure created:
 # ~/erks/erk/my-feature/.erk/impl-context/

@@ -88,7 +88,7 @@ def run_objective_update_after_close(
     user_output("")
     user_output("Starting objective update...")
 
-    cmd = f"/erk:objective-update-with-closed-plan --plan {pr_number} --objective {objective}"
+    cmd = f"/erk:objective-update-with-closed-plan --pr {pr_number} --objective {objective}"
 
     result = stream_command_with_feedback(
         executor=ctx.prompt_executor,

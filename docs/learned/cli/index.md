@@ -12,7 +12,7 @@
 - **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
 - **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
 - **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
-- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
+- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-pr flag, changing slot allocation behavior
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
 - **[click-framework-conventions.md](click-framework-conventions.md)** — adding Click options to erk CLI commands, understanding default=None convention in Click options, distinguishing 'not provided' from 'empty string' in CLI arguments

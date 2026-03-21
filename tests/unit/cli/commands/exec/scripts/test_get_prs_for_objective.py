@@ -1,12 +1,12 @@
-"""Unit tests for get-plans-for-objective command."""
+"""Unit tests for get-prs-for-objective command."""
 
 import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.get_plans_for_objective import (
-    get_plans_for_objective,
+from erk.cli.commands.exec.scripts.get_prs_for_objective import (
+    get_prs_for_objective,
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
@@ -74,13 +74,13 @@ def _make_issue(
     )
 
 
-def test_get_plans_for_objective_returns_empty_list() -> None:
-    """Test fetch with no plans linked to objective."""
+def test_get_prs_for_objective_returns_empty_list() -> None:
+    """Test fetch with no prs linked to objective."""
     fake_gh = FakeGitHubIssues()
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plans_for_objective,
+        get_prs_for_objective,
         ["4954"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
@@ -92,21 +92,21 @@ def test_get_plans_for_objective_returns_empty_list() -> None:
     assert output["plans"] == []
 
 
-def test_get_plans_for_objective_finds_linked_plans() -> None:
-    """Test fetch with plans linked to objective."""
-    # Plan linked to objective 4954
+def test_get_prs_for_objective_finds_linked_plans() -> None:
+    """Test fetch with prs linked to objective."""
+    # PR linked to objective 4954
     plan_linked = _make_issue(
         number=5066,
         title="P5066: Implement feature X",
         body=_make_plan_header(objective_id=4954),
     )
-    # Plan linked to different objective
+    # PR linked to different objective
     plan_other = _make_issue(
         number=5067,
         title="P5067: Other plan",
         body=_make_plan_header(objective_id=9999),
     )
-    # Plan with no objective
+    # PR with no objective
     plan_no_obj = _make_issue(
         number=5068,
         title="P5068: Standalone plan",
@@ -123,7 +123,7 @@ def test_get_plans_for_objective_finds_linked_plans() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plans_for_objective,
+        get_prs_for_objective,
         ["4954"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
@@ -140,8 +140,8 @@ def test_get_plans_for_objective_finds_linked_plans() -> None:
     }
 
 
-def test_get_plans_for_objective_finds_multiple_plans() -> None:
-    """Test fetch with multiple plans linked to same objective."""
+def test_get_prs_for_objective_finds_multiple_plans() -> None:
+    """Test fetch with multiple prs linked to same objective."""
     plan1 = _make_issue(
         number=5066,
         title="P5066: Phase 1",
@@ -164,7 +164,7 @@ def test_get_plans_for_objective_finds_multiple_plans() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plans_for_objective,
+        get_prs_for_objective,
         ["4954"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
@@ -179,7 +179,7 @@ def test_get_plans_for_objective_finds_multiple_plans() -> None:
     assert pr_numbers == {5066, 5067}
 
 
-def test_get_plans_for_objective_supports_legacy_field() -> None:
+def test_get_prs_for_objective_supports_legacy_field() -> None:
     """Test fetch supports legacy objective_issue field name."""
     plan_legacy = _make_issue(
         number=5066,
@@ -191,7 +191,7 @@ def test_get_plans_for_objective_supports_legacy_field() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plans_for_objective,
+        get_prs_for_objective,
         ["4954"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
@@ -203,9 +203,9 @@ def test_get_plans_for_objective_supports_legacy_field() -> None:
     assert output["plans"][0]["number"] == 5066
 
 
-def test_get_plans_for_objective_skips_plans_without_metadata() -> None:
-    """Test that plans without plan-header block are skipped."""
-    # Plan with no metadata block
+def test_get_prs_for_objective_skips_plans_without_metadata() -> None:
+    """Test that prs without plan-header block are skipped."""
+    # PR with no metadata block
     plan_no_metadata = _make_issue(
         number=5066,
         title="P5066: Old format plan",
@@ -216,7 +216,7 @@ def test_get_plans_for_objective_skips_plans_without_metadata() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plans_for_objective,
+        get_prs_for_objective,
         ["4954"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )
@@ -238,7 +238,7 @@ def test_json_output_structure() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plans_for_objective,
+        get_prs_for_objective,
         ["100"],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
     )

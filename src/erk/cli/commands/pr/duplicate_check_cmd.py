@@ -26,7 +26,7 @@ from erk_shared.output.output import user_output
     help="PR file to read",
 )
 @click.option(
-    "--plan",
+    "--pr",
     "-p",
     type=str,
     help="Existing PR ID to check (fetches body and excludes self from comparison)",
@@ -36,7 +36,7 @@ from erk_shared.output.output import user_output
 def duplicate_check_plan(
     ctx: ErkContext,
     file: Path | None,
-    plan: str | None,
+    pr: str | None,
     *,
     repo_id: GitHubRepoId,
 ) -> None:
@@ -49,7 +49,7 @@ def duplicate_check_plan(
     via recent commits merged to the trunk branch (local mode only).
 
     Supports three input modes:
-    - Plan ID: --plan ID (fetches plan body, excludes self from comparison)
+    - Plan ID: --pr ID (fetches plan body, excludes self from comparison)
     - File: --file PATH (recommended for automation)
     - Stdin: pipe content via shell (for Unix composability)
 
@@ -58,21 +58,21 @@ def duplicate_check_plan(
         1: Duplicates found, already implemented, or error
 
     Examples:
-        erk pr duplicate-check --plan 200
+        erk pr duplicate-check --pr 200
         erk pr duplicate-check --file plan.md
-        erk pr duplicate-check --plan 200 --repo owner/repo
+        erk pr duplicate-check --pr 200 --repo owner/repo
         cat plan.md | erk pr duplicate-check
     """
-    if plan is not None and file is not None:
-        Ensure.invariant(False, "Cannot use both --plan and --file. Choose one input mode.")
+    if pr is not None and file is not None:
+        Ensure.invariant(False, "Cannot use both --pr and --file. Choose one input mode.")
 
     # Resolve plan content
     exclude_pr_id: str | None = None
     content: str
 
-    if plan is not None:
+    if pr is not None:
         remote = get_remote_github(ctx)
-        pr_number = parse_issue_identifier(plan)
+        pr_number = parse_issue_identifier(pr)
         issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
         if isinstance(issue, IssueNotFound):
             user_output(click.style("Error: ", fg="red") + f"PR {pr_number} not found.")
@@ -93,7 +93,7 @@ def duplicate_check_plan(
             user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
             raise SystemExit(1) from e
     else:
-        Ensure.invariant(False, "No input provided. Use --plan, --file, or pipe content to stdin.")
+        Ensure.invariant(False, "No input provided. Use --pr, --file, or pipe content to stdin.")
 
     Ensure.not_empty(content.strip(), "PR content is empty. Provide a non-empty PR.")
 

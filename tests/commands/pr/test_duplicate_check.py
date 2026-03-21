@@ -193,7 +193,7 @@ def test_no_input_shows_error() -> None:
 
 
 def test_plan_flag_fetches_and_excludes_self() -> None:
-    """--plan fetches the plan body and excludes it from comparison set."""
+    """--pr fetches the plan body and excludes it from comparison set."""
     llm_output = '{"duplicates": []}'
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
@@ -237,7 +237,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "200"],
+            ["pr", "duplicate-check", "--pr", "200"],
             obj=ctx,
         )
 
@@ -288,7 +288,7 @@ def test_progress_reporting_lists_plans() -> None:
 
 
 def test_plan_flag_not_found() -> None:
-    """--plan with nonexistent plan ID returns exit code 1 with error."""
+    """--pr with nonexistent plan ID returns exit code 1 with error."""
     plan_store, _ = create_pr_backend_with_plans({})
     fake_remote = FakeRemoteGitHub(
         authenticated_user="test-user",
@@ -312,7 +312,7 @@ def test_plan_flag_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "999"],
+            ["pr", "duplicate-check", "--pr", "999"],
             obj=ctx,
         )
 
@@ -321,7 +321,7 @@ def test_plan_flag_not_found() -> None:
 
 
 def test_plan_and_file_mutually_exclusive() -> None:
-    """Using both --plan and --file produces an error."""
+    """Using both --pr and --file produces an error."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env)
@@ -335,7 +335,7 @@ def test_plan_and_file_mutually_exclusive() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "100", "--file", temp_path],
+            ["pr", "duplicate-check", "--pr", "100", "--file", temp_path],
             obj=ctx,
         )
 

@@ -224,9 +224,9 @@ CLI flags and error codes were standardized from "issue" to "plan" terminology:
 
 | Old Name                             | New Name                |
 | ------------------------------------ | ----------------------- |
-| `--plan-issue` (flag)                | `--learn-plan`          |
-| `missing-plan-issue` (error code)    | `missing-learn-plan`    |
-| `unexpected-plan-issue` (error code) | `unexpected-learn-plan` |
+| `--plan-issue` (flag)                | `--learn-pr`            |
+| `missing-plan-issue` (error code)    | `missing-learn-pr`      |
+| `unexpected-plan-issue` (error code) | `unexpected-learn-pr`   |
 | `no-issue-reference` (error code)    | `no-plan-reference`     |
 | `issue-not-found` (error code)       | `plan-not-found`        |
 

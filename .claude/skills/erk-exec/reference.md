@@ -48,7 +48,6 @@ Quick reference for all `erk exec` subcommands.
 | `get-learn-sessions`              | Get session information for a plan.                                               |
 | `get-plan-info`                   | Retrieve plan info from the appropriate backend.                                  |
 | `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                         |
-| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                           |
 | `get-pr-body-footer`              | Generate PR body footer with teleport command.                                    |
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).                     |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.                     |
@@ -56,6 +55,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-feedback`                 | Fetch all PR feedback in a single command.                                        |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                             |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).                     |
+| `get-prs-for-objective`           | Fetch erk-prs linked to an objective.                                             |
 | `get-review-activity-log`         | Fetch the activity log from an existing review summary comment.                   |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                            |
 | `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.                |
@@ -507,18 +507,6 @@ Extract a metadata field from a plan's plan-header block.
 | `PR_NUMBER`  | Yes      | -           |
 | `FIELD_NAME` | Yes      | -           |
 
-### get-plans-for-objective
-
-Fetch erk-plans linked to an objective.
-
-**Usage:** `erk exec get-plans-for-objective` <objective_number>
-
-**Arguments:**
-
-| Name               | Required | Description |
-| ------------------ | -------- | ----------- |
-| `OBJECTIVE_NUMBER` | Yes      | -           |
-
 ### get-pr-body-footer
 
 Generate PR body footer with teleport command.
@@ -610,6 +598,18 @@ Fetch PR details using REST API (avoids GraphQL rate limits).
 | Flag       | Type | Required | Default | Description                   |
 | ---------- | ---- | -------- | ------- | ----------------------------- |
 | `--branch` | TEXT | No       | -       | Branch name to look up PR for |
+
+### get-prs-for-objective
+
+Fetch erk-prs linked to an objective.
+
+**Usage:** `erk exec get-prs-for-objective` <objective_number>
+
+**Arguments:**
+
+| Name               | Required | Description |
+| ------------------ | -------- | ----------- |
+| `OBJECTIVE_NUMBER` | Yes      | -           |
 
 ### get-review-activity-log
 
@@ -1312,12 +1312,12 @@ Track learn workflow result on a plan.
 
 **Options:**
 
-| Flag           | Type    | Required | Default        | Description                                                          |
-| -------------- | ------- | -------- | -------------- | -------------------------------------------------------------------- |
-| `--pr-id`      | TEXT    | Yes      | Sentinel.UNSET | PR identifier (e.g., issue number)                                   |
-| `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
-| `--learn-plan` | INTEGER | No       | Sentinel.UNSET | Learn PR number (required if status is completed_with_plan)          |
-| `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
+| Flag         | Type    | Required | Default        | Description                                                          |
+| ------------ | ------- | -------- | -------------- | -------------------------------------------------------------------- |
+| `--pr-id`    | TEXT    | Yes      | Sentinel.UNSET | PR identifier (e.g., issue number)                                   |
+| `--status`   | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
+| `--learn-pr` | INTEGER | No       | Sentinel.UNSET | Learn PR number (required if status is completed_with_plan)          |
+| `--plan-pr`  | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
 
 ### update-issue-body
 
