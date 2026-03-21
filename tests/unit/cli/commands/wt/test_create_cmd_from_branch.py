@@ -37,7 +37,10 @@ def test_create_from_branch_assigns_local_branch(tmp_path) -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create", "--from-branch", "feature-auth"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["wt", "create", "--from-branch", "feature-auth"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -209,7 +212,10 @@ def test_create_from_branch_already_assigned(tmp_path) -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["wt", "create", "--from-branch", "feature-auth"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["wt", "create", "--from-branch", "feature-auth"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0

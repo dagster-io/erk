@@ -10,12 +10,12 @@ read_when:
 
 ## Command Matrix
 
-| Command                                  | Branch State Required | Slot State Required   | Creates Branch? | Creates Slot? |
-| ---------------------------------------- | --------------------- | --------------------- | --------------- | ------------- |
-| `erk wt create <name>`                   | No branch exists      | Free slot available   | Yes (new)       | Yes           |
-| `erk wt create --from-branch <branch>`   | Branch must exist     | Free slot available   | No              | Yes           |
-| `erk wt create --from-current-branch`    | On a non-trunk branch | Free slot available   | No              | Yes           |
-| `erk wt co <slot>`                       | N/A                   | Slot must be occupied | No              | No            |
+| Command                                | Branch State Required | Slot State Required   | Creates Branch? | Creates Slot? |
+| -------------------------------------- | --------------------- | --------------------- | --------------- | ------------- |
+| `erk wt create <name>`                 | No branch exists      | Free slot available   | Yes (new)       | Yes           |
+| `erk wt create --from-branch <branch>` | Branch must exist     | Free slot available   | No              | Yes           |
+| `erk wt create --from-current-branch`  | On a non-trunk branch | Free slot available   | No              | Yes           |
+| `erk wt co <slot>`                     | N/A                   | Slot must be occupied | No              | No            |
 
 ## When to Use Each
 
