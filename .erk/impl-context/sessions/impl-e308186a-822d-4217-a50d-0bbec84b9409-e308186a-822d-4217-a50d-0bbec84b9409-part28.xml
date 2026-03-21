@@ -1,0 +1,142 @@
+<session>
+  <meta source="agent-a7d1ccb" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py`:
+
+Rename all occurrences of `plan_backend` to `pr_backend`.
+Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
+
+This includes:
+- Imports
+- Parameter names
+- Variable names and attribute accesses
+- Type annotations
+- Comments
+
+DO NOT rename:
+- External API field names
+- User-facing string messages
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` in the file. Let me start by reading the file to understand its structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16121" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16121, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VBdHePPfpEdV7o2dr7g4Tu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16121" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16121, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VBdHePPfpEdV7o2dr7g4Tu">
+     1→"""Stack landing for `erk land --stack`.
+     2→
+     3→Lands an entire Graphite stack bottom-up while preserving the existing land
+     4→command's validation and cleanup guarantees:
+     5→- all confirmations happen before mutations
+     6→- child PR base updates are verified before landing a parent branch
+     7→- local cleanup reuses the same branch/worktree cleanup paths as `erk land`
+     8→"""
+     9→
+    10→from dataclasses import dataclass
+    11→from pathlib import Path
+    12→
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.commands.land_cmd import (
+    17→    CleanupContext,
+    18→    _cleanup_landed_branch,
+    19→    check_unresolved_comments,
+    20→)
+    21→from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
+    22→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    23→from erk.cli.commands.objective_helpers import (
+    24→    get_objective_for_branch,
+    25→    run_objective_update_after_land,
+    26→)
+    27→from erk.cli.ensure import Ensure
+    28→from erk.core.context import ErkContext
+    29→from erk.core.repo_discovery import RepoContext
+    30→from erk_shared.gateway.git.remote_ops.types import PushError
+
+... [665 lines omitted] ...
+
+    31→from erk_shared.gateway.github.types import MergeError, PRDetails, PRNotFound
+   333→    except RuntimeError as exc:
+   336→            _format_partial_failure(
+   339→                    f"Failed to fetch origin/{trunk_branch} before rebasing '{branch}'.\n\n"
+   351→        except RuntimeError as exc:
+   353→                click.style("Warning: ", fg="yellow")
+   354→                + f"Automatic rebase abort failed in {rebase_cwd}: {exc}"
+   364→            _format_partial_failure(
+   378→    except Exception as exc:
+   381→            _format_partial_failure(
+   384→                    f"Failed to re-track rebased branch '{branch}' in Graphite.\n\n"
+   398→    if isinstance(push_result, PushError):
+   401→            _format_partial_failure(
+   404→                    f"Failed to push rebased branch '{branch}' to origin.\n\n"
+   437→    error_message = reparent_child_pr_bases_for_land(
+   443→    if error_message is not None:
+   446→            _format_partial_failure(merged_entries=merged_entries, message=error_message),
+   455→        except Exception as exc:
+   458→                _format_partial_failure(
+   461→                        f"Failed to update local Graphite tracking for child branch "
+   495→    if isinstance(merge_result, MergeError):
+   498→            _format_partial_failure(
+   501→                    f"Failed to merge PR #{entry.pr_number} [{entry.branch}].\n\n"
+   511→            click.style("Warning: ", fg="yellow")
+   537→        except Exception as exc:
+   539→                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {entry.branch}: {exc}"
+   551→        except Exception as exc:
+   553→                click.style("Warning: ", fg="yellow")
+   554→                + f"Objective update failed for {entry.branch}: {exc}"
+   568→    cleanup_warnings: list[str] = []
+   590→        except Exception as exc:
+   591→            cleanup_warnings.append(f"{entry.branch}: {exc}")
+   593→    if cleanup_warnings:
+   594→        user_output(click.style("Warning: ", fg="yellow") + "Stack merged, but cleanup had issues:")
+   595→        for warning in cleanup_warnings:
+   596→            user_output(f"  - {warning}")
+   608→            click.style("Warning: ", fg="yellow")
+   616→    except RuntimeError:
+   618→            click.style("Warning: ", fg="yellow")
+   630→            click.style("Warning: ", fg="yellow")
+   642→    except RuntimeError:
+   644→            click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
+   680→def _format_partial_failure(
+  </tool_result>
+  <assistant>Now I'll apply the renames. I found one occurrence of `plan_backend` on line 286. Let me search for all occurrences of both `plan_backend` and `require_plan_backend` to ensure I find everything.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="9072" cache_read_input_tokens="16121" cache_creation="{'ephemeral_5m_input_tokens': 9072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DjkyCHkxtVVnrGHgAYiwe7">
+    <param name="pattern">plan_backend|require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="9072" cache_read_input_tokens="16121" cache_creation="{'ephemeral_5m_input_tokens': 9072, 'ephemeral_1h_input_tokens': 0}" output_tokens="175" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DjkyCHkxtVVnrGHgAYiwe7">
+286:                pr_id=ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch),
+  </tool_result>
+  <assistant>Perfect. I found one occurrence of `plan_backend` on line 286. Now I'll apply the rename:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="218" cache_read_input_tokens="25193" cache_creation="{'ephemeral_5m_input_tokens': 218, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017xjUa4UNwD5tiweR4719JW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py</param>
+    <param name="old_string">                pr_id=ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch),</param>
+    <param name="new_string">                pr_id=ctx.pr_backend.resolve_pr_number_for_branch(main_repo_root, branch),</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="218" cache_read_input_tokens="25193" cache_creation="{'ephemeral_5m_input_tokens': 218, 'ephemeral_1h_input_tokens': 0}" output_tokens="198" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017xjUa4UNwD5tiweR4719JW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully completed the rename. Here's a summary of the changes:
+
+## Summary
+
+I've renamed all occurrences of `plan_backend` to `pr_backend` in the file `/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py`.
+
+**Changes made:**
+- **Line 286**: `ctx.plan_backend.resolve_pr_number_for_branch(...)` → `ctx.pr_backend.resolve_pr_number_for_branch(...)`
+
+**Note on `require_plan_backend`:** 
+No occurrences of `require_plan_backend` were found in this file, so no changes were needed for that symbol.
+
+The rename is complete and the file has been updated.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="244" cache_read_input_tokens="25411" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="177" service_tier="standard" inference_geo="not_available" />
+</session>

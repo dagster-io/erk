@@ -1,0 +1,252 @@
+<session>
+  <meta source="agent-a710e68" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In each of these test files, rename all occurrences of `plan_backend` to `pr_backend`, and rename `require_plan_backend` to `require_pr_backend` wherever it appears:
+
+1. `/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py`
+2. `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py`
+
+This includes:
+- Imports
+- Parameter names
+- Variable names and attribute accesses (e.g., `ctx.plan_backend` → `ctx.pr_backend`)
+- Fixture parameters
+- Type annotations
+- Comments
+
+DO NOT rename:
+- External API field names (e.g., workflow input names like `"plan_backend": "planned_pr"` in dict literals or strings)
+- User-facing string messages
+
+Read each file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading both test files to understand their structure and then apply the renames.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6094" cache_read_input_tokens="10113" cache_creation="{'ephemeral_5m_input_tokens': 6094, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GjekvCKjdLAby4GWBpJTDi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6094" cache_read_input_tokens="10113" cache_creation="{'ephemeral_5m_input_tokens': 6094, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G253V4ppCy4TQuhLibPiFx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6094" cache_read_input_tokens="10113" cache_creation="{'ephemeral_5m_input_tokens': 6094, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GjekvCKjdLAby4GWBpJTDi">
+     1→"""Tests for workflow smoke test core logic."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from tests.fakes.gateway.git import FakeGit
+     6→from tests.fakes.gateway.github import FakeLocalGitHub
+     7→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+     8→from tests.fakes.tests.context import create_test_context
+     9→
+    10→from erk.core.workflow_smoke_test import (
+    11→    SMOKE_TEST_BRANCH_PREFIX,
+    12→    SmokeTestError,
+    13→    SmokeTestResult,
+    14→    _extract_branch_name,
+    15→    cleanup_smoke_tests,
+    16→    run_smoke_test,
+    17→)
+    18→from erk_shared.context.context import ErkContext
+    19→from erk_shared.context.types import NoRepoSentinel
+    20→from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
+    21→
+    22→
+    23→class TestRunSmokeTest:
+    24→    def test_dispatches_through_production_one_shot_path(self) -&gt; None:
+    25→        """Smoke test dispatches through dispatch_one_shot_remote production code path."""
+    26→        repo_root = Path("/fake/repo")
+    27→        git = FakeGit(
+    28→            git_common_dirs={repo_root: repo_root / ".git"},
+    29→            remote_urls={(repo_root, "origin"): "https://github.com/test-owner/test-repo.git"},
+    30→            default_branches={repo_root: "main"},
+
+... [184 lines omitted] ...
+
+    90→    def test_returns_error_when_not_in_repo(self) -&gt; None:
+    91→        """Smoke test returns error for NoRepoSentinel."""
+    96→        assert isinstance(result, SmokeTestError)
+  </tool_result>
+  <tool_result tool="toolu_01G253V4ppCy4TQuhLibPiFx">
+     1→"""Unit tests for dispatch_cmd._detect_plan_number_from_context."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.dispatch_cmd import _detect_pr_number_from_context
+     6→from erk_shared.context.types import RepoContext
+     7→from erk_shared.gateway.github.types import PRDetails
+     8→from tests.fakes.gateway.github import FakeLocalGitHub
+     9→from tests.fakes.tests.shared_context import context_for_test
+    10→
+    11→
+    12→def _repo_context(tmp_path: Path) -&gt; RepoContext:
+    13→    return RepoContext(
+    14→        root=tmp_path,
+    15→        repo_name="test-repo",
+    16→        repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+    17→        worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+    18→        pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+    19→    )
+    20→
+    21→
+    22→def _make_pr_details(*, number: int, branch: str) -&gt; PRDetails:
+    23→    return PRDetails(
+    24→        number=number,
+    25→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    26→        title=f"Plan #{number}",
+    27→        body="plan body",
+    28→        state="OPEN",
+    29→        is_draft=True,
+    30→        base_ref_name="main",
+
+... [48 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll analyze the files to identify all occurrences that need to be renamed:
+
+**File 1**: `/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py`
+- Line 88: `wf.inputs["plan_backend"]` - This is an external API field name (workflow input), so it should NOT be renamed according to the instructions.
+
+**File 2**: `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py`
+- Line 42: Comment mentions `plan_backend.resolve_pr_id_for_branch` - this needs renaming to `pr_backend`
+- Line 56: Comment mentions `plan_backend` - needs renaming
+- Line 41: Function name `test_fallback_to_plan_backend_when_no_impl_dir` - needs renaming to `test_fallback_to_pr_backend_when_no_impl_dir`
+- Line 55: Function name `test_returns_none_when_no_impl_dir_and_no_plan_backend_match` - needs renaming
+
+Let me apply these edits:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8432" cache_read_input_tokens="16207" cache_creation="{'ephemeral_5m_input_tokens': 8432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WpEtiQNxbGbsamiW7HsHbL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py</param>
+    <param name="old_string">def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -&gt; None:
+    """When resolve_impl_dir returns None, falls back to plan_backend.resolve_pr_id_for_branch."""</param>
+    <param name="new_string">def test_fallback_to_pr_backend_when_no_impl_dir(tmp_path: Path) -&gt; None:
+    """When resolve_impl_dir returns None, falls back to pr_backend.resolve_pr_id_for_branch."""</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8432" cache_read_input_tokens="16207" cache_creation="{'ephemeral_5m_input_tokens': 8432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WpEtiQNxbGbsamiW7HsHbL">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019cNkSdosfRSu8sRCk1YmVN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py</param>
+    <param name="old_string">def test_returns_none_when_no_impl_dir_and_no_plan_backend_match(tmp_path: Path) -&gt; None:
+    """When both resolve_impl_dir and plan_backend return nothing, returns None."""</param>
+    <param name="new_string">def test_returns_none_when_no_impl_dir_and_no_pr_backend_match(tmp_path: Path) -&gt; None:
+    """When both resolve_impl_dir and pr_backend return nothing, returns None."""</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="564" cache_read_input_tokens="24639" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019cNkSdosfRSu8sRCk1YmVN">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by reading the updated file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="275" cache_read_input_tokens="25203" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011SCnisiXLMKnMAyyHctBhs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="275" cache_read_input_tokens="25203" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011SCnisiXLMKnMAyyHctBhs">
+     1→"""Unit tests for dispatch_cmd._detect_plan_number_from_context."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.dispatch_cmd import _detect_pr_number_from_context
+     6→from erk_shared.context.types import RepoContext
+     7→from erk_shared.gateway.github.types import PRDetails
+     8→from tests.fakes.gateway.github import FakeLocalGitHub
+     9→from tests.fakes.tests.shared_context import context_for_test
+    10→
+    11→
+    12→def _repo_context(tmp_path: Path) -&gt; RepoContext:
+    13→    return RepoContext(
+    14→        root=tmp_path,
+    15→        repo_name="test-repo",
+    16→        repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+    17→        worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+    18→        pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+    19→    )
+    20→
+    21→
+    22→def _make_pr_details(*, number: int, branch: str) -&gt; PRDetails:
+    23→    return PRDetails(
+    24→        number=number,
+    25→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    26→        title=f"Plan #{number}",
+    27→        body="plan body",
+    28→        state="OPEN",
+    29→        is_draft=True,
+    30→        base_ref_name="main",
+
+... [48 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me verify that the first file doesn't need any changes (the `plan_backend` field name in line 88 is an external API field name that should not be renamed):</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1385" cache_read_input_tokens="25478" cache_creation="{'ephemeral_5m_input_tokens': 1385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UV3ee3ri4UfBt5TGrryL9t">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py</param>
+    <param name="offset">80</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1385" cache_read_input_tokens="25478" cache_creation="{'ephemeral_5m_input_tokens': 1385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UV3ee3ri4UfBt5TGrryL9t">
+    80→        assert len(remote.added_labels) == 1
+    81→        assert remote.added_labels[0].labels == ("erk-pr",)
+    82→
+    83→        # Verify workflow triggered
+    84→        assert len(remote.dispatched_workflows) == 1
+    85→        wf = remote.dispatched_workflows[0]
+    86→        assert wf.workflow == "one-shot.yml"
+    87→        assert wf.inputs["submitted_by"] == "testuser"
+    88→        assert wf.inputs["plan_backend"] == "planned_pr"
+    89→
+    90→    def test_returns_error_when_not_in_repo(self) -&gt; None:
+    91→        """Smoke test returns error for NoRepoSentinel."""
+    92→        ctx = create_test_context(repo=NoRepoSentinel())
+    93→
+    94→        result = run_smoke_test(ctx, dispatch_ref=None)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good. The `plan_backend` in the first file is correct - it's an external API field name (a dictionary key for workflow inputs) and should NOT be renamed according to the instructions.
+
+Let me verify the edits were successful by checking the second file one more time:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="490" cache_read_input_tokens="26863" cache_creation="{'ephemeral_5m_input_tokens': 490, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QCBAGnjyCvxDunrz6BQoat">
+    <param name="command">grep -n "plan_backend\|pr_backend\|require_plan_backend\|require_pr_backend" /home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py</param>
+    <param name="description">Check for any remaining plan_backend or require_plan_backend references</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="490" cache_read_input_tokens="26863" cache_creation="{'ephemeral_5m_input_tokens': 490, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QCBAGnjyCvxDunrz6BQoat">
+41:def test_fallback_to_pr_backend_when_no_impl_dir(tmp_path: Path) -&gt; None:
+42:    """When resolve_impl_dir returns None, falls back to pr_backend.resolve_pr_id_for_branch."""
+55:def test_returns_none_when_no_impl_dir_and_no_pr_backend_match(tmp_path: Path) -&gt; None:
+56:    """When both resolve_impl_dir and pr_backend return nothing, returns None."""
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WB51qLXGyBtUeyVQm4Ty36">
+    <param name="command">grep -n "plan_backend\|pr_backend\|require_plan_backend\|require_pr_backend" /home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py</param>
+    <param name="description">Check for any remaining plan_backend or require_plan_backend references</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="434" cache_read_input_tokens="27353" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WB51qLXGyBtUeyVQm4Ty36">
+88:        assert wf.inputs["plan_backend"] == "planned_pr"
+  </tool_result>
+  <assistant>Perfect! The renames have been completed successfully.
+
+## Summary
+
+I've successfully renamed all occurrences of `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` in the two test files, while preserving external API field names as instructed.
+
+### Changes Made:
+
+**File 1: `/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py`**
+- No changes required. The only occurrence of `plan_backend` on line 88 is an external API field name (`wf.inputs["plan_backend"]`) in a workflow input dictionary, which should NOT be renamed per the instructions.
+
+**File 2: `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_dispatch_cmd.py`**
+- Line 41: Function name renamed from `test_fallback_to_plan_backend_when_no_impl_dir` to `test_fallback_to_pr_backend_when_no_impl_dir`
+- Line 42: Comment updated from `plan_backend.resolve_pr_id_for_branch` to `pr_backend.resolve_pr_id_for_branch`
+- Line 55: Function name renamed from `test_returns_none_when_no_impl_dir_and_no_plan_backend_match` to `test_returns_none_when_no_impl_dir_and_no_pr_backend_match`
+- Line 56: Comment updated from `plan_backend` to `pr_backend`
+
+All renames have been applied to comments, function names, and variable references while preserving external API field names in dictionary literals.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="167" cache_read_input_tokens="27787" cache_creation="{'ephemeral_5m_input_tokens': 167, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

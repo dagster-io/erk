@@ -1,0 +1,609 @@
+<session>
+  <meta source="agent-a44ecc4" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In each of these files, rename all occurrences of `plan_backend` to `pr_backend`, and rename `require_plan_backend` to `require_pr_backend` wherever it appears:
+
+1. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+2. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py`
+3. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py`
+4. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py`
+
+This includes:
+- Imports
+- Parameter names
+- Variable names and attribute accesses
+- Type annotations
+- Comments
+
+DO NOT rename:
+- External API field names
+- User-facing string messages
+
+Read each file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` across these four files. Let me start by reading each file to understand the context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16235, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C3JhuQPcwmAvieTroviKYo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16235, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RADhkVJkQNZbvB225N4usW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16235, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QC4Rcqon129hrWcrjr884J">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16235, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HC12dNjrpZUrEvQBKMP4Jn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16235, 'ephemeral_1h_input_tokens': 0}" output_tokens="338" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C3JhuQPcwmAvieTroviKYo">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-pr label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced, sync_branch_to_sha
+    18→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    19→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    20→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    21→from erk_shared.context.helpers import (
+    22→    require_branch_manager,
+    23→    require_context,
+    24→    require_git,
+    25→    require_github,
+    26→    require_plan_backend,
+    27→    require_repo_root,
+    28→    require_time,
+    29→)
+    30→from erk_shared.context.types import NoRepoSentinel
+
+... [208 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PushError
+    85→        _output_error(output_format, f"PR #{pr_number} not found")
+    89→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+   100→        _output_error(output_format, "Not in a git repository")
+   150→    if isinstance(push_result, PushError):
+   151→        _output_error(output_format, f"Push failed: {push_result.message}")
+   197→    except RuntimeError as e:
+   199→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   227→def _output_error(output_format: str, message: str) -&gt; None:
+   228→    """Output error in the requested format."""
+   230→        click.echo(json.dumps({"success": False, "error": message}))
+   232→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <tool_result tool="toolu_01RADhkVJkQNZbvB225N4usW">
+     1→"""Get session information for a plan.
+     2→
+     3→This exec script returns JSON with session data for use by the /erk:learn skill.
+     4→It replaces the `erk learn --json --no-track` workflow, separating data retrieval
+     5→from tracking.
+     6→
+     7→Usage:
+     8→    erk exec get-learn-sessions &lt;issue-number&gt;
+     9→    erk exec get-learn-sessions &lt;issue-url&gt;
+    10→
+    11→Output:
+    12→    JSON object with session information:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "planning_session_id": "abc-123" | null,
+    17→        "implementation_session_ids": [...],
+    18→        "learn_session_ids": [...],
+    19→        "readable_session_ids": [...],
+    20→        "session_paths": [...],
+    21→        "local_session_ids": [...],
+    22→        "last_remote_impl_at": "2024-01-01T..." | null,
+    23→        "last_remote_impl_run_id": "12345678" | null,
+    24→        "last_remote_impl_session_id": "abc-def-ghi" | null
+    25→    }
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Error (invalid issue, GitHub failure, etc.)
+    30→"""
+
+... [274 lines omitted] ...
+
+    45→    GetLearnSessionsErrorDict,
+   269→            error = GetLearnSessionsErrorDict(
+   271→                error=f"Invalid issue identifier: {issue}",
+   273→            click.echo(json.dumps(error))
+   280→        error = GetLearnSessionsErrorDict(
+   282→            error="No issue specified and could not infer from branch name",
+   284→        click.echo(json.dumps(error))
+  </tool_result>
+  <tool_result tool="toolu_01QC4Rcqon129hrWcrjr884J">
+     1→"""Backend-aware plan info retrieval.
+     2→
+     3→Usage:
+     4→    erk exec get-plan-info &lt;plan-number&gt;
+     5→    erk exec get-plan-info &lt;plan-number&gt; --include-body
+     6→
+     7→Output:
+     8→    JSON with plan info fields:
+     9→    {"success": true, "pr_number": "42", "title": "...", "state": "OPEN",
+    10→     "labels": [...], "url": "...", "objective_id": null, "backend": "github",
+    11→     "head_ref_name": "...", "base_ref_name": "..."}
+    12→
+    13→    With --include-body, adds "body": "..." containing plan content.
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Error (plan not found)
+    18→"""
+    19→
+    20→import json
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    25→from erk_shared.pr_store.types import PrNotFound
+    26→
+    27→
+    28→@click.command(name="get-plan-info")
+    29→@click.argument("pr_number", type=int)
+    30→@click.option(
+
+... [54 lines omitted] ...
+
+    54→                    "error": "plan_not_found",
+  </tool_result>
+  <tool_result tool="toolu_01HC12dNjrpZUrEvQBKMP4Jn">
+     1→"""Extract arbitrary metadata fields from a plan's plan-header block.
+     2→
+     3→Usage:
+     4→    erk exec get-plan-metadata &lt;plan-number&gt; &lt;field-name&gt;
+     5→
+     6→Output:
+     7→    JSON with success status and field value (or null if field doesn't exist)
+     8→
+     9→Exit Codes:
+    10→    0: Success (field found or null)
+    11→    1: Error (plan not found)
+    12→"""
+    13→
+    14→import json
+    15→from dataclasses import asdict, dataclass
+    16→from typing import Any
+    17→
+    18→import click
+    19→
+    20→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    21→from erk_shared.pr_store.types import PrNotFound
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class MetadataSuccess:
+    26→    """Success response for metadata extraction."""
+    27→
+    28→    success: bool
+    29→    value: Any
+    30→    pr_number: int
+
+... [56 lines omitted] ...
+
+    35→class MetadataError:
+    36→    """Error response for metadata extraction."""
+    39→    error: str
+    65→        error_result = MetadataError(
+    67→            error="issue_not_found",
+    70→        click.echo(json.dumps(asdict(error_result)), err=True)
+  </tool_result>
+  <assistant>Now I'll make the necessary renames in each file. I'll be careful to:
+- Rename `plan_backend` to `pr_backend` 
+- Rename `require_plan_backend` to `require_pr_backend`
+- Keep external API field names and user-facing messages unchanged
+
+Let me start with the first file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10297" cache_read_input_tokens="16235" cache_creation="{'ephemeral_5m_input_tokens': 10297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QkQX2cthZLVFCgYgwYbMGt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">from erk_shared.context.helpers import (
+    require_branch_manager,
+    require_context,
+    require_git,
+    require_github,
+    require_plan_backend,
+    require_repo_root,
+    require_time,
+)</param>
+    <param name="new_string">from erk_shared.context.helpers import (
+    require_branch_manager,
+    require_context,
+    require_git,
+    require_github,
+    require_pr_backend,
+    require_repo_root,
+    require_time,
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10297" cache_read_input_tokens="16235" cache_creation="{'ephemeral_5m_input_tokens': 10297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MviTurmnbbiXdm43FVuDcc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="old_string">    # Update PR header dispatch metadata (best-effort)
+    try:
+        plan_backend = req...[truncated 164 chars]...er,
+            run_id=run_id,
+            dispatched_at=time.now().isoformat(),
+        )</param>
+    <param name="new_string">    # Update PR header dispatch metadata (best-effort)
+    try:
+        pr_backend = requi...[truncated 158 chars]...er,
+            run_id=run_id,
+            dispatched_at=time.now().isoformat(),
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10297" cache_read_input_tokens="16235" cache_creation="{'ephemeral_5m_input_tokens': 10297, 'ephemeral_1h_input_tokens': 0}" output_tokens="623" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QkQX2cthZLVFCgYgwYbMGt">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MviTurmnbbiXdm43FVuDcc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the second file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JaFH2S5NXLC3sbXijVUyqR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">from erk_shared.context.helpers import (
+    require_claude_installation,
+    require_cwd,
+    require_git,
+    require_plan_backend,
+    require_repo_root,
+)</param>
+    <param name="new_string">from erk_shared.context.helpers import (
+    require_claude_installation,
+    require_cwd,
+    require_git,
+    require_pr_backend,
+    require_repo_root,
+)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RdDEcEHW4J9EZvwbh5fnEr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">def _discover_sessions(
+    *,
+    plan_backend,
+    claude_installation,
+    git,
+    rep...[truncated 109 chars]...ssions for a plan.
+
+    Args:
+        plan_backend: ManagedPrBackend for session discovery</param>
+    <param name="new_string">def _discover_sessions(
+    *,
+    pr_backend,
+    claude_installation,
+    git,
+    repo_...[truncated 105 chars]...sessions for a plan.
+
+    Args:
+        pr_backend: ManagedPrBackend for session discovery</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XmEx8iY4ehJGCW8LbMTVoD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    # Find sessions for the plan via ManagedPrBackend
+    sessions_for_plan = plan_backend.find_sessions_for_managed_pr(
+        repo_root,
+        pr_id,
+    )</param>
+    <param name="new_string">    # Find sessions for the plan via ManagedPrBackend
+    sessions_for_plan = pr_backend.find_sessions_for_managed_pr(
+        repo_root,
+        pr_id,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01J88pqVjtAnv6aUe8GWfWQF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    # Get dependencies from context
+    git = require_git(ctx)
+    claude_installation = r...[truncated 32 chars]...d(ctx)
+    repo_root = require_repo_root(ctx)
+    plan_backend = require_plan_backend(ctx)</param>
+    <param name="new_string">    # Get dependencies from context
+    git = require_git(ctx)
+    claude_installation = r...[truncated 28 chars]...e_cwd(ctx)
+    repo_root = require_repo_root(ctx)
+    pr_backend = require_pr_backend(ctx)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Dj6beiYR4wLb6gSNqWGMLN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    elif branch_name is not None:
+        pr_id = plan_backend.resolve_pr_number_for_branch(repo_root, branch_name)</param>
+    <param name="new_string">    elif branch_name is not None:
+        pr_id = pr_backend.resolve_pr_number_for_branch(repo_root, branch_name)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G3Kuu4U2auu3KBJfTbfSQk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="old_string">    # Discover sessions
+    result = _discover_sessions(
+        plan_backend=plan_backend...[truncated 63 chars]...ot=repo_root,
+        cwd=cwd,
+        pr_id=pr_id,
+        branch_name=branch_name,
+    )</param>
+    <param name="new_string">    # Discover sessions
+    result = _discover_sessions(
+        pr_backend=pr_backend,
+  ...[truncated 59 chars]...ot=repo_root,
+        cwd=cwd,
+        pr_id=pr_id,
+        branch_name=branch_name,
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="862" cache_read_input_tokens="26532" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JaFH2S5NXLC3sbXijVUyqR">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RdDEcEHW4J9EZvwbh5fnEr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XmEx8iY4ehJGCW8LbMTVoD">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01J88pqVjtAnv6aUe8GWfWQF">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Dj6beiYR4wLb6gSNqWGMLN">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01G3Kuu4U2auu3KBJfTbfSQk">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the third file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1912" cache_read_input_tokens="27394" cache_creation="{'ephemeral_5m_input_tokens': 1912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UftGNH7BtoJTykH3Q5qBuW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+    <param name="old_string">from erk_shared.context.helpers import require_plan_backend, require_repo_root</param>
+    <param name="new_string">from erk_shared.context.helpers import require_pr_backend, require_repo_root</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1912" cache_read_input_tokens="27394" cache_creation="{'ephemeral_5m_input_tokens': 1912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KFgXYKA8VzowKXfDui4Cvh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+    <param name="old_string">    """Retrieve plan info from the appropriate backend."""
+    backend = require_plan_backend(ctx)
+    repo_root = require_repo_root(ctx)</param>
+    <param name="new_string">    """Retrieve plan info from the appropriate backend."""
+    backend = require_pr_backend(ctx)
+    repo_root = require_repo_root(ctx)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1912" cache_read_input_tokens="27394" cache_creation="{'ephemeral_5m_input_tokens': 1912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UftGNH7BtoJTykH3Q5qBuW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01KFgXYKA8VzowKXfDui4Cvh">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py has been updated successfully.
+  </tool_result>
+  <assistant>Now the fourth file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="586" cache_read_input_tokens="29306" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DnFa7Dpqb9QsTdWbwkYKUn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py</param>
+    <param name="old_string">from erk_shared.context.helpers import require_plan_backend, require_repo_root</param>
+    <param name="new_string">from erk_shared.context.helpers import require_pr_backend, require_repo_root</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="586" cache_read_input_tokens="29306" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MFzs5emUaxHj3VtUYozBM6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py</param>
+    <param name="old_string">    """Extract a metadata field from a plan's plan-header block.
+
+    Fetches the issue, e...[truncated 91 chars]...st.
+    """
+    backend = require_plan_backend(ctx)
+    repo_root = require_repo_root(ctx)</param>
+    <param name="new_string">    """Extract a metadata field from a plan's plan-header block.
+
+    Fetches the issue, e...[truncated 89 chars]...xist.
+    """
+    backend = require_pr_backend(ctx)
+    repo_root = require_repo_root(ctx)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="586" cache_read_input_tokens="29306" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="427" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DnFa7Dpqb9QsTdWbwkYKUn">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MFzs5emUaxHj3VtUYozBM6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify all the changes were applied correctly by reading one section from each file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016tvaQRcvwpNC6q9rjUdAAJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="offset">21</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J63RXMDUei9Vsw8JJxboim">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="offset">185</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016eTSw4DpAC9vjR7cwt78nT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="offset">37</param>
+    <param name="limit">7</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AQuz6cxDmgXkyYsFzBDqJB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="offset">255</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KAmpMMDUw6Ponm16QbWHuY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+    <param name="offset">24</param>
+    <param name="limit">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ShqVttmx1LMPPqZe9kMbnq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py</param>
+    <param name="offset">42</param>
+    <param name="limit">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SmGnf7egB7wUbwt5M29FDZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py</param>
+    <param name="offset">20</param>
+    <param name="limit">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UATNZF6Z37F9DX67kuNY42">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py</param>
+    <param name="offset">57</param>
+    <param name="limit">2</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="668" cache_read_input_tokens="29892" cache_creation="{'ephemeral_5m_input_tokens': 668, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016tvaQRcvwpNC6q9rjUdAAJ">
+    21→from erk_shared.context.helpers import (
+    22→    require_branch_manager,
+    23→    require_context,
+    24→    require_git,
+    25→    require_github,
+    26→    require_pr_backend,
+    27→    require_repo_root,
+    28→    require_time,
+    29→)
+    30→from erk_shared.context.types import NoRepoSentinel
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01J63RXMDUei9Vsw8JJxboim">
+   185→    # Update PR header dispatch metadata (best-effort)
+   186→    try:
+   187→        pr_backend = require_pr_backend(ctx)
+   188→        write_dispatch_metadata(
+   189→            plan_backend=pr_backend,
+   190→            github=github,
+   191→            repo_root=repo_root,
+   192→            pr_number=pr_number,
+   193→            run_id=run_id,
+   194→            dispatched_at=time.now().isoformat(),
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_016eTSw4DpAC9vjR7cwt78nT">
+    37→from erk_shared.context.helpers import (
+    38→    require_claude_installation,
+    39→    require_cwd,
+    40→    require_git,
+    41→    require_pr_backend,
+    42→    require_repo_root,
+    43→)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01AQuz6cxDmgXkyYsFzBDqJB">
+   255→    git = require_git(ctx)
+   256→    claude_installation = require_claude_installation(ctx)
+   257→    cwd = require_cwd(ctx)
+   258→    repo_root = require_repo_root(ctx)
+   259→    pr_backend = require_pr_backend(ctx)
+   260→
+   261→    # Get current branch for local session filtering
+   262→    branch_name = git.branch.get_current_branch(cwd)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01KAmpMMDUw6Ponm16QbWHuY">
+    24→from erk_shared.context.helpers import require_pr_backend, require_repo_root
+    25→from erk_shared.pr_store.types import PrNotFound
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01ShqVttmx1LMPPqZe9kMbnq">
+    42→    """Retrieve plan info from the appropriate backend."""
+    43→    backend = require_pr_backend(ctx)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01SmGnf7egB7wUbwt5M29FDZ">
+    20→from erk_shared.context.helpers import require_pr_backend, require_repo_root
+    21→from erk_shared.pr_store.types import PrNotFound
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01UATNZF6Z37F9DX67kuNY42">
+    57→    backend = require_pr_backend(ctx)
+    58→    repo_root = require_repo_root(ctx)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! All the renames have been applied successfully. Here's a summary of the changes made:
+
+## Rename Summary
+
+I've successfully renamed all occurrences of `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` across all four files:
+
+### 1. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+- **Line 26**: Updated import from `require_plan_backend` to `require_pr_backend`
+- **Line 187**: Updated function call from `require_plan_backend(ctx)` to `require_pr_backend(ctx)`
+- **Line 187**: Updated variable name from `plan_backend` to `pr_backend`
+- **Line 189**: Kept `plan_backend=` as a parameter name (external API field - preserved per instructions)
+
+### 2. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py`
+- **Line 41**: Updated import from `require_plan_backend` to `require_pr_backend`
+- **Line 139**: Updated parameter from `plan_backend` to `pr_backend` in function signature
+- **Line 152**: Updated docstring from `plan_backend` to `pr_backend`
+- **Line 171**: Updated method call from `plan_backend.find_sessions_for_managed_pr` to `pr_backend.find_sessions_for_managed_pr`
+- **Line 259**: Updated function call from `require_plan_backend(ctx)` to `require_pr_backend(ctx)`
+- **Line 259**: Updated variable from `plan_backend` to `pr_backend`
+- **Line 277**: Updated method call from `plan_backend.resolve_pr_number_for_branch` to `pr_backend.resolve_pr_number_for_branch`
+- **Line 289**: Updated parameter name from `plan_backend=` to `pr_backend=` in function call
+
+### 3. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py`
+- **Line 24**: Updated import from `require_plan_backend` to `require_pr_backend`
+- **Line 43**: Updated function call from `require_plan_backend(ctx)` to `require_pr_backend(ctx)`
+
+### 4. `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py`
+- **Line 20**: Updated import from `require_plan_backend` to `require_pr_backend`
+- **Line 57**: Updated function call from `require_plan_backend(ctx)` to `require_pr_backend(ctx)`
+
+All changes preserve external API field names (like the `plan_backend=` parameter passed to `write_dispatch_metadata`) and maintain user-facing messages unchanged, as requested.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2362" cache_read_input_tokens="30560" cache_creation="{'ephemeral_5m_input_tokens': 2362, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

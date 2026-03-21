@@ -1,0 +1,868 @@
+<session>
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-sonnet-4-6" />
+  <assistant>Now let me check what `context_for_test` does with this env var and what the actual env var name is in production `context.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="954" cache_read_input_tokens="63085" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KMdGeygLn3Y8s7U6V3iXSv">
+    <param name="command">grep -rn "ERK_PLAN_BACKEND\|ERK_PR_BACKEND\|PR_BACKEND\|PLAN_BACKEND" /home/runner/work/erk/erk/packages /home/runner/work/erk/erk/src 2&gt;/dev/null | head -20</param>
+    <param name="description">Search for env var usage in production code</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="954" cache_read_input_tokens="63085" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0168rDoES3WexajVCaRjwkAs">
+    <param name="command">grep -rn "context_for_test" /home/runner/work/erk/erk/tests/test_utils/ 2&gt;/dev/null | head -5</param>
+    <param name="description">Find context_for_test definition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="954" cache_read_input_tokens="63085" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0168rDoES3WexajVCaRjwkAs">
+/home/runner/work/erk/erk/tests/test_utils/builders.py:44:from tests.test_utils.test_context import context_for_test
+/home/runner/work/erk/erk/tests/test_utils/builders.py:407:        self.ctx = context_for_test(
+/home/runner/work/erk/erk/tests/test_utils/cli_helpers.py:111:                test_ctx = context_for_test(git=git_ops, cwd=env.cwd)
+/home/runner/work/erk/erk/tests/test_utils/paths.py:187:        - context_for_test() accepts any Path without validating existence
+/home/runner/work/erk/erk/tests/test_utils/test_context.py:67:        use context_for_test() instead.
+  </tool_result>
+  <tool_result tool="toolu_01KMdGeygLn3Y8s7U6V3iXSv">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012PjhuWna21vCZ8n8Z6GP3U">
+    <param name="command">grep -n "PLAN_BACKEND\|PR_BACKEND\|environ\|getenv" /home/runner/work/erk/erk/tests/test_utils/test_context.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check context_for_test for env var usage</param>
+  </tool_use>
+  <usage input_tokens="239" cache_creation_input_tokens="544" cache_read_input_tokens="64039" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019dTohUpjoU6KiTMppNfsGq">
+    <param name="command">grep -rn "PLAN_BACKEND\|PR_BACKEND" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages 2&gt;/dev/null | head -20 || echo "None found"</param>
+    <param name="description">Final check for env var constants in production code</param>
+  </tool_use>
+  <usage input_tokens="239" cache_creation_input_tokens="544" cache_read_input_tokens="64039" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012PjhuWna21vCZ8n8Z6GP3U">
+
+  </tool_result>
+  <tool_result tool="toolu_019dTohUpjoU6KiTMppNfsGq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Xf57kgrCzfrsyaFwdLA6Wq">
+    <param name="command">grep -rn "PR_BACKEND" /home/runner/work/erk/erk/ --include="*.py" 2&gt;/dev/null | grep -v "test_plan_save\|test_connect_cmd" | head -20</param>
+    <param name="description">Find PR_BACKEND env var in non-test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="64583" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xf57kgrCzfrsyaFwdLA6Wq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JdmEuPCV8mv9v7t7hVw6XH">
+    <param name="command">grep -rn "PR_BACKEND" /home/runner/work/erk/erk/ --include="*.py" 2&gt;/dev/null | grep -v "test_plan_save\|test_connect_cmd" | grep -v "planned_pr_backend" | head -30</param>
+    <param name="description">Find PR_BACKEND env var usages, excluding known test files and variable names</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="65149" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JdmEuPCV8mv9v7t7hVw6XH">
+
+  </tool_result>
+  <assistant>The `ERK_PR_BACKEND` env var is only in `test_plan_save.py` and the GitHub workflows still use `ERK_PLAN_BACKEND`. Let me find where it's actually read:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="65531" cache_creation="{'ephemeral_5m_input_tokens': 178, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Tt5FLXrgM1i9gzDu8QxipC">
+    <param name="command">grep -rn "environ.get\|os.getenv\|os.environ" /home/runner/work/erk/erk/src /home/runner/work/erk/erk/packages 2&gt;/dev/null | grep -i "backend\|plan\|pr" | head -20</param>
+    <param name="description">Find where backend env var is read from environment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="65531" cache_creation="{'ephemeral_5m_input_tokens': 178, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tt5FLXrgM1i9gzDu8QxipC">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py:788:        editor = os.environ.get("EDITOR")
+/home/runner/work/erk/erk/src/erk/core/anthropic_prompt_executor.py:51:        return os.environ.get("ANTHROPIC_API_KEY") is not None
+/home/runner/work/erk/erk/src/erk/core/anthropic_prompt_executor.py:76:        api_key = os.environ.get("ANTHROPIC_API_KEY")
+/home/runner/work/erk/erk/src/erk/core/prompt_executor.py:525:        os.environ.pop("CLAUDECODE", None)
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_subprocess_utils.py:11:    with patch.dict(os.environ, {"CLAUDECODE": "1", "PATH": "/usr/bin"}):
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_subprocess_utils.py:20:    with patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True):
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_subprocess_utils.py:27:def test_build_claude_subprocess_env_does_not_modify_os_environ() -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_subprocess_utils.py:28:    """Returns a copy, does not modify os.environ."""
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_subprocess_utils.py:29:    with patch.dict(os.environ, {"CLAUDECODE": "1"}):
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_subprocess_utils.py:31:        assert os.environ.get("CLAUDECODE") == "1"
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py:33:    env = os.environ.copy()
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py:47:    env = os.environ.copy()
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Wm4tSZ68nKgvR1bFS1b6rx">
+    <param name="command">grep -rn "environ.get\|os.getenv\|os.environ" /home/runner/work/erk/erk/src/erk/core/context.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check context.py for env var reading</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1060" cache_read_input_tokens="65709" cache_creation="{'ephemeral_5m_input_tokens': 1060, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wm4tSZ68nKgvR1bFS1b6rx">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PKyyb86BTteXT645XHfenG">
+    <param name="command">grep -rn "plan_backend\|pr_backend\|PR_BACKEND\|PLAN_BACKEND" /home/runner/work/erk/erk/src/erk/core/context.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check context.py for backend references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="66769" cache_creation="{'ephemeral_5m_input_tokens': 154, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PKyyb86BTteXT645XHfenG">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QZ5sFnP4tjC7SnWXi9j3WQ">
+    <param name="command">grep -rn "pr_backend" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check erk_shared context.py for pr_backend</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="66923" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QZ5sFnP4tjC7SnWXi9j3WQ">
+176:    def pr_backend(self) -&gt; ManagedPrBackend:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01X7X2nvUQFVjYWn3CTu9TZt">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">165</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="67083" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X7X2nvUQFVjYWn3CTu9TZt">
+   165→
+   166→    @property
+   167→    def github_issues(self) -&gt; GitHubIssues:
+   168→        """DotAgentContext compatibility - alias for issues property.
+   169→
+   170→        Deprecated: Use ctx.github.issues instead. This property is provided for
+   171→        backward compatibility with code written for the old DotAgentContext.
+   172→        """
+   173→        return self.github.issues
+   174→
+   175→    @property
+   176→    def pr_backend(self) -&gt; ManagedPrBackend:
+   177→        """Access plan_store as ManagedPrBackend (read/write interface).
+   178→
+   179→        Since plan_store is typed as ManagedPrBackend, this is a direct alias.
+   180→        Retained for call-site compatibility.
+   181→        """
+   182→        return self.plan_store
+   183→
+   184→    @property
+   185→    def branch_manager(self) -&gt; BranchManager:
+   186→        """Get the appropriate BranchManager for branch operations.
+   187→
+   188→        Returns GitBranchManager when Graphite is disabled,
+   189→        GraphiteBranchManager when Graphite is enabled.
+   190→
+   191→        This provides a unified interface for branch operations that
+   192→        handles Graphite vs plain Git differences transparently.
+   193→        """
+   194→        # Check if Graphite is disabled (also handles DryRunGraphite wrapping GraphiteDisabled)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Good - `pr_backend` property returns `plan_store`. Now I need to find where `ERK_PLAN_BACKEND` is read in production code to understand if the test's `ERK_PR_BACKEND` setenv is affecting something:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="67480" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0176jVpiKK9xAMstWmzHspLE">
+    <param name="command">grep -rn "PLAN_BACKEND\|PR_BACKEND" /home/runner/work/erk/erk/tests/test_utils/ 2&gt;/dev/null | head -20</param>
+    <param name="description">Check test_utils for env var handling</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="67480" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0176jVpiKK9xAMstWmzHspLE">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XYYgJtWuv7v7QyLdTaTXpi">
+    <param name="command">grep -rn "PLAN_BACKEND\|PR_BACKEND" /home/runner/work/erk/erk/tests 2&gt;/dev/null | grep -v "test_plan_save.py\|test_connect_cmd" | head -20</param>
+    <param name="description">Find env var usage in other test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="68069" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XYYgJtWuv7v7QyLdTaTXpi">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014pAGcCgYQ6G6Fe242h43uR">
+    <param name="command">grep -rn "PLAN_BACKEND\|PR_BACKEND" /home/runner/work/erk/erk/tests/test_utils/ /home/runner/work/erk/erk/tests/conftest.py 2&gt;/dev/null | head -20 || echo "No matches"</param>
+    <param name="description">Check test_utils and conftest for env var</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="68493" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="149" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014pAGcCgYQ6G6Fe242h43uR">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01P8bWVeKbX1HybbPUaMbmMU">
+    <param name="command">grep -rn "plan_store\|PLAN_BACKEND\|PR_BACKEND" /home/runner/work/erk/erk/tests/test_utils/test_context.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check test_context.py for plan_store and env var</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="68655" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P8bWVeKbX1HybbPUaMbmMU">
+108:        plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time),
+143:    plan_store: ManagedPrBackend | None = None,
+250:    if plan_store is None:
+251:        plan_store = ManagedGitHubPrBackend(github, issues, time=FakeTime())
+356:        plan_store=plan_store,
+  </tool_result>
+  <assistant>Now let me check what the `plan_save.py` output JSON actually says in production - specifically the `pr_backend` key that was renamed in tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="68655" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016noYSS43A65KR1ch9hAroh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">340</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="68655" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016noYSS43A65KR1ch9hAroh">
+   340→        click.echo(f"PR saved as planned PR #{pr_number}")
+   341→        click.echo(f"Title: {prefixed_title}")
+   342→        click.echo(f"URL: {result.url}")
+   343→        click.echo(f"Branch: {branch_name}")
+   344→        if snapshot_result is not None:
+   345→            click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+   346→        click.echo()
+   347→        click.echo(format_pr_next_steps_plain(pr_number, url=result.url, branch_name=branch_name))
+   348→    else:
+   349→        output_data: dict[str, str | int | bool | None] = {
+   350→            "success": True,
+   351→            "pr_number": pr_number,
+   352→            "pr_url": result.url,
+   353→            "title": prefixed_title,
+   354→            "branch_name": branch_name,
+   355→            "plan_backend": "planned_pr",
+   356→            "objective_issue": objective_issue,
+   357→        }
+   358→        if snapshot_result is not None:
+   359→            output_data["archived_to"] = str(snapshot_result.snapshot_dir)
+   360→        click.echo(json.dumps(output_data))
+   361→
+   362→
+   363→def _save_plan_via_planned_pr(
+   364→    ctx: click.Context,
+   365→    *,
+   366→    output_format: str,
+   367→    plan_file: Path | None,
+   368→    session_id: str | None,
+   369→    plan_type: str | None,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>I can see the issue now. The production code at line 355 outputs `"plan_backend": "planned_pr"` in the JSON. But the test was changed to assert `output["pr_backend"]`. The test is now asserting the wrong key. This is an incorrect rename - the output JSON key `"plan_backend"` is part of the external API (like the GitHub Actions workflow inputs).
+
+Let me check what the test_plan_save.py asserts:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="69320" cache_creation="{'ephemeral_5m_input_tokens': 975, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FnSk8YofdpFL84dc8TnH9e">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">54</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="69320" cache_creation="{'ephemeral_5m_input_tokens': 975, 'ephemeral_1h_input_tokens': 0}" output_tokens="223" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FnSk8YofdpFL84dc8TnH9e">
+    54→def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    55→    """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
+    56→    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    57→    runner = CliRunner()
+    58→
+    59→    result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
+    60→
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    62→    output = json.loads(result.output)
+    63→    assert output["success"] is True
+    64→    assert "pr_number" in output
+    65→    assert "branch_name" in output
+    66→    assert output["branch_name"].startswith("plnd/")
+    67→    assert output["pr_backend"] == "planned_pr"
+    68→
+    69→
+    70→def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    71→    """Display format: output contains 'Plan saved as planned PR'."""
+    72→    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    73→    runner = CliRunner()
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Confirmed - line 67 asserts `output["pr_backend"]` but the production code outputs `"plan_backend": "planned_pr"`. This test will fail. I need to revert the `output["pr_backend"]` → `output["plan_backend"]` change in test_plan_save.py.
+
+Let me also check line 149:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="920" cache_read_input_tokens="70295" cache_creation="{'ephemeral_5m_input_tokens': 920, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HqUGfCJ7skA9ASqHxGXshq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">140</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="920" cache_read_input_tokens="70295" cache_creation="{'ephemeral_5m_input_tokens': 920, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HqUGfCJ7skA9ASqHxGXshq">
+   140→    result2 = runner.invoke(
+   141→        plan_save,
+   142→        ["--format", "json", "--session-id", session_id, "--branch-slug", "test-slug"],
+   143→        obj=ctx,
+   144→    )
+   145→    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+   146→    output2 = json.loads(result2.output)
+   147→    assert output2["success"] is True
+   148→    assert output2["skipped_duplicate"] is True
+   149→    assert output2["pr_backend"] == "planned_pr"
+   150→    # branch_name should be included from the branch marker saved during first call
+   151→    assert "branch_name" in output2
+   152→    assert output2["branch_name"] == output1["branch_name"]
+   153→
+   154→
+   155→def test_planned_pr_different_titles_both_succeed(
+   156→    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+   157→) -&gt; None:
+   158→    """Two saves with different plan titles in the same session both succeed."""
+   159→    runner = CliRunner()
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me also check what the duplicate case outputs in production:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="71215" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012WDXZqK6vnVF3UdYRqBgdq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">420</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="596" cache_read_input_tokens="71215" cache_creation="{'ephemeral_5m_input_tokens': 596, 'ephemeral_1h_input_tokens': 0}" output_tokens="130" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012WDXZqK6vnVF3UdYRqBgdq">
+   420→    if not plan:
+   421→        if output_format == "display":
+   422→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   423→        else:
+   424→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   425→        raise SystemExit(1)
+   426→
+   427→    title = extract_title_from_pr(plan)
+   428→
+   429→    # Session deduplication check (keyed by plan title)
+   430→    if session_id is not None:
+   431→        existing_issue = get_existing_saved_issue(session_id, repo_root, title=title)
+   432→        if existing_issue is not None:
+   433→            existing_branch = get_existing_saved_branch(session_id, repo_root)
+   434→            if output_format == "display":
+   435→                click.echo(
+   436→                    f"This session already saved PR #{existing_issue}. "
+   437→                    "Skipping duplicate creation.",
+   438→                    err=True,
+   439→                )
+   440→            else:
+   441→                dedup_response = {
+   442→                    "success": True,
+   443→                    "pr_number": existing_issue,
+   444→                    "skipped_duplicate": True,
+   445→                    "message": f"Session already saved PR #{existing_issue}",
+   446→                    "plan_backend": "planned_pr",
+   447→                }
+   448→                if existing_branch is not None:
+   449→                    dedup_response["branch_name"] = existing_branch
+
+... [15 lines omitted] ...
+
+   454→    valid, error, details = _validate_plan_content(plan)
+   457→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+  </tool_result>
+  <assistant>Confirmed - production code at line 446 still outputs `"plan_backend": "planned_pr"`. The tests at lines 67 and 149 that assert `output["pr_backend"]` are wrong and will fail.
+
+Now let me also check the `ERK_PR_BACKEND` setenv - is this env var read somewhere that was renamed? Let me check if the test's `setenv("ERK_PR_BACKEND", ...)` was matching something:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1001" cache_read_input_tokens="71811" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EgasuCvCiikY7Nu6pGShuj">
+    <param name="command">grep -rn "ERK_PLAN_BACKEND" /home/runner/work/erk/erk/ 2&gt;/dev/null | grep -v ".github" | head -20</param>
+    <param name="description">Find all uses of ERK_PLAN_BACKEND outside .github</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1001" cache_read_input_tokens="71811" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EgasuCvCiikY7Nu6pGShuj">
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py:167:        cli, ["codespace", "connect", "--env", "ERK_PLAN_BACKEND=draft_pr"], obj=ctx
+/home/runner/work/erk/erk/tests/unit/cli/commands/codespace/test_connect_cmd.py:172:    assert "export ERK_PLAN_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
+/home/runner/work/erk/erk/.erk/scratch/sessions/e308186a-822d-4217-a50d-0bbec84b9409/hooks/pre-tool-use-hook/2026-03-21T16-31-30-531980+00-00.json:12:  "stdin_context": "{\"session_id\":\"e308186a-822d-4217-a50d-0bbec84b9409\",\"transcript_path\":\"/home/runner/.claude/projects/-home-runner-work-erk-erk/e308186a-822d-4217-a50d-0bbec84b9409.jsonl\",\"cwd\":\"/home/runner/work/erk/erk\",\"permission_mode\":\"bypassPermissions\",\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py\",\"old_string\":\"    fake_git = FakeGit(\\n        current_branches={tmp_path: \\\"feature/my-work\\\"},\\n        trunk_branches={tmp_path: \\\"master\\\"},\\n        remote_branches={tmp_path: [\\\"origin/feature/my-work\\\"]},\\n    )\\n    fake_graphite = FakeGraphite()\\n    monkeypatch.setenv(\\\"ERK_PLAN_BACKEND\\\", \\\"planned_pr\\\")\",\"new_string\":\"    fake_git = FakeGit(\\n        current_branches={tmp_path: \\\"feature/my-work\\\"},\\n        trunk_branches={tmp_path: \\\"master\\\"},\\n        remote_branches={tmp_path: [\\\"origin/feature/my-work\\\"]},\\n    )\\n    fake_graphite = FakeGraphite()\\n    monkeypatch.setenv(\\\"ERK_PR_BACKEND\\\", \\\"planned_pr\\\")\"},\"tool_use_id\":\"toolu_01Got6BtBtmSm1DjnLny8UFw\"}",
+/home/runner/work/erk/erk/.erk/scratch/sessions/e308186a-822d-4217-a50d-0bbec84b9409/hooks/pre-tool-use-hook/2026-03-21T16-31-26-624062+00-00.json:12:  "stdin_context": "{\"session_id\":\"e308186a-822d-4217-a50d-0bbec84b9409\",\"transcript_path\":\"/home/runner/.claude/projects/-home-runner-work-erk-erk/e308186a-822d-4217-a50d-0bbec84b9409.jsonl\",\"cwd\":\"/home/runner/work/erk/erk\",\"permission_mode\":\"bypassPermissions\",\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py\",\"old_string\":\"def test_planned_pr_tracks_branch_with_graphite_on_trunk(\\n    tmp_path: Path, monkeypatch: pytest.MonkeyPatch\\n) -&gt; None:\\n    \\\"\\\"\\\"When on trunk, plan branch is tracked with trunk as Graphite parent.\\\"\\\"\\\"\\n    fake_git = FakeGit(current_branches={tmp_path: \\\"master\\\"}, trunk_branches={tmp_path: \\\"master\\\"})\\n    fake_graphite = FakeGraphite()\\n    monkeypatch.setenv(\\\"ERK_PLAN_BACKEND\\\", \\\"planned_pr\\\")\",\"new_string\":\"def test_planned_pr_tracks_branch_with_graphite_on_trunk(\\n    tmp_path: Path, monkeypatch: pytest.MonkeyPatch\\n) -&gt; None:\\n    \\\"\\\"\\\"When on trunk, plan branch is tracked with trunk as Graphite parent.\\\"\\\"\\\"\\n    fake_git = FakeGit(current_branches={tmp_path: \\\"master\\\"}, trunk_branches={tmp_path: \\\"master\\\"})\\n    fake_graphite = FakeGraphite()\\n    monkeypatch.setenv(\\\"ERK_PR_BACKEND\\\", \\\"planned_pr\\\")\"},\"tool_use_id\":\"toolu_019djGhanWVVQLBtMLfUxGa7\"}",
+/home/runner/work/erk/erk/.erk/scratch/sessions/e308186a-822d-4217-a50d-0bbec84b9409/hooks/pre-tool-use-hook/2026-03-21T16-31-49-495223+00-00.json:12:  "stdin_context": "{\"session_id\":\"e308186a-822d-4217-a50d-0bbec84b9409\",\"transcript_path\":\"/home/runner/.claude/projects/-home-runner-work-erk-erk/e308186a-822d-4217-a50d-0bbec84b9409.jsonl\",\"cwd\":\"/home/runner/work/erk/erk\",\"permission_mode\":\"bypassPermissions\",\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py\",\"old_string\":\"    fake_git = FakeGit(current_branches={tmp_path: \\\"my-feature-branch\\\"})\\n    fake_graphite = FakeGraphite()\\n    monkeypatch.setenv(\\\"ERK_PLAN_BACKEND\\\", \\\"planned_pr\\\")\\n    ctx = context_for_test(\\n        git=fake_git,\\n        graphite=fake_graphite,\\n        claude_installation=FakeClaudeInstallation.for_test(plans={\\\"plan\\\": VALID_PLAN_CONTENT}),\\n        cwd=tmp_path,\\n        repo_root=tmp_path,\\n    )\",\"new_string\":\"    fake_git = FakeGit(current_branches={tmp_path: \\\"my-feature-branch\\\"})\\n    fake_graphite = FakeGraphite()\\n    monkeypatch.setenv(\\\"ERK_PR_BACKEND\\\", \\\"planned_pr\\\")\\n    ctx = context_for_test(\\n        git=fake_git,\\n        graphite=fake_graphite,\\n        claude_installation=FakeClaudeInstallation.for_test(plans={\\\"plan\\\": VALID_PLAN_CONTENT}),\\n        cwd=tmp_path,\\n        repo_root=tmp_path,\\n    )\"},\"tool_use_id\":\"toolu_01Wu8yBTGQWtsK4CDnwTrTfo\"}",
+/home/runner/work/erk/erk/CHANGELOG.md:512:**How it works:** Plans can now be stored as GitHub draft PRs instead of issues, with `ERK_PLAN_BACKEND=draft_pr` controlling the backend. All workflows (plan-save, plan-implement, learn, CI) support both backends transparently.
+/home/runner/work/erk/erk/CHANGELOG.md:514:**Key features:** `ERK_PLAN_BACKEND` environment variable, draft PR auto-publishing during `erk pr submit`, backend-agnostic plan checkout via `erk br co --for-plan`.
+/home/runner/work/erk/erk/CHANGELOG.md:594:- Simplify plan backend configuration from 3-tier to 2-tier: `ERK_PLAN_BACKEND` env var or default, removing config-file tier
+/home/runner/work/erk/erk/docs/learned/testing/tripwires.md:73:**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+/home/runner/work/erk/erk/docs/learned/testing/tripwires.md:109:**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md:10:  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
+/home/runner/work/erk/erk/docs/learned/testing/cli-testing.md:11:    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
+/home/runner/work/erk/erk/docs/learned/testing/index.md:17:- **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PLAN_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:5:  - "working with ERK_PLAN_BACKEND in tests"
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:10:    warning: "Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911."
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:16:## The `ERK_PLAN_BACKEND` Contamination Pattern
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:18:&gt; **Note:** After PR #7971 (objective #7911 node 1.1), the `get_plan_backend()` function was deleted and the plan backend is hardcoded to `"planned_pr"`. The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. The contamination pattern described below is historical but the mitigations remain relevant until vestigial code paths are fully cleaned up in later nodes of objective #7911.
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:20:Previously, setting `ERK_PLAN_BACKEND=planned_pr` in the shell environment caused **125+ test failures** when running the full test suite.
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:24:`context_for_test()` in `tests/fakes/tests/shared_context.py` creates a test `ErkContext`. After PR #7971, the plan backend selection uses a tautological comparison that always takes the planned-PR path, regardless of environment variables. Tests that set `ERK_PLAN_BACKEND` are now exercising dead code paths. Monkeypatching this variable has no behavioral effect.
+/home/runner/work/erk/erk/docs/learned/testing/environment-variable-isolation.md:32:After PR #8210, `context_for_test()` in `tests/fakes/tests/shared_context.py` no longer checks `ERK_PLAN_BACKEND`. The plan backend is hardcoded to `ManagedGitHubPrBackend`.
+  </tool_result>
+  <assistant>This is very helpful. According to `docs/learned/testing/environment-variable-isolation.md`, `ERK_PLAN_BACKEND` is **already obsolete** - the env var is no longer read by application code. Setting `monkeypatch.setenv("ERK_PR_BACKEND", ...)` has no behavioral effect either way. Those test setenv calls are testing dead code paths.
+
+So the `ERK_PR_BACKEND` rename in the tests is harmless (the env var isn't read anywhere), but the `output["pr_backend"]` assertion IS wrong - it's asserting a JSON output key that the production code still emits as `"plan_backend"`.
+
+I need to revert those two assertions in `test_plan_save.py` back to `output["plan_backend"]`. Also check the dispatch tests that changed `inputs["plan_backend"]` → `inputs["pr_backend"]` since the workflow inputs use `"plan_backend"`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3661" cache_read_input_tokens="72812" cache_creation="{'ephemeral_5m_input_tokens': 3661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017XYyVu4onqa4TXjs3NcE7D">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">62</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3661" cache_read_input_tokens="72812" cache_creation="{'ephemeral_5m_input_tokens': 3661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TNh6HdKpj6cP2FqMFy9Ab7">
+    <param name="command">grep -n "pr_backend\|plan_backend" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check test_incremental_dispatch for backend assertions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3661" cache_read_input_tokens="72812" cache_creation="{'ephemeral_5m_input_tokens': 3661, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017XYyVu4onqa4TXjs3NcE7D">
+    62→    output = json.loads(result.output)
+    63→    assert output["success"] is True
+    64→    assert "pr_number" in output
+    65→    assert "branch_name" in output
+    66→    assert output["branch_name"].startswith("plnd/")
+    67→    assert output["pr_backend"] == "planned_pr"
+    68→
+    69→
+    70→def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    71→    """Display format: output contains 'Plan saved as planned PR'."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01TNh6HdKpj6cP2FqMFy9Ab7">
+90:    assert inputs["pr_backend"] == "planned_pr"
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015QNvey4hEGRonsGqZf5MvX">
+    <param name="command">grep -n "pr_backend\|plan_backend" /home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py 2&gt;/dev/null | head -30</param>
+    <param name="description">Check test_dispatch.py for backend assertions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1000" cache_read_input_tokens="76473" cache_creation="{'ephemeral_5m_input_tokens': 1000, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JfKYHZxYKBcdG5yzbemeBN">
+    <param name="command">grep -n "pr_backend\|plan_backend" /home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py 2&gt;/dev/null | head -30</param>
+    <param name="description">Check test_remote_paths.py for backend assertions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1000" cache_read_input_tokens="76473" cache_creation="{'ephemeral_5m_input_tokens': 1000, 'ephemeral_1h_input_tokens': 0}" output_tokens="233" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JfKYHZxYKBcdG5yzbemeBN">
+487:    assert dispatched.inputs["pr_backend"] == "planned_pr"
+  </tool_result>
+  <tool_result tool="toolu_015QNvey4hEGRonsGqZf5MvX">
+22:def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+23:    """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_pr.
+28:    - Trigger workflow with pr_backend="planned_pr" in inputs
+80:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+113:            plan_store=pr_backend,
+118:        # Verify: workflow was triggered with pr_backend="planned_pr"
+124:        assert inputs["pr_backend"] == "planned_pr"
+209:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+238:            plan_store=pr_backend,
+284:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+313:            plan_store=pr_backend,
+338:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+367:            plan_store=pr_backend,
+426:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+459:            plan_store=pr_backend,
+495:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+535:            plan_store=pr_backend,
+545:        assert inputs["pr_backend"] == "planned_pr"
+583:        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+624:            plan_store=pr_backend,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RT6JhBnBFLJZDcvdbo35QC">
+    <param name="command">grep -n "pr_backend\|plan_backend" /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Check test_one_shot_dispatch for backend assertions</param>
+  </tool_use>
+  <usage input_tokens="50" cache_creation_input_tokens="712" cache_read_input_tokens="77473" cache_creation="{'ephemeral_5m_input_tokens': 712, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RT6JhBnBFLJZDcvdbo35QC">
+72:    # Verify workflow was triggered with pr_backend=planned_pr
+77:    assert wf.inputs["pr_backend"] == "planned_pr"
+  </tool_result>
+  <assistant>These are also testing the workflow input dict key, which is `"plan_backend"` not `"pr_backend"` in production. I need to revert all these `inputs["pr_backend"]` assertions. Let me check the production dispatch code to confirm:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="78185" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UFMJw7gKUZDTxMW7TTWWKH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">285</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="78185" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UFMJw7gKUZDTxMW7TTWWKH">
+   285→    user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+   286→
+   287→    inputs = {
+   288→        "pr_number": str(pr_number),
+   289→        "submitted_by": submitted_by,
+   290→        "pr_title": validated.title,
+   291→        "branch_name": branch_name,
+   292→        "impl_pr_number": str(pr_number),
+   293→        "base_branch": base_branch,
+   294→        "plan_backend": "planned_pr",
+   295→        **workflow_config,
+   296→    }
+   297→
+   298→    run_id = ctx.github.trigger_workflow(
+   299→        repo_root=repo.root,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Confirmed - the workflow inputs still use `"plan_backend": "planned_pr"` (line 294). The test assertions `inputs["pr_backend"]` are wrong. I need to fix:
+
+1. `tests/unit/cli/commands/exec/scripts/test_plan_save.py` - lines 67 and 149: `output["pr_backend"]` → `output["plan_backend"]`
+2. `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py` - line 90: `inputs["pr_backend"]` → `inputs["plan_backend"]`
+3. `tests/commands/pr/test_dispatch.py` - lines 124 and 545: `inputs["pr_backend"]` → `inputs["plan_backend"]`
+4. `tests/commands/pr/test_remote_paths.py` - line 487: `inputs["pr_backend"]` → `inputs["plan_backend"]`
+5. `tests/commands/one_shot/test_one_shot_dispatch.py` - line 77: `wf.inputs["pr_backend"]` → `wf.inputs["plan_backend"]`
+
+Also check the workflow smoke test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="78650" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QTVtKgruv76m6KW2XF3nBj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_workflow_smoke_test.py</param>
+    <param name="offset">85</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="78650" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="396" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTVtKgruv76m6KW2XF3nBj">
+    85→        wf = remote.dispatched_workflows[0]
+    86→        assert wf.workflow == "one-shot.yml"
+    87→        assert wf.inputs["submitted_by"] == "testuser"
+    88→        assert wf.inputs["plan_backend"] == "planned_pr"
+    89→
+    90→    def test_returns_error_when_not_in_repo(self) -&gt; None:
+    91→        """Smoke test returns error for NoRepoSentinel."""
+    92→        ctx = create_test_context(repo=NoRepoSentinel())
+    93→
+    94→        result = run_smoke_test(ctx, dispatch_ref=None)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good - the smoke test (line 88) still correctly asserts `wf.inputs["plan_backend"]`. That one was NOT renamed (it was noted it shouldn't be). Now let me fix all the wrong assertions in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="79115" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VgJgYm89cHq8i4jB6LWqPX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert output["pr_backend"] == "planned_pr"
+
+
+def test_planned_pr_success_display</param>
+    <param name="new_string">    assert output["plan_backend"] == "planned_pr"
+
+
+def test_planned_pr_success_display</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="79115" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VgJgYm89cHq8i4jB6LWqPX">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NJyB2PG6kk2CDKv5pX9AHh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">1</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="80007" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N93xETwKFkgKPQNH8y7CZK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+    <param name="offset">85</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="80007" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014VcWmb7dsXWNLaB7jooue2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">118</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="80007" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NJyB2PG6kk2CDKv5pX9AHh">
+     1→"""Unit tests for plan-save command (draft PR creation)."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01N93xETwKFkgKPQNH8y7CZK">
+    85→    assert len(fake_github.triggered_workflows) == 1
+    86→    workflow, inputs, _ref = fake_github.triggered_workflows[0]
+    87→    assert workflow == "plan-implement.yml"
+    88→    assert inputs["pr_number"] == "42"
+    89→    assert inputs["branch_name"] == "feature/my-feature"
+    90→    assert inputs["pr_backend"] == "planned_pr"
+    91→
+    92→
+    93→def test_incremental_dispatch_pr_not_found(tmp_path: Path) -&gt; None:
+    94→    """Test error when PR does not exist."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_014VcWmb7dsXWNLaB7jooue2">
+   118→        # Verify: workflow was triggered with pr_backend="planned_pr"
+   119→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   120→            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+   121→            f"Output: {result.output}"
+   122→        )
+   123→        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
+   124→        assert inputs["pr_backend"] == "planned_pr"
+   125→        assert inputs["pr_number"] == "42"
+   126→        assert inputs["branch_name"] == plan_branch
+   127→
+   128→        # Verify: no new PR was created (planned-PR already exists)
+   129→        assert len(fake_gh.created_prs) == 0
+   130→
+   131→        # Verify: expected output messages for git plumbing path
+   132→        assert "Syncing branch:" in result.output
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_0116C3wsSawB1gXuPx5nN9Lh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">535</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="80274" cache_creation="{'ephemeral_5m_input_tokens': 1310, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RKUj8vCVSen2HYNJMVMUdn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">483</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="80274" cache_creation="{'ephemeral_5m_input_tokens': 1310, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LJ5WqJeTa4bkc8Hnb3t5ab">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">70</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1310" cache_read_input_tokens="80274" cache_creation="{'ephemeral_5m_input_tokens': 1310, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0116C3wsSawB1gXuPx5nN9Lh">
+   535→            plan_store=pr_backend,
+   536→        )
+   537→
+   538→        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+   539→
+   540→        # Verify: workflow was triggered successfully
+   541→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   542→            f"Expected workflow trigger\nOutput: {result.output}"
+   543→        )
+   544→        inputs = fake_gh.triggered_workflows[0][1]
+   545→        assert inputs["pr_backend"] == "planned_pr"
+   546→        assert inputs["branch_name"] == plan_branch
+   547→
+   548→        # Verify: create_branch was NOT called (branch was checked out)
+   549→        assert len(git.created_branches) == 0, (
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01RKUj8vCVSen2HYNJMVMUdn">
+   483→    # Verify workflow was dispatched
+   484→    assert len(fake_remote.dispatched_workflows) == 1
+   485→    dispatched = fake_remote.dispatched_workflows[0]
+   486→    assert dispatched.inputs["pr_number"] == "42"
+   487→    assert dispatched.inputs["pr_backend"] == "planned_pr"
+   488→    assert dispatched.inputs["branch_name"] == "plnd/remote-test"
+   489→
+   490→    # Verify impl-context files were committed to the branch
+   491→    assert len(fake_remote.created_file_commits) &gt;= 1
+   492→    committed_paths = [c.path for c in fake_remote.created_file_commits]
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01LJ5WqJeTa4bkc8Hnb3t5ab">
+    70→    assert remote.added_labels[0].labels == ("erk-pr",)
+    71→
+    72→    # Verify workflow was triggered with pr_backend=planned_pr
+    73→    assert len(remote.dispatched_workflows) == 1
+    74→    wf = remote.dispatched_workflows[0]
+    75→    assert wf.workflow == "one-shot.yml"
+    76→    assert wf.inputs["prompt"] == "fix the import in config.py"
+    77→    assert wf.inputs["pr_backend"] == "planned_pr"
+    78→    assert wf.inputs["plan_issue_number"] == "1"
+    79→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Wait - looking at `test_one_shot_dispatch.py` line 72: it says `"Verify workflow was triggered with pr_backend=planned_pr"` which was the comment. And line 77 now asserts `wf.inputs["pr_backend"]`. But the production `one_shot_remote_dispatch.py` line 410 still uses `"plan_backend": "planned_pr"`. So this is wrong too.
+
+Let me verify the one-shot dispatch command:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1423" cache_read_input_tokens="81584" cache_creation="{'ephemeral_5m_input_tokens': 1423, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WyX9gRWdarksMikwA1cyp5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="offset">405</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1423" cache_read_input_tokens="81584" cache_creation="{'ephemeral_5m_input_tokens': 1423, 'ephemeral_1h_input_tokens': 0}" output_tokens="229" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WyX9gRWdarksMikwA1cyp5">
+   405→        inputs: dict[str, str] = {
+   406→            "prompt": truncated_prompt,
+   407→            "branch_name": branch_name,
+   408→            "pr_number": str(pr_number),
+   409→            "submitted_by": submitted_by,
+   410→            "plan_backend": "planned_pr",
+   411→        }
+   412→        if params.model is not None:
+   413→            inputs["model_name"] = params.model
+   414→        inputs["plan_issue_number"] = str(pr_number)
+   415→        inputs.update(params.extra_workflow_inputs)
+   416→
+   417→        # Dispatch workflow
+   418→        current_step = "Dispatching one-shot workflow"
+   419→        user_output("Dispatching one-shot workflow...")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Confirmed - `"plan_backend"` not `"pr_backend"`. Now I need to fix all the tests. Let me do all the edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="83007" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PEGiNgSmCQnofqy1VS9Mgk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert output["pr_backend"] == "planned_pr"
+
+
+def test_planned_pr_success_display</param>
+    <param name="new_string">    assert output["plan_backend"] == "planned_pr"
+
+
+def test_planned_pr_success_display</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="83007" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="206" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PEGiNgSmCQnofqy1VS9Mgk">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SqcYRx35irStokZ3VTkhq7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">60</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="489" cache_read_input_tokens="83533" cache_creation="{'ephemeral_5m_input_tokens': 489, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SqcYRx35irStokZ3VTkhq7">
+    60→
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    62→    output = json.loads(result.output)
+    63→    assert output["success"] is True
+    64→    assert "pr_number" in output
+    65→    assert "branch_name" in output
+    66→    assert output["branch_name"].startswith("plnd/")
+    67→    assert output["pr_backend"] == "planned_pr"
+    68→
+    69→
+    70→def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:
+    71→    """Display format: output contains 'Plan saved as planned PR'."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012PJxDo5iS4GKjWCA2Us52g">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert output["pr_backend"] == "planned_pr"
+
+
+def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:</param>
+    <param name="new_string">    assert output["plan_backend"] == "planned_pr"
+
+
+def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="84022" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="214" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012PJxDo5iS4GKjWCA2Us52g">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011rLSDC46Acn3ygELkhVbcM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">    assert output2["pr_backend"] == "planned_pr"</param>
+    <param name="new_string">    assert output2["plan_backend"] == "planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="84414" cache_creation="{'ephemeral_5m_input_tokens': 264, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011rLSDC46Acn3ygELkhVbcM">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the other files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="84678" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ey2XCknSEfuiny8TZULtEj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+    <param name="old_string">    assert inputs["pr_backend"] == "planned_pr"</param>
+    <param name="new_string">    assert inputs["plan_backend"] == "planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="84678" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ey2XCknSEfuiny8TZULtEj">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WZsqFMWZMHmUAbTQ89WjQG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+    <param name="offset">85</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="85115" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011r5iN1mKop9KyFLMep7qq6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">115</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="85115" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0178XnqpLxENUytcAPY1vMNJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">484</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="85115" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HZJMys5eyautDEfw2tKGQV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">72</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="85115" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WZsqFMWZMHmUAbTQ89WjQG">
+    85→    assert len(fake_github.triggered_workflows) == 1
+    86→    workflow, inputs, _ref = fake_github.triggered_workflows[0]
+    87→    assert workflow == "plan-implement.yml"
+    88→    assert inputs["pr_number"] == "42"
+    89→    assert inputs["branch_name"] == "feature/my-feature"
+    90→    assert inputs["pr_backend"] == "planned_pr"
+    91→
+    92→
+    93→def test_incremental_dispatch_pr_not_found(tmp_path: Path) -&gt; None:
+    94→    """Test error when PR does not exist."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_011r5iN1mKop9KyFLMep7qq6">
+   115→
+   116→        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+   117→
+   118→        # Verify: workflow was triggered with pr_backend="planned_pr"
+   119→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_0178XnqpLxENUytcAPY1vMNJ">
+   484→    assert len(fake_remote.dispatched_workflows) == 1
+   485→    dispatched = fake_remote.dispatched_workflows[0]
+   486→    assert dispatched.inputs["pr_number"] == "42"
+   487→    assert dispatched.inputs["pr_backend"] == "planned_pr"
+   488→    assert dispatched.inputs["branch_name"] == "plnd/remote-test"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01HZJMys5eyautDEfw2tKGQV">
+    72→    # Verify workflow was triggered with pr_backend=planned_pr
+    73→    assert len(remote.dispatched_workflows) == 1
+    74→    wf = remote.dispatched_workflows[0]
+    75→    assert wf.workflow == "one-shot.yml"
+    76→    assert wf.inputs["prompt"] == "fix the import in config.py"
+    77→    assert wf.inputs["pr_backend"] == "planned_pr"
+    78→    assert wf.inputs["plan_issue_number"] == "1"
+    79→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I'll fix all 4 remaining files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1546" cache_read_input_tokens="85317" cache_creation="{'ephemeral_5m_input_tokens': 1546, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>

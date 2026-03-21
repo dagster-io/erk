@@ -1,0 +1,123 @@
+<session>
+  <meta source="agent-a5c9b4e" />
+  <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`:
+
+Rename all occurrences of `plan_backend` to `pr_backend`.
+Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
+
+This includes:
+- Imports
+- Parameter names
+- Variable names and attribute accesses
+- Type annotations
+- Comments
+
+DO NOT rename:
+- External API field names
+- User-facing string messages
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll start by reading the file to understand its structure and identify all occurrences that need to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16125" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16125, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LxjSAMcxPGhWndQ5dFPiHZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16125" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16125, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LxjSAMcxPGhWndQ5dFPiHZ">
+     1→"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
+     2→
+     3→Uses RemoteGitHub gateway to create branches, commit files, create PRs,
+     4→and dispatch workflows entirely via the GitHub REST API. This is the
+     5→canonical dispatch path for all one-shot commands.
+     6→"""
+     7→
+     8→import time
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→from typing import Any
+    12→
+    13→import click
+    14→
+    15→from erk.core.branch_slug_generator import generate_branch_slug
+    16→from erk_shared.core.prompt_executor import PromptExecutor
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_submission_queued_block,
+    19→    render_erk_issue_event,
+    20→)
+    21→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    22→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    23→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    24→from erk_shared.gateway.http.abc import HttpError
+    25→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    26→from erk_shared.gateway.time.abc import Time
+    27→from erk_shared.naming import (
+    28→    format_branch_timestamp_suffix,
+    29→    generate_planned_pr_branch_name,
+    30→    sanitize_worktree_name,
+
+... [461 lines omitted] ...
+
+   459→        except HttpError as e:
+   461→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   466→    except Exception as exc:
+   467→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <assistant>Now I'll analyze the occurrences that need to be renamed. I can see:
+
+1. Line 410: `"plan_backend": "planned_pr",` - This is in a dictionary that will be passed as workflow inputs. Based on the instruction to NOT rename external API field names, this should NOT be changed since it's a workflow input that the external system expects.
+
+2. Line 414: `inputs["plan_issue_number"] = str(pr_number)` - This is also an external API field name (workflow input), so this should NOT be changed.
+
+However, let me search for any imports or function calls to `require_plan_backend` and `plan_backend` variable/parameter usage:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="6527" cache_read_input_tokens="16125" cache_creation="{'ephemeral_5m_input_tokens': 6527, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RenxGUBrMjpLgxqiJCHDkL">
+    <param name="pattern">require_plan_backend|plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="6527" cache_read_input_tokens="16125" cache_creation="{'ephemeral_5m_input_tokens': 6527, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RenxGUBrMjpLgxqiJCHDkL">
+410:            "plan_backend": "planned_pr",
+  </tool_result>
+  <assistant>Looking at the file, I can see that:
+
+1. Line 410 contains `"plan_backend": "planned_pr",` which is a dictionary key being passed as a workflow input
+2. There are no `require_plan_backend` function calls or imports in this file
+3. There are no other `plan_backend` variable names or parameters in the file
+
+According to the instructions, I should NOT rename external API field names. The `"plan_backend"` at line 410 is a workflow input field name that the external workflow system expects, so it should remain as is.
+
+Let me verify there are no other occurrences I might have missed:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="307" cache_read_input_tokens="22652" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ksc8BsNYgYYzT5wRF11pJx">
+    <param name="pattern">plan_backend|pr_backend|require_plan_backend|require_pr_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="307" cache_read_input_tokens="22652" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ksc8BsNYgYYzT5wRF11pJx">
+410:            "plan_backend": "planned_pr",
+  </tool_result>
+  <assistant>Perfect. The analysis shows that in the file `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`:
+
+1. There is only **one occurrence** of `plan_backend` (line 410)
+2. This occurrence is a **dictionary key** that represents an **external API field name** being passed as a workflow input
+3. According to the instructions: "DO NOT rename: External API field names"
+4. There are **no occurrences** of `require_plan_backend` in this file
+5. There are **no other variable names, parameters, imports, or comments** using these terms
+
+## Summary
+
+The file `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py` contains only one occurrence of the terms to be renamed:
+
+- **Line 410**: `"plan_backend": "planned_pr",` 
+
+This is an **external API field name** (a workflow input that will be passed to the GitHub workflow system). According to the explicit instruction "DO NOT rename: External API field names", this should **not be changed**.
+
+There are no other occurrences of `plan_backend`, `pr_backend`, `require_plan_backend`, or `require_pr_backend` in this file - neither as imports, parameters, variables, type annotations, nor comments.
+
+**No edits are needed** in this file since the only occurrence is an external API field name that must remain unchanged.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="306" cache_read_input_tokens="22959" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="345" service_tier="standard" inference_geo="not_available" />
+</session>
