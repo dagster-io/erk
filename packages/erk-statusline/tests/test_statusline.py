@@ -715,7 +715,7 @@ class TestFindNewPlanFile:
     """Test new plan file detection."""
 
     def test_finds_file_with_correct_frontmatter(self) -> None:
-        """Should find plan file with erk_plan: true."""
+        """Should find plan file with erk_pr: true."""
         with tempfile.TemporaryDirectory() as tmpdir:
             plan_file = Path(tmpdir) / "add-lorem-ipsum-impl.md"
             plan_file.write_text(
@@ -752,7 +752,7 @@ Just content, no frontmatter.
             assert result is None
 
     def test_returns_none_when_frontmatter_has_false(self) -> None:
-        """Should return None when erk_plan is false."""
+        """Should return None when erk_pr is false."""
         with tempfile.TemporaryDirectory() as tmpdir:
             plan_file = Path(tmpdir) / "feature-impl.md"
             plan_file.write_text(

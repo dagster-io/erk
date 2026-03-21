@@ -47,7 +47,7 @@ This convention is enforced by the schemas in `erk_shared.gateway.github.metadat
 
 1. **Get GitHub username** — returns error if authentication fails
 2. **Extract title** — from parameter or first heading in content
-3. **Build labels** — adds `erk-objective` (not `erk-plan`)
+3. **Build labels** — adds `erk-objective` (not `erk-pr`)
 4. **Build issue body** — creates `objective-header` block, optionally adds `objective-roadmap` block
 5. **Create GitHub issue** — with metadata-only body
 6. **Add first comment** — wraps content in `objective-body` block

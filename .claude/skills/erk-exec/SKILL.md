@@ -38,7 +38,7 @@ When addressing PR review comments or resolving threads:
 
 ### Plan Operations
 
-When working with erk-plans:
+When working with erk-prs:
 
 | Command              | Purpose                      |
 | -------------------- | ---------------------------- |

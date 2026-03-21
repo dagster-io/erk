@@ -145,7 +145,7 @@ The inner skill handles marker creation, marking as planning, context gathering,
 | Scenario                                | Action                                                           |
 | --------------------------------------- | ---------------------------------------------------------------- |
 | Objective not found                     | Report error and exit                                            |
-| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| Reference is erk-pr                     | Redirect to `/erk:plan-implement`                                |
 | No pending nodes                        | Report all nodes complete, suggest closing                       |
 | Invalid argument format                 | Prompt for valid issue number                                    |
 | Roadmap not parseable                   | Ask user to specify which node to plan                           |

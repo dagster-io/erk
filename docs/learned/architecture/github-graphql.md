@@ -81,10 +81,10 @@ The `-F` flag performs type conversion:
 
 ```bash
 # ✅ CORRECT: Array with gh's array syntax
-gh api graphql -f query='...' -f 'labels[]=erk-plan' -f 'labels[]=bug' -f 'states[]=OPEN'
+gh api graphql -f query='...' -f 'labels[]=erk-pr' -f 'labels[]=bug' -f 'states[]=OPEN'
 
-# ❌ WRONG: -F with JSON array (passes as literal string "[\"erk-plan\"]")
-gh api graphql -f query='...' -F 'labels=["erk-plan", "bug"]'
+# ❌ WRONG: -F with JSON array (passes as literal string "[\"erk-pr\"]")
+gh api graphql -f query='...' -F 'labels=["erk-pr", "bug"]'
 ```
 
 **Object syntax:** Use `key[subkey]=value`:

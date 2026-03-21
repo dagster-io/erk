@@ -186,7 +186,7 @@ class TestCreateObjectiveIssue:
     """Test objective issue creation using create_objective_issue()."""
 
     def test_creates_objective_issue_with_correct_labels(self, tmp_path: Path) -> None:
-        """Objective issues use only erk-objective label (NOT erk-plan)."""
+        """Objective issues use only erk-objective label (NOT erk-pr)."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild a feature..."
 
@@ -204,13 +204,13 @@ class TestCreateObjectiveIssue:
         assert result.plan_number == 1
         assert result.title == "My Objective"
 
-        # Verify labels only include erk-objective (NOT erk-plan)
+        # Verify labels only include erk-objective (NOT erk-pr)
         _, body, labels = fake_gh.created_issues[0]
         assert labels == ["erk-objective"]
 
         # Verify only erk-objective label was created
         assert "erk-objective" in fake_gh.labels
-        assert "erk-plan" not in fake_gh.labels
+        assert "erk-pr" not in fake_gh.labels
 
     def test_objective_has_no_title_tag(self, tmp_path: Path) -> None:
         """Objective issues have no title tag."""
@@ -328,7 +328,7 @@ class TestCreateObjectiveIssue:
         assert result.success is True
 
         _, _, labels = fake_gh.created_issues[0]
-        assert "erk-plan" not in labels  # objectives don't get erk-plan
+        assert "erk-pr" not in labels  # objectives don't get erk-pr
         assert "erk-objective" in labels
         assert "priority-high" in labels
 

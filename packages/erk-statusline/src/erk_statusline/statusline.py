@@ -269,14 +269,14 @@ def get_objective_issue(git_root: str) -> int | None:
 
 
 def find_new_plan_file(git_root: str) -> str | None:
-    """Find plan file with erk_plan frontmatter at git root.
+    """Find plan file with erk_pr frontmatter at git root.
 
     Args:
         git_root: Absolute path to git repository root
 
     Returns:
         Filename (basename) of first matching *-impl.md file with
-        erk_plan: true in YAML frontmatter, or None if no matching file found.
+        erk_pr: true in YAML frontmatter, or None if no matching file found.
     """
     if not git_root:
         return None
@@ -300,10 +300,10 @@ def find_new_plan_file(git_root: str) -> str | None:
                     if len(parts) >= 3:
                         frontmatter = parts[1]
 
-                        # Check for erk_plan: true
+                        # Check for erk_pr: true (or erk_plan: true for backward compat)
                         for line in frontmatter.split("\n"):
                             line = line.strip()
-                            if line.startswith("erk_plan:"):
+                            if line.startswith("erk_pr:") or line.startswith("erk_plan:"):
                                 value = line.split(":", 1)[1].strip().lower()
                                 if value == "true":
                                     return plan_file.name

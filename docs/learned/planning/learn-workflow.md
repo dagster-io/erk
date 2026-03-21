@@ -32,7 +32,7 @@ The learn workflow extracts insights from implementation sessions and creates do
 ```
 ┌─────────────────┐     /erk:learn      ┌─────────────────┐
 │  Parent Plan    │ ─────────────────→  │  Learn Plan     │
-│  (erk-plan)     │                     │  (erk-learn)    │
+│  (erk-pr)     │                     │  (erk-learn)    │
 │                 │                     │                 │
 │ learn_status:   │                     │ learned_from:   │
 │ completed_with_ │ ←─────────────────  │ <parent-issue>  │

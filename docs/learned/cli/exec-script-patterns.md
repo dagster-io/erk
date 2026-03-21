@@ -116,7 +116,7 @@ Example from real exec scripts:
 {
   "success": false,
   "error": "missing_erk_plan_label",
-  "message": "Issue #123 does not have the 'erk-plan' label"
+  "message": "Issue #123 does not have the 'erk-pr' label"
 }
 ```
 

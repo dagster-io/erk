@@ -822,8 +822,8 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 
 **Characteristics**:
 
-- Labeled with `erk-plan` (like all plans)
-- **Issue identification**: Issues have the `erk-learn` label (in addition to `erk-plan`)
+- Labeled with `erk-pr` (like all plans)
+- **Issue identification**: Issues have the `erk-learn` label (in addition to `erk-pr`)
 - Created from session analysis to capture valuable insights
 - Contains documentation items rather than code changes
 - Marked with `plan_type: learn` in the plan-header metadata

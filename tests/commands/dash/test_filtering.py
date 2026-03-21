@@ -42,7 +42,7 @@ def test_plan_list_no_filters() -> None:
         body="",
         state=PlanState.OPEN,  # Changed to OPEN to match default behavior
         url="https://github.com/owner/repo/issues/2",
-        # Must have erk-plan label to be returned by default
+        # Must have erk-pr label to be returned by default
         labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),

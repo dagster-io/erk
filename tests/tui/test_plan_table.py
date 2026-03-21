@@ -571,7 +571,7 @@ class TestShowPrColumnFalse:
 def test_row_to_values_planned_pr_includes_stage() -> None:
     """Stage column is included in output (stage/sts/created columns are always present)."""
     filters = PrFilters(
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         state=None,
         run_state=None,
         limit=None,

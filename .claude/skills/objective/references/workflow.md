@@ -5,7 +5,7 @@ Detailed procedures for creating objectives, spawning plans, and resuming work.
 ## Contents
 
 - [Creating a New Objective](#creating-a-new-objective)
-- [Spawning Erk-Plans](#spawning-erk-plans)
+- [Spawning Erk-Plans](#spawning-erk-prs)
 - [Resuming Work on an Objective](#resuming-work-on-an-objective)
 - [Structuring for Steelthread Development](#structuring-for-steelthread-development)
 - [Best Practices](#best-practices)
@@ -28,7 +28,7 @@ Create an objective when:
 
 Do NOT create an objective for:
 
-- Single PR implementations (use erk-plan instead)
+- Single PR implementations (use erk-pr instead)
 - Quick fixes or one-off changes
 - Exploratory work without clear deliverables
 
@@ -94,11 +94,11 @@ EOF
 
 ## Spawning Erk-Plans
 
-Objectives coordinate work; erk-plans execute it. Spawn an erk-plan for individual nodes.
+Objectives coordinate work; erk-prs execute it. Spawn an erk-pr for individual nodes.
 
 ### When to Spawn
 
-Spawn an erk-plan when:
+Spawn an erk-pr when:
 
 - A roadmap node is ready to implement
 - The node is well-defined and scoped
@@ -110,7 +110,7 @@ Spawn an erk-plan when:
 2. **Create the plan** - Reference the objective
 
 ```bash
-# Create an erk-plan for a specific objective node
+# Create an erk-pr for a specific objective node
 erk pr create --file plan.md --title "[Node description]"
 ```
 
@@ -118,7 +118,7 @@ erk pr create --file plan.md --title "[Node description]"
 
 ### After Plan Completion
 
-1. **Merge the PR** from the erk-plan
+1. **Merge the PR** from the erk-pr
 2. **Post action comment** on the objective (see [updating.md](updating.md))
 3. **Update objective body** - node status, link PR
 4. **Check for closing** - If all nodes done, see [closing.md](closing.md)
@@ -152,7 +152,7 @@ gh issue view <issue-number> --comments
 ### Continuing Work
 
 1. **Identify next node** from roadmap
-2. **Create erk-plan** if needed for implementation
+2. **Create erk-pr** if needed for implementation
 3. **Work on the node**
 4. **Post action comment** when done (see [updating.md](updating.md))
 5. **Update body** with new status
@@ -247,7 +247,7 @@ Good: "The API requires pagination for lists > 100 items; always check response 
 
 - Link PRs in the roadmap table
 - Link related issues in action comments
-- Link erk-plans spawned from the objective
+- Link erk-prs spawned from the objective
 
 ### Don't Over-Engineer
 

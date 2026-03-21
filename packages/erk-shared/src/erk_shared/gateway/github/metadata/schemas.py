@@ -97,10 +97,10 @@ class WorktreeCreationSchema(MetadataBlockSchema):
 
 @dataclass(frozen=True)
 class PlanSchema(MetadataBlockSchema):
-    """Schema for erk-plan blocks."""
+    """Schema for erk-pr blocks."""
 
     def validate(self, data: dict[str, Any]) -> None:
-        """Validate erk-plan data structure."""
+        """Validate erk-pr data structure."""
         _migrate_to_pr_number(data)
 
         required_fields = {"pr_number", "worktree_name", "timestamp"}
@@ -141,7 +141,7 @@ class PlanSchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return BlockKeys.ERK_PLAN
+        return BlockKeys.ERK_PR
 
 
 @dataclass(frozen=True)

@@ -66,7 +66,7 @@ def _fetch_and_setup(
             {
                 "success": False,
                 "error": "is_plan",
-                "message": f"Issue #{objective_number} is an erk-plan, not an objective",
+                "message": f"Issue #{objective_number} is an erk-pr, not an objective",
             },
             1,
         )

@@ -165,10 +165,10 @@ def test_close_remote_not_found() -> None:
 def test_log_remote_displays_events() -> None:
     """Test pr log with --repo flag parses events from comments."""
     issue = _make_issue(42)
-    # Comment with an erk-plan metadata block
-    comment_body = """<!-- erk:metadata-block:erk-plan -->
+    # Comment with an erk-pr metadata block
+    comment_body = """<!-- erk:metadata-block:erk-pr -->
 <details>
-<summary><code>erk-plan</code></summary>
+<summary><code>erk-pr</code></summary>
 
 ```yaml
 
@@ -178,7 +178,7 @@ worktree_name: test-wt
 ```
 
 </details>
-<!-- /erk:metadata-block:erk-plan -->
+<!-- /erk:metadata-block:erk-pr -->
 """
     fake_remote = _make_fake_remote(
         issues={42: issue},

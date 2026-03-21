@@ -10,7 +10,7 @@ def test_wrap_simple_plan_format() -> None:
     wrapped = f"""{expected_intro}
 
 <details>
-<summary><code>erk-plan</code></summary>
+<summary><code>erk-pr</code></summary>
 
 {plan_content}
 </details>"""
@@ -18,7 +18,7 @@ def test_wrap_simple_plan_format() -> None:
     # Verify structure
     assert expected_intro in wrapped
     assert "<details>" in wrapped
-    assert "<summary><code>erk-plan</code></summary>" in wrapped
+    assert "<summary><code>erk-pr</code></summary>" in wrapped
     assert plan_content in wrapped
     assert "</details>" in wrapped
 
@@ -41,7 +41,7 @@ def test_wrap_plan_preserves_formatting() -> None:
     wrapped = f"""This issue contains an implementation plan:
 
 <details>
-<summary><code>erk-plan</code></summary>
+<summary><code>erk-pr</code></summary>
 
 {plan_content}
 </details>"""
@@ -66,7 +66,7 @@ def test_wrap_plan_with_special_characters() -> None:
     wrapped = f"""This issue contains an implementation plan:
 
 <details>
-<summary><code>erk-plan</code></summary>
+<summary><code>erk-pr</code></summary>
 
 {plan_content}
 </details>"""
@@ -87,13 +87,13 @@ def test_rendered_plan_block_is_parseable() -> None:
     wrapped = f"""This issue contains an implementation plan:
 
 <details>
-<summary><code>erk-plan</code></summary>
+<summary><code>erk-pr</code></summary>
 
 {plan_content}
 </details>"""
 
     # Verify structure is correct for GitHub rendering
     assert "<details>" in wrapped
-    assert "<summary><code>erk-plan</code></summary>" in wrapped
+    assert "<summary><code>erk-pr</code></summary>" in wrapped
     assert plan_content in wrapped
     assert "</details>" in wrapped

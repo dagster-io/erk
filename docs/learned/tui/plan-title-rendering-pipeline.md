@@ -30,7 +30,7 @@ GitHub returns raw issue/PR data:
 ```json
 {
   "title": "Add dark mode support",
-  "labels": ["erk-plan", "erk-learn"]
+  "labels": ["erk-pr", "erk-learn"]
 }
 ```
 
@@ -49,7 +49,7 @@ The data provider or service layer adds prefixes based on labels:
 
 Plans are filtered by:
 
-- Labels (show only `erk-plan`, exclude closed)
+- Labels (show only `erk-pr`, exclude closed)
 - Run state (show only running/queued)
 - User-defined filters
 

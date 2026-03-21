@@ -65,7 +65,7 @@ def test_dispatch_happy_path() -> None:
     assert pr.title == "Consolidate learn PRs"
     assert "plan-header" in pr.body
 
-    # Verify erk-pr, erk-plan, and erk-learn labels added
+    # Verify erk-pr and erk-learn labels added
     assert len(remote.added_labels) == 1
     assert remote.added_labels[0].labels == ("erk-pr", "erk-learn")
 

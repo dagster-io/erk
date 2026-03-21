@@ -33,7 +33,7 @@
 - **[learn-workflow.md](learn-workflow.md)** — using /erk:learn skill, understanding learn status tracking, auto-updating parent plans when learn plans land
 - **[lifecycle-stage-consolidation.md](lifecycle-stage-consolidation.md)** — adding or modifying lifecycle_stage write points, understanding the impl stage consolidation from implementing/implemented, working with plan lifecycle stage transitions
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
-- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-prs that lack metadata blocks
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan metadata schema, coordinating metadata changes across files
 - **[metadata-update-patterns.md](metadata-update-patterns.md)** — writing plan dispatch metadata updates, choosing between assertive and best-effort metadata operations, working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata
 - **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output

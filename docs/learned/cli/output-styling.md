@@ -827,7 +827,7 @@ table.add_row(escape_markup("[erk-learn] Fix the bug"))
 
 Escape user data that may contain:
 
-- **Plan titles** - `[erk-learn]`, `[erk-plan]` prefixes
+- **Plan titles** - `[erk-learn]`, `[erk-pr]` prefixes
 - **Branch names** - May have brackets from naming conventions
 - **Issue titles** - User-provided content with arbitrary brackets
 - **File paths** - Directory names with brackets

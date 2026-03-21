@@ -20,7 +20,7 @@ class BlockKeys:
     OBJECTIVE_HEADER = "objective-header"
     OBJECTIVE_BODY = "objective-body"
     OBJECTIVE_ROADMAP = "objective-roadmap"
-    ERK_PLAN = "erk-plan"
+    ERK_PR = "erk-pr"
     ERK_WORKTREE_CREATION = "erk-worktree-creation"
     ERK_IMPLEMENTATION_STATUS = "erk-implementation-status"
     WORKFLOW_STARTED = "workflow-started"

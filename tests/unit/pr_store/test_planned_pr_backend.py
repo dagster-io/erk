@@ -122,8 +122,8 @@ def test_create_plan_falls_back_to_master_when_base_ref_name_not_string() -> Non
     assert fake_github.created_prs[0][3] == "master"
 
 
-def test_create_plan_adds_erk_plan_label() -> None:
-    """create_plan adds the erk-plan label to the PR."""
+def test_create_plan_adds_erk_pr_label() -> None:
+    """create_plan adds the erk-pr label to the PR."""
     fake_github = FakeLocalGitHub()
     backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
@@ -141,7 +141,7 @@ def test_create_plan_adds_erk_plan_label() -> None:
 
 
 def test_create_plan_adds_extra_labels() -> None:
-    """create_plan adds extra labels beyond erk-plan."""
+    """create_plan adds extra labels beyond erk-pr."""
     fake_github = FakeLocalGitHub()
     backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 

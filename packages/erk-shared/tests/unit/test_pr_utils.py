@@ -26,7 +26,7 @@ def test_wrap_plan_basic() -> None:
     # Should wrap in metadata block format
     assert "<details>" in result
     assert "</details>" in result
-    assert "<summary><code>erk-plan</code></summary>" in result
+    assert "<summary><code>erk-pr</code></summary>" in result
     # Should include plan content
     assert plan in result
 

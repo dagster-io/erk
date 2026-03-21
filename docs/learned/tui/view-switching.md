@@ -48,7 +48,7 @@ The TUI supports three views — Plans, Learn, and Objectives — with instant s
 | Learn      | `("erk-learn",)`     | `()`             | `2` |
 | Objectives | `("erk-objective",)` | `()`             | `3` |
 
-Plans and Learn use **different** type-specific labels. Plans queries `erk-pr` and excludes `erk-learn` items. Learn queries `erk-learn` directly. Both share the BASE label `erk-planned-pr` on their issues but use different type labels for API queries.
+Plans and Learn use **different** type-specific labels. Plans queries `erk-pr` and excludes `erk-learn` items. Learn queries `erk-learn` directly. Both share the BASE label `erk-prned-pr` on their issues but use different type labels for API queries.
 
 ## Label-Based Filtering
 

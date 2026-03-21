@@ -321,9 +321,9 @@ Once approved:
 
 | Feature          | /erk:plan-save      | /erk:objective-create           |
 | ---------------- | ------------------- | ------------------------------- |
-| Label            | `erk-plan`          | `erk-objective` only            |
+| Label            | `erk-pr`            | `erk-objective` only            |
 | Purpose          | Implementation plan | Roadmap or perpetual focus area |
-| Title prefix     | `[erk-plan]`        | None                            |
+| Title prefix     | `[erk-pr]`          | None                            |
 | Metadata block   | Yes                 | No                              |
 | Commands section | Yes                 | No                              |
 | Body content     | Metadata only       | Objective directly              |

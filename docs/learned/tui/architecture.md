@@ -143,7 +143,7 @@ Raw JSON from GitHub. Issue titles are plain strings without prefixes:
 {
   "number": 123,
   "title": "Add dark mode",
-  "labels": [{ "name": "erk-plan" }, { "name": "erk-learn" }],
+  "labels": [{ "name": "erk-pr" }, { "name": "erk-learn" }],
   "body": "<!-- erk-metadata: {...} -->\n\n# Plan content..."
 }
 ```
