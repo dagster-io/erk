@@ -3,6 +3,15 @@
 # Title prefix for erk-pr issues (with trailing space for easy stripping)
 ERK_PR_TITLE_PREFIX = "[erk-pr] "
 
+# Title prefix for erk-learn issues (with trailing space for easy stripping)
+ERK_LEARN_TITLE_PREFIX = "[erk-learn] "
+
+
+def has_plan_title_prefix(title: str) -> bool:
+    """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
+    return title.startswith(ERK_PR_TITLE_PREFIX) or title.startswith(ERK_LEARN_TITLE_PREFIX)
+
+
 # Plan markdown heading prefix (with trailing space for easy stripping)
 PLAN_HEADING_PREFIX = "Plan: "
 

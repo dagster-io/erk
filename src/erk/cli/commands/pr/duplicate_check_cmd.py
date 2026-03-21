@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.constants import has_plan_title_prefix
 from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
@@ -122,7 +123,7 @@ def duplicate_check_plan(
         http_client=http_client,
     )
     # Filter to plans only (title prefix check)
-    existing_plans = [p for p in plan_data.plans if p.title.startswith("[erk-pr]")]
+    existing_plans = [p for p in plan_data.plans if has_plan_title_prefix(p.title)]
 
     if exclude_pr_id is not None:
         existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_pr_id]
