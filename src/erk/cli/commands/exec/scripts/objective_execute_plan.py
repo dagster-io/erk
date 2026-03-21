@@ -55,7 +55,7 @@ def _build_node_dict(position: int, node: ObjectiveNode, phase_name: str) -> dic
 @click.command(name="objective-execute-plan")
 @click.argument("objective_number", type=int)
 @click.option("--count", type=int, required=True, help="Number of nodes to resolve")
-@click.option("--json", "output_json", is_flag=True, default=False, help="Output as JSON")
+@click.option("--json", "output_json", is_flag=True, help="Output as JSON")
 @click.pass_context
 def objective_execute_plan(
     ctx: click.Context,
