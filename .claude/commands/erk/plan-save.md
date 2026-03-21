@@ -23,7 +23,7 @@ Objective linking: if a plan was created via `/erk:objective-plan`, the session'
 The plan is saved using the configured backend:
 
 - **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a planned PR. Plan content is in the PR body after the metadata separator.
-  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `pr_backend`.
 
 ## Agent Instructions
 

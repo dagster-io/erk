@@ -182,7 +182,7 @@ jobs:
       impl_pr_number: ${{ inputs.pr_number }}
       model_name: ${{ inputs.model_name }}
       base_branch: ${{ needs.consolidate.outputs.base_branch }}
-      plan_backend: planned_pr
+      pr_backend: planned_pr
     secrets: inherit
 
   ci-address:
