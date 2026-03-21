@@ -1,0 +1,1082 @@
+<session>
+  <meta branch="plnd/fix-script-output-content-03-21-0724" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="f3602c15-9066-4093-97cf-cb91bac6ca06" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="f3602c15-9066-4093-97cf-cb91bac6ca06" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="f3602c15-9066-4093-97cf-cb91bac6ca06" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="f3602c15-9066-4093-97cf-cb91bac6ca06" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15499" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15499}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15499" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15499}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0135CLQJT7WUN9VtiDgAfm3J">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect plan from current branch and set up impl</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15499" cache_read_input_tokens="9015" output_tokens="227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15499, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0135CLQJT7WUN9VtiDgAfm3J">
+Found existing impl dir for PR #9330, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/.erk/impl-context/plnd--fix-script-output-content-03-21-0724", "pr_number": 9330, "pr_url": "https://github.com/dagster-io/erk/pull/9330", "branch": "plnd/fix-script-output-content-03-21-0724", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9330, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ApsSP8QK5mWdGzhjV11ZZp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/.erk/impl-context/plnd--fix-script-output-content-03-21-0724/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="24514" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 404, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ApsSP8QK5mWdGzhjV11ZZp">
+     1→# Fix: `source &lt;(erk ... --script)` outputs path instead of content
+     2→
+     3→## Context
+     4→
+     5→`source &lt;(erk slot co BRANCH --script) &amp;&amp; erk implement` doesn't work. The `cd` to the worktree happens in a subprocess and doesn't persist, so `erk implement` runs in the original directory on `master`.
+     6→
+     7→**Root cause:** `ScriptResult.output_for_script_handler()` outputs the temp file **path** to stdout. With process substitution `&lt;(...)`, the shell sources a virtual file containing just the path string, executing it as a subprocess instead of in the current shell.
+     8→
+     9→**Why the manual flow works:** `source /path/to/activate.sh` directly sources the file contents in the current shell.
+    10→
+    11→**Inconsistency:** The codebase uses two competing patterns:
+    12→- `source &lt;(erk ... --script)` — newer code (PrNextSteps, CLI docstrings) — **broken** with path output
+    13→- `source "$(erk ... --script)"` — older code (TUI, cmux, docs) — works with path output
+    14→
+    15→The fix: output script **content** to stdout, standardize on `source &lt;(...)` everywhere.
+    16→
+    17→## Implementation (Red/Green TDD)
+    18→
+    19→### Cycle 1: RED — Core fix test
+    20→
+    21→**Write failing test** in `tests/core/test_script_result_output.py`:
+    22→- Modify `test_output_for_script_handler_routes_to_stdout` to assert output equals `content` not `path`
+    23→- `assert output == "#!/bin/bash\necho 'test'"` (the `content` field from line 17)
+    24→- Run test → RED (currently outputs path)
+    25→
+    26→**GREEN** — `packages/erk-shared/src/erk_shared/core/script_writer.py`:
+    27→- Line 72: `machine_output(str(self.path), nl=False)` → `machine_output(self.content, nl=False)`
+    28→- Run test → GREEN
+    29→
+    30→**Cleanup** — Update docstrings in same file (lines 31-55) and `script_error.py` docstrings
+
+... [42 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1426" cache_read_input_tokens="24918" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1426}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Plan read. Let me load the relevant tripwires and source files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1426" cache_read_input_tokens="24918" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1426}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01A4f3rS1sECQ3xEbg7gBswj">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1426" cache_read_input_tokens="24918" output_tokens="322" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1426, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A4f3rS1sECQ3xEbg7gBswj">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SgHuNPoiKr4F9G1ekihsi5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/script_writer.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1084" cache_read_input_tokens="26344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1084}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SgHuNPoiKr4F9G1ekihsi5">
+     1→"""Shell activation script writing abstraction - ABC and types.
+     2→
+     3→This module provides ScriptResult and the abstract ScriptWriter interface.
+     4→The real implementation (RealScriptWriter) remains in erk.core.script_writer.
+     5→
+     6→ScriptResult is a self-documenting return type for commands that generate shell
+     7→activation scripts. The key insight is that ScriptResult knows how to output
+     8→itself correctly to the right stream (stdout vs stderr), preventing an entire
+     9→class of shell integration bugs.
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ScriptResult:
+    19→    """Result of writing an activation script.
+    20→
+    21→    Attributes:
+    22→        path: Path to the script file (may be sentinel in tests)
+    23→        content: Full content of the script including headers
+    24→        _output_performed: Private flag tracking if output has been performed (for idempotency)
+    25→    """
+    26→
+    27→    path: Path
+    28→    content: str
+    29→    _output_performed: bool = False
+    30→
+
+... [141 lines omitted] ...
+
+    40→        times on the same instance will raise ValueError.
+    58→            ValueError: If output has already been performed for this ScriptResult.
+    62→            raise ValueError(
+    86→        times on the same instance will raise ValueError.
+    95→            ValueError: If output has already been performed for this ScriptResult.
+    99→            raise ValueError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_016xA3UrHovkdxbeHx3pMiPK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/activation.py</param>
+    <param name="offset">380</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1084" cache_read_input_tokens="26344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1084}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016xA3UrHovkdxbeHx3pMiPK">
+   380→        user_output(f"  {primary_cmd}  {clipboard_hint}")
+   381→        # Emit OSC 52 to copy the command to clipboard (invisible escape sequence)
+   382→        user_output(copy_to_clipboard_osc52(primary_cmd), nl=False)
+   383→    else:
+   384→        user_output(f"  {primary_cmd}")
+   385→
+   386→
+   387→def render_land_script() -&gt; str:
+   388→    """Return shell script content for land.sh.
+   389→
+   390→    The script wraps `erk land --script` to provide shell integration,
+   391→    allowing the command to navigate the shell after landing a PR.
+   392→
+   393→    Uses process substitution with `cat` to read the temp file immediately,
+   394→    avoiding race conditions where the file might be deleted before sourcing.
+   395→    """
+   396→    return """#!/usr/bin/env bash
+   397→# erk land wrapper - source this script to land with shell integration
+   398→# Usage: source .erk/bin/land.sh [args...]
+   399→source &lt;(cat "$(erk land --script "$@")")
+   400→"""
+   401→
+   402→
+   403→def ensure_land_script(worktree_path: Path) -&gt; Path:
+   404→    """Ensure land.sh exists at .erk/bin/land.sh in the worktree.
+   405→
+   406→    Creates the script if it doesn't exist. The script wraps
+   407→    `erk land --script` to provide shell integration.
+   408→
+   409→    Args:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SmAJtmjQkUFW1A4w8Sj4PU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/docs/learned/testing/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1084" cache_read_input_tokens="26344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1084}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SmAJtmjQkUFW1A4w8Sj4PU">
+     1→---
+     2→title: Testing Tripwires
+     3→read_when:
+     4→  - "working on testing code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from testing/*.md frontmatter --&gt;
+    10→
+    11→# Testing Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Test only success cases for batch commands** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Cover all four categories: success, partial failure, validation errors, and JSON structure. Missing any category leaves a critical gap.
+    16→
+    17→**Use stateful failure injection (\_should_fail_next flags) in fake gateways** → Read [Exec Script Batch Testing](exec-script-batch-testing.md) first. Use set-based constructor injection instead. Stateful flags are order-dependent and brittle. See the set-based pattern below.
+    18→
+    19→**accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
+    20→
+    21→**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+    22→
+    23→**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+    24→
+    25→**adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
+    26→
+    27→**adding a tracking list without documenting the tuple field order** → Read [FakeLocalGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.
+    28→
+    29→**adding monkeypatch or @patch to a test** [pattern: `@patch|monkeypatch\.`] → Read [Monkeypatch Elimination Checklist](monkeypatch-elimination-checklist.md) first. Use gateway fakes instead. If no gateway exists for the operation, create one first. See gateway-abc-implementation.md.
+    30→
+
+... [122 lines omitted] ...
+
+    33→**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
+    35→**asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
+    63→**creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
+    71→**creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
+    73→**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+    81→**implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
+    99→**renaming a user-facing string in CLI output and updating related test assertions** → Read [CLI Testing Patterns](cli-testing.md) first. Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout.
+   109→**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+   119→**tracking mutations before checking error configuration in a fake method** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Decide deliberately: should this operation track even on failure? push_to_remote skips tracking on error (nothing happened), pull_rebase always tracks (the attempt matters). Match the real operation's semantics.
+   131→**using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   133→**using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
+   143→**using monkeypatch.chdir() in exec script tests** [pattern: `monkeypatch\.chdir\(`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.
+   145→**using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XhL2x49sCvKPCK9hHcbWEg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/docs/learned/cli/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1084" cache_read_input_tokens="26344" output_tokens="353" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1084, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XhL2x49sCvKPCK9hHcbWEg">
+     1→---
+     2→title: Cli Tripwires
+     3→read_when:
+     4→  - "working on cli code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from cli/*.md frontmatter --&gt;
+    10→
+    11→# Cli Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Design batch commands that process items despite validation failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Validate ALL items upfront before processing ANY items. Stop on first validation error.
+    16→
+    17→**Return non-zero exit codes for batch command failures** → Read [Batch Exec Commands](batch-exec-commands.md) first. Always exit 0, encode errors in JSON output with per-item success fields.
+    18→
+    19→**Use OR semantics for batch success (success=true if any item succeeds)** → Read [Batch Exec Commands](batch-exec-commands.md) first. Use AND semantics: top-level success=true only if ALL items succeed.
+    20→
+    21→**Using RuntimeError for expected CLI failures** → Read [CLI Error Handling Anti-Patterns](error-handling-antipatterns.md) first. RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message.
+    22→
+    23→**WORKFLOW_COMMAND_MAP maps command names to .yml filenames** → Read [Workflow Commands](workflow-commands.md) first. command names intentionally diverge from filenames (e.g., pr-rebase → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME constant)
+    24→
+    25→**adding --from-current-branch without handling detached HEAD** → Read [Slot Assign --from-current-branch](slot-assign-from-current-branch.md) first. When the target branch is checked out in another worktree, fall back to detached HEAD checkout. See slot-assign-from-current-branch.md.
+    26→
+    27→**adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
+    28→
+    29→**adding --json flag to a human command** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Machine JSON output belongs in the `erk json` command tree. Create a machine adapter as json_cli.py in the command's subpackage instead.
+    30→
+
+... [212 lines omitted] ...
+
+    43→**adding a new step to the submit pipeline** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to \_submit_pipeline() tuple.
+    45→**adding a parameter to erk exec without updating calling command** → Read [Parameter Addition Checklist](parameter-addition-checklist.md) first. 5-step verification required. Parameter additions must thread through skill argument-hint, command invocations, AND exec script. Miss any layer and you get silent failures or discovery problems. See parameter-addition-checklist.md.
+    79→**calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+    81→**choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
+   115→**flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
+   139→**making a separate subprocess call for each item in a batch operation** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling.
+   141→**making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
+   165→**plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
+   193→**returning MachineCommandError without raising SystemExit** → Read [Machine Command Architecture](json-command-decorator.md) first. The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback.
+   195→**returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
+   205→**testing prompts without matching confirm_responses array length** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. confirm_responses array length must match the number of prompts. Too few causes IndexError; too many indicates a prompt was removed without updating tests.
+   207→**using EnsureIdeal for discriminated union narrowing** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method.
+   219→**using ctx.invoke() with kwargs that don't match target function parameter names** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature.
+   221→**using dict .get() to access fields from exec script JSON output without a TypedDict schema** → Read [Exec Script Schema Patterns](exec-script-schema-patterns.md) first. Silent filtering failures occur when field names are mistyped. Define TypedDict in erk_shared and use cast() in consumers.
+   241→**writing multi-line error messages in Ensure method calls** → Read [CLI Output Styling Guide](output-styling.md) first. Use implicit string concatenation with \n at end of first string. Line 1 is the primary error, line 2+ is remediation context. Do NOT use \n\n (double newline) — Ensure handles spacing.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the test files and remaining source files referenced in the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_015kKqKfnNTu3ZRzhiuqD3gz">
+    <param name="subject">Cycle 1: Fix ScriptResult.output_for_script_handler() to output content</param>
+    <param name="description">Change script_writer.py line 72 to output self.content instead of str(self.path). Update test assertions and docstrings.</param>
+    <param name="activeForm">Fixing core ScriptResult output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015kKqKfnNTu3ZRzhiuqD3gz">
+Task #1 created successfully: Cycle 1: Fix ScriptResult.output_for_script_handler() to output content
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0169QXLUESa6GtRHkpUq7jda">
+    <param name="subject">Cycle 2: Update land script to use source &lt;(...) pattern</param>
+    <param name="description">Update render_land_script() in activation.py and its test.</param>
+    <param name="activeForm">Updating land script pattern</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0169QXLUESa6GtRHkpUq7jda">
+Task #2 created successfully: Cycle 2: Update land script to use source &lt;(...) pattern
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01S7RoDQry1rqfLM5RMCAWpd">
+    <param name="subject">Cycle 3: Migrate TUI and service patterns from source "$(...)" to source &lt;(...)</param>
+    <param name="description">Update TUI registry, execute_command, actions, plan_detail_screen, plan_list_service, and cmux_checkout_workspace.</param>
+    <param name="activeForm">Migrating TUI source patterns</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S7RoDQry1rqfLM5RMCAWpd">
+Task #3 created successfully: Cycle 3: Migrate TUI and service patterns from source "$(...)" to source &lt;(...)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01VjxxzrtrSfAjuLNDH7ZiPE">
+    <param name="subject">Cycle 4: Cleanup pass - rename and documentation updates</param>
+    <param name="description">Rename script_path_output, update docs and skill files.</param>
+    <param name="activeForm">Cleanup and documentation updates</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17461}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VjxxzrtrSfAjuLNDH7ZiPE">
+Task #4 created successfully: Cycle 4: Cleanup pass - rename and documentation updates
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Fq256Ex889vJ2NoQP59PpQ">
+    <param name="subject">Run CI</param>
+    <param name="description">Run make fast-ci to verify all changes pass.</param>
+    <param name="activeForm">Running CI</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17461" cache_read_input_tokens="27428" output_tokens="622" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fq256Ex889vJ2NoQP59PpQ">
+Task #5 created successfully: Run CI
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01VaN1VSn6M3WLYfGB6NxgYF">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="44889" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 862, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VaN1VSn6M3WLYfGB6NxgYF">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_011EajX59fxUy63Ns8cmyafa">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1145" cache_read_input_tokens="45751" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1145, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011EajX59fxUy63Ns8cmyafa">
+Updated task #1 status
+  </tool_result>
+  <assistant>Let me read the existing test file and the other source files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1238" cache_read_input_tokens="45751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019MViw4pZubd6J193AtU1Cd">
+    <param name="pattern">test_output_for_script_handler</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1238" cache_read_input_tokens="45751" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MViw4pZubd6J193AtU1Cd">
+Found 1 file
+tests/core/test_script_result_output.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015QXjscKzSbKuxicj1fTRjY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/core/test_script_result_output.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015QXjscKzSbKuxicj1fTRjY">
+     1→"""Tests for ScriptResult output methods."""
+     2→
+     3→import sys
+     4→from io import StringIO
+     5→from pathlib import Path
+     6→
+     7→import pytest
+     8→
+     9→from erk.core.script_writer import ScriptResult
+    10→
+    11→
+    12→def test_output_for_script_handler_routes_to_stdout() -&gt; None:
+    13→    """Test that output_for_script_handler() routes to stdout."""
+    14→    # Arrange
+    15→    result = ScriptResult(
+    16→        path=Path("/tmp/test_script.sh"),
+    17→        content="#!/bin/bash\necho 'test'",
+    18→    )
+    19→
+    20→    # Capture stdout
+    21→    old_stdout = sys.stdout
+    22→    sys.stdout = StringIO()
+    23→
+    24→    try:
+    25→        # Act
+    26→        result.output_for_script_handler()
+    27→
+    28→        # Assert
+    29→        output = sys.stdout.getvalue()
+    30→        assert output == "/tmp/test_script.sh"
+
+... [119 lines omitted] ...
+
+    59→    """Test that calling output_for_script_handler() twice raises ValueError."""
+    74→    # Second call should raise ValueError
+    75→    with pytest.raises(ValueError) as exc_info:
+    83→    """Test that calling output_path_for_user() twice raises ValueError."""
+    98→    # Second call should raise ValueError
+    99→    with pytest.raises(ValueError) as exc_info:
+  </tool_result>
+  <tool_use name="Read" id="toolu_019wCWTpXRnEMaVmGgUTHVyn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/unit/cli/test_activation.py</param>
+    <param name="offset">1090</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019wCWTpXRnEMaVmGgUTHVyn">
+  1090→    assert "erk implement" in captured.err
+  1091→    assert "source" not in captured.err
+  1092→
+  1093→
+  1094→# land.sh script tests
+  1095→
+  1096→
+  1097→def test_render_land_script_content() -&gt; None:
+  1098→    """render_land_script returns correct shell script content."""
+  1099→    script = render_land_script()
+  1100→    assert "#!/usr/bin/env bash" in script
+  1101→    # Uses process substitution with cat to avoid race conditions with temp files
+  1102→    assert 'source &lt;(cat "$(erk land --script "$@")")' in script
+  1103→    assert "source this script" in script
+  1104→
+  1105→
+  1106→def test_ensure_land_script_creates_if_missing(tmp_path: Path) -&gt; None:
+  1107→    """ensure_land_script creates land.sh if it doesn't exist."""
+  1108→    script_path = ensure_land_script(tmp_path)
+  1109→
+  1110→    assert script_path == tmp_path / ".erk" / "bin" / "land.sh"
+  1111→    assert script_path.exists()
+  1112→    content = script_path.read_text(encoding="utf-8")
+  1113→    # Uses process substitution with cat to avoid race conditions with temp files
+  1114→    assert 'source &lt;(cat "$(erk land --script "$@")")' in content
+  1115→
+  1116→
+  1117→def test_ensure_land_script_creates_bin_directory(tmp_path: Path) -&gt; None:
+  1118→    """ensure_land_script creates .erk/bin/ directory if needed."""
+  1119→    assert not (tmp_path / ".erk").exists()
+  </tool_result>
+  <tool_use name="Read" id="toolu_01564zpSuCqZ64841Ch8iTE8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/tui/commands/test_registry.py</param>
+    <param name="offset">310</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01564zpSuCqZ64841Ch8iTE8">
+   310→    cmd = next(c for c in get_all_commands() if c.id == "copy_checkout")
+   311→    assert get_display_name(cmd, ctx) == "erk pr co 5831"
+   312→
+   313→
+   314→def test_display_name_copy_pr_checkout_script_shows_pr() -&gt; None:
+   315→    """copy_pr_checkout_script should show the PR number in the source command."""
+   316→    row = make_pr_row(5831, "Test Plan")
+   317→    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+   318→    cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout_script")
+   319→    expected = 'source "$(erk pr checkout 5831 --script)"'
+   320→    assert get_display_name(cmd, ctx) == expected
+   321→
+   322→
+   323→def test_display_name_copy_pr_checkout_plain_shows_pr() -&gt; None:
+   324→    """copy_pr_checkout_plain should show the PR number."""
+   325→    row = make_pr_row(5831, "Test Plan")
+   326→    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+   327→    cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout_plain")
+   328→    assert get_display_name(cmd, ctx) == "erk pr checkout 5831"
+   329→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HkeDHggD94fNLhkagfgfgZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/tui/commands/test_registry.py</param>
+    <param name="offset">890</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HkeDHggD94fNLhkagfgfgZ">
+   890→
+   891→
+   892→def test_get_copy_text_returns_display_name_for_valid_command() -&gt; None:
+   893→    """get_copy_text returns display name for a valid, available command."""
+   894→    row = make_pr_row(123, "Test")
+   895→    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+   896→    result = get_copy_text("copy_pr_checkout_script", ctx)
+   897→    expected = 'source "$(erk pr checkout 123 --script)"'
+   898→    assert result == expected
+   899→
+   900→
+   901→def test_get_copy_text_returns_none_for_unknown_command() -&gt; None:
+   902→    """get_copy_text returns None when command ID does not exist."""
+   903→    row = make_pr_row(123, "Test")
+   904→    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+   905→    result = get_copy_text("nonexistent_command", ctx)
+   906→    assert result is None
+   907→
+   908→
+   909→def test_get_copy_text_returns_none_for_unavailable_command() -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RCpo5HSYVZjFTMAstXryWS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/tui/commands/test_execute_command.py</param>
+    <param name="offset">100</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RCpo5HSYVZjFTMAstXryWS">
+   100→    def test_copy_pr_checkout_script_copies_command(self) -&gt; None:
+   101→        """copy_pr_checkout_script copies the PR checkout command with --script."""
+   102→        row = make_pr_row(123, "Test")
+   103→        executor = FakeCommandExecutor()
+   104→        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+   105→        screen.execute_command("copy_pr_checkout_script")
+   106→        expected_cmd = 'source "$(erk pr checkout 123 --script)"'
+   107→        assert executor.copied_texts == [expected_cmd]
+   108→        assert f"Copied: {expected_cmd}" in executor.notifications
+   109→
+   110→    def test_copy_pr_checkout_plain_copies_command(self) -&gt; None:
+   111→        """copy_pr_checkout_plain copies the plain PR checkout command."""
+   112→        row = make_pr_row(123, "Test")
+   113→        executor = FakeCommandExecutor()
+   114→        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JrpastYL7Vyg8PmMDDtFN4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/tui/app/test_actions.py</param>
+    <param name="offset">305</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JrpastYL7Vyg8PmMDDtFN4">
+   305→
+   306→        async with app.run_test() as pilot:
+   307→            await pilot.pause()
+   308→            await pilot.pause()
+   309→
+   310→            app._on_launch_result("copy_implement_local")
+   311→
+   312→            expected = 'source "$(erk pr checkout 123 --script)" &amp;&amp; erk implement --dangerous'
+   313→            assert clipboard.last_copied == expected
+   314→
+   315→    @pytest.mark.asyncio
+   316→    async def test_launch_screen_dismisses_on_unmapped_key(self) -&gt; None:
+   317→        """Pressing an unmapped key dismisses LaunchScreen with None result."""
+   318→        provider = FakePrDataProvider(
+   319→            plans=[
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q6fUDZ5DcdwoRTXjjqCY8K">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="offset">298</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q6fUDZ5DcdwoRTXjjqCY8K">
+   298→            await pilot.press("space")
+   299→            await pilot.pause()
+   300→            await pilot.pause()
+   301→
+   302→            await pilot.press("e")
+   303→            await pilot.pause()
+   304→
+   305→            assert clipboard.last_copied == 'source "$(erk pr checkout 123 --script)"'
+   306→
+   307→
+   308→class TestPlanDetailScreenRebaseKeybinding:
+   309→    """Tests for action_rebase_remote() triggered via keybinding '5'.
+   310→
+   311→    The keybinding action dismisses the detail screen and delegates to
+   312→    the app's toast + async worker pattern.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XVE4dymb3eBGruvdYPF7rY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/unit/services/test_plan_list_service.py</param>
+    <param name="offset">410</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="46989" output_tokens="857" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XVE4dymb3eBGruvdYPF7rY">
+   410→            "## Key Changes\n\n"
+   411→            "Rewired the widget to support frobnication"
+   412→            "\n---\n"
+   413→            "\nCloses #7626\n"
+   414→            "\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
+   415→            "```\n"
+   416→            'source "$(erk pr checkout 200 --script)"\n'
+   417→            "```\n"
+   418→        )
+   419→        rest_items = [_make_rest_issue_pr(number=200, title="Frobnication", body=pr_body)]
+   420→        http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[200])
+   421→
+   422→        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+   423→        result = service.get_pr_list_data(
+   424→            location=TEST_LOCATION,
+  </tool_result>
+  <assistant>Now let me also read the TUI source files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11094" cache_read_input_tokens="47115" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11094}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014Nto8jvLEfnS8tZEBmrtZN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/tui/commands/registry.py</param>
+    <param name="offset">95</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11094" cache_read_input_tokens="47115" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11094}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Nto8jvLEfnS8tZEBmrtZN">
+    95→    return "erk br co &lt;branch&gt;"
+    96→
+    97→
+    98→def _display_copy_pr_checkout_script(ctx: CommandContext) -&gt; str:
+    99→    """Display name for copy_pr_checkout_script command."""
+   100→    if ctx.row.pr_number:
+   101→        return f'source "$(erk pr checkout {ctx.row.pr_number} --script)"'
+   102→    return "checkout"
+   103→
+   104→
+   105→def _display_copy_pr_checkout_plain(ctx: CommandContext) -&gt; str:
+   106→    """Display name for copy_pr_checkout_plain command."""
+   107→    if ctx.row.pr_number:
+   108→        return f"erk pr checkout {ctx.row.pr_number}"
+   109→    return "checkout"
+   110→
+   111→
+   112→def _display_copy_teleport(ctx: CommandContext) -&gt; str:
+   113→    """Display name for copy_teleport command."""
+   114→    return f"erk pr teleport {ctx.row.pr_number}"
+   115→
+   116→
+   117→def _display_copy_teleport_new_slot(ctx: CommandContext) -&gt; str:
+   118→    """Display name for copy_teleport_new_slot command."""
+   119→    return f"erk pr teleport {ctx.row.pr_number} --new-slot"
+   120→
+   121→
+   122→def _display_cmux_checkout(ctx: CommandContext) -&gt; str:
+   123→    """Display name for cmux_checkout command."""
+   124→    return f"erk pr checkout {ctx.row.pr_number} --script"
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RPuet3bBdfs8sB1kYMt86o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">360</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11094" cache_read_input_tokens="47115" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11094}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RPuet3bBdfs8sB1kYMt86o">
+   360→    def action_copy_prepare(self) -&gt; None:
+   361→        """Copy basic prepare command to clipboard."""
+   362→        cmd = f"erk br co --for-pr {self._row.pr_number}"
+   363→        self._copy_and_notify(cmd)
+   364→
+   365→    def action_copy_prepare_activate(self) -&gt; None:
+   366→        """Copy one-liner to prepare worktree and start implementation."""
+   367→        cmd = (
+   368→            f'source "$(erk br co --for-pr {self._row.pr_number} --script)"'
+   369→            " &amp;&amp; erk implement --dangerous"
+   370→        )
+   371→        self._copy_and_notify(cmd)
+   372→
+   373→    def action_copy_implement_local(self) -&gt; None:
+   374→        """Copy one-liner to checkout PR and start local implementation."""
+   375→        if self._row.pr_number is not None:
+   376→            cmd = (
+   377→                f'source "$(erk pr checkout {self._row.pr_number} --script)"'
+   378→                " &amp;&amp; erk implement --dangerous"
+   379→            )
+   380→            self._copy_and_notify(cmd)
+   381→
+   382→    def action_copy_dispatch(self) -&gt; None:
+   383→        """Copy dispatch command to clipboard."""
+   384→        cmd = f"erk pr dispatch {self._row.pr_number}"
+   385→        self._copy_and_notify(cmd)
+   386→
+   387→    def action_rebase_remote(self) -&gt; None:
+   388→        """Launch remote rebase workflow."""
+   389→        from erk.tui.app import ErkDashApp
+  </tool_result>
+  <tool_use name="Read" id="toolu_01K8U7TvBFw59hDrvyVbDQit">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="offset">680</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11094" cache_read_input_tokens="47115" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11094}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K8U7TvBFw59hDrvyVbDQit">
+   680→            cmd = f"erk br co --for-pr {row.pr_number}"
+   681→            executor.copy_to_clipboard(cmd)
+   682→            executor.notify(f"Copied: {cmd}", severity=None)
+   683→
+   684→        elif command_id == "copy_prepare_activate":
+   685→            cmd = (
+   686→                f'source "$(erk br co --for-pr {row.pr_number} --script)"'
+   687→                " &amp;&amp; erk implement --dangerous"
+   688→            )
+   689→            executor.copy_to_clipboard(cmd)
+   690→            executor.notify(f"Copied: {cmd}", severity=None)
+   691→
+   692→        elif command_id == "copy_implement_local":
+   693→            ctx = CommandContext(
+   694→                row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TGbJzu5udPScteX86t8j1h">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py</param>
+    <param name="offset">112</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11094" cache_read_input_tokens="47115" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11094}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TGbJzu5udPScteX86t8j1h">
+   112→            )
+   113→            raise SystemExit(1)
+   114→        branch = result.head_ref_name
+   115→
+   116→    # Build the checkout command that will run inside the new workspace
+   117→    if mode == "teleport":
+   118→        checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'
+   119→    else:
+   120→        checkout_cmd = f'source "$(erk pr checkout {pr} --script)"'
+   121→
+   122→    cmux = require_context(ctx).cmux
+   123→
+   124→    try:
+   125→        ws_ref = cmux.create_workspace(command=checkout_cmd)
+   126→        cmux.rename_workspace(workspace_ref=ws_ref, new_name=branch)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MZcbBhWLQ4J8P8bRYtq4WE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/unit/cli/commands/land/test_cleanup_and_navigate.py</param>
+    <param name="offset">875</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11094" cache_read_input_tokens="47115" output_tokens="600" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11094, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MZcbBhWLQ4J8P8bRYtq4WE">
+   875→    # Capture stdout where machine_output writes to
+   876→    captured = capsys.readouterr()
+   877→
+   878→    # Verify a script path was output (not empty)
+   879→    # The key assertion: --script should ALWAYS output a path, even when no navigation needed
+   880→    script_path_output = captured.out.strip()
+   881→    assert script_path_output, "Expected script path output, got empty string"
+   882→
+   883→    # Verify the script content contains the no-op marker
+   884→    # Use FakeScriptWriter's stored content instead of reading from disk
+   885→    assert fake_script_writer.last_script is not None, "No script was written"
+   886→    script_content = fake_script_writer.last_script.content
+   887→    assert "land complete" in script_content.lower(), (
+   888→        f"Expected 'land complete' in script content, got: {script_content[:200]}"
+   889→    )
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5203" cache_read_input_tokens="58209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have full context. Let me implement all cycles.
+
+**Cycle 1: Core fix** — Update test assertion first (RED), then fix implementation (GREEN).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5203" cache_read_input_tokens="58209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5203}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019Kd8w5ajPDZeJfFEymD8MG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/core/test_script_result_output.py</param>
+    <param name="old_string">        assert output == "/tmp/test_script.sh"</param>
+    <param name="new_string">        assert output == "#!/bin/bash\necho 'test'"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5203" cache_read_input_tokens="58209" output_tokens="763" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5203, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Kd8w5ajPDZeJfFEymD8MG">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         assert output == "/tmp/test_script.sh"&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CPCcY79stTJkpoSLNmh7DS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/core/test_script_result_output.py</param>
+    <param name="old_string">    try:
+        # Act
+        result.output_for_script_handler()
+
+        # Assert
+      ...[truncated 14 chars]...       assert output == "/tmp/test_script.sh"
+    finally:
+        sys.stdout = old_stdout</param>
+    <param name="new_string">    try:
+        # Act
+        result.output_for_script_handler()
+
+        # Assert - outp...[truncated 54 chars]...  assert output == "#!/bin/bash\necho 'test'"
+    finally:
+        sys.stdout = old_stdout</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="866" cache_read_input_tokens="63412" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 866, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CPCcY79stTJkpoSLNmh7DS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/core/test_script_result_output.py has been updated successfully.
+  </tool_result>
+  <assistant>Now make it GREEN — fix the implementation:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="64278" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 337}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012UPBf8sqd7ob6Wq1MtrKGE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/script_writer.py</param>
+    <param name="old_string">        # Output path to stdout for shell integration handler
+        machine_output(str(self.path), nl=False)</param>
+    <param name="new_string">        # Output script content to stdout for process substitution: source &lt;(erk ... --script)
+        machine_output(self.content, nl=False)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="64278" output_tokens="205" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012UPBf8sqd7ob6Wq1MtrKGE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/script_writer.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update docstrings in the same file to reflect the change:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="64615" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 518}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QmdpUkE8NcoQHjcwmEhrzF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/script_writer.py</param>
+    <param name="old_string">    def output_for_script_handler(self) -&gt; None:
+        """Output script path to stdout f...[truncated 161 chars]...t the --script flag should call this method after generating an
+        activation script.</param>
+    <param name="new_string">    def output_for_script_handler(self) -&gt; None:
+        """Output script content to stdou...[truncated 190 chars]...t the --script flag should call this method after generating an
+        activation script.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="64615" output_tokens="327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 518, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QmdpUkE8NcoQHjcwmEhrzF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/script_writer.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check `script_error.py` for docstring updates as mentioned in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="393" cache_read_input_tokens="65133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 393}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TEc2nZvkFtpQwCJURt5Atv">
+    <param name="pattern">script_error</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="393" cache_read_input_tokens="65133" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 393, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TEc2nZvkFtpQwCJURt5Atv">
+Found 1 file
+packages/erk-shared/src/erk_shared/core/script_error.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_019JfeqNoWLaBo3XbJBEpkaV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/script_error.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="65526" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019JfeqNoWLaBo3XbJBEpkaV">
+     1→"""Script-mode error handling for --script commands.
+     2→
+     3→Provides a context manager that catches errors and emits a valid error script
+     4→so that ``source "$(erk ... --script)"`` never receives empty stdout.
+     5→"""
+     6→
+     7→import contextlib
+     8→import sys
+     9→from collections.abc import Generator
+    10→
+    11→import click
+    12→
+    13→from erk_shared.context.context import ErkContext
+    14→from erk_shared.output.output import user_output
+    15→
+    16→
+    17→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    18→    """Write a minimal error script and output its path, then exit 1.
+    19→
+    20→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    21→    always receives a valid file path — even on failure — so the shell never
+    22→    sees ``source ""``.
+    23→    """
+    24→    result = ctx.script_writer.write_activation_script(
+    25→        "# erk error\nreturn 1\n",
+    26→        command_name="checkout",
+    27→        comment="checkout error",
+    28→    )
+    29→    result.output_for_script_handler()
+    30→    sys.exit(1)
+
+... [32 lines omitted] ...
+
+    34→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    35→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    37→    Wraps the checkout body so that any error path produces a valid script
+    40→    ``source: no such file or directory:`` error.
+    42→    Exception handling:
+    44→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    45→      write error script and exit 1.
+    46→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    47→      won't run since we catch first), write error script, exit 1.
+    48→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    55→        _write_error_script_and_exit(ctx)
+    56→    except click.ClickException as exc:
+    57→        user_output(f"Error: {exc.format_message()}")
+    58→        _write_error_script_and_exit(ctx)
+    59→    except RuntimeError as exc:
+    60→        user_output(f"Error: {exc}")
+    61→        _write_error_script_and_exit(ctx)
+  </tool_result>
+</session>

@@ -1,0 +1,816 @@
+<session>
+  <meta branch="plnd/fix-script-output-content-03-21-0724" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_013y1ZgMkTeaS2xBpnFNHwta">
+679-
+680-        # Assert: Navigated to feature-1
+681-        script_path = Path(result.stdout.strip().split("\n")[-1])
+682:        script_content = env.script_writer.get_script_content(script_path)
+683-        assert script_content is not None
+684-        assert str(repo_dir / "worktrees" / "feature-1") in script_content
+685-
+--
+819-
+820-        # Assert: Deletion is DEFERRED - script generated with deletion commands
+821-        script_path = Path(result.stdout.strip().split("\n")[-1])
+822:        script_content = env.script_writer.get_script_content(script_path)
+823-        assert script_content is not None
+824-        assert len(git_ops.removed_worktrees) == 0, "Deletion should be deferred"
+825-        assert "git worktree remove --force" in script_content
+--
+1117-        assert "Reached root after 2 step(s) (requested 10)" in result.output
+1118-        # Should still navigate to root
+1119-        script_path = Path(result.stdout.strip().split("\n")[-1])
+1120:        script_content = env.script_writer.get_script_content(script_path)
+1121-        assert script_content is not None
+1122-        assert str(env.cwd) in script_content
+1123-
+--
+1527-        assert result.exit_code == 0
+1528-
+1529-        script_path = Path(result.stdout.strip().split("\n")[-1])
+1530:        script_content = env.script_writer.get_script_content(script_path)
+1531-        assert script_content is not None
+1532-
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>These use `result.stdout.strip().split("\n")[-1]` to extract the last line as a path. Since stdout now contains the full script content, the path extraction is wrong. These need to use `env.script_writer.last_script.content` or just `result.stdout` directly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="158230" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 655}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QTR5kbaNAYqdBRXJGWVwRK">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/navigation/test_down.py</param>
+    <param name="old_string">        script_path = Path(result.stdout.strip().split("\n")[-1])
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None</param>
+    <param name="new_string">        script_content = result.stdout</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="158230" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 655, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QTR5kbaNAYqdBRXJGWVwRK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/navigation/test_down.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Pn2B4mf1gPD2odNgob8XqX">
+    <param name="pattern">get_script_content</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/navigation/test_up.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="158885" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pn2B4mf1gPD2odNgob8XqX">
+793-
+794-        # Assert: Navigated to feature-2
+795-        script_path = Path(result.stdout.strip().split("\n")[-1])
+796:        script_content = env.script_writer.get_script_content(script_path)
+797-        assert script_content is not None
+798-        assert str(repo_dir / "worktrees" / "feature-2") in script_content
+799-
+--
+942-
+943-        # Assert: Navigated to feature-2
+944-        script_path = Path(result.stdout.strip().split("\n")[-1])
+945:        script_content = env.script_writer.get_script_content(script_path)
+946-        assert script_content is not None
+947-        assert str(repo_dir / "worktrees" / "feature-2") in script_content
+948-
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Pz5ZrLcBvSez9EyvBHDFhv">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/navigation/test_up.py</param>
+    <param name="old_string">        script_path = Path(result.stdout.strip().split("\n")[-1])
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None</param>
+    <param name="new_string">        script_content = result.stdout</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="159220" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 368, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pz5ZrLcBvSez9EyvBHDFhv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/navigation/test_up.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Anc7n5c8R6EwTDB6BPR59q">
+    <param name="pattern">get_script_content</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/test_wt_checkout.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="159588" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Anc7n5c8R6EwTDB6BPR59q">
+247-
+248-        # Assert: Script is valid and contains cd command
+249-        script_path = Path(script_path_str)
+250:        script_content = env.script_writer.get_script_content(script_path)
+251-        assert script_content is not None
+252-        assert str(worktree_path) in script_content
+253-
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SxnCBk5NK6PkdNQcSSANqd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/test_wt_checkout.py</param>
+    <param name="offset">235</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="159855" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SxnCBk5NK6PkdNQcSSANqd">
+   235→            cli,
+   236→            ["wt", "checkout", "my-feature", "--script"],
+   237→            obj=test_ctx,
+   238→            catch_exceptions=False,
+   239→        )
+   240→
+   241→        # Assert: Command succeeded
+   242→        assert result.exit_code == 0
+   243→
+   244→        # Assert: Output contains script path (not user messages)
+   245→        script_path_str = result.stdout.strip()
+   246→        assert script_path_str != ""
+   247→
+   248→        # Assert: Script is valid and contains cd command
+   249→        script_path = Path(script_path_str)
+   250→        script_content = env.script_writer.get_script_content(script_path)
+   251→        assert script_content is not None
+   252→        assert str(worktree_path) in script_content
+   253→
+   254→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CLRs1YVNxghbC1Jab7bqH8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/test_wt_checkout.py</param>
+    <param name="old_string">        # Assert: Output contains script path (not user messages)
+        script_path_str ...[truncated 222 chars]...     assert script_content is not None
+        assert str(worktree_path) in script_content</param>
+    <param name="new_string">        # Assert: Output contains script content
+        script_content = result.stdout
+        assert script_content.strip() != ""
+        assert str(worktree_path) in script_content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="160102" output_tokens="298" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 595, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CLRs1YVNxghbC1Jab7bqH8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/test_wt_checkout.py has been updated successfully.
+  </tool_result>
+  <assistant>Now verify zero remaining occurrences of the old patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="160697" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 355}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PtZRKEM3fQadmMFLD1Yigg">
+    <param name="pattern">get_script_content</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/</param>
+    <param name="output_mode">content</param>
+    <param name="glob">!*script_writer*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="160697" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 355, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PtZRKEM3fQadmMFLD1Yigg">
+No matches found
+  </tool_result>
+  <assistant>All `get_script_content` calls outside the FakeScriptWriter itself are gone. Now let me run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="170" cache_read_input_tokens="161052" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 170}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TqUbJqpkteGqRQBuZFD95i">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Focus on any test failures or formatting issues.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="170" cache_read_input_tokens="161052" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 170, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TqUbJqpkteGqRQBuZFD95i">
+## Summary
+
+**make fast-ci failed** with multiple issues:
+
+### Linting Issues (Ruff)
+1. **Import sorting** - `refactor_script_output.py:15` has un-sorted imports
+2. **Unused imports** - 13 instances of unused `pathlib.Path` imports across test files:
+   - `tests/commands/implement/test_flags.py:3`
+   - `tests/commands/implement/test_model_flag.py:3`
+   - `tests/commands/land/test_core.py:14`
+   - `tests/commands/land/test_git_pull.py:10`
+   - `tests/commands/land/test_up_flag.py:6`
+   - `tests/commands/navigation/test_checkout.py:3`
+   - `tests/commands/navigation/test_checkout_graphite_disabled.py:7`
+   - `tests/commands/navigation/test_stack_navigation.py:3`
+   - And 5 more locations in `test_pr_arguments.py`
+3. **Undefined name** - `tests/commands/management/test_impl.py:392` references undefined `script_path`
+4. **Unused assignments** - `tests/commands/navigation/test_checkout.py` has unused `script_content` variables on lines 274 and 383
+
+### Test Failures (38 failed, 5868 passed)
+The root cause is a **file name too long** error. Tests are trying to use script content (shell commands) as file paths:
+
+```
+OSError: [Errno 63] File name too long: '#!/bin/bash\n...[long script content]...'
+```
+
+The issue is in test files that assume `--script` flag returns a **file path**, but the actual output is the **script content itself**. This aligns with the plan titled "Fix: `source &lt;(erk ... --script)` outputs path instead of content".
+
+**Key failure files:**
+- `tests/unit/cli/test_activation.py` (2 failures)
+
+... [12 lines omitted] ...
+
+- `tests/commands/navigation/test_up.py` (5 failures)
+- `tests/commands/land/` (7 failures)
+- `tests/commands/implement/` (4 failures)
+- `tests/commands/navigation/test_down.py` (8 failures)
+- `tests/commands/pr/test_checkout.py` and related (7 failures)
+- Others (4 failures)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="828" cache_read_input_tokens="161222" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 828}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>More work needed. Let me fix the issues systematically. First, check what `refactor_script_output.py` is (probably a haiku agent artifact):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="828" cache_read_input_tokens="161222" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 828}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_013yxfpAsbGrDqJgtJiEmYNi">
+    <param name="pattern">**/refactor_script_output.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="828" cache_read_input_tokens="161222" output_tokens="351" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 828, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013yxfpAsbGrDqJgtJiEmYNi">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/refactor_script_output.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019MxKWiGaP9E6B14PwmZdkA">
+    <param name="command">rm /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/refactor_script_output.py</param>
+    <param name="description">Delete haiku agent artifact file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="393" cache_read_input_tokens="162050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 393}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019MxKWiGaP9E6B14PwmZdkA">
+(Bash completed with no output)
+  </tool_result>
+  <assistant>Now let me find ALL remaining test files that still treat stdout as a file path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="162443" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 127}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CQAZKXzZeiMUiYfEEkVmcK">
+    <param name="pattern">Path\(result\.(stdout|output)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="162443" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 127, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CQAZKXzZeiMUiYfEEkVmcK">
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:28:        temp_path = Path(result.output.strip())
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:69:        temp_path = Path(result.output.strip())
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:96:        temp_path = Path(result.output.strip())
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:128:        temp_path = Path(result.output.strip())
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:173:        temp_path = Path(result.output.strip())
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:199:        temp_path = Path(result.output.strip())
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_preprocess_workflow.py:230:        temp_path = Path(result.output.strip())
+  </tool_result>
+  <assistant>Those are preprocess_session tests — they output temp file paths but NOT through `output_for_script_handler`, so they're unrelated.
+
+Let me find the actual remaining failures. The CI output mentioned `test_pr_checkout.py` and some land tests. Let me look for other patterns that use the script path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="162570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01U43N9Mz92yzK24kiMcLB8j">
+    <param name="pattern">script_path\.(exists|read_text|name)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="162570" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U43N9Mz92yzK24kiMcLB8j">
+tests/commands/pr/test_checkout.py:353:        assert script_path.exists()
+tests/commands/pr/test_checkout.py:354:        script_content = script_path.read_text()
+tests/unit/cli/test_activation.py:533:    assert script_path.exists()
+tests/unit/cli/test_activation.py:535:    content = script_path.read_text(encoding="utf-8")
+tests/unit/cli/test_activation.py:565:    content = script_path.read_text(encoding="utf-8")
+tests/unit/cli/test_activation.py:581:    assert script_path.exists()
+tests/unit/cli/test_activation.py:597:    assert script_path.read_text(encoding="utf-8") == "existing content"
+tests/unit/cli/test_activation.py:609:    content = script_path.read_text(encoding="utf-8")
+tests/unit/cli/test_activation.py:1111:    assert script_path.exists()
+tests/unit/cli/test_activation.py:1112:    content = script_path.read_text(encoding="utf-8")
+tests/unit/cli/test_activation.py:1136:    assert script_path.read_text(encoding="utf-8") == "existing land script"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PFYRpx8npqUj6vLZeYPvhX">
+    <param name="pattern">script_path = Path\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/pr/test_checkout.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="163258" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 533, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PFYRpx8npqUj6vLZeYPvhX">
+347-        assert result.exit_code == 0
+348-        # In script mode, output is just the script path
+349-        script_path_str = result.stdout.strip()
+350-        assert script_path_str != ""
+351-        # Script file should exist and contain activation commands
+352:        script_path = Path(script_path_str)
+353-        assert script_path.exists()
+354-        script_content = script_path.read_text()
+355-        assert "cd " in script_content
+356-        assert ".venv" in script_content
+357-
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MzUqVNqGMaMxGku7uoMpMK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/pr/test_checkout.py</param>
+    <param name="offset">340</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="163791" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 300, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MzUqVNqGMaMxGku7uoMpMK">
+   340→            local_branches={env.cwd: ["main", "script-branch"]},
+   341→            existing_paths={env.cwd, env.repo.worktrees_dir},
+   342→        )
+   343→        ctx = build_workspace_test_context(env, git=git, github=github)
+   344→
+   345→        result = runner.invoke(pr_group, ["checkout", "555", "--script"], obj=ctx)
+   346→
+   347→        assert result.exit_code == 0
+   348→        # In script mode, output is just the script path
+   349→        script_path_str = result.stdout.strip()
+   350→        assert script_path_str != ""
+   351→        # Script file should exist and contain activation commands
+   352→        script_path = Path(script_path_str)
+   353→        assert script_path.exists()
+   354→        script_content = script_path.read_text()
+   355→        assert "cd " in script_content
+   356→        assert ".venv" in script_content
+   357→
+   358→
+   359→def test_pr_checkout_non_script_mode_prints_activation_instructions() -&gt; None:
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Y55tFiAP9XRMSsLA3UhG5C">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/pr/test_checkout.py</param>
+    <param name="old_string">        # In script mode, output is just the script path
+        script_path_str = result....[truncated 217 chars]...ead_text()
+        assert "cd " in script_content
+        assert ".venv" in script_content</param>
+    <param name="new_string">        # In script mode, output is the script content directly
+        script_content = r...[truncated 26 chars]...ip() != ""
+        assert "cd " in script_content
+        assert ".venv" in script_content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="429" cache_read_input_tokens="164091" output_tokens="303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 429, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y55tFiAP9XRMSsLA3UhG5C">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/pr/test_checkout.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the `test_activation.py` failures. Those use `script_path` to reference filesystem paths for `ensure_land_script` tests — which are not related to stdout output. Let me check if they're the ones failing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="164520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 359}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0112pUAURz7ww6hURijWxJhC">
+    <param name="pattern">script_path = Path\(result</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/unit/cli/test_activation.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="164520" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0112pUAURz7ww6hURijWxJhC">
+No matches found
+  </tool_result>
+  <assistant>Good — `test_activation.py` doesn't use `Path(result...)`, so those `script_path` references are for filesystem tests. The CI failures there are from other causes. Let me now check the remaining failing test categories. Let me search more broadly for other places that parse stdout as a path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="201" cache_read_input_tokens="164879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 201}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CeWPCEjDod6TpPiStDjvhn">
+    <param name="pattern">result\.(stdout|output).*strip.*split</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="201" cache_read_input_tokens="164879" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 201, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CeWPCEjDod6TpPiStDjvhn">
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:257:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:629:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:670:    json_line = next(line for line in result.output.strip().splitlines() if line.startswith("{"))
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:202:    output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:294:    output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:320:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:372:    output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:644:    json_lines = [line for line in result.output.strip().split("\n") if line.startswith("{")]
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py:67:    output = json.loads(result.output.strip().split("\n")[-1])
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py:108:    output = json.loads(result.output.strip().split("\n")[-1])
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py:129:    output = json.loads(result.output.strip().split("\n")[-1])
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py:193:    output = json.loads(result.output.strip().split("\n")[-1])
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py:272:    output = json.loads(result.output.strip().split("\n")[-1])
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py:567:    raw_lines = result.output.strip().splitlines()
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:181:        output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:267:        output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:347:        output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:398:        output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:504:        output_lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_preprocess_session/test_splitting.py:610:        for line in result.output.strip().split("\n"):
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py:62:    lines = result.output.strip().split("\n")
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py:140:    output_lines = result.output.strip().split("\n")
+  </tool_result>
+  <assistant>Those are all exec script tests (JSON parsers) — not related to the script output change.
+
+Let me run the specific failing test suites to see the actual failures more clearly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="165080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012FLQw2y6eP7RewdGZopC3i">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run failing land tests</param>
+    <param name="prompt">Run pytest on tests/commands/land/ -x --tb=short and report which tests fail and the first failure message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="165080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01L9aqEsf6TDbjmKP5NkGPXM">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run failing implement tests</param>
+    <param name="prompt">Run pytest on tests/commands/implement/ -x --tb=short and report which tests fail and the first failure message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="165080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KTFHzKghjxPRhVxatCYqQq">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run failing pr tests</param>
+    <param name="prompt">Run pytest on tests/commands/pr/ -x --tb=short and report which tests fail and the first failure message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1177" cache_read_input_tokens="165080" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L9aqEsf6TDbjmKP5NkGPXM">
+pytest failed: 1 issue found
+
+**File and test:** tests/commands/implement/test_execution_modes.py::test_script_with_submit_includes_all_commands
+
+**Failure:** The assertion `assert "erk-implement-" in result.output` failed. The test expects the string "erk-implement-" to be present in the output, but it was not found. The actual output contains script commands and permissions flags but is missing the "erk-implement-" marker.
+agentId: a2860c0725ed9045a (use SendMessage with to: 'a2860c0725ed9045a' to continue this agent)
+&lt;usage&gt;total_tokens: 13731
+tool_uses: 1
+duration_ms: 5534&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_012FLQw2y6eP7RewdGZopC3i">
+pytest failed: 1 test failed
+
+**Test:** `test_land_outputs_deferred_execution_script` in `tests/commands/land/test_core.py::128`
+
+**Failure:** The test expects `'erk exec land-execute'` to be in the script content, but instead the script content is just a file path: `'/test/erks/repos/repo/worktrees/feature-1/.erk/bin/land.sh'`
+
+This appears to be related to the plan in the current branch: "Fix: `source &lt;(erk ... --script)` outputs path instead of content" — the script output is returning the path instead of the actual script content.
+agentId: a9edb298f4d513641 (use SendMessage with to: 'a9edb298f4d513641' to continue this agent)
+&lt;usage&gt;total_tokens: 13636
+tool_uses: 1
+duration_ms: 6458&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01KTFHzKghjxPRhVxatCYqQq">
+pytest failed: 1 test failed
+
+**Failed Test:**
+- `test_pr_checkout_script_mode_no_gt_submit_for_new_worktree` in `tests/commands/pr/test_checkout_graphite_linking.py:325`
+
+**First Failure Message:**
+```
+OSError: [Errno 63] File name too long: '#!/bin/bash\n...'
+```
+
+The test is attempting to read a file path that is actually the script content itself, not a file path. The error indicates that the code is treating the generated bash script content as a filename instead of reading it from the actual script file. This is the exact issue mentioned in the plan: "source &lt;(erk ... --script) outputs path instead of content".
+agentId: a6f241c8d43fe970c (use SendMessage with to: 'a6f241c8d43fe970c' to continue this agent)
+&lt;usage&gt;total_tokens: 15025
+tool_uses: 1
+duration_ms: 9543&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1329" cache_read_input_tokens="166257" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1329}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Three distinct failure categories. Let me investigate the land command's script output mechanism — it might use a different code path.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1329" cache_read_input_tokens="166257" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1329}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017ZPtUiqnq3Q2q5aouTKVuc">
+    <param name="pattern">machine_output|output_for_script_handler</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1329" cache_read_input_tokens="166257" output_tokens="3780" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1329, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017ZPtUiqnq3Q2q5aouTKVuc">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land/. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019Qs6fqdoQPs97Dk7hnmEd6">
+    <param name="pattern">output_for_script_handler|machine_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/</param>
+    <param name="glob">*land*"</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3855" cache_read_input_tokens="167586" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3855}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Qs6fqdoQPs97Dk7hnmEd6">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MkLo2YdhJV7MgneNKybUoy">
+    <param name="pattern">output_for_script_handler"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3855" cache_read_input_tokens="167586" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3855, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MkLo2YdhJV7MgneNKybUoy">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UCaXyp4FRNNenAjMsN9giK">
+    <param name="pattern">output_for_script_handler</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="171441" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 326, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UCaXyp4FRNNenAjMsN9giK">
+src/erk/cli/commands/wt/create_cmd.py:977:        result.output_for_script_handler()
+src/erk/cli/commands/checkout_helpers.py:157:        result.output_for_script_handler()
+src/erk/cli/commands/navigation_helpers.py:395:        result.output_for_script_handler()
+src/erk/cli/commands/stack/consolidate_cmd.py:463:        activation_result.output_for_script_handler()
+src/erk/cli/commands/branch/checkout_cmd.py:353:        result.output_for_script_handler()
+src/erk/cli/commands/branch/create_cmd.py:277:            result.output_for_script_handler()
+src/erk/cli/commands/implement_shared.py:575:        result.output_for_script_handler()
+  </tool_result>
+  <assistant>Now let me check where the land command outputs its script:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="171767" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Q4JsZZqmGqeF9ceMsKuapj">
+    <param name="pattern">output_for_script_handler|machine_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/</param>
+    <param name="glob">*land*"</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="171767" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q4JsZZqmGqeF9ceMsKuapj">
+No matches found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01FLMjydZQpM7b28nqnwdGwK">
+    <param name="pattern">src/erk/cli/commands/**/land*"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="172115" output_tokens="64" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 181, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FLMjydZQpM7b28nqnwdGwK">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01TQLcSBzZKgF372dTDrpd9M">
+    <param name="pattern">src/erk/cli/commands/**/land*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="79" cache_read_input_tokens="172296" output_tokens="63" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 79, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TQLcSBzZKgF372dTDrpd9M">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_pipeline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_stack.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/__pycache__/land_pipeline.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/__pycache__/land_stack.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/exec/scripts/land_execute.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/exec/scripts/__pycache__/land_execute.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_learn.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/__pycache__/land_cmd.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/__pycache__/land_learn.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0144AbgsGGEeP1RiK1GTk8yo">
+    <param name="pattern">output_for_script_handler|machine_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="172375" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 556}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0144AbgsGGEeP1RiK1GTk8yo">
+56:from erk_shared.output.output import machine_output, user_output
+489:            machine_output(str(result.path), nl=False)
+997:        machine_output(str(script_result.path), nl=False)
+1126:        machine_output(str(result.path), nl=False)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RN25UFvazxztVFmNVEQ4m9">
+    <param name="pattern">output_for_script_handler|machine_output</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="172375" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 556, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RN25UFvazxztVFmNVEQ4m9">
+No matches found
+  </tool_result>
+  <assistant>Found it. The land command at `land_cmd.py` uses `machine_output(str(result.path), nl=False)` **directly** instead of `result.output_for_script_handler()`. Three occurrences at lines 489, 997, and 1126. These need to be changed to output content too.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="172931" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 625}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RGnYhrRGYxE32oTecHfZUs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">485</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="172931" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 625}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RGnYhrRGYxE32oTecHfZUs">
+   485→                script_content,
+   486→                command_name="land",
+   487→                comment="no-op",
+   488→            )
+   489→            machine_output(str(result.path), nl=False)
+   490→        raise SystemExit(0)
+   491→
+   492→
+   493→def _cleanup_landed_branch(cleanup: CleanupContext) -&gt; None:
+   494→    """Run the appropriate cleanup path without navigation or exit behavior."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DWQaZHscZZggc5UkqKscAp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">993</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="172931" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 625}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DWQaZHscZZggc5UkqKscAp">
+   993→            script_content,
+   994→            command_name="land",
+   995→            comment="no-op",
+   996→        )
+   997→        machine_output(str(script_result.path), nl=False)
+   998→
+   999→    if exit_after is not None:
+  1000→        raise exit_after
+  1001→
+  1002→    raise SystemExit(0)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LNKmizP7dA8kfJXGbqnvPa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1122</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="172931" output_tokens="424" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 625, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LNKmizP7dA8kfJXGbqnvPa">
+  1122→        display_flags.append("--no-delete")
+  1123→
+  1124→    if script:
+  1125→        # Shell integration mode: output just the path
+  1126→        machine_output(str(result.path), nl=False)
+  1127→    else:
+  1128→        # Interactive mode: show instructions and copy to clipboard
+  1129→        print_temp_script_instructions(
+  1130→            result.path,
+  1131→            instruction="To land the PR:",
+  </tool_result>
+  <assistant>These three locations directly call `machine_output(str(result.path))` instead of using `output_for_script_handler()`. I need to change them to output content:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="173556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 847}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UfBabeXpSQcWDRSJfoF2Fi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">            machine_output(str(result.path), nl=False)
+        raise SystemExit(0)</param>
+    <param name="new_string">            machine_output(result.content, nl=False)
+        raise SystemExit(0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="173556" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 847, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UfBabeXpSQcWDRSJfoF2Fi">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014k3seRHNGt5NBDFKc7fUkE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">        machine_output(str(script_result.path), nl=False)
+
+    if exit_after is not None:</param>
+    <param name="new_string">        machine_output(script_result.content, nl=False)
+
+    if exit_after is not None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="174403" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 291, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014k3seRHNGt5NBDFKc7fUkE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JYgKiokcG5v7HzRgoS2gcp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py</param>
+    <param name="old_string">    if script:
+        # Shell integration mode: output just the path
+        machine_output(str(result.path), nl=False)</param>
+    <param name="new_string">    if script:
+        # Shell integration mode: output script content for process substitution
+        machine_output(result.content, nl=False)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="257" cache_read_input_tokens="174694" output_tokens="209" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 257, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JYgKiokcG5v7HzRgoS2gcp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if there are other places that do the same thing (`machine_output(str(result.path)` or `machine_output(str(...path)`) across the codebase:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="174951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 268}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011xuYV2txqYiSCLdQTVx5m6">
+    <param name="pattern">machine_output\(str\(.*\.path\)</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="268" cache_read_input_tokens="174951" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 268, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011xuYV2txqYiSCLdQTVx5m6">
+src/erk/cli/commands/land_stack.py:677:    machine_output(str(script_result.path), nl=False)
+src/erk/cli/commands/navigation_helpers.py:933:        machine_output(str(result.path), nl=False)
+  </tool_result>
+  <assistant>Two more. Let me fix those too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="175219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F9qByji9hZ1dRzJpDa9rpV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_stack.py</param>
+    <param name="offset">674</param>
+    <param name="limit">6</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="175219" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 477}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F9qByji9hZ1dRzJpDa9rpV">
+   674→        command_name="land",
+   675→        comment="no-op",
+   676→    )
+   677→    machine_output(str(script_result.path), nl=False)
+   678→
+   679→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CDUBjQ372uJCJJo829UPi2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/navigation_helpers.py</param>
+    <param name="offset">930</param>
+    <param name="limit">6</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="175219" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 477, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CDUBjQ372uJCJJo829UPi2">
+   930→            command_name=command_name,
+   931→            comment=activate_comment,
+   932→        )
+   933→        machine_output(str(result.path), nl=False)
+   934→    else:
+   935→        if shared_worktree and deletion_commands:
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015NTaqZpJPRBPXyGPzFPgBp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_stack.py</param>
+    <param name="old_string">    machine_output(str(script_result.path), nl=False)</param>
+    <param name="new_string">    machine_output(script_result.content, nl=False)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="175696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 432}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015NTaqZpJPRBPXyGPzFPgBp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/land_stack.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01X8JogjL4mJwH6db8SLRCX3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/navigation_helpers.py</param>
+    <param name="old_string">        machine_output(str(result.path), nl=False)</param>
+    <param name="new_string">        machine_output(result.content, nl=False)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="175696" output_tokens="335" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X8JogjL4mJwH6db8SLRCX3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/cli/commands/navigation_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check the implement test failure. The test expects `"erk-implement-"` in `result.output` — this was likely a filename prefix check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="176128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 488}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018vG1AFHrpWn8PwH7yCGeED">
+    <param name="pattern">erk-implement-</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="176128" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 488, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018vG1AFHrpWn8PwH7yCGeED">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-35-        assert "✓ Created impl folder" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-36-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-37-        # Script should be created
+tests/commands/implement/test_flags.py:38:        assert "erk-implement-" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-39-        assert ".sh" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-40-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-41-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-60-        assert "✓ Created impl folder" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-61-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-62-        # Script should be created
+tests/commands/implement/test_flags.py:63:        assert "erk-implement-" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-64-        assert ".sh" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-65-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-66-        # Verify plan file was preserved (not deleted)
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-87-        assert "✓ Created impl folder" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-88-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-89-        # Verify script has only implement-plan command (not CI/submit)
+tests/commands/implement/test_flags.py:90:        assert "erk-implement-" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-91-        assert ".sh" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-92-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py-93-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py-216-        assert result.exit_code == 0
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py-217-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py-218-        # Script should be created (output contains script path)
+tests/commands/implement/test_execution_modes.py:219:        assert "erk-implement-" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py-220-        assert ".sh" in result.output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py-221-
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>These tests assert that the output contains the filename pattern `"erk-implement-"` and `".sh"`. Since stdout now contains the script *content* (not the path), the content header from FakeScriptWriter includes `# erk implement` and the path itself isn't shown. I need to update these assertions to check for script content markers instead:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1471" cache_read_input_tokens="176616" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1471}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TKQ2Yq5XRqdnWMTu7oUhkf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py</param>
+    <param name="offset">33</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1471" cache_read_input_tokens="176616" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1471, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TKQ2Yq5XRqdnWMTu7oUhkf">
+    33→
+    34→        assert result.exit_code == 0
+    35→        assert "✓ Created impl folder" in result.output
+    36→
+    37→        # Script should be created
+    38→        assert "erk-implement-" in result.output
+    39→        assert ".sh" in result.output
+    40→
+    41→
+    42→def test_implement_with_submit_flag_from_file() -&gt; None:
+    43→    """Test implementing from file with --submit flag and --script generates script."""
+    44→    runner = CliRunner()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="178087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 354}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SNX2tAdPSc8hAx4PWdDPGA">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py</param>
+    <param name="old_string">        # Script should be created
+        assert "erk-implement-" in result.output
+        assert ".sh" in result.output</param>
+    <param name="new_string">        # Script content should be output
+        assert "#!/bin/bash" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="354" cache_read_input_tokens="178087" output_tokens="536" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SNX2tAdPSc8hAx4PWdDPGA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011LbHEyhk763pixahncj7h3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py</param>
+    <param name="old_string">        # Verify script has only implement-plan command (not CI/submit)
+        assert "erk-implement-" in result.output
+        assert ".sh" in result.output</param>
+    <param name="new_string">        # Verify script content is output
+        assert "#!/bin/bash" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="822" cache_read_input_tokens="178441" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 822, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011LbHEyhk763pixahncj7h3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_flags.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_011c9EBbpm4AUA7Q4hsCCtjq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py</param>
+    <param name="offset">215</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="179263" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 263, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011c9EBbpm4AUA7Q4hsCCtjq">
+   215→
+   216→        assert result.exit_code == 0
+   217→
+   218→        # Script should be created (output contains script path)
+   219→        assert "erk-implement-" in result.output
+   220→        assert ".sh" in result.output
+   221→
+   222→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01535QchVgWr17fmVLHM2h7n">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/tests/commands/implement/test_execution_modes.py</param>
+    <param name="old_string">        # Script should be created (output contains script path)
+        assert "erk-implement-" in result.output
+        assert ".sh" in result.output</param>
+    <param name="new_string">        # Script content should be output
+        assert "#!/bin/bash" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="213" cache_read_input_tokens="179526" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 213, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
