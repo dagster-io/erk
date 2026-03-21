@@ -475,24 +475,24 @@ def _display_dry_run_report(plan: TeleportPlan) -> None:
     # Local state section (only for in-place when there's something to report)
     has_local_state = (
         plan.ahead > 0
-        or len(plan.staged) > 0
-        or len(plan.modified) > 0
-        or len(plan.untracked) > 0
+        or plan.staged
+        or plan.modified
+        or plan.untracked
     )
     if has_local_state:
         click.echo(click.style("\n  Local state that would be discarded:", bold=True))
         if plan.ahead > 0:
             msg = f"    {plan.ahead} local commit(s) ahead of remote (would be lost)"
             click.echo(click.style(msg, fg="yellow"))
-        if len(plan.staged) > 0:
+        if plan.staged:
             file_list = ", ".join(plan.staged[:5])
             suffix = f" (+{len(plan.staged) - 5} more)" if len(plan.staged) > 5 else ""
             click.echo(f"    {len(plan.staged)} staged file(s): {file_list}{suffix}")
-        if len(plan.modified) > 0:
+        if plan.modified:
             file_list = ", ".join(plan.modified[:5])
             suffix = f" (+{len(plan.modified) - 5} more)" if len(plan.modified) > 5 else ""
             click.echo(f"    {len(plan.modified)} modified file(s): {file_list}{suffix}")
-        if len(plan.untracked) > 0:
+        if plan.untracked:
             click.echo(f"    {len(plan.untracked)} untracked file(s)")
 
     # Operations section
