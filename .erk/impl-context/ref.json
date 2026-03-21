@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Eliminate all `erk-plan` label references, replace with `erk-pr` throughout codebase"
+}

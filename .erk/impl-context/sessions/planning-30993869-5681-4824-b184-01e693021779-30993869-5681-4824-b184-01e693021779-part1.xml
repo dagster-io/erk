@@ -1,0 +1,1062 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>eliminate any and all references to erk-plan</user>
+  <usage input_tokens="3" cache_creation_input_tokens="9323" cache_read_input_tokens="15230" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9323}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0158yRdRXxQMqfjLMoBLogyo">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9323" cache_read_input_tokens="15230" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9323}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0158yRdRXxQMqfjLMoBLogyo">
+Found 70 files
+tests/unit/gateways/github/metadata_blocks/test_plan_wrapping.py
+tests/unit/pr_store/test_planned_pr_backend.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/pr/test_dispatch.py
+tests/commands/dash/test_filtering.py
+packages/erk-shared/tests/unit/github/test_objective_issues.py
+packages/erk-shared/tests/unit/test_pr_utils.py
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py
+docs/learned/planning/plan-title-prefix-system.md
+docs/learned/planning/planned-pr-backend.md
+docs/learned/architecture/tripwires.md
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+.claude/skills/erk-planning/SKILL.md
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+docs/learned/planning/learn-workflow.md
+docs/learned/planning/incremental-dispatch.md
+docs/learned/planning/index.md
+docs/learned/planning/tripwires.md
+pyproject.toml
+docs/learned/glossary.md
+docs/learned/capabilities/index.md
+docs/learned/capabilities/skill-deletion-patterns.md
+src/erk/cli/commands/pr/log_cmd.py
+tests/unit/gateways/github/metadata_blocks/test_plan_issue_schema.py
+tests/tui/test_plan_table.py
+tests/core/test_impl_issue_wt_workflow.py
+tests/commands/consolidate_learn_plans/test_dispatch.py
+
+... [41 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018hXeK1DtZNAa1FsiGwGFuj">
+    <param name="pattern">erk_plan</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9323" cache_read_input_tokens="15230" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018hXeK1DtZNAa1FsiGwGFuj">
+Found 6 files
+tests/unit/pr_store/test_planned_pr_backend.py
+tests/core/test_impl_issue_wt_workflow.py
+packages/erk-statusline/tests/test_statusline.py
+packages/erk-statusline/src/erk_statusline/statusline.py
+tests/unit/objective_issues/test_label_definitions.py
+docs/learned/cli/exec-script-patterns.md
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>That's 70+ files with `erk-plan` references and 6 with `erk_plan`. Let me understand the scope better before proceeding.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DR35Uk5gEnwQi4JsM3mvp3">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DR35Uk5gEnwQi4JsM3mvp3">
+100:    """Schema for erk-plan blocks."""
+103:        """Validate erk-plan data structure."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012gfGy5cnkEdPG7UgUfX1aT">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012gfGy5cnkEdPG7UgUfX1aT">
+23:    ERK_PLAN = "erk-plan"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JP7Db7GkQzBob2kxor7CWU">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JP7Db7GkQzBob2kxor7CWU">
+1:"""Schema v2 plan header operations for erk-plan issues.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01E5D4zWhDFNgmxxEP622iQ8">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E5D4zWhDFNgmxxEP622iQ8">
+244:    """Create an erk-plan block with validation.
+253:        MetadataBlock with erk-plan schema
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AgPUNcEaV1GATcPx8JhPw7">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1438}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AgPUNcEaV1GATcPx8JhPw7">
+124:    - Labels: erk-objective (NOT erk-plan)
+168:    # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LZJRg62C2XDywVYwtogbks">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/docs/learned/glossary.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="24553" output_tokens="766" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1438, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LZJRg62C2XDywVYwtogbks">
+825:- Labeled with `erk-plan` (like all plans)
+826:- **Issue identification**: Issues have the `erk-learn` label (in addition to `erk-plan`)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017kiaKcjzQ6wkiXENjAgBi1">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/docs/learned/planning/plan-title-prefix-system.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1094" cache_read_input_tokens="25991" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1094}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017kiaKcjzQ6wkiXENjAgBi1">
+38:- **Title tag**: `[erk-plan]` or `[erk-learn]` — added by `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/pr_utils.py`. This identifies the plan type.
+41:Both can apply simultaneously, producing titles like `plnd/[erk-plan] My Feature`.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QxnjfPTbgnLf49QBg1CHx8">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1094" cache_read_input_tokens="25991" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1094}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QxnjfPTbgnLf49QBg1CHx8">
+86:".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01W9rrCQXsdkB5gaNbDNhCdx">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1094" cache_read_input_tokens="25991" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1094}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W9rrCQXsdkB5gaNbDNhCdx">
+192:        key: Metadata block key (e.g., "erk-plan", "submission-queued")
+216:    """Extract plan creation event from erk-plan block."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DjzbunxVnCJWnrAvhzPrPg">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1094" cache_read_input_tokens="25991" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1094}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DjzbunxVnCJWnrAvhzPrPg">
+65:        "erk-planning": "[REMOVED] Plan management now in slash commands",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01B36XB2C99BSKsfgEU814uz">
+    <param name="pattern">erk-plan</param>
+    <param name="output_mode">content</param>
+    <param name="path">/workspaces/erk/src/erk/core/capabilities/codex_portable.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1094" cache_read_input_tokens="25991" output_tokens="486" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1094, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B36XB2C99BSKsfgEU814uz">
+30:            "erk-planning",
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="27085" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 919}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>`erk-plan` is used as a GitHub label, metadata block type, title tag prefix, and extensively in docs/tests. Before I start replacing everything, what should it be renamed to? Or is the entire concept being removed (not just renamed)?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="919" cache_read_input_tokens="27085" output_tokens="572" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 919, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>it should be eliminated. erk-pr has replaced it. but let's amke sure there aren't unintented conequences</user>
+  <usage input_tokens="3" cache_creation_input_tokens="746" cache_read_input_tokens="28004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 746}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me do a thorough analysis first to understand all the ways `erk-plan` is used and what the consequences of replacing with `erk-pr` would be.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="746" cache_read_input_tokens="28004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 746}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NVKvaqMqVj7Sa6G743vQms">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Analyze erk-plan usage in source code</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1405 chars]...ase and could conflict.
+
+Be very thorough - read each file to understand the full context.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="746" cache_read_input_tokens="28004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 746}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VHdixfN5MRvqy1FM1k1uXz">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Analyze erk-plan usage in tests</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Search for al...[truncated 1280 chars].../statusline.py
+
+Be thorough - read the actual test code to understand what's being tested.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="746" cache_read_input_tokens="28004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 746}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01J5UG8jB1pCtbnYzwVKSgQj">
+    <param name="pattern">erk-pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="746" cache_read_input_tokens="28004" output_tokens="1349" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 746, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J5UG8jB1pCtbnYzwVKSgQj">
+&lt;persisted-output&gt;
+Output too large (54.5KB). Full output saved to: /home/vscode/.claude/projects/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tool-results/toolu_01J5UG8jB1pCtbnYzwVKSgQj.txt
+
+Preview (first 2KB):
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:196:            labels=("erk-pr", "erk-learn"),
+src/erk/cli/commands/init/main.py:357:    (erk-pr, erk-objective) exist in that target repository.
+src/erk/cli/commands/init/main.py:364:    user_output("Erk uses labels (erk-pr, erk-learn, erk-objective) to organize PRs and issues.")
+src/erk/cli/commands/one_shot_remote_dispatch.py:395:            labels=("erk-pr",),
+src/erk/cli/commands/pr/create_cmd.py:79:    # Build labels: erk-pr + any extra
+src/erk/cli/commands/pr/create_cmd.py:80:    labels = ["erk-pr"]
+src/erk/cli/commands/pr/list/operation.py:84:    labels = request.label if request.label else ("erk-pr",)
+src/erk/cli/commands/pr/list/cli.py:316:    labels = label if label else ("erk-pr",)
+src/erk/cli/commands/pr/list/cli.py:389:        erk pr list --label erk-pr --label bug
+src/erk/cli/commands/pr/list/cli.py:439:        erk dash --label erk-pr --state open
+src/erk/cli/constants.py:3:# Title prefix for erk-pr issues (with trailing space for easy stripping)
+src/erk/cli/constants.py:4:ERK_PR_TITLE_PREFIX = "[erk-pr] "
+src/erk/cli/constants.py:11:    """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
+src/erk/cli/constants.py:64:ERK_PR_LABEL = "erk-pr"
+src/erk/cli/commands/run/list_cmd.py:76:    issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-pr"])
+src/erk/cli/commands/land_learn.py:271:        labels=["erk-pr", "erk-learn"],
+src/erk/cli/commands/branch/checkout_cmd.py:424:    help="PR number or URL with erk-pr label",
+src/erk/core/services/pr_list_service.py:45:    Uses a single GraphQL query to fetch draft PRs with the erk-pr label
+src/erk/core/services/pr_list_service.py:367:            labels: Labels to filter issues by (e.g., ["erk-pr"])
+src/erk/cli/commands/wt/create_cmd.py:461:        "Plan number or URL with erk-pr label. Fetches plan content "
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_result tool="toolu_01VHdixfN5MRvqy1FM1k1uXz">
+Perfect! Now I have comprehensive information. Let me create the final report:
+
+## Comprehensive Test Reference Report: "erk-plan" / "erk_plan" References
+
+Based on my thorough search of all test files in the erk repository, here is a detailed documentation of how "erk-plan" or "erk_plan" is referenced across the test suite:
+
+### Summary Statistics
+- **Total files with "erk-plan"/"erk_plan" references:** 29 files
+- **String literal references:** Predominantly found in test fixture data and expected output assertions
+- **Key pattern:** Most references are to the metadata block key `"erk-plan"` or the string literal `"erk-plan"` used in HTML/YAML structures
+
+---
+
+## Test Files by Category
+
+### 1. Metadata Block Tests (Highest Concentration)
+
+#### `/workspaces/erk/tests/unit/gateways/github/metadata_blocks/test_plan_wrapping.py`
+**What's being tested:** Plan wrapping functionality in collapsible HTML details blocks
+
+**String literal references:**
+- Line 13: `&lt;summary&gt;&lt;code&gt;erk-plan&lt;/code&gt;&lt;/summary&gt;` - Expected HTML structure in wrapped plan
+- Line 21: `&lt;summary&gt;&lt;code&gt;erk-plan&lt;/code&gt;&lt;/summary&gt;` - Assertion checking for correct HTML tag
+- Line 44: `&lt;summary&gt;&lt;code&gt;erk-plan&lt;/code&gt;&lt;/summary&gt;` - Another wrapping format check
+- Line 90: `&lt;summary&gt;&lt;code&gt;erk-plan&lt;/code&gt;&lt;/summary&gt;` - Parseable block structure test
+
+**Key finding:** These are all string literals that would need updating if the block tag changes from `erk-plan` to something else.
+
+---
+
+
+... [248 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NVKvaqMqVj7Sa6G743vQms">
+Perfect! Now I have a complete picture. Let me compile my comprehensive analysis report:
+
+---
+
+## COMPREHENSIVE ANALYSIS: "erk-plan" → "erk-pr" REPLACEMENT IMPACT
+
+Based on my thorough examination of the source code, here's the complete picture of how "erk-plan" and "erk_plan" are used:
+
+### **CRITICAL FINDING: Label Conflict Already Exists**
+
+**The most important discovery:** The "erk-pr" label **already exists and is actively used** as the default GitHub label for plan PRs. This replacement would consolidate terminology:
+
+- **Current state:** Plans are tagged with GitHub label `"erk-pr"` (see line 36 in `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py`)
+- **"erk-plan" string:** Only used internally as a metadata block key, never as a GitHub label
+- **`BlockKeys.ERK_PLAN`:** A constant for metadata block type identification, not label-based filtering
+
+---
+
+## SOURCE CODE INVENTORY
+
+### **1. Metadata Block Key: `BlockKeys.ERK_PLAN = "erk-plan"`**
+
+**File:** `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py` (line 23)
+
+**Type:** Class constant in `BlockKeys` enum-like class
+
+**Usage:** Marks metadata blocks that store plan creation events in PR comments
+
+**Usage Locations:**
+- `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py` (lines 58-62) - Block type registry
+
+... [200 lines omitted] ...
+
+### **4. Error Messages: "is an erk-plan"**
+**Context:** Error message when user tries to set up an objective from a plan PR instead of an objective issue
+**Risk Level:** ⚠️ **LOW** - Error message only, but updates user-facing text. Should change to "is an erk-pr" for consistency.
+| `objective_plan_setup.py` | Update error message | ✅ LOW | User message |
+   - Update error messages and temp file prefixes
+  </tool_result>
+  <usage input_tokens="3888" cache_creation_input_tokens="4275" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4275}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's what I found. The key risk and the full scope:
+
+## Current State
+
+- **GitHub labels**: Already use `erk-pr` (migration happened previously)
+- **Metadata block key**: Still `"erk-plan"` — used in HTML comment markers like `&lt;!-- erk:metadata-block:erk-plan --&gt;` embedded in PR bodies
+- **`BlockKeys.ERK_PLAN`**: Python constant with value `"erk-plan"`
+- **Docs/comments/tests**: ~70 files reference `erk-plan`
+
+## Key Risk: Backward Compatibility
+
+Existing GitHub PRs/issues have `&lt;!-- erk:metadata-block:erk-plan --&gt;` markers. If we change the block key to `"erk-pr"`, the registry needs to still parse old `"erk-plan"` blocks. Without this, `erk pr log` and other commands would fail on historical PRs.
+
+**My plan:**
+1. Rename `BlockKeys.ERK_PLAN` → `BlockKeys.ERK_PR` with value `"erk-pr"`
+2. Add a backward-compat alias in the block registry so `"erk-plan"` still parses
+3. Update all source code, tests, and docs
+
+Before I start making changes across 70+ files — does the backward-compat approach sound right, or should I handle old blocks differently?</assistant>
+  <usage input_tokens="3888" cache_creation_input_tokens="4275" cache_read_input_tokens="28750" output_tokens="1463" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4275, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;bx0t8smfc&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01LrEy45crVWHfBEpLrExVCQ&lt;/tool-use-id&gt;
+&lt;output-file&gt;/tmp/claude-1000/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tasks/bx0t8smfc.output&lt;/output-file&gt;
+&lt;status&gt;completed&lt;/status&gt;
+&lt;summary&gt;Background command "find /workspaces/erk -type f \( -name "*.py" -o -name "*.md" \) -exec grep -l "label.*erk-plan\|erk-plan.*label" {} \; | head -20" completed (exit code 0)&lt;/summary&gt;
+&lt;/task-notification&gt;
+Read the output file to retrieve the result: /tmp/claude-1000/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tasks/bx0t8smfc.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;bn5lul24i&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01QfEXLC3F6N6LEKtJQJSPdD&lt;/tool-use-id&gt;
+&lt;output-file&gt;/tmp/claude-1000/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tasks/bn5lul24i.output&lt;/output-file&gt;
+&lt;status&gt;killed&lt;/status&gt;
+&lt;summary&gt;Background command "find /workspaces/erk -type f -name "*.py" -exec grep -l "\"erk-plan\"" {} \; | xargs -I {} sh -c 'echo "=== {} ===" &amp;amp;&amp;amp; grep -B2 -A2 "\"erk-plan\"" {}' | head -100" was stopped&lt;/summary&gt;
+&lt;/task-notification&gt;
+Read the output file to retrieve the result: /tmp/claude-1000/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tasks/bn5lul24i.output</user>
+  <user>&lt;task-notification&gt;
+&lt;task-id&gt;bib2ikwbl&lt;/task-id&gt;
+&lt;tool-use-id&gt;toolu_01F69T26y2awYEqGVGgUrX5W&lt;/tool-use-id&gt;
+&lt;output-file&gt;/tmp/claude-1000/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tasks/bib2ikwbl.output&lt;/output-file&gt;
+&lt;status&gt;killed&lt;/status&gt;
+&lt;summary&gt;Background command "find /workspaces/erk -type f \( -name "*.py" -o -name "*.sh" -o -name "*.yaml" \) -exec grep -l "label.*erk" {} \; | head -20" was stopped&lt;/summary&gt;
+&lt;/task-notification&gt;
+Read the output file to retrieve the result: /tmp/claude-1000/-workspaces-erk/30993869-5681-4824-b184-01e693021779/tasks/bib2ikwbl.output</user>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key source files and start making changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NZW6origidzKQQZiGVga83">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NZW6origidzKQQZiGVga83">
+     1→"""Core data structures and constants for GitHub metadata blocks."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from dataclasses import dataclass, field
+     5→from typing import Any
+     6→
+     7→
+     8→class BlockKeys:
+     9→    """Canonical metadata block key constants.
+    10→
+    11→    Import this class instead of hardcoding string literals::
+    12→
+    13→        from erk_shared.gateway.github.metadata.types import BlockKeys
+    14→
+    15→        find_metadata_block(body, BlockKeys.PLAN_HEADER)
+    16→    """
+    17→
+    18→    PLAN_HEADER = "plan-header"
+    19→    PLAN_BODY = "plan-body"
+    20→    OBJECTIVE_HEADER = "objective-header"
+    21→    OBJECTIVE_BODY = "objective-body"
+    22→    OBJECTIVE_ROADMAP = "objective-roadmap"
+    23→    ERK_PLAN = "erk-plan"
+    24→    ERK_WORKTREE_CREATION = "erk-worktree-creation"
+    25→    ERK_IMPLEMENTATION_STATUS = "erk-implementation-status"
+    26→    WORKFLOW_STARTED = "workflow-started"
+    27→    SUBMISSION_QUEUED = "submission-queued"
+    28→    PLAN_RETRY = "plan-retry"
+    29→    IMPL_STARTED = "impl-started"
+    30→    IMPL_ENDED = "impl-ended"
+
+... [55 lines omitted] ...
+
+    53→class MetadataBlockError:
+    54→    """A metadata block that failed to parse."""
+    62→    """Result of parsing metadata blocks, with explicit error reporting."""
+    65→    errors: tuple[MetadataBlockError, ...]
+    69→    def has_errors(self) -&gt; bool:
+    70→        return bool(self.errors)
+    78→        """Validate data against schema. Raises ValueError if invalid."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01S6BrBRTic87vrPfP7jxU3q">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S6BrBRTic87vrPfP7jxU3q">
+File content (10743 tokens) exceeds maximum allowed tokens (10000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Mir5z3LXjTUGsQgjUPKSzw">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mir5z3LXjTUGsQgjUPKSzw">
+     1→"""Core operations for creating, rendering, and parsing metadata blocks."""
+     2→
+     3→import logging
+     4→import re
+     5→from typing import Any
+     6→
+     7→import yaml
+     8→
+     9→from erk_shared.gateway.github.metadata.registry import (
+    10→    BlockCategory,
+    11→    get_block_type,
+    12→)
+    13→from erk_shared.gateway.github.metadata.schemas import (
+    14→    ImplementationStatusSchema,
+    15→    ObjectiveHeaderSchema,
+    16→    PlanSchema,
+    17→    SubmissionQueuedSchema,
+    18→    WorkflowStartedSchema,
+    19→    WorktreeCreationSchema,
+    20→)
+    21→from erk_shared.gateway.github.metadata.types import (
+    22→    BlockKeys,
+    23→    MetadataBlock,
+    24→    MetadataBlockError,
+    25→    MetadataBlockSchema,
+    26→    MetadataParseResult,
+    27→    RawMetadataBlock,
+    28→)
+    29→from erk_shared.output.next_steps import format_next_steps_markdown
+    30→
+
+... [865 lines omitted] ...
+
+    52→        ValueError: If schema validation fails
+    65→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    85→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   162→        status: Current status (pending, in_progress, complete, failed)
+   380→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   391→        raise ValueError("plan-body block must have 'content' field")
+   395→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   539→        ValueError: If body format is invalid or YAML parsing fails
+   550→        raise ValueError("Body does not match expected &lt;details&gt; structure")
+   554→    # Parse YAML (strict - raises on error)
+   557→    except yaml.YAMLError as e:
+   558→        raise ValueError(f"Failed to parse YAML content: {e}") from e
+   561→        raise ValueError(f"YAML content is not a dict, got {type(data).__name__}")
+   574→    Errors are collected in the result rather than logged silently.
+   580→        MetadataParseResult with parsed blocks, content blocks, and any errors
+   583→    errors: list[MetadataBlockError] = []
+   602→        except ValueError as e:
+   603→            errors.append(MetadataBlockError(key=raw_block.key, message=str(e)))
+   608→        errors=tuple(errors),
+   691→        ValueError: If block not found
+   699→        rf"(?:&lt;!-- WARNING: Machine-generated\. Manual edits may break erk tooling\. --&gt;\n)*"
+   706→        raise ValueError(f"Metadata block '{key}' not found in body")
+   774→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   784→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   879→        ValueError: If objective-header block not found or invalid
+   883→        raise ValueError("objective-header block not found in issue body")
+  </tool_result>
+  <tool_use name="Read" id="toolu_013sXwsACeYr1qKADXGXUTHe">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013sXwsACeYr1qKADXGXUTHe">
+     1→"""Schema v2 plan header operations for erk-plan issues.
+     2→
+     3→These support the new plan issue structure where:
+     4→- Issue body contains only compact metadata (for fast querying)
+     5→- First comment contains the plan content
+     6→- last_dispatched_run_id is stored in issue body
+     7→
+     8→Optional fields (added over time, backward compatible):
+     9→- source_repo: For cross-repo plans, the repo where this plan will be
+    10→  implemented (e.g., "owner/impl-repo"). When set, the plan issue lives in
+    11→  a different repo (the plans repo) than where code changes will be made.
+    12→"""
+    13→
+    14→import re
+    15→from typing import Any
+    16→
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_plan_body_block,
+    19→    find_metadata_block,
+    20→    render_metadata_block,
+    21→    render_plan_body_block,
+    22→    replace_metadata_block_in_body,
+    23→)
+    24→from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    BRANCH_NAME,
+    27→    CI_SUMMARY_COMMENT_ID,
+    28→    LAST_DISPATCHED_AT,
+    29→    LAST_DISPATCHED_NODE_ID,
+    30→    LAST_DISPATCHED_RUN_ID,
+
+... [934 lines omitted] ...
+
+    71→        ValueError: If plan-header block not found or validation fails.
+    75→        raise ValueError("plan-header block not found in issue body")
+   353→        ValueError: If plan-header block not found or invalid
+   450→        ValueError: If plan-header block not found or invalid
+   469→        ValueError: If plan-header block not found or invalid
+   488→        ValueError: If plan-header block not found or invalid
+   507→        ValueError: If plan-header block not found or invalid
+   529→        ValueError: If plan-header block not found or invalid
+   583→        ValueError: If plan-header block not found or invalid
+   671→        ValueError: If plan-header block not found or invalid
+   693→        ValueError: If plan-header block not found or invalid
+   720→        ValueError: If plan-header block not found or invalid
+   765→        ValueError: If plan-header block not found or invalid
+   863→        ValueError: If plan-header block not found or invalid
+   888→        ValueError: If plan-header block not found or invalid
+   926→        ValueError: If plan-header block not found or invalid
+   955→        comment_id: GitHub comment ID containing CI failure summaries
+   961→        ValueError: If plan-header block not found or invalid
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Vg2iyLogwLhmkSUtUMU6H3">
+    <param name="pattern">erk-plan|ERK_PLAN</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6566" cache_read_input_tokens="33025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6566}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vg2iyLogwLhmkSUtUMU6H3">
+packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py:1:"""Schema v2 plan header operations for erk-plan issues.
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:244:    """Create an erk-plan block with validation.
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py:253:        MetadataBlock with erk-plan schema
+packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py:23:    ERK_PLAN = "erk-plan"
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:58:    BlockKeys.ERK_PLAN: BlockTypeInfo(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:59:        key=BlockKeys.ERK_PLAN,
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:100:    """Schema for erk-plan blocks."""
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:103:        """Validate erk-plan data structure."""
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:144:        return BlockKeys.ERK_PLAN
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the registry and the remaining source files that need changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EhkaTsDssyjG4g8C4AW954">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EhkaTsDssyjG4g8C4AW954">
+     1→"""Block type registry for metadata block categorization.
+     2→
+     3→Provides a central registry of all known metadata block types, categorized
+     4→as either YAML (structured data parsed as YAML) or CONTENT (raw content
+     5→like markdown that should not be YAML-parsed).
+     6→
+     7→Block key constants are defined in ``types.BlockKeys``. Import
+     8→``BlockKeys`` instead of hardcoding string literals in production code.
+     9→"""
+    10→
+    11→from dataclasses import dataclass
+    12→from enum import Enum
+    13→
+    14→from erk_shared.gateway.github.metadata.schemas import (
+    15→    ImplementationStatusSchema,
+    16→    ObjectiveHeaderSchema,
+    17→    PlanHeaderSchema,
+    18→    PlanRetrySchema,
+    19→    PlanSchema,
+    20→    SubmissionQueuedSchema,
+    21→    WorkflowStartedSchema,
+    22→    WorktreeCreationSchema,
+    23→)
+    24→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
+    25→
+    26→
+    27→class BlockCategory(Enum):
+    28→    """Category of a metadata block determining how it should be parsed."""
+    29→
+    30→    YAML = "yaml"
+
+... [142 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UEhVdfnE6LzjW6bbLPEMk9">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="offset">90</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UEhVdfnE6LzjW6bbLPEMk9">
+    90→        unknown_fields = set(data.keys()) - known_fields
+    91→        if unknown_fields:
+    92→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+    93→
+    94→    def get_key(self) -&gt; str:
+    95→        return BlockKeys.ERK_WORKTREE_CREATION
+    96→
+    97→
+    98→@dataclass(frozen=True)
+    99→class PlanSchema(MetadataBlockSchema):
+   100→    """Schema for erk-plan blocks."""
+   101→
+   102→    def validate(self, data: dict[str, Any]) -&gt; None:
+   103→        """Validate erk-plan data structure."""
+   104→        _migrate_to_pr_number(data)
+   105→
+   106→        required_fields = {"pr_number", "worktree_name", "timestamp"}
+   107→        optional_fields = {"plan_file"}
+   108→
+   109→        # Check required fields exist
+   110→        missing = required_fields - set(data.keys())
+   111→        if missing:
+   112→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   113→
+   114→        # Validate required fields
+   115→        if not isinstance(data["pr_number"], int):
+   116→            raise ValueError("pr_number must be an integer")
+   117→        if data["pr_number"] &lt;= 0:
+   118→            raise ValueError("pr_number must be positive")
+   119→
+
+... [30 lines omitted] ...
+
+   121→            raise ValueError("worktree_name must be a string")
+   123→            raise ValueError("worktree_name must not be empty")
+   126→            raise ValueError("timestamp must be a string")
+   128→            raise ValueError("timestamp must not be empty")
+   133→                raise ValueError("plan_file must be a string")
+   135→                raise ValueError("plan_file must not be empty")
+   141→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CawC21rMjW3P45S87BnDQm">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="offset">185</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CawC21rMjW3P45S87BnDQm">
+   185→    return events
+   186→
+   187→
+   188→def _block_to_event(key: str, data: dict) -&gt; Event | None:
+   189→    """Convert a metadata block to an Event.
+   190→
+   191→    Args:
+   192→        key: Metadata block key (e.g., "erk-plan", "submission-queued")
+   193→        data: Metadata block data
+   194→
+   195→    Returns:
+   196→        Event object or None if block type is not recognized
+   197→    """
+   198→    # Map block types to event extractors
+   199→    extractors: dict[str, EventExtractor] = {
+   200→        BlockKeys.ERK_PLAN: _extract_plan_created_event,
+   201→        BlockKeys.SUBMISSION_QUEUED: _extract_submission_queued_event,
+   202→        BlockKeys.WORKFLOW_STARTED: _extract_workflow_started_event,
+   203→        BlockKeys.ERK_IMPLEMENTATION_STATUS: _extract_implementation_status_event,
+   204→        BlockKeys.PLAN_RETRY: _extract_plan_retry_event,
+   205→        BlockKeys.ERK_WORKTREE_CREATION: _extract_worktree_creation_event,
+   206→    }
+   207→
+   208→    extractor = extractors.get(key)
+   209→    if extractor is None:
+   210→        return None
+   211→
+   212→    return extractor(data)
+   213→
+   214→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BJMJcaz2medhhzMND6D8jV">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/exec/scripts/objective_plan_setup.py</param>
+    <param name="offset">60</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BJMJcaz2medhhzMND6D8jV">
+    60→        )
+    61→
+    62→    # Check labels
+    63→    warnings: list[str] = []
+    64→    if issue.title.startswith(ERK_PR_TITLE_PREFIX):
+    65→        return (
+    66→            {
+    67→                "success": False,
+    68→                "error": "is_plan",
+    69→                "message": f"Issue #{objective_number} is an erk-plan, not an objective",
+    70→            },
+    71→            1,
+    72→        )
+    73→
+    74→    if ERK_OBJECTIVE_LABEL not in issue.labels:
+    75→        warnings.append(
+    76→            f"Issue #{objective_number} does not have the '{ERK_OBJECTIVE_LABEL}' label"
+    77→        )
+    78→
+    79→    # Create marker
+  </tool_result>
+  <tool_use name="Read" id="toolu_0181PP4gSe2HefU4derFF9HM">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="offset">80</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0181PP4gSe2HefU4derFF9HM">
+    80→        # Get parent commit SHA
+    81→        parent_sha = run_subprocess_with_context(
+    82→            cmd=["git", "rev-parse", branch],
+    83→            operation_context=f"resolve branch {branch}",
+    84→            cwd=cwd,
+    85→        ).stdout.strip()
+    86→
+    87→        # Create temporary index file to avoid touching the real index
+    88→        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+    89→        os.close(tmp_fd)
+    90→        try:
+    91→            env = os.environ.copy()
+    92→            env["GIT_INDEX_FILE"] = tmp_index
+    93→
+    94→            # Read parent tree into temp index
+  </tool_result>
+  <tool_use name="Read" id="toolu_014obJxJedPxW3BC5eCVs56H">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="offset">120</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24479" cache_read_input_tokens="39591" output_tokens="639" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 24479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014obJxJedPxW3BC5eCVs56H">
+   120→
+   121→    Objectives use the same pattern as plans:
+   122→    - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
+   123→    - First comment: objective content wrapped in objective-body metadata block
+   124→    - Labels: erk-objective (NOT erk-plan)
+   125→    - No title suffix, no commands section
+   126→
+   127→    Args:
+   128→        github_issues: GitHubIssues interface (real, fake, or dry-run)
+   129→        repo_root: Repository root directory
+   130→        plan_content: The full objective markdown content
+   131→        title: Optional title (extracted from H1 if None)
+   132→        extra_labels: Additional labels beyond erk-objective
+   133→        slug: Optional short kebab-case identifier (validated, not transformed)
+   134→
+   135→    Returns:
+   136→        CreateObjectiveIssueResult with success status and details
+   137→
+   138→    Note:
+   139→        Does NOT raise exceptions. All errors returned in result.
+   140→    """
+   141→    # Step 1: Get GitHub username
+   142→    username = github_issues.get_current_username()
+   143→    if username is None:
+   144→        return CreateObjectiveIssueResult(
+   145→            success=False,
+   146→            pr_number=None,
+   147→            plan_url=None,
+   148→            title="",
+   149→            error="Could not get GitHub username (gh CLI not authenticated?)",
+
+... [25 lines omitted] ...
+
+   165→                error=slug_result.message,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6017" cache_read_input_tokens="64070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6017}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me also check the `erk_plan` references in source and the `erk-planning` skill.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6017" cache_read_input_tokens="64070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6017}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BqjtTXwAvyEr4AaiFpc5nv">
+    <param name="pattern">erk_plan</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">*.py</param>
+    <param name="path">/workspaces/erk/packages/erk-statusline</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6017" cache_read_input_tokens="64070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6017}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BqjtTXwAvyEr4AaiFpc5nv">
+packages/erk-statusline/src/erk_statusline/statusline.py:272:    """Find plan file with erk_plan frontmatter at git root.
+packages/erk-statusline/src/erk_statusline/statusline.py:279:        erk_plan: true in YAML frontmatter, or None if no matching file found.
+packages/erk-statusline/src/erk_statusline/statusline.py:303:                        # Check for erk_plan: true
+packages/erk-statusline/src/erk_statusline/statusline.py:306:                            if line.startswith("erk_plan:"):
+packages/erk-statusline/tests/test_statusline.py:718:        """Should find plan file with erk_plan: true."""
+packages/erk-statusline/tests/test_statusline.py:723:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:755:        """Should return None when erk_plan is false."""
+packages/erk-statusline/tests/test_statusline.py:760:erk_plan: false
+packages/erk-statusline/tests/test_statusline.py:777:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:794:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:803:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:850:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:873:erk_plan: false
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XsqL4khSnSNzsfJkpWGXhe">
+    <param name="file_path">/workspaces/erk/.claude/skills/erk-planning/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6017" cache_read_input_tokens="64070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6017}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XsqL4khSnSNzsfJkpWGXhe">
+     1→---
+     2→name: erk-planning
+     3→description: "[REMOVED] This skill has been deleted. Plan management is now handled by slash commands and AGENTS.md."
+     4→---
+     5→
+     6→This skill has been removed. Use the following instead:
+     7→
+     8→- `/erk:plan-save` — save plan as a planned PR
+     9→- `/local:plan-update` — update an existing plan
+    10→- `/erk:replan` — replan against current codebase
+    11→- `AGENTS.md` — ambient planning workflow documentation
+    12→
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012STHXsvh2cXCXMbRi1gwDv">
+    <param name="pattern">erk-planning</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="path">/workspaces/erk/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6017" cache_read_input_tokens="64070" output_tokens="379" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6017, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012STHXsvh2cXCXMbRi1gwDv">
+86:".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the complete picture. Let me start making all the changes. I'll handle source code directly and use agents for the bulk test/doc updates.
+
+**Source code changes first:**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Hc6egbLNs3ZAGMv6jnJzTp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py</param>
+    <param name="old_string">    ERK_PLAN = "erk-plan"</param>
+    <param name="new_string">    ERK_PR = "erk-pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hc6egbLNs3ZAGMv6jnJzTp">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GXJyFZXbRdwiR56feGeFwo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">    """Schema for erk-plan blocks."""
+
+    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate erk-plan data structure."""</param>
+    <param name="new_string">    """Schema for erk-pr blocks."""
+
+    def validate(self, data: dict[str, Any]) -&gt; None:
+        """Validate erk-pr data structure."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GXJyFZXbRdwiR56feGeFwo">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CKqCkEvwKpVZZFoquMrSUy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+    <param name="old_string">        return BlockKeys.ERK_PLAN</param>
+    <param name="new_string">        return BlockKeys.ERK_PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CKqCkEvwKpVZZFoquMrSUy">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014mDc8skqD7t5d3FQhwwHFE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py</param>
+    <param name="old_string">    BlockKeys.ERK_PLAN: BlockTypeInfo(
+        key=BlockKeys.ERK_PLAN,
+        category=BlockCategory.YAML,
+        schema=PlanSchema(),
+    ),</param>
+    <param name="new_string">    BlockKeys.ERK_PR: BlockTypeInfo(
+        key=BlockKeys.ERK_PR,
+        category=BlockC...[truncated 147 chars]...  key="erk-plan",
+        category=BlockCategory.YAML,
+        schema=PlanSchema(),
+    ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014mDc8skqD7t5d3FQhwwHFE">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01B7Cid3r8Ro3sisuDAZjKgo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="old_string">    """Create an erk-plan block with validation.
+
+    Args:
+        pr_number: GitHub PR n...[truncated 141 chars]...e: Optional path to the plan file
+
+    Returns:
+        MetadataBlock with erk-plan schema</param>
+    <param name="new_string">    """Create an erk-pr block with validation.
+
+    Args:
+        pr_number: GitHub PR num...[truncated 137 chars]...ile: Optional path to the plan file
+
+    Returns:
+        MetadataBlock with erk-pr schema</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B7Cid3r8Ro3sisuDAZjKgo">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013Jd4oT7MY7idKXTZVJC2qJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="old_string">"""Schema v2 plan header operations for erk-plan issues.</param>
+    <param name="new_string">"""Schema v2 plan header operations for erk-pr issues.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Jd4oT7MY7idKXTZVJC2qJ">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LRwdgdu1iJajMp4e1cgak6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="old_string">        key: Metadata block key (e.g., "erk-plan", "submission-queued")</param>
+    <param name="new_string">        key: Metadata block key (e.g., "erk-pr", "submission-queued")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LRwdgdu1iJajMp4e1cgak6">
+The file /workspaces/erk/src/erk/cli/commands/pr/log_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016oKfUrfowbr8HNSCQREZbM">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="old_string">        BlockKeys.ERK_PLAN: _extract_plan_created_event,</param>
+    <param name="new_string">        BlockKeys.ERK_PR: _extract_plan_created_event,
+        # Backward compat: old blocks used "erk-plan" key
+        "erk-plan": _extract_plan_created_event,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SZidkuLBSNo8ckuWqsTPoh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/log_cmd.py</param>
+    <param name="old_string">    """Extract plan creation event from erk-plan block."""</param>
+    <param name="new_string">    """Extract plan creation event from erk-pr block."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016oKfUrfowbr8HNSCQREZbM">
+The file /workspaces/erk/src/erk/cli/commands/pr/log_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SZidkuLBSNo8ckuWqsTPoh">
+The file /workspaces/erk/src/erk/cli/commands/pr/log_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Mke43NVtj1vjou3cozmgaF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/exec/scripts/objective_plan_setup.py</param>
+    <param name="old_string">                "message": f"Issue #{objective_number} is an erk-plan, not an objective",</param>
+    <param name="new_string">                "message": f"Issue #{objective_number} is an erk-pr, not an objective",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mke43NVtj1vjou3cozmgaF">
+The file /workspaces/erk/src/erk/cli/commands/exec/scripts/objective_plan_setup.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019tVsvg4X59StLo4C64rniR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="old_string">tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")</param>
+    <param name="new_string">tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-pr-")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019tVsvg4X59StLo4C64rniR">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MqG3qmcL79vyvcVWtbGdUh">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="old_string">    - Labels: erk-objective (NOT erk-plan)</param>
+    <param name="new_string">    - Labels: erk-objective (NOT erk-pr)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1158}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MqG3qmcL79vyvcVWtbGdUh">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014vUWvHZCfQ3t6jLfq91nWu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="old_string">    # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)</param>
+    <param name="new_string">    # Step 3: Build labels - objectives only use erk-objective (NOT erk-pr)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="70087" output_tokens="3531" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014vUWvHZCfQ3t6jLfq91nWu">
+The file /workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me handle the statusline `erk_plan` references and update tests/docs in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="60651" cache_read_input_tokens="15230" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 60651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SBuFS1zT9K2wcJRWLudS3i">
+    <param name="file_path">/workspaces/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">268</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="60651" cache_read_input_tokens="15230" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 60651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SBuFS1zT9K2wcJRWLudS3i">
+   268→    return None
+   269→
+   270→
+   271→def find_new_plan_file(git_root: str) -&gt; str | None:
+   272→    """Find plan file with erk_plan frontmatter at git root.
+   273→
+   274→    Args:
+   275→        git_root: Absolute path to git repository root
+   276→
+   277→    Returns:
+   278→        Filename (basename) of first matching *-impl.md file with
+   279→        erk_plan: true in YAML frontmatter, or None if no matching file found.
+   280→    """
+   281→    if not git_root:
+   282→        return None
+   283→
+   284→    try:
+   285→        git_root_path = Path(git_root)
+   286→        if not git_root_path.exists():
+   287→            return None
+   288→
+   289→        # Scan for *-impl.md files at repository root
+   290→        for plan_file in git_root_path.glob("*-impl.md"):
+   291→            if not plan_file.is_file():
+   292→                continue
+   293→
+   294→            try:
+   295→                content = plan_file.read_text(encoding="utf-8")
+   296→
+   297→                # Parse YAML frontmatter
+
+... [15 lines omitted] ...
+
+   311→            except (OSError, UnicodeDecodeError):
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WFbwveJCQGYf5FUZduDhaH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">    """Find plan file with erk_plan frontmatter at git root.
+
+    Args:
+        git_root: ...[truncated 85 chars]...d file with
+        erk_plan: true in YAML frontmatter, or None if no matching file found.</param>
+    <param name="new_string">    """Find plan file with erk_pr frontmatter at git root.
+
+    Args:
+        git_root: Ab...[truncated 81 chars]....md file with
+        erk_pr: true in YAML frontmatter, or None if no matching file found.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="75881" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 687}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WFbwveJCQGYf5FUZduDhaH">
+The file /workspaces/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ENaq8QazSeeJfEkJHanT1o">
+    <param name="replace_all">False</param>
+    <param name="file_path">/workspaces/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">                        # Check for erk_plan: true
+                        for line in fro...[truncated 20 chars]...          line = line.strip()
+                            if line.startswith("erk_plan:"):</param>
+    <param name="new_string">                        # Check for erk_pr: true (also accept legacy erk_plan:)
+          ...[truncated 79 chars]...                            if line.startswith("erk_pr:") or line.startswith("erk_plan:"):</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="75881" output_tokens="487" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 687, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ENaq8QazSeeJfEkJHanT1o">
+The file /workspaces/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update all the test files and doc files in parallel using agents.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="652" cache_read_input_tokens="76568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 652}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>
