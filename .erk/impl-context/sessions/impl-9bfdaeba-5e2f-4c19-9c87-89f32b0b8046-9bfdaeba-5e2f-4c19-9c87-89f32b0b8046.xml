@@ -1,0 +1,695 @@
+<session>
+  <meta branch="plnd/fix-dispatch-pr-backend-in-03-21-1536" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15543" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15543}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15543" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15543}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011MEard57Gyu4zbgghnB3ab">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Run setup-impl to auto-detect plan from branch/impl-context</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15543" cache_read_input_tokens="9015" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011MEard57Gyu4zbgghnB3ab">
+Found existing impl dir for PR #9385, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/.erk/impl-context/plnd--fix-dispatch-pr-backend-in-03-21-1536", "pr_number": 9385, "pr_url": "https://github.com/dagster-io/erk/pull/9385", "branch": "plnd/fix-dispatch-pr-backend-in-03-21-1536", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9385, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="24558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 389}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013Je951AvwTgMnAbHdTvk83">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/.erk/impl-context/plnd--fix-dispatch-pr-backend-in-03-21-1536/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="24558" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Je951AvwTgMnAbHdTvk83">
+     1→# Fix: `pr_backend` workflow input mismatch in dispatch
+     2→
+     3→## Context
+     4→
+     5→The Phase 3 rename (commit `06b522b5d`) changed `plan_backend` → `pr_backend` throughout the codebase, but the GitHub Actions workflow `plan-implement.yml` still expects `plan_backend` as its input name. The CLI dispatch code now sends `pr_backend`, which GitHub rejects with HTTP 422 "Unexpected inputs provided".
+     6→
+     7→Workflow input names are a GitHub Actions API contract — the CLI must use the name the workflow expects.
+     8→
+     9→## Changes
+    10→
+    11→**File**: `src/erk/cli/commands/pr/dispatch_cmd.py`
+    12→
+    13→1. **Line 294** (local dispatch path `_dispatch_planned_pr_plan`): Change `"pr_backend"` → `"plan_backend"` in the inputs dict
+    14→2. **Line 522** (remote dispatch path `_dispatch_planned_pr_plan_remote`): Change `"pr_backend"` → `"plan_backend"` in the inputs dict
+    15→3. **Line 283** (comment): Update comment from `pr_backend="planned_pr"` to `plan_backend="planned_pr"`
+    16→
+    17→## Verification
+    18→
+    19→1. Run dispatch tests: `pytest tests/commands/pr/test_dispatch*.py`
+    20→2. Run type checker on the file: `ty check src/erk/cli/commands/pr/dispatch_cmd.py`
+    21→3. Manual: `erk pr dispatch &lt;PR&gt;` should no longer get HTTP 422
+    22→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="24558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear plan - fix the workflow input key mismatch. Let me read the file and implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="24558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01X9w5MVUUPNUuDGcMzqD2xQ">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="24558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X9w5MVUUPNUuDGcMzqD2xQ">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PeM955HY4WyLbP2ZaEYvRw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">275</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="24558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PeM955HY4WyLbP2ZaEYvRw">
+   275→    user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+   276→
+   277→    # Gather submission metadata
+   278→    queued_at = datetime.now(UTC).isoformat()
+   279→
+   280→    # Load workflow-specific config
+   281→    workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
+   282→
+   283→    # Build inputs dict with pr_backend="planned_pr"
+   284→    user_output("")
+   285→    user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+   286→
+   287→    inputs = {
+   288→        "pr_number": str(pr_number),
+   289→        "submitted_by": submitted_by,
+   290→        "pr_title": validated.title,
+   291→        "branch_name": branch_name,
+   292→        "impl_pr_number": str(pr_number),
+   293→        "base_branch": base_branch,
+   294→        "pr_backend": "planned_pr",
+   295→        **workflow_config,
+   296→    }
+   297→
+   298→    run_id = ctx.github.trigger_workflow(
+   299→        repo_root=repo.root,
+   300→        workflow=DISPATCH_WORKFLOW_NAME,
+   301→        inputs=inputs,
+   302→        ref=ref,
+   303→    )
+   304→    user_output(click.style("✓", fg="green") + " Workflow dispatched.")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01626GPdr4fPxjGkx3gGzdSB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">510</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="944" cache_read_input_tokens="24558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 944}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01626GPdr4fPxjGkx3gGzdSB">
+   510→    queued_at = time_gateway.now().isoformat()
+   511→    user_output(f"\nDispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+   512→    dispatch_ref = (
+   513→        ref if ref is not None else remote.get_default_branch_name(owner=owner, repo=repo_name)
+   514→    )
+   515→    inputs = {
+   516→        "pr_number": str(pr_number),
+   517→        "submitted_by": submitted_by,
+   518→        "pr_title": validated.title,
+   519→        "branch_name": branch_name,
+   520→        "impl_pr_number": str(pr_number),
+   521→        "base_branch": base_branch,
+   522→        "pr_backend": "planned_pr",
+   523→    }
+   524→    run_id = remote.dispatch_workflow(
+   525→        owner=owner,
+   526→        repo=repo_name,
+   527→        workflow=DISPATCH_WORKFLOW_NAME,
+   528→        ref=dispatch_ref,
+   529→        inputs=inputs,
+   530→    )
+   531→    user_output(click.style("\u2713", fg="green") + " Workflow dispatched.")
+   532→
+   533→    # Compute URLs
+   534→    workflow_url = construct_workflow_run_url(owner, repo_name, run_id)
+   535→    impl_pr_url = construct_pr_url(owner, repo_name, pr_number)
+   536→
+   537→    # Update PR body with workflow run link (best-effort)
+   538→    try:
+   539→        if issue.body:
+  </tool_result>
+  <assistant>
+
+I can see all three locations. Let me apply the fixes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2039" cache_read_input_tokens="25502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2039}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AnTMhSLDfRXhsr45cGN12T">
+    <param name="command">erk exec impl-signal started --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2039" cache_read_input_tokens="25502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2039}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PgtfcMuNYHyyn36kpP1bdZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    # Build inputs dict with pr_backend="planned_pr"</param>
+    <param name="new_string">    # Build inputs dict with plan_backend="planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2039" cache_read_input_tokens="25502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2039}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HxCvymiRWNjxmLS96AQba1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">        "pr_backend": "planned_pr",
+        **workflow_config,</param>
+    <param name="new_string">        "plan_backend": "planned_pr",
+        **workflow_config,</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2039" cache_read_input_tokens="25502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2039}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018mdvmJwjbp9a1nqm7QHPZu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">        "pr_backend": "planned_pr",
+    }</param>
+    <param name="new_string">        "plan_backend": "planned_pr",
+    }</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2039" cache_read_input_tokens="25502" output_tokens="567" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2039, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AnTMhSLDfRXhsr45cGN12T">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9385
+}
+  </tool_result>
+  <tool_result tool="toolu_01PgtfcMuNYHyyn36kpP1bdZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01HxCvymiRWNjxmLS96AQba1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_018mdvmJwjbp9a1nqm7QHPZu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>All three changes applied. Now let me verify and run tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1017" cache_read_input_tokens="27541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1017}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BWZp5GxTtpLCCEs2gxMu3u">
+    <param name="pattern">pr_backend</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1017" cache_read_input_tokens="27541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1017}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BWZp5GxTtpLCCEs2gxMu3u">
+206:    - Pushes and triggers the workflow with pr_backend="planned_pr"
+312:            pr_backend=ctx.pr_backend,
+362:        ctx.pr_backend.add_comment(repo.root, str(pr_number), comment_body)
+624:        pr_id = ctx.pr_backend.resolve_pr_number_for_branch(repo.root, branch_name)
+  </tool_result>
+  <tool_use name="Agent" id="toolu_017tmviGcaiJYWgdQ9633gcB">
+    <param name="description">Run dispatch tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the dispatch tests and report results:
+pytest tests/commands/pr/test_dispatch*.py -x -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1017" cache_read_input_tokens="27541" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1017}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DoxjKmJAURzdCUKWvRQYpc">
+    <param name="description">Run ty check on dispatch_cmd</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run ty check on the dispatch command file and report results:
+ty check src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1017" cache_read_input_tokens="27541" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1017, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DoxjKmJAURzdCUKWvRQYpc">
+ty passed: All type checks passed on dispatch_cmd.py
+agentId: a507b0efe92c9891e (use SendMessage with to: 'a507b0efe92c9891e' to continue this agent)
+&lt;usage&gt;total_tokens: 13297
+tool_uses: 1
+duration_ms: 2916&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_017tmviGcaiJYWgdQ9633gcB">
+pytest failed: 1 issue found
+
+**test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend**
+- **File:** tests/commands/pr/test_dispatch.py:124
+- **Error:** KeyError: 'pr_backend'
+- **Issue:** The dispatch workflow trigger is not including the `pr_backend` input field. The test expects `inputs["pr_backend"] == "planned_pr"`, but the key is missing from the triggered workflow inputs.
+
+This indicates that the dispatch command is not passing the `pr_backend` parameter when triggering the workflow, which aligns with the plan description "Fix: pr_backend workflow input mismatch in dispatch".
+agentId: a8beecc16301a58c9 (use SendMessage with to: 'a8beecc16301a58c9' to continue this agent)
+&lt;usage&gt;total_tokens: 14921
+tool_uses: 1
+duration_ms: 5501&lt;/usage&gt;
+  </tool_result>
+  <usage input_tokens="119" cache_creation_input_tokens="737" cache_read_input_tokens="28558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 737}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Type check passes. One test expects `pr_backend` - needs updating to match the workflow contract. Let me find and fix it.</assistant>
+  <usage input_tokens="119" cache_creation_input_tokens="737" cache_read_input_tokens="28558" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 737}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JnStr1ULv869qhjm3C88ry">
+    <param name="pattern">pr_backend.*planned_pr|plan_backend.*planned_pr</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="119" cache_creation_input_tokens="737" cache_read_input_tokens="28558" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 737, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JnStr1ULv869qhjm3C88ry">
+tests/commands/pr/test_dispatch.py:23:    """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_pr.
+tests/commands/pr/test_dispatch.py:28:    - Trigger workflow with pr_backend="planned_pr" in inputs
+tests/commands/pr/test_dispatch.py:118:        # Verify: workflow was triggered with pr_backend="planned_pr"
+tests/commands/pr/test_dispatch.py:124:        assert inputs["pr_backend"] == "planned_pr"
+tests/commands/pr/test_dispatch.py:545:        assert inputs["pr_backend"] == "planned_pr"
+tests/commands/pr/test_remote_paths.py:487:    assert dispatched.inputs["pr_backend"] == "planned_pr"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pdfu5Q14dmAof5mpGVcxfp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">20</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="29295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pdfu5Q14dmAof5mpGVcxfp">
+    20→
+    21→
+    22→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    23→    """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_pr.
+    24→
+    25→    Planned-PR plans already have a branch and PR. Dispatch should:
+    26→    - Validate the PR has the erk-pr label and is OPEN
+    27→    - Sync local branch ref to remote and commit impl-context via git plumbing
+    28→    - Trigger workflow with pr_backend="planned_pr" in inputs
+    29→    - NOT create a new branch or PR
+    30→    """
+    31→    runner = CliRunner()
+    32→    with erk_isolated_fs_env(runner) as env:
+    33→        plan_branch = "draft-pr-plan-branch"
+    34→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Lu2oLfYqq3HfDT7BEmpVFR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">115</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="29295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lu2oLfYqq3HfDT7BEmpVFR">
+   115→
+   116→        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+   117→
+   118→        # Verify: workflow was triggered with pr_backend="planned_pr"
+   119→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   120→            f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
+   121→            f"Output: {result.output}"
+   122→        )
+   123→        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
+   124→        assert inputs["pr_backend"] == "planned_pr"
+   125→        assert inputs["pr_number"] == "42"
+   126→        assert inputs["branch_name"] == plan_branch
+   127→
+   128→        # Verify: no new PR was created (planned-PR already exists)
+   129→        assert len(fake_gh.created_prs) == 0
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Nx7fvdWzRU8Tn5YBHNMaax">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">540</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="29295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nx7fvdWzRU8Tn5YBHNMaax">
+   540→        # Verify: workflow was triggered successfully
+   541→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   542→            f"Expected workflow trigger\nOutput: {result.output}"
+   543→        )
+   544→        inputs = fake_gh.triggered_workflows[0][1]
+   545→        assert inputs["pr_backend"] == "planned_pr"
+   546→        assert inputs["branch_name"] == plan_branch
+   547→
+   548→        # Verify: create_branch was NOT called (branch was checked out)
+   549→        assert len(git.created_branches) == 0, (
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KpawwzM6UKu1YSBk7SbyWf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">484</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="29295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 535}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KpawwzM6UKu1YSBk7SbyWf">
+   484→    assert len(fake_remote.dispatched_workflows) == 1
+   485→    dispatched = fake_remote.dispatched_workflows[0]
+   486→    assert dispatched.inputs["pr_number"] == "42"
+   487→    assert dispatched.inputs["pr_backend"] == "planned_pr"
+   488→    assert dispatched.inputs["branch_name"] == "plnd/remote-test"
+   489→
+   490→    # Verify impl-context files were committed to the branch
+   491→    assert len(fake_remote.created_file_commits) &gt;= 1
+  </tool_result>
+  <assistant>Tests need updating to match the workflow contract change. The key is `plan_backend` (what the workflow expects), not `pr_backend`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6337" cache_read_input_tokens="29830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6337}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U2bGzRkBU6NRSUCJNLPcWt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">    """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_p...[truncated 157 chars]...mpl-context via git plumbing
+    - Trigger workflow with pr_backend="planned_pr" in inputs</param>
+    <param name="new_string">    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned...[truncated 161 chars]...l-context via git plumbing
+    - Trigger workflow with plan_backend="planned_pr" in inputs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6337" cache_read_input_tokens="29830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6337}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U2bGzRkBU6NRSUCJNLPcWt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011jq67GoxS12cYi3nnt2CV5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">        # Verify: workflow was triggered with pr_backend="planned_pr"
+        assert len(f...[truncated 175 chars]... _ref = fake_gh.triggered_workflows[0]
+        assert inputs["pr_backend"] == "planned_pr"</param>
+    <param name="new_string">        # Verify: workflow was triggered with plan_backend="planned_pr"
+        assert len...[truncated 179 chars]...ref = fake_gh.triggered_workflows[0]
+        assert inputs["plan_backend"] == "planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6337" cache_read_input_tokens="29830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6337}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011jq67GoxS12cYi3nnt2CV5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CrH533kkmYqmfUS4GHzf8f">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">        inputs = fake_gh.triggered_workflows[0][1]
+        assert inputs["pr_backend"] == "planned_pr"</param>
+    <param name="new_string">        inputs = fake_gh.triggered_workflows[0][1]
+        assert inputs["plan_backend"] == "planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6337" cache_read_input_tokens="29830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6337}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CrH533kkmYqmfUS4GHzf8f">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QvVUqGXM1xg44JpQWWyRvA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_remote_paths.py</param>
+    <param name="old_string">    assert dispatched.inputs["pr_backend"] == "planned_pr"</param>
+    <param name="new_string">    assert dispatched.inputs["plan_backend"] == "planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6337" cache_read_input_tokens="29830" output_tokens="984" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QvVUqGXM1xg44JpQWWyRvA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/tests/commands/pr/test_remote_paths.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if `pr_backend` appears in the docstring on line 206 of dispatch_cmd.py that the grep found.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1343" cache_read_input_tokens="36167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1343}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ch6URNPYK2xqKZ9TQ3NGjV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">200</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1343" cache_read_input_tokens="36167" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1343, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ch6URNPYK2xqKZ9TQ3NGjV">
+   200→) -&gt; DispatchResult:
+   201→    """Dispatch a validated planned-PR plan for implementation.
+   202→
+   203→    For planned-PR plans, the branch and PR already exist. This function:
+   204→    - Syncs local branch ref to remote using git plumbing (no checkout)
+   205→    - Commits .erk/impl-context/ files directly to branch (no checkout)
+   206→    - Pushes and triggers the workflow with pr_backend="planned_pr"
+   207→
+   208→    Args:
+   209→        ctx: ErkContext with git operations
+   210→        repo: Repository context
+   211→        validated: Validated planned PR information
+   212→        submitted_by: GitHub username of submitter
+   213→        base_branch: Base branch for PR
+   214→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SwQ98ZCkDqHMBtY3XzgexR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    - Pushes and triggers the workflow with pr_backend="planned_pr"</param>
+    <param name="new_string">    - Pushes and triggers the workflow with plan_backend="planned_pr"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="37510" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SwQ98ZCkDqHMBtY3XzgexR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-15/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="37881" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 247}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TyMQEXx23gSRvAE7fNvaqS">
+    <param name="description">Re-run dispatch tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on the dispatch tests and report results:
+pytest tests/commands/pr/test_dispatch*.py tests/commands/pr/test_remote_paths.py -x -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="37881" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TyMQEXx23gSRvAE7fNvaqS">
+pytest passed: 32 passed in 0.60s
+
+All dispatch and remote_paths tests passed successfully with no failures.
+agentId: a25dfd373f7737d5b (use SendMessage with to: 'a25dfd373f7737d5b' to continue this agent)
+&lt;usage&gt;total_tokens: 13544
+tool_uses: 1
+duration_ms: 3698&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+All 32 tests pass. Let me signal completion, clean up, and run CI.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 364}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AuWtC1nW2dWTAeD7ESEU4n">
+    <param name="command">erk exec impl-signal ended --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 364}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PCZyisULQV5Z7eXBNvQcpV">
+    <param name="command">erk exec upload-impl-session --session-id="9bfdaeba-5e2f-4c19-9c87-89f32b0b8046" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 364}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MNpLgWXtoYjKude26xBHox">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="364" cache_read_input_tokens="38128" output_tokens="311" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 364, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AuWtC1nW2dWTAeD7ESEU4n">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9385
+}
+  </tool_result>
+</session>
