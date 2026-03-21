@@ -1,163 +1,58 @@
-# Plan: Consolidated Learn Documentation Update
-
-> **Consolidates:** #9329, #9328, #9323, #9322, #9317, #9316, #9315, #9312, #9309, #9305, #9304, #9302, #9300, #9299, #9295, #9291, #9289, #9284, #9283
+# Plan: Delete branch create command (Objective #9272, Node 1.5)
 
 ## Context
 
-19 erk-learn plans accumulated from recent implementation sessions covering two major workstreams: **PR terminology rename** (plan→PR, 5 plans) and **slot system extraction** (8 plans), plus 6 miscellaneous bug fix/improvement plans. All source PRs have been merged to master. The documentation has not caught up with the code changes, leaving stale references and missing coverage.
+Part of Objective #9272 (Extract Slot System into Plugin Package), Node 1.5.
 
-## Source Plans
+The `erk branch create` command currently creates a branch, allocates a pool slot, and optionally sets up impl-context for `--for-pr`. After extracting slot logic to `erk_slots`, the remaining value is thin: `gt create` handles branch creation with Graphite tracking, and `erk slot checkout` / `erk slot assign` handle worktree allocation. The `--for-pr` workflow is already handled by `erk br checkout --for-pr` (which the TUI uses). Rather than simplifying `branch create` to a trivial wrapper, we delete it entirely.
 
-| # | Title | Items |
-| --- | --- | --- |
-| #9322 | Rename plan-oriented types to PR terminology (Nodes 1.1-1.4) | 2 |
-| #9317 | Standardize CLI flags from "plan" to "PR" terminology | 2 |
-| #9295 | Rename test helpers and fake executor methods | 1 |
-| #9289 | Rename workflow YAML inputs/env vars plan_id→pr_number | 2 |
-| #9283 | Rename plan variables/types in CLI/TUI/shared packages | 1 |
-| #9323 | Make `erk slot co` commands copy-pasteable | 1 |
-| #9316 | Move slot allocation logic to `erk.core` | 2 |
-| #9312 | Remove `--new-slot` flag from `erk slot checkout` | 1 |
-| #9309 | Replace `erk br co --for-plan` with `erk slot co` | 1 |
-| #9304 | Extract slot naming utilities to erk-shared | 1 |
-| #9299 | Add script mode and activation navigation | 1 |
-| #9284 | Extract slot system into erk-slots package | 2 |
-| #9291 | Extract CLI infrastructure to erk-shared | 2 |
-| #9329 | Escape pipe characters in objective roadmap tables | 1 |
-| #9328 | Improve `erk pr teleport` help string | 1 |
-| #9315 | Fix exit plan mode hook copy | 0 |
-| #9305 | Fix false positive review for ternary context managers | 0 |
-| #9302 | Fix "p" keybinding for objective issues | 0 |
-| #9300 | Delete `get-pr-for-plan` exec command | 1 |
+## Changes
 
-## Investigation Findings
+### 1. Delete `src/erk/cli/commands/branch/create_cmd.py`
 
-### Items Already Documented (Skip)
-- **#9305**: Ternary context manager guidance already added to `.claude/skills/dignified-code-simplifier/SKILL.md`
-- **#9302**: "p" keybinding already documented in `docs/learned/tui/keyboard-shortcuts.md`
-- **#9315**: Simple copy fix, no documentation value
+Remove the file entirely.
 
-### Stale Documentation (Must Fix)
-1. **`docs/learned/planning/next-steps-output.md`** — References `PlanNextSteps` (now `PrNextSteps`), `format_plan_next_steps_plain` (now `format_pr_next_steps_plain`), and `erk br co --for-plan` (now `erk slot co`)
-2. **`docs/learned/erk/slot-pool-architecture.md`** — References `src/erk/cli/commands/slot/common.py` (moved to `src/erk/core/slot_allocation.py`), mentions removed `--new-slot` flag
-3. **`docs/learned/cli/erk-exec-commands.md`** — Line 14 tripwire says "use 'plan' terminology" but should say "use 'PR' terminology"
+### 2. Update `src/erk/cli/commands/branch/__init__.py`
 
-### New Documentation Needed
-- Slot system package extraction pattern (erk-slots, erk-shared infrastructure)
-- Markdown table cell escaping utility
+Remove the `branch_create` import and `branch_group.add_command(branch_create)` registration.
 
-## Implementation Steps
+### 3. Delete `tests/unit/cli/commands/branch/test_create_cmd.py`
 
-### Step 1: Fix `next-steps-output.md` (from #9309, #9283, #9289, #9323)
+Remove the test file entirely.
 
-**File:** `docs/learned/planning/next-steps-output.md`
+### 4. Update help text references (4 files)
 
-**Changes:**
-- Frontmatter line 5: "understanding PlanNextSteps" → "understanding PrNextSteps"
-- Frontmatter tripwire line 9: "PlanNextSteps" → "PrNextSteps"
-- Line 22: `PlanNextSteps` → `PrNextSteps`
-- Line 30: `format_plan_next_steps_plain` → `format_pr_next_steps_plain`
-- Add `branch_name` parameter documentation (added by #9309)
-- Update command examples from `erk br co --for-plan` to `erk slot co {branch_name}`
-- Document the `source <(erk slot co ... --script)` shell activation pattern
+Update error messages and docstrings that suggest `erk branch create` / `erk br create`:
 
-**Source:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
+| File | Current text | New text |
+|------|-------------|----------|
+| `src/erk/cli/commands/wt/create_from_cmd.py:62` | `erk br create {branch}` | `gt create {branch}` |
+| `packages/erk-slots/src/erk_slots/checkout_cmd.py:41-42` | `Use \`erk branch create\` to create a new branch.` | `Use \`gt create\` to create a new branch.` |
+| `packages/erk-slots/src/erk_slots/checkout_cmd.py:113` | `Use \`erk branch create\` to create a new branch.` | `Use \`gt create\` to create a new branch.` |
+| `packages/erk-slots/src/erk_slots/assign_cmd.py:39` | `Use \`erk branch create\` to create a NEW branch and assign it.` | `Use \`gt create\` to create a NEW branch.` |
+| `packages/erk-slots/src/erk_slots/assign_cmd.py:89` | `Use \`erk branch create\` to create a new branch.` | `Use \`gt create\` to create a new branch.` |
 
-**Verification:** All class/function names in doc match actual names in source file
+### 5. Do NOT touch (out of scope)
 
-### Step 2: Fix `slot-pool-architecture.md` (from #9316, #9312, #9284, #9291)
+- `docs/learned/` references — documentation updates are separate from code changes
+- Other files that reference `create_branch` as a git gateway method (not CLI command)
+- `src/erk/core/slot_allocation.py` — stays for other callers until they move
 
-**File:** `docs/learned/erk/slot-pool-architecture.md`
+## Key files
 
-**Changes:**
-- Update all references from `src/erk/cli/commands/slot/common.py` → `src/erk/core/slot_allocation.py`
-- Remove `--new-slot` flag documentation (lines ~178-183)
-- Add note about slot commands living in `packages/erk-slots/` package
-- Add note about naming utilities in `packages/erk-shared/src/erk_shared/slots/naming.py`
-- Document conditional loading pattern (`importlib.util.find_spec()` in `src/erk/cli/cli.py`)
-
-**Source files:**
-- `src/erk/core/slot_allocation.py` (moved allocation logic)
-- `packages/erk-slots/` (package structure)
-- `packages/erk-shared/src/erk_shared/slots/naming.py` (pure naming utilities)
-- `packages/erk-shared/src/erk_shared/cli_alias.py` (extracted from erk)
-- `packages/erk-shared/src/erk_shared/cli_group.py` (ErkCommandGroup)
-
-**Verification:** grep for old paths in the doc yields zero matches; all referenced files exist
-
-### Step 3: Fix `erk-exec-commands.md` tripwire (from #9317, #9300)
-
-**File:** `docs/learned/cli/erk-exec-commands.md`
-
-**Changes:**
-- Line 14 tripwire: change "use 'plan' terminology not 'issue'" → "use 'PR' terminology not 'issue' or 'plan'"
-- Remove any reference to deleted `get-pr-for-plan` command
-- Verify `get-prs-for-objective` command is documented (renamed from `get-plans-for-objective`)
-
-**Source:** `src/erk/cli/commands/exec/scripts/` directory for current command inventory
-
-**Verification:** tripwire text matches current naming convention
-
-### Step 4: Create `docs/learned/objectives/markdown-table-escaping.md` (from #9329)
-
-**File:** `docs/learned/objectives/markdown-table-escaping.md`
-
-**Content outline:**
-1. Problem: Pipe characters (`|`) in objective roadmap cell content break markdown table rendering
-2. Solution: `escape_md_table_cell()` utility in `erk_shared.gateway.github.metadata.roadmap`
-3. What it escapes: pipes (`|` → `\|`) and newlines (→ space)
-4. Where applied: `roadmap.py` rendering and `objective_render_roadmap.py` exec script
-5. Tripwire: Always use `escape_md_table_cell()` when rendering user-provided text in markdown tables
-
-**Source:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
-
-**Verification:** Function exists and tests pass in `test_roadmap.py`
-
-### Step 5: Update `docs/learned/cli/checkout-teleport-split.md` (from #9328)
-
-**File:** `docs/learned/cli/checkout-teleport-split.md`
-
-**Changes:**
-- Add section documenting the 5 capabilities that `erk pr teleport` provides beyond `gh pr checkout`:
-  1. Force-resets local branch to match remote
-  2. Worktree pool integration
-  3. Graphite registration/tracking
-  4. Shell activation scripts
-  5. `--sync` mode for `gt submit`
-
-**Source:** `src/erk/cli/commands/pr/teleport_cmd.py` (lines 47-76, docstring)
-
-**Verification:** Capability list matches the current help text
-
-### Step 6: Update category indexes
-
-**Files:**
-- `docs/learned/objectives/index.md` — add entry for `markdown-table-escaping.md`
-- `docs/learned/objectives/tripwires.md` — add tripwire for `escape_md_table_cell()`
-
-**Verification:** `docs/learned/index.md` categories still route correctly
-
-## Overlap Analysis
-
-- **PR terminology rename** (#9322, #9317, #9295, #9289, #9283): All five plans touch the same rename. Consolidated into Steps 1 and 3 — update existing docs rather than create new ones.
-- **Slot system extraction** (#9323, #9316, #9312, #9309, #9304, #9299, #9284, #9291): Eight plans covering one large refactor. Consolidated into Step 2 — update the existing slot-pool-architecture.md.
-- **#9305, #9302, #9315**: Already documented or too thin for standalone docs. No action needed.
-
-## Attribution
-
-- **Steps 1**: #9309, #9283, #9289, #9323
-- **Step 2**: #9316, #9312, #9284, #9291, #9304, #9299
-- **Step 3**: #9317, #9300
-- **Step 4**: #9329
-- **Step 5**: #9328
-- **Step 6**: Supporting step for Step 4
+| File | Action |
+|------|--------|
+| `src/erk/cli/commands/branch/create_cmd.py` | Delete |
+| `src/erk/cli/commands/branch/__init__.py` | Remove create registration |
+| `tests/unit/cli/commands/branch/test_create_cmd.py` | Delete |
+| `src/erk/cli/commands/wt/create_from_cmd.py` | Update help text |
+| `packages/erk-slots/src/erk_slots/checkout_cmd.py` | Update help text |
+| `packages/erk-slots/src/erk_slots/assign_cmd.py` | Update help text |
 
 ## Verification
 
-After implementation:
-1. Grep `docs/learned/` for `PlanNextSteps` — should return zero matches
-2. Grep `docs/learned/` for `src/erk/cli/commands/slot/common.py` — should return zero matches
-3. Grep `docs/learned/` for `--new-slot` — should return zero matches
-4. Grep `docs/learned/` for `get-pr-for-plan` — should return zero matches
-5. Verify all referenced source files exist
-6. Verify new `markdown-table-escaping.md` is in the objectives index
+1. Run branch command tests: `uv run pytest tests/unit/cli/commands/branch/`
+2. Run slot tests (checkout, assign): `uv run pytest packages/erk-slots/tests/`
+3. Run wt create-from tests: `uv run pytest tests/unit/cli/commands/wt/test_create_from_cmd.py`
+4. Run type checker on modified files
+5. Run fast CI: `make fast-ci`
