@@ -1,0 +1,1053 @@
+<session>
+  <meta branch="plnd/teleport-helpstring-docs-03-12-1330" />
+  <meta model="claude-opus-4-6" />
+  <user>add a --dry-run capability to erk pr teleport. it should tell the user what local state it will discard and anything else mutative it willd o</user>
+  <user>[Request interrupted by user]</user>
+  <user>add a --dry-run capability to erk pr teleport. it should tell the user what local state it will discard and anything else mutative it will do</user>
+  <usage input_tokens="3" cache_creation_input_tokens="13344" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13344}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the codebase to understand the current `erk pr teleport` implementation and existing dry-run patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13344" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13344}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FSNSkB48bMwD32UB25Ewaj">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore pr teleport implementation</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 572 chars]...y.
+
+Also check docs/learned/architecture/ and docs/learned/cli/ for any relevant patterns.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13344" cache_read_input_tokens="9131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13344}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01GAcdQGw1ZaZjMh6VhsDdjb">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore dry-run patterns in erk</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 476 chars]...to understand the established convention so a new --dry-run flag follows the same pattern.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13344" cache_read_input_tokens="9131" output_tokens="633" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FSNSkB48bMwD32UB25Ewaj">
+Perfect! Now I have comprehensive information about teleport. Let me create a detailed summary document based on all the files I've read:
+
+## Summary: `erk pr teleport` Command Implementation
+
+Based on my thorough exploration of the codebase, documentation, and tests, here's a comprehensive analysis of the `erk pr teleport` command:
+
+---
+
+### 1. **CLI Command Definition**
+
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/pr/teleport_cmd.py`
+
+**Command Interface:**
+```bash
+erk pr teleport &lt;PR_NUMBER&gt; [--new-slot] [-f/--force] [--sync] [--script]
+```
+
+**Flags:**
+- `--new-slot`: Create a new worktree slot instead of operating in-place
+- `-f/--force`: Skip confirmation prompts before overwriting local state
+- `--sync`: Run `gt submit --no-interactive` after teleport (Graphite sync)
+- `--script`: Output shell activation script for integration with tmux/direnv
+
+---
+
+### 2. **Full Implementation Trace**
+
+The command has two execution paths based on `--new-slot` flag:
+
+#### **Path A: In-Place Teleport (default)**
+
+... [146 lines omitted] ...
+
+   - User gets a warning prompt showing: "X local commit(s) ahead" before force-reset (unless `--force`)
+- `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/docs/learned/cli/tripwires.md` — Warnings about misusing teleport
+- PR not found error handling
+  </tool_result>
+  <tool_result tool="toolu_01GAcdQGw1ZaZjMh6VhsDdjb">
+Perfect! I now have a comprehensive understanding of the dry-run patterns in erk. Let me compile my findings into a clear report.
+
+## Summary: Dry-Run Patterns in the Erk Codebase
+
+Based on my thorough exploration of the erk codebase, here are the established dry-run patterns and conventions:
+
+### 1. **Core Architecture: Two-Layer System**
+
+The dry-run pattern uses a two-layer wrapper approach:
+
+**Layer 1 - Context-level flag** (`ErkContext.dry_run: bool`)
+- Located in `/packages/erk-shared/src/erk_shared/context/context.py` (line 133)
+- Simple boolean field on the immutable ErkContext dataclass
+- Set during context creation at the CLI entry point
+
+**Layer 2 - Gateway-level wrappers** (DryRun* implementations)
+- Located in `packages/erk-shared/src/erk_shared/gateway/{gateway_name}/dry_run.py`
+- Currently implemented for 4 gateways that have user-facing `--dry-run`:
+  - `DryRunGit` (git operations)
+  - `DryRunLocalGitHub` (GitHub operations)
+  - `DryRunGraphite` (Graphite operations)
+  - `DryRunAgentDocs` (agent documentation)
+
+### 2. **Gateway Wrapper Pattern** (Reference: `/packages/erk-shared/src/erk_shared/gateway/github/issues/dry_run.py`)
+
+Each dry-run wrapper implements two categories of methods:
+
+**Read-Only Methods** - Delegate to wrapped implementation:
+```python
+def issue_exists(self, repo_root: Path, number: int) -&gt; bool:
+
+... [132 lines omitted] ...
+
+2. **Read operations execute**: Validation paths use read operations even in dry-run to surface errors before actual execution
+5. **No exceptions in dry-run**: DryRun implementations return success values; they don't raise exceptions
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4891" cache_read_input_tokens="22475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the key files to deepen my understanding before designing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4891" cache_read_input_tokens="22475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q3pAH3dtbcT4hToxfWoVMm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4891" cache_read_input_tokens="22475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q3pAH3dtbcT4hToxfWoVMm">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from contextlib import nullcontext
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    activation_config_activate_only,
+    19→    ensure_worktree_activate_script,
+    20→    print_activation_instructions,
+    21→)
+    22→from erk.cli.commands.checkout_helpers import (
+    23→    ensure_branch_has_worktree,
+    24→    navigate_and_display_checkout,
+    25→    script_error_handler,
+    26→)
+    27→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    28→from erk.cli.commands.slot.common import find_assignment_by_worktree, update_slot_assignment_tip
+    29→from erk.cli.ensure import Ensure
+    30→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+
+... [355 lines omitted] ...
+
+    79→        ctx.console.error("Not in a git repository")
+    84→        ctx_manager = script_error_handler(ctx)
+    92→            ctx.console.error(
+    99→            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   262→    # Check if branch already has a worktree — navigate to it instead of erroring
+   360→    except RuntimeError:
+   375→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <tool_use name="Read" id="toolu_0121HeveQisyHwW6nVsq2qjb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/docs/learned/architecture/lbyl-gateway-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4891" cache_read_input_tokens="22475" output_tokens="265" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0121HeveQisyHwW6nVsq2qjb">
+     1→---
+     2→title: LBYL Gateway Pattern
+     3→read_when:
+     4→  - "implementing existence checks before gateway operations"
+     5→  - "adding LBYL validation to CLI commands"
+     6→  - "understanding why gateways have separate existence methods"
+     7→last_audited: "2026-02-16 14:20 PT"
+     8→audit_result: clean
+     9→tripwires:
+    10→  - action: "calling get_X() and handling IssueNotFound sentinel inline"
+    11→    warning: "Check with X_exists() first for cleaner error messages and LBYL compliance."
+    12→  - action: "implementing idempotent operations that fail on missing resources"
+    13→    warning: "Use LBYL existence check to return early, making the operation truly idempotent."
+    14→  - action: "adding a get_X() method to a gateway ABC without a corresponding X_exists() convenience method"
+    15→    warning: "Gateway ABCs pair fetch methods with lightweight existence checks. Add X_exists() alongside get_X() for LBYL compliance at CLI boundaries."
+    16→---
+    17→
+    18→# LBYL Gateway Pattern
+    19→
+    20→Gateway ABCs provide separate existence-check methods (`issue_exists()`, `label_exists()`, etc.) alongside their fetch methods (`get_issue()`, `get_label()`, etc.). This enables Look Before You Leap validation at CLI boundaries.
+    21→
+    22→## Why Separate Existence Methods
+    23→
+    24→Gateway `get_X()` methods may return sentinels (e.g., `IssueNotFound`) or fail when resources don't exist. Without upfront existence checks, CLI commands face a choice:
+    25→
+    26→1. **Handle sentinels inline** — Leads to complex control flow and cryptic error messages
+    27→2. **Catch exceptions** — Violates LBYL, creates misleading stack traces in agent sessions
+    28→3. **Check existence first** — Clean, explicit validation with user-friendly errors
+    29→
+    30→The third option is erk's standard. Existence methods make LBYL practical by providing a lightweight check that avoids fetching the full resource.
+
+... [77 lines omitted] ...
+
+    64→**Why delegate instead of no-op?** Dry-run mode validates workflows without mutating state. If a command would fail due to a missing resource, dry-run should surface that error before the user runs it for real.
+    73→2. If missing, output user-friendly error and exit
+    79→**Anti-pattern:** Calling `get_issue()` and checking for `IssueNotFound` inline. This works but produces worse error messages and violates LBYL.
+    87→| Resource existence is first validation step | ✅ Yes      | Enables user-friendly "not found" errors before deeper validation         |
+   105→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — Sentinel types like `IssueNotFound`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7593" cache_read_input_tokens="27366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7593}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the land command handles dry-run, and also look at what git operations are available for detecting uncommitted changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7593" cache_read_input_tokens="27366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7593}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Aq1dFj4omqp8eRBx57YaDi">
+    <param name="pattern">dry.run</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7593" cache_read_input_tokens="27366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7593}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Aq1dFj4omqp8eRBx57YaDi">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017wTZE5SSWhcDkfJztZPMRB">
+    <param name="pattern">def.*dirty|def.*uncommitted|def.*has_changes|def.*working_tree|def.*is_clean</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/packages/erk-shared/src/erk_shared/gateway</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7593" cache_read_input_tokens="27366" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7593}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017wTZE5SSWhcDkfJztZPMRB">
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:33:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:27:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:42:    def has_uncommitted_changes(self, cwd: Path) -&gt; bool:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GYDjbiqxhDA4QYzPSPQSFq">
+    <param name="pattern">dry_run|dry-run</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7593" cache_read_input_tokens="27366" output_tokens="497" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7593, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GYDjbiqxhDA4QYzPSPQSFq">
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:58:    dry_run: bool,
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:67:    Returns ConsolidateLearnPlansDispatchResult, or None in dry-run mode.
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:77:    if dry_run:
+src/erk/cli/commands/land_pipeline.py:48:    dry_run: bool
+src/erk/cli/commands/land_pipeline.py:361:    # Force and dry-run skip confirmation entirely (no repo discovery needed)
+src/erk/cli/commands/land_pipeline.py:362:    if state.force or ctx.dry_run:
+src/erk/cli/commands/land_pipeline.py:539:    dry_run: bool,
+src/erk/cli/commands/land_pipeline.py:557:        dry_run=dry_run,
+src/erk/cli/commands/land_pipeline.py:607:        dry_run=False,  # Execute mode never dry-runs
+src/erk/cli/commands/wt/rename_cmd.py:17:    "--dry-run",
+src/erk/cli/commands/wt/rename_cmd.py:19:    # dry_run=False: Allow destructive operations by default
+src/erk/cli/commands/wt/rename_cmd.py:24:def rename_wt(ctx: ErkContext, old_name: str, new_name: str, dry_run: bool) -&gt; None:
+src/erk/cli/commands/wt/rename_cmd.py:30:    # Create dry-run context if needed
+src/erk/cli/commands/wt/rename_cmd.py:31:    if dry_run:
+src/erk/cli/commands/wt/rename_cmd.py:32:        ctx = create_context(dry_run=True)
+src/erk/cli/commands/wt/rename_cmd.py:60:    # Write .env file (dry-run vs real)
+src/erk/cli/commands/wt/rename_cmd.py:62:    if ctx.dry_run:
+src/erk/cli/commands/completions.py:60:            erk_ctx = create_context(dry_run=False)
+src/erk/cli/commands/wt/delete_cmd.py:176:    ctx: ErkContext, repo_root: Path, wt_path: Path, dry_run: bool
+src/erk/cli/commands/wt/delete_cmd.py:204:    if not dry_run and ctx.git.worktree.safe_chdir(repo_root):
+src/erk/cli/commands/wt/delete_cmd.py:295:def _confirm_operations(ctx: ErkContext, *, force: bool, dry_run: bool) -&gt; bool:
+src/erk/cli/commands/wt/delete_cmd.py:296:    """Prompt for confirmation unless force or dry-run mode.
+src/erk/cli/commands/wt/delete_cmd.py:300:    if force or dry_run:
+src/erk/cli/commands/wt/delete_cmd.py:350:    if ctx.dry_run:
+src/erk/cli/commands/wt/delete_cmd.py:371:    ctx: ErkContext, *, repo_root: Path, branch: str, force: bool, dry_run: bool
+src/erk/cli/commands/wt/delete_cmd.py:391:        if not dry_run:
+src/erk/cli/commands/wt/delete_cmd.py:436:    dry_run: bool,
+src/erk/cli/commands/wt/delete_cmd.py:447:        dry_run: Print what would be done without executing destructive operations
+src/erk/cli/commands/wt/delete_cmd.py:451:    if dry_run:
+src/erk/cli/commands/wt/delete_cmd.py:452:        ctx = create_context(dry_run=True)
+
+... [32 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2895" cache_read_input_tokens="34959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2895}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at specific dry-run implementations more closely, and check if there are any git status operations available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2895" cache_read_input_tokens="34959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2895}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ArgDDWBhFsmruMfVUKv4gi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/reconcile_cmd.py</param>
+    <param name="offset">20</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2895" cache_read_input_tokens="34959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2895}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ArgDDWBhFsmruMfVUKv4gi">
+    20→from erk_shared.output.output import user_output
+    21→
+    22→
+    23→@click.command("reconcile", hidden=True)
+    24→@click.option("--force", is_flag=True, help="Skip confirmation prompts")
+    25→@click.option("--dry-run", is_flag=True, help="Preview without making changes")
+    26→@click.option("--skip-learn", is_flag=True, help="Skip creating learn PRs")
+    27→@click.pass_obj
+    28→def reconcile(ctx: ErkContext, *, force: bool, dry_run: bool, skip_learn: bool) -&gt; None:
+    29→    """Reconcile branches merged outside erk land.
+    30→
+    31→    Detects local branches whose remote tracking refs have been pruned
+    32→    (indicating the PR was merged on GitHub) and runs post-merge lifecycle
+    33→    operations: learn PR creation, objective updates, and branch cleanup.
+    34→
+    35→    Examples:
+    36→
+    37→    \b
+    38→      # Preview what would be reconciled
+    39→      erk reconcile --dry-run
+    40→
+    41→    \b
+    42→      # Reconcile without prompts
+    43→      erk reconcile --force
+    44→
+    45→    \b
+    46→      # Skip learn PR creation
+    47→      erk reconcile --skip-learn
+    48→    """
+    49→    repo = discover_repo_context(ctx, ctx.cwd)
+
+... [50 lines omitted] ...
+
+    51→        raise click.ClickException("Could not determine main repository root.")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01F2PA3B183SerjWnGaR4GWS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1510</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2895" cache_read_input_tokens="34959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2895}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F2PA3B183SerjWnGaR4GWS">
+  1510→)
+  1511→@click.option(
+  1512→    "--pull/--no-pull",
+  1513→    "pull_flag",
+  1514→    default=True,
+  1515→    help="Pull latest changes after landing (default: --pull)",
+  1516→)
+  1517→@click.option(
+  1518→    "--dry-run",
+  1519→    is_flag=True,
+  1520→    help="Print what would be done without executing destructive operations.",
+  1521→)
+  1522→@click.option(
+  1523→    "--no-delete",
+  1524→    "no_delete",
+  1525→    is_flag=True,
+  1526→    help="Preserve the local branch and its slot assignment after landing.",
+  1527→)
+  1528→@click.option(
+  1529→    "--skip-learn",
+  1530→    "skip_learn",
+  1531→    is_flag=True,
+  1532→    help="Skip creating a learn PR after landing.",
+  1533→)
+  1534→@click.pass_obj
+  1535→def land(
+  1536→    ctx: ErkContext,
+  1537→    *,
+  1538→    script: bool,
+  1539→    target: str | None,
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016gzgpm7rBzZdxSRmwAa5DE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2895" cache_read_input_tokens="34959" output_tokens="406" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2895, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016gzgpm7rBzZdxSRmwAa5DE">
+     1→"""Abstract base class for Git status operations.
+     2→
+     3→This sub-gateway extracts status query operations from the main Git gateway,
+     4→including staged changes, uncommitted changes, file status, and conflict detection.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→
+    13→class GitStatusOps(ABC):
+    14→    """Abstract interface for Git status operations.
+    15→
+    16→    This interface contains ONLY query operations (no mutations).
+    17→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    18→    """
+    19→
+    20→    @abstractmethod
+    21→    def has_staged_changes(self, repo_root: Path) -&gt; bool:
+    22→        """Check if the repository has staged changes.
+    23→
+    24→        Args:
+    25→            repo_root: Path to the git repository root
+    26→
+    27→        Returns:
+    28→            True if there are staged changes, False otherwise
+    29→        """
+    30→        ...
+
+... [69 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4036" cache_read_input_tokens="37854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4036}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018sxbkkeMorZt7r3r212GXj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">910</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4036" cache_read_input_tokens="37854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4036}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018sxbkkeMorZt7r3r212GXj">
+   910→    Merges the PR and cleans up the branch inline without navigation.
+   911→
+   912→    Args:
+   913→        ctx: ErkContext
+   914→        repo: Repository context
+   915→        target: Resolved landing target
+   916→        script: Whether running in script mode
+   917→        pull_flag: Whether to pull after landing
+   918→        no_delete: Preserve branch after landing
+   919→        skip_learn: Skip creating a learn plan after landing
+   920→        cleanup_confirmed: Whether user confirmed cleanup during validation
+   921→    """
+   922→    branch = target.branch
+   923→    pr_number = target.pr_details.number
+   924→
+   925→    # Handle dry-run mode
+   926→    if ctx.dry_run:
+   927→        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+   928→        user_output(f"Would delete branch '{branch}'")
+   929→        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+   930→        raise SystemExit(0)
+   931→
+   932→    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+   933→
+   934→    # Capture plan context BEFORE execution pipeline (which deletes the branch)
+   935→    pr_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+   936→    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+   937→
+   938→    # Build execution state and run the pipeline directly
+   939→    state = make_execution_state(
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LeVg5xbsSvx6QWdVkwb4oh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1055</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4036" cache_read_input_tokens="37854" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4036}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LeVg5xbsSvx6QWdVkwb4oh">
+  1055→    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+  1056→
+  1057→    # Step 2: Look up slot assignment (needed for dry-run output)
+  1058→    state = load_pool_state(repo.pool_json_path)
+  1059→    slot_assignment: SlotAssignment | None = None
+  1060→    if state is not None:
+  1061→        slot_assignment = find_branch_assignment(state, branch)
+  1062→
+  1063→    # Step 4: Determine target path for navigation after landing
+  1064→    if target.target_child_branch is not None:
+  1065→        # --up mode: navigate to child branch worktree
+  1066→        target_path = ctx.git.worktree.find_worktree_for_branch(
+  1067→            main_repo_root, target.target_child_branch
+  1068→        )
+  1069→        if target_path is None:
+  1070→            # Will auto-create worktree in execute phase
+  1071→            if repo.worktrees_dir:
+  1072→                target_path = repo.worktrees_dir / target.target_child_branch
+  1073→            else:
+  1074→                target_path = main_repo_root
+  1075→    else:
+  1076→        # Navigate to trunk/root
+  1077→        target_path = main_repo_root
+  1078→
+  1079→    # Step 5: Handle dry-run mode
+  1080→    if ctx.dry_run:
+  1081→        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+  1082→        if slot_assignment is not None:
+  1083→            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+  1084→        user_output(f"Would delete branch '{branch}'")
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012gJtpousNcEF8AvbAko4cN">
+    <param name="pattern">ctx\.git\.status</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4036" cache_read_input_tokens="37854" output_tokens="469" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4036, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012gJtpousNcEF8AvbAko4cN">
+src/erk/status/collectors/git.py:49:        staged, modified, untracked = ctx.git.status.get_file_status(worktree_path)
+src/erk/cli/commands/wt/create_cmd.py:314:                not ctx.git.status.has_staged_changes(repo_root),
+src/erk/cli/commands/land_cmd.py:409:        not cleanup.ctx.git.status.has_uncommitted_changes(cleanup.worktree_path),
+src/erk/cli/commands/land_stack.py:272:        if worktree_path is not None and ctx.git.status.has_uncommitted_changes(worktree_path):
+src/erk/cli/commands/land_stack.py:295:    if root_needs_clean_check and ctx.git.status.has_uncommitted_changes(main_repo_root):
+src/erk/cli/commands/pr/submit_pipeline.py:221:    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+src/erk/cli/commands/pr/submit_pipeline.py:233:    if ctx.git.status.has_uncommitted_changes(state.cwd):
+src/erk/cli/commands/slot/common.py:363:    if ctx.git.status.has_uncommitted_changes(existing.worktree_path):
+src/erk/cli/commands/pr/dispatch_helpers.py:29:    if ctx.git.status.has_uncommitted_changes(checked_out_path):
+src/erk/cli/commands/pr/dispatch_helpers.py:47:    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+src/erk/cli/commands/pr/rebase_cmd.py:135:    conflicted = ctx.git.status.get_conflicted_files(cwd)
+src/erk/cli/commands/slot/unassign_cmd.py:58:    if ctx.git.status.has_uncommitted_changes(assignment.worktree_path):
+src/erk/cli/commands/slot/list_cmd.py:195:        if worktree_exists and ctx.git.status.has_uncommitted_changes(worktree_path):
+src/erk/cli/commands/stack/consolidate_cmd.py:318:        if ctx.git.worktree.path_exists(wt.path) and ctx.git.status.has_uncommitted_changes(
+src/erk/cli/commands/navigation_helpers.py:70:        not ctx.git.status.has_uncommitted_changes(ctx.cwd),
+src/erk/cli/commands/stack/move_cmd.py:119:    if ctx.git.status.has_uncommitted_changes(source_wt) and not force:
+src/erk/cli/commands/stack/move_cmd.py:138:        if ctx.git.status.has_uncommitted_changes(target_wt) and not force:
+src/erk/cli/commands/stack/move_cmd.py:186:    if ctx.git.status.has_uncommitted_changes(source_wt) or ctx.git.status.has_uncommitted_changes(
+src/erk/cli/commands/stack/split_old/command.py:65:        if ctx.git.status.has_uncommitted_changes(current_worktree):
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2667" cache_read_input_tokens="41890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2667}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2667" cache_read_input_tokens="41890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2667}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NQ3QogkDLTcVLg3BcVQ5ne">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design teleport dry-run plan</param>
+    <param name="prompt">Design an implementation plan for adding `--dry-run` to `erk pr teleport`.
+
+## Context
+
+Th...[truncated 4635 chars]...cluding what the dry-run output should look like for both the in-place and new-slot paths.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2667" cache_read_input_tokens="41890" output_tokens="1557" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2667, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NQ3QogkDLTcVLg3BcVQ5ne">
+Now I have all the information I need. Let me produce a comprehensive implementation plan.
+
+---
+
+## Implementation Plan: `--dry-run` for `erk pr teleport`
+
+### Overview
+
+Add a `--dry-run` flag to `erk pr teleport` that performs all read-only operations (fetching PR metadata, checking branch state, computing ahead/behind divergence, detecting uncommitted changes) but skips all mutations, instead reporting what **would** happen.
+
+### Design Decision: Conditional-Return Pattern (Pattern B/C)
+
+The land command uses the "context recreation" pattern (`create_context(dry_run=True)`) which wraps all gateways with DryRun wrappers. This is appropriate for land because it has a complex pipeline with many gateways.
+
+For teleport, the **conditional-return pattern** (as used by `reconcile`) is more appropriate because:
+
+1. Teleport has a relatively linear flow -- gather state, then mutate.
+2. We want **specific "Would do X" messages** tailored to the exact teleport path (in-place vs new-slot).
+3. The mutations are localized and enumerable, not scattered across a pipeline.
+4. We need to report **what would be discarded** (uncommitted changes, local commits), which requires explicit data gathering, not just suppressing mutations.
+
+### Step 1: Add the `--dry-run` CLI flag
+
+In `teleport_cmd.py`, add the flag to the `@click.command` decorator stack:
+
+```python
+@click.option("--dry-run", is_flag=True, help="Preview without making changes")
+```
+
+Add `dry_run: bool` as a parameter to `pr_teleport`. Note: per erk convention, no default parameter values -- but Click `is_flag=True` inherently provides False as default, which is the Click pattern used throughout (see `--force`, `--sync`, `--new-slot`). This is consistent with the existing `reconcile` command.
+
+... [164 lines omitted] ...
+
+- `--dry-run --force`: allowed. `--force` is irrelevant since nothing is being done, but no need to error. In the report, note that `--force` was specified but is moot.
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4785" cache_read_input_tokens="44557" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4785}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the test file structure and fake setup patterns before finalizing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4785" cache_read_input_tokens="44557" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4785}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DJVf8tCFJdeg689M9cfbg6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/commands/pr/test_teleport.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4785" cache_read_input_tokens="44557" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4785, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DJVf8tCFJdeg689M9cfbg6">
+     1→"""Tests for erk pr teleport command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.pr import pr_group
+     8→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+     9→from erk_shared.gateway.git.abc import WorktreeInfo
+    10→from erk_shared.gateway.github.types import PRDetails
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→from tests.fakes.gateway.git import FakeGit
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.graphite import FakeGraphite
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    17→
+    18→
+    19→def _make_pr_details(
+    20→    number: int,
+    21→    head_ref_name: str,
+    22→    *,
+    23→    is_cross_repository: bool = False,
+    24→    state: str = "OPEN",
+    25→    base_ref_name: str = "main",
+    26→) -&gt; PRDetails:
+    27→    return PRDetails(
+    28→        number=number,
+    29→        url=f"https://github.com/owner/repo/pull/{number}",
+    30→        title=f"PR #{number}",
+
+... [90 lines omitted] ...
+
+    45→    """Teleport errors when PR doesn't exist."""
+    60→def test_teleport_cross_repo_errors() -&gt; None:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7083" cache_read_input_tokens="49342" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7083}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q7D6Vzr4HUo58j1xCtbSUB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/commands/pr/test_teleport.py</param>
+    <param name="offset">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7083" cache_read_input_tokens="49342" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7083, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q7D6Vzr4HUo58j1xCtbSUB">
+   120→
+   121→
+   122→def test_teleport_in_place_with_force() -&gt; None:
+   123→    """Teleport force-resets current branch to match remote."""
+   124→    runner = CliRunner()
+   125→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   126→        pr = _make_pr_details(123, "feature-branch")
+   127→        github = FakeLocalGitHub(pr_details={123: pr})
+   128→        git = FakeGit(
+   129→            git_common_dirs={env.cwd: env.git_dir},
+   130→            default_branches={env.cwd: "main"},
+   131→            current_branches={env.cwd: "feature-branch"},
+   132→            local_branches={env.cwd: ["main", "feature-branch"]},
+   133→            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+   134→            ahead_behind={(env.cwd, "feature-branch"): (1, 2)},
+   135→        )
+   136→        ctx = build_workspace_test_context(env, git=git, github=github)
+   137→        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+   138→        assert result.exit_code == 0
+   139→        assert "Teleported" in result.output
+   140→        assert "feature-branch" in result.output
+   141→
+   142→
+   143→def test_teleport_already_in_sync_exits_cleanly() -&gt; None:
+   144→    """Teleport exits with 0 when branch is already in sync."""
+   145→    runner = CliRunner()
+   146→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   147→        pr = _make_pr_details(123, "feature-branch")
+   148→        github = FakeLocalGitHub(pr_details={123: pr})
+   149→        git = FakeGit(
+
+... [350 lines omitted] ...
+
+   303→    """Teleport --new-slot navigates to existing worktree instead of erroring."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6332" cache_read_input_tokens="56425" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6332}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0155hN9J9tRn476MmijKQk7F">
+    <param name="pattern">file_statuses</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6332" cache_read_input_tokens="56425" output_tokens="205" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6332, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0155hN9J9tRn476MmijKQk7F">
+tests/fakes/gateway/git.py-124-        branch_heads: dict[str, str] | None = None,
+tests/fakes/gateway/git.py-125-        commit_messages: dict[str, str] | None = None,
+tests/fakes/gateway/git.py-126-        staged_repos: set[Path] | None = None,
+tests/fakes/gateway/git.py:127:        file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
+tests/fakes/gateway/git.py-128-        ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
+tests/fakes/gateway/git.py-129-        behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
+tests/fakes/gateway/git.py-130-        branch_sync_info: dict[Path, dict[str, BranchSyncInfo]] | None = None,
+--
+tests/fakes/gateway/git.py-183-            branch_heads: Mapping of branch name -&gt; commit SHA
+tests/fakes/gateway/git.py-184-            commit_messages: Mapping of commit SHA -&gt; commit message
+tests/fakes/gateway/git.py-185-            staged_repos: Set of repo roots that should report staged changes
+tests/fakes/gateway/git.py:186:            file_statuses: Mapping of cwd -&gt; (staged, modified, untracked) files
+tests/fakes/gateway/git.py-187-            ahead_behind: Mapping of (cwd, branch) -&gt; (ahead, behind) counts
+tests/fakes/gateway/git.py-188-            behind_commit_authors: Mapping of (cwd, branch) -&gt; list of author names
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-189-                for commits on remote but not locally
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-247-        self._branch_heads = branch_heads or {}
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-248-        self._commit_messages = commit_messages or {}
+tests/fakes/gateway/git.py-249-        self._repos_with_staged_changes: set[Path] = staged_repos or set()
+tests/fakes/gateway/git.py:250:        self._file_statuses = file_statuses or {}
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-251-        self._ahead_behind = ahead_behind or {}
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-252-        self._behind_commit_authors = behind_commit_authors or {}
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-253-        self._branch_sync_info = branch_sync_info or {}
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-429-        # Status operations subgateway - linked to FakeGit's state
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-430-        self._status_gateway = FakeGitStatusOps(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-431-            staged_repos=self._repos_with_staged_changes,
+tests/fakes/gateway/git.py:432:            file_statuses=self._file_statuses,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-433-            merge_conflicts=self._merge_conflicts,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-64/tests/fakes/gateway/git.py-434-            conflicted_files=self._conflicted_files,
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>I have all the information I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1365" cache_read_input_tokens="62757" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1365}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Uy63VkN1BfqCezqdxqMca6">
+    <param name="file_path">/Users/schrockn/.claude/plans/floofy-swinging-fountain.md</param>
+    <param name="content"># Plan: Add `--dry-run` to `erk pr teleport`
+
+## Context
+
+`erk pr teleport` force-resets a...[truncated 5238 chars]...
+4. Manual: `erk pr teleport &lt;number&gt; --dry-run` on a real PR to verify output formatting
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1365" cache_read_input_tokens="62757" output_tokens="1793" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Uy63VkN1BfqCezqdxqMca6">
+File created successfully at: /Users/schrockn/.claude/plans/floofy-swinging-fountain.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01DpT6EkorqEWbbjCPqiHMUE">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1929" cache_read_input_tokens="64122" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1929, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DpT6EkorqEWbbjCPqiHMUE">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_016ZqBJFuKeNHmkNdoBM3tQa">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests with pytest'}, {'tool': 'Bash', 'prompt': 'run type checker with ty'}, {'tool': 'Bash', 'prompt': 'run linter with ruff'}]</param>
+    <param name="plan"># Plan: Add `--dry-run` to `erk pr teleport`
+
+## Context
+
+`erk pr teleport` force-resets a...[truncated 5238 chars]...
+4. Manual: `erk pr teleport &lt;number&gt; --dry-run` on a real PR to verify output formatting
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="66051" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ZqBJFuKeNHmkNdoBM3tQa">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/floofy-swinging-fountain.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Add `--dry-run` to `erk pr teleport`
+Current context: (wt:erk-slot-64) (br:plnd/teleport-helpstring-docs-03-12-1330) (pr:#9221)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/tele"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 2bb19530-57a0-4bbf-9a28-1101a48542a2 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/floofy-swinging-fountain.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Xg5gg7yFYBrBcAg6kse5KL">
+    <param name="file_path">/Users/schrockn/.claude/plans/floofy-swinging-fountain.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="66789" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 755, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xg5gg7yFYBrBcAg6kse5KL">
+     1→# Plan: Add `--dry-run` to `erk pr teleport`
+     2→
+     3→## Context
+     4→
+     5→`erk pr teleport` force-resets a local branch to match remote, discarding local commits and uncommitted changes. Users want a way to preview what would be lost before committing to the operation. The `--dry-run` flag will perform read-only operations (fetch, compute divergence, detect uncommitted changes) and report what would happen without making any mutations.
+     6→
+     7→## Approach: Conditional-return pattern
+     8→
+     9→Use the simpler conditional-return pattern (as in `reconcile_cmd.py`) rather than context recreation (as in `land_cmd.py`). Teleport's flow is linear — gather state, then mutate — so we gather state, display the report, and exit before mutations.
+    10→
+    11→## Files to modify
+    12→
+    13→- `src/erk/cli/commands/pr/teleport_cmd.py` — add flag, dry-run logic, report helper
+    14→- `tests/commands/pr/test_teleport.py` — add dry-run tests
+    15→
+    16→## Implementation steps
+    17→
+    18→### 1. Add `--dry-run` CLI flag
+    19→
+    20→Add to the `@click.command` decorator stack, following existing pattern:
+    21→```python
+    22→@click.option("--dry-run", is_flag=True, help="Preview without making changes")
+    23→```
+    24→Add `dry_run: bool` parameter to `pr_teleport`. Pass through to both `_teleport_in_place` and `_teleport_new_slot`.
+    25→
+    26→When `--dry-run` is active, force `script=False` (same as land command line 1584) so output is always human-readable.
+    27→
+    28→### 2. Modify `_teleport_in_place` (add `dry_run` param)
+    29→
+    30→After the fetch and ahead/behind computation (lines 200-205), insert dry-run logic:
+
+... [100 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Add `--dry-run` to `erk pr teleport`
+
+**Context:** `erk pr teleport` force-resets a local branch to match remote, discarding local commits and uncommitted changes. The `--dry-run` flag will preview what would be lost without making mutations.
+
+**Approach:** Conditional-return pattern (like `reconcile_cmd.py`) — gather state, display report, exit before mutations.
+
+**Files:** `src/erk/cli/commands/pr/teleport_cmd.py` + `tests/commands/pr/test_teleport.py`
+
+**Steps:**
+1. Add `--dry-run` CLI flag, pass through to both code paths
+2. In `_teleport_in_place`: after fetch + ahead/behind computation, gather file status and display report before mutations
+3. In `_teleport_new_slot`: fetch branch, compute state, display report before mutations
+4. Create `_display_dry_run_report` helper with two sections: "Local state that would be discarded" (commits ahead, staged/modified/untracked files) and "Operations" (fetch, force-reset, checkout, slot update, Graphite, gt submit)
+5. Add 6 tests covering: local state display, already-in-sync, no-mutations verification, new-slot mode, --sync flag, Graphite operations
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2203" cache_read_input_tokens="67544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2203}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01DhxDjt44CSNxuDrVBCDYgT">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2203" cache_read_input_tokens="67544" output_tokens="401" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2203, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DhxDjt44CSNxuDrVBCDYgT">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01VVh7BbFJnG3MSXcQ1Sjrkp">
+    <param name="questions">[{'question': '📋 Plan: Add `--dry-run` to `erk pr teleport`\nCurrent context: (wt:erk-slot...[truncated 433 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2855" cache_read_input_tokens="69747" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2855, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VVh7BbFJnG3MSXcQ1Sjrkp">
+User has answered your questions: "📋 Plan: Add `--dry-run` to `erk pr teleport`
+Current context: (wt:erk-slot-64) (br:plnd/teleport-helpstring-docs-03-12-1330) (pr:#9221)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JuWVGoJD9esh5az7psUsJV">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="475" cache_read_input_tokens="72602" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 475, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JuWVGoJD9esh5az7psUsJV">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="2bb19530-57a0-4bbf-9a28-1101a48542a2" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="2bb19530-57a0-4bbf-9a28-1101a48542a2" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2bb19530-57a0-4bbf-9a28-1101a48542a2" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2bb19530-57a0-4bbf-9a28-1101a48542a2" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2bb19530-57a0-4bbf-9a28-1101a48542a2" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2bb19530-57a0-4bbf-9a28-1101a48542a2" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+</session>
