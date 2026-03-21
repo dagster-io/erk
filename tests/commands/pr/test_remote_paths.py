@@ -523,7 +523,7 @@ def test_dispatch_remote_missing_title_prefix() -> None:
     )
 
     assert result.exit_code != 0
-    assert "does not have '[erk-pr]' title prefix" in result.output
+    assert "valid plan title prefix" in result.output
 
 
 def test_dispatch_remote_closed_plan() -> None:
