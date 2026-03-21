@@ -28,7 +28,6 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk.core.slot_allocation import find_assignment_by_worktree, update_slot_assignment_tip
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.github.types import PRNotFound
