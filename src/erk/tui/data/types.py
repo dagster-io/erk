@@ -74,7 +74,8 @@ class PrRowData:
         objective_total_nodes: Total nodes in objective roadmap. 0 if no objective.
         objective_progress_display: Progress display (e.g., "3/7" or "-").
         objective_slug_display: Slug or stripped title fallback (max 25 chars).
-        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
+        objective_frontier_display: Frontier sparkline starting at first non-done node
+            (e.g., "▶▶○○○○"). "-" when all done.
         objective_deps_display: Dep status of next node ("ready", "in progress", "-").
         objective_deps_plans: Tuple of (display, url) pairs for blocking dep plans.
             Each entry is a plan number like "#7911" paired with its GitHub URL.
@@ -134,7 +135,7 @@ class PrRowData:
     objective_total_nodes: int
     objective_progress_display: str
     objective_slug_display: str
-    objective_state_display: str
+    objective_frontier_display: str
     objective_deps_display: str
     objective_deps_plans: tuple[tuple[str, str], ...]
     objective_next_node_display: str

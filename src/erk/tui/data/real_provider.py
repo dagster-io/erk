@@ -25,8 +25,8 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
+    build_frontier_sparkline,
     build_graph,
-    build_state_sparkline,
     compute_graph_summary,
     find_graph_next_node,
 )
@@ -683,7 +683,7 @@ class RealPrDataProvider(PrDataProvider):
         objective_done_nodes = 0
         objective_total_nodes = 0
         objective_progress_display = "-"
-        objective_state_display = "-"
+        objective_frontier_display = "-"
         objective_deps_display = "-"
         objective_next_node_display = "-"
         objective_deps_plans: list[tuple[str, str]] = []
@@ -695,7 +695,7 @@ class RealPrDataProvider(PrDataProvider):
                 objective_done_nodes = summary["done"]
                 objective_total_nodes = summary["total_nodes"]
                 objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
-                objective_state_display = build_state_sparkline(graph.nodes)
+                objective_frontier_display = build_frontier_sparkline(graph.nodes)
                 next_node = find_graph_next_node(graph, phases)
                 if next_node is not None:
                     objective_next_node_display = next_node["id"]
@@ -794,7 +794,7 @@ class RealPrDataProvider(PrDataProvider):
             objective_total_nodes=objective_total_nodes,
             objective_progress_display=objective_progress_display,
             objective_slug_display=objective_slug_display,
-            objective_state_display=objective_state_display,
+            objective_frontier_display=objective_frontier_display,
             objective_deps_display=objective_deps_display,
             objective_deps_plans=tuple(objective_deps_plans),
             objective_next_node_display=objective_next_node_display,

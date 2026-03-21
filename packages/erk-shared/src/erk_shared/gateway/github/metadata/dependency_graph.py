@@ -246,6 +246,29 @@ def build_state_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
     return "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in nodes)
 
 
+def build_frontier_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
+    """Build sparkline starting at first non-done node.
+
+    Strips leading done/skipped nodes so the sparkline shows only the
+    frontier (remaining work). Returns "-" when all nodes are done.
+
+    Args:
+        nodes: Objective nodes in graph order
+
+    Returns:
+        Sparkline string starting at first non-done node, or "-" if all done.
+    """
+    first_non_done = 0
+    for node in nodes:
+        if node.status not in _TERMINAL_STATUSES:
+            break
+        first_non_done += 1
+    if first_non_done == len(nodes):
+        return "-"
+    frontier = nodes[first_non_done:]
+    return "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in frontier)
+
+
 def _find_node_by_status(
     nodes: tuple[ObjectiveNode, ...], status: RoadmapNodeStatus
 ) -> ObjectiveNode | None:

@@ -162,7 +162,7 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("prog", key="progress", width=5)
             col_index += 1
-            self.add_column("state", key="state", width=20)
+            self.add_column("frontier", key="state", width=20)
             col_index += 1
             self.add_column("deps-state", key="deps_state", width=12)
             col_index += 1
@@ -297,7 +297,7 @@ class PlanDataTable(DataTable):
                 plan_cell,
                 row.objective_slug_display,
                 row.objective_progress_display,
-                Text(row.objective_state_display),
+                Text(row.objective_frontier_display),
                 row.objective_deps_display,
                 deps_cell,
                 row.objective_next_node_display,

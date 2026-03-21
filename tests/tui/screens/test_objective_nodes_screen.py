@@ -467,7 +467,7 @@ def _make_row_without_pr_url() -> PrRowData:
         objective_total_nodes=0,
         objective_progress_display="-",
         objective_slug_display="-",
-        objective_state_display="-",
+        objective_frontier_display="-",
         objective_deps_display="-",
         objective_deps_plans=(),
         objective_next_node_display="-",

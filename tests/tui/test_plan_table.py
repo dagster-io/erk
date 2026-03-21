@@ -371,7 +371,7 @@ class TestObjectivesViewRowConversion:
             objective_total_nodes=7,
             objective_progress_display="3/7",
             objective_slug_display="build-feature",
-            objective_state_display="✓✓✓▶▶○○",
+            objective_frontier_display="✓✓✓▶▶○○",
             updated_display="2h ago",
         )
 

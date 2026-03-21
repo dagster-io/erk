@@ -14,8 +14,8 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
     DependencyGraph,
     ObjectiveNode,
+    build_frontier_sparkline,
     build_graph,
-    build_state_sparkline,
     compute_graph_summary,
     find_graph_next_node,
 )
@@ -109,7 +109,7 @@ def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
     """Compute roadmap-derived fields for a single objective."""
     defaults = {
         "progress": "-",
-        "state": "-",
+        "frontier": "-",
         "deps_state": "-",
         "deps": "-",
         "next_node": "-",
@@ -128,7 +128,7 @@ def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
 
     return {
         "progress": f"{summary['done']}/{summary['total_nodes']}",
-        "state": build_state_sparkline(graph.nodes),
+        "frontier": build_frontier_sparkline(graph.nodes),
         "deps_state": deps_state,
         "deps": deps,
         "next_node": next_node,
@@ -178,7 +178,7 @@ def list_objectives(ctx: ErkContext, *, repo_id: GitHubRepoId) -> None:
         table.add_row(
             f"[link={plan.url}]#{plan.pr_identifier}[/link]",
             escape(slug),
-            f"{_rich_sparkline(fields['state'])}  {fields['progress']}",
+            f"{_rich_sparkline(fields['frontier'])}  {fields['progress']}",
             fields["deps_state"],
             fields["deps"],
             fields["next_node"],

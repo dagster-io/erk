@@ -106,7 +106,7 @@ Quick reference for writing command availability predicates and understanding
 | `objective_url`               | `str \| None`                 | URL to the objective issue                            | Yes                   |
 | `objective_display`           | `str`                         | Formatted display string (e.g., "#123" or "-")        | Never (dash possible) |
 | `objective_slug_display`      | `str`                         | Objective slug for compact display                    | Never (dash possible) |
-| `objective_state_display`     | `str`                         | Objective state display string                        | Never (dash possible) |
+| `objective_frontier_display`  | `str`                         | Objective state display string                        | Never (dash possible) |
 | `objective_done_nodes`        | `int`                         | Count of done nodes in objective roadmap              | Never (0 if no obj)   |
 | `objective_total_nodes`       | `int`                         | Total nodes in objective roadmap                      | Never (0 if no obj)   |
 | `objective_progress_display`  | `str`                         | Progress display (e.g., "3/7" or "-")                 | Never (dash possible) |

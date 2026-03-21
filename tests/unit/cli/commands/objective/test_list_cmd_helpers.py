@@ -130,7 +130,7 @@ def test_enriched_fields_no_body() -> None:
     plan = _make_plan(body="")
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "-"
-    assert fields["state"] == "-"
+    assert fields["frontier"] == "-"
     assert fields["deps_state"] == "-"
     assert fields["deps"] == "-"
     assert fields["next_node"] == "-"
@@ -140,7 +140,7 @@ def test_enriched_fields_body_no_roadmap() -> None:
     plan = _make_plan(body="Just some text without a roadmap block.")
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "-"
-    assert fields["state"] == "-"
+    assert fields["frontier"] == "-"
 
 
 def test_enriched_fields_valid_roadmap() -> None:
@@ -148,7 +148,7 @@ def test_enriched_fields_valid_roadmap() -> None:
     plan = _make_plan(body=body)
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "1/2"
-    assert fields["state"] != "-"
+    assert fields["frontier"] != "-"
     assert fields["next_node"] == "1.2"
     assert fields["deps_state"] == "ready"
 

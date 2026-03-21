@@ -153,7 +153,7 @@ def make_pr_row(
     objective_total_nodes: int = 0,
     objective_progress_display: str = "-",
     objective_slug_display: str = "-",
-    objective_state_display: str = "-",
+    objective_frontier_display: str = "-",
     objective_deps_display: str = "-",
     objective_deps_plans: tuple[tuple[str, str], ...] = (),
     objective_next_node_display: str = "-",
@@ -196,7 +196,7 @@ def make_pr_row(
         objective_total_nodes: Total nodes in objective roadmap
         objective_progress_display: Progress display (e.g., "3/7" or "-")
         objective_slug_display: Slug or stripped title fallback (max 25 chars)
-        objective_state_display: Sparkline string (e.g., "done done done wip wip todo")
+        objective_frontier_display: Sparkline string (e.g., "done done done wip wip todo")
         objective_deps_display: Dependency status of next node (e.g., "ready", "in progress")
         objective_deps_plans: Blocking dep PR references
         objective_next_node_display: Next node ID display
@@ -309,7 +309,7 @@ def make_pr_row(
         objective_total_nodes=objective_total_nodes,
         objective_progress_display=objective_progress_display,
         objective_slug_display=objective_slug_display,
-        objective_state_display=objective_state_display,
+        objective_frontier_display=objective_frontier_display,
         objective_deps_display=objective_deps_display,
         objective_deps_plans=objective_deps_plans,
         objective_next_node_display=objective_next_node_display,
