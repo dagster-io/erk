@@ -5,8 +5,8 @@ The main consumer is RealPrDataProvider in real.py.
 """
 
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.types import Plan
 
 
 def compute_lifecycle_display(

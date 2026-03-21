@@ -30,12 +30,12 @@ from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import Plan, PrNotFound
 from erk_shared.plan_workflow import (
     PlanBranchSetup,
     PlanValidationFailed,
     prepare_plan_for_worktree,
 )
+from erk_shared.pr_store.types import Plan, PrNotFound
 
 
 def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) -> Path | None:

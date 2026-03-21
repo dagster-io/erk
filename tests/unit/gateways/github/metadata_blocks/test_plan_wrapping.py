@@ -5,7 +5,7 @@ def test_wrap_simple_plan_format() -> None:
     """Test that plan wrapping produces correct collapsible format."""
     plan_content = "# My Plan\n1. Step one\n2. Step two"
 
-    # Simulate the wrap_plan_in_metadata_block output format
+    # Simulate the wrap_pr_in_metadata_block output format
     expected_intro = "This issue contains an implementation plan:"
     wrapped = f"""{expected_intro}
 

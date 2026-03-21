@@ -1,19 +1,19 @@
 ---
 title: Plan Context Integration
 read_when:
-  - "using PlanContextProvider for PR generation"
+  - "using PrContextProvider for PR generation"
   - "extracting plan content from branches"
   - "understanding how PR descriptions get plan context"
 tripwires:
-  - action: "using PlanContextProvider"
-    warning: "Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case."
+  - action: "using PrContextProvider"
+    warning: "Read this doc first. PrContextProvider returns None on any failure (graceful degradation). Always handle the None case."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
 
 # Plan Context Integration
 
-The `PlanContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the "why" behind changes.
+The `PrContextProvider` extracts plan content for branches linked to erk plans, enabling more accurate PR descriptions that understand the "why" behind changes.
 
 ## 5-Step Extraction Algorithm
 
@@ -75,13 +75,13 @@ else:
 
 ## PlanContext Data Structure
 
-<!-- Source: src/erk/core/plan_context_provider.py, PlanContext -->
+<!-- Source: src/erk/core/pr_context_provider.py, PlanContext -->
 
-When extraction succeeds, the provider returns a `PlanContext` frozen dataclass. See `PlanContext` in `src/erk/core/plan_context_provider.py`. Key fields: `plan_id` (str), `plan_content` (str), `objective_summary` (str | None).
+When extraction succeeds, the provider returns a `PlanContext` frozen dataclass. See `PlanContext` in `src/erk/core/pr_context_provider.py`. Key fields: `plan_id` (str), `plan_content` (str), `objective_summary` (str | None).
 
 ## Usage in PR Generation
 
-The `CommitMessageGenerator` uses `PlanContextProvider` to add plan context to PR descriptions. The priority order for context is:
+The `CommitMessageGenerator` uses `PrContextProvider` to add plan context to PR descriptions. The priority order for context is:
 
 1. **Plan Context** (highest) - Full understanding of intent
 2. **Objective Summary** - Parent goal context
@@ -89,7 +89,7 @@ The `CommitMessageGenerator` uses `PlanContextProvider` to add plan context to P
 
 ## Reference Implementation
 
-See `src/erk/core/plan_context_provider.py` for the canonical implementation.
+See `src/erk/core/pr_context_provider.py` for the canonical implementation.
 
 ## Related Topics
 

@@ -13,8 +13,8 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.output.next_steps import format_pr_next_steps_plain
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.pr_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.pr_utils import extract_title_from_pr
 
 
 @click.command("create")
@@ -93,7 +93,7 @@ def pr_create(
     # Generate branch name with LLM slug
     slug = generate_branch_slug(
         ctx.prompt_executor,
-        title if title is not None else extract_title_from_plan(content),
+        title if title is not None else extract_title_from_pr(content),
     )
     branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
 

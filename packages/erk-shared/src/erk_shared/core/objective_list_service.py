@@ -9,7 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from erk_shared.core.plan_list_service import PrListData
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
 
 if TYPE_CHECKING:

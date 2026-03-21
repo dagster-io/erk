@@ -1,4 +1,4 @@
-"""Tests for plan_store.conversion module."""
+"""Tests for pr_store.conversion module."""
 
 from datetime import UTC, datetime
 
@@ -11,14 +11,14 @@ from erk_shared.gateway.github.metadata.schemas import (
     WORKTREE_NAME,
 )
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.conversion import (
+from erk_shared.pr_store.conversion import (
     github_issue_to_plan,
     header_datetime,
     header_int,
     header_str,
     pr_details_to_plan,
 )
-from erk_shared.plan_store.types import PlanState
+from erk_shared.pr_store.types import PlanState
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 

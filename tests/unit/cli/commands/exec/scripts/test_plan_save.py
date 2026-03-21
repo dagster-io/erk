@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_save import plan_save
 from erk_shared.context.context import ErkContext
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -520,10 +520,9 @@ def test_planned_pr_learn_branch_uses_trunk_as_base(
 
 # --- Title validation rejection tests (planned-PR path) ---
 
-# Plan content with no H1 heading → extract_title_from_plan returns "Untitled Plan"
+# Plan with explicit "Implementation Plan" heading should be rejected as fallback title
 _UNTITLED_PLAN_CONTENT = (
-    "This plan has no heading so extract_title_from_plan"
-    ' returns "Untitled Plan".\n\n'
+    "# Implementation Plan\n\n"
     "- Step 1: Set up the environment\n"
     "- Step 2: Implement the core logic\n"
     "- Step 3: Add tests and documentation\n"
@@ -543,7 +542,7 @@ This plan has an emoji-only title which should fail validation.
 def test_planned_pr_rejects_untitled_plan_json(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Planned-PR save rejects plan with fallback title 'Untitled Plan'."""
+    """Planned-PR save rejects plan with fallback title 'Implementation Plan'."""
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),

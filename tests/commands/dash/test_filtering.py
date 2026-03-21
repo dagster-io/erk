@@ -9,12 +9,12 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -55,9 +55,9 @@ def test_plan_list_no_filters() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
-        plan_service = build_fake_plan_list_service([plan1, plan2])
+        plan_service = build_fake_pr_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Use erk plan list for static output
@@ -106,9 +106,9 @@ def test_plan_list_filter_by_state() -> None:
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
         github = FakeLocalGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
-        plan_service = build_fake_plan_list_service([open_plan, closed_plan])
+        plan_service = build_fake_pr_list_service([open_plan, closed_plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Filter for open issues
@@ -159,9 +159,9 @@ def test_plan_list_filter_by_labels() -> None:
         github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
         )
-        plan_service = build_fake_plan_list_service([plan_with_both, plan_with_one])
+        plan_service = build_fake_pr_list_service([plan_with_both, plan_with_one])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act - Filter for both labels (AND logic)
@@ -207,9 +207,9 @@ def test_plan_list_with_limit() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
         github = FakeLocalGitHub(issues_data=issues_list)
-        plan_service = build_fake_plan_list_service(all_plans)
+        plan_service = build_fake_pr_list_service(all_plans)
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act
@@ -279,11 +279,11 @@ def test_plan_list_combined_filters() -> None:
                 plan_to_issue(wrong_labels_plan),
             ]
         )
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [matching_plan, wrong_state_plan, wrong_labels_plan]
         )
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act
@@ -327,9 +327,9 @@ def test_plan_list_empty_results() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act

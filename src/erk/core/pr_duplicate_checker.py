@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from erk.core.llm_json import extract_json_dict
 from erk_shared.core.prompt_executor import PromptExecutor
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.types import Plan
 
 DUPLICATE_CHECK_SYSTEM_PROMPT = """\
 You are a duplicate plan detector. Given a NEW plan and a list of EXISTING \
@@ -65,7 +65,7 @@ class DuplicateCheckResult:
     error: str | None
 
 
-class PlanDuplicateChecker:
+class PrDuplicateChecker:
     """Checks new plans for duplicates against existing open plans.
 
     This is a concrete class (not ABC) that uses PromptExecutor for

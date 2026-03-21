@@ -36,7 +36,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.learn.tracking import track_learn_invocation
-from erk_shared.plan_store.types import PlanHeaderNotFoundError
+from erk_shared.pr_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)

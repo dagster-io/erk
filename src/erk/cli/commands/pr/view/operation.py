@@ -16,8 +16,8 @@ from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.gateway.github.types import GitHubRepoId
-from erk_shared.plan_store.conversion import github_issue_to_plan
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.conversion import github_issue_to_plan
+from erk_shared.pr_store.types import PrNotFound
 
 
 @dataclass(frozen=True)

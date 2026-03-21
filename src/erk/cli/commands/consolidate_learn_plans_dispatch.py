@@ -22,7 +22,7 @@ from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import format_branch_timestamp_suffix
 from erk_shared.output.output import format_duration, user_output
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 
 CONSOLIDATE_LEARN_PLANS_WORKFLOW = "consolidate-learn-plans.yml"
 

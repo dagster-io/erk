@@ -40,7 +40,7 @@ from erk_shared.cli_alias import alias
 from erk_shared.context.types import RepoContext
 from erk_shared.impl_folder import create_impl_folder, get_impl_dir, resolve_impl_dir, save_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 def _execute(

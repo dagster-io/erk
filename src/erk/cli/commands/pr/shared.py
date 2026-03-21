@@ -20,7 +20,7 @@ from erk.core.commit_message_generator import (
     CommitMessageResult,
 )
 from erk.core.context import ErkContext
-from erk.core.plan_context_provider import PrContext
+from erk.core.pr_context_provider import PrContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_AT,
@@ -33,9 +33,9 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.planned_pr_lifecycle import build_original_plan_section
-from erk_shared.plan_store.types import PrNotFound
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.planned_pr_lifecycle import build_original_plan_section
+from erk_shared.pr_store.types import PrNotFound
 
 # ---------------------------------------------------------------------------
 # Branch Discovery

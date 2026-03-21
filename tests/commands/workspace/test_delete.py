@@ -15,7 +15,7 @@ from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, create_marker
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub

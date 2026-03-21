@@ -47,7 +47,7 @@ HttpClient follows the standard gateway pattern:
 
 ## Required http_client Parameter
 
-<!-- Source: packages/erk-shared/src/erk_shared/core/plan_list_service.py -->
+<!-- Source: packages/erk-shared/src/erk_shared/core/pr_list_service.py -->
 <!-- Source: packages/erk-shared/src/erk_shared/core/objective_list_service.py -->
 
 Service methods require `http_client: HttpClient` as a keyword argument (not optional). Both `PlanListService.get_plan_list_data()` and `ObjectiveListService.get_objective_list_data()` take `http_client` as a required parameter and return `PlanListData`.
@@ -74,7 +74,7 @@ PR data parsing is extracted to a shared module to avoid duplication. Both plan 
 
 ## Source Code
 
-- `packages/erk-shared/src/erk_shared/core/plan_list_service.py` — Plan list service (ABC)
+- `packages/erk-shared/src/erk_shared/core/pr_list_service.py` — Plan list service (ABC)
 - `packages/erk-shared/src/erk_shared/core/objective_list_service.py` — Objective list service (ABC)
 - `packages/erk-shared/src/erk_shared/gateway/http/abc.py` — HttpClient ABC
 

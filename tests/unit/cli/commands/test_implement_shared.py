@@ -8,7 +8,7 @@ from erk.cli.commands.implement_shared import (
     extract_plan_from_current_branch,
     validate_flags,
 )
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime

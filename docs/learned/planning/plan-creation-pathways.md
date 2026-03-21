@@ -28,9 +28,9 @@ The `ERK_PLAN_BACKEND` environment variable is no longer read by application cod
 
 ## Label Application
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py, get_title_tag_from_labels -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_utils.py, get_title_tag_from_labels -->
 
-All plan creation pathways apply a title tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py`:
+All plan creation pathways apply a title tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/pr_utils.py`:
 
 - `"erk-learn"` label → `[erk-learn]` prefix
 - All other plans → `[erk-pr]` prefix

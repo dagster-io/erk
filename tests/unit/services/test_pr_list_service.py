@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from erk.core.services.plan_list_service import (
+from erk.core.services.pr_list_service import (
     ManagedPrListService,
     PrListData,
     RealPrListService,
@@ -17,7 +17,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.http import FakeHttpClient
@@ -494,7 +494,7 @@ class TestBuildEnrichmentWarnings:
 
     def test_no_warnings_when_all_enriched(self) -> None:
         """No warnings when unenriched_count is zero."""
-        from erk.core.services.plan_list_service import _build_enrichment_warnings
+        from erk.core.services.pr_list_service import _build_enrichment_warnings
 
         result = _build_enrichment_warnings(0, 5)
 
@@ -502,7 +502,7 @@ class TestBuildEnrichmentWarnings:
 
     def test_warning_when_some_unenriched(self) -> None:
         """Warning message includes counts when some PRs lack enrichment."""
-        from erk.core.services.plan_list_service import _build_enrichment_warnings
+        from erk.core.services.pr_list_service import _build_enrichment_warnings
 
         result = _build_enrichment_warnings(2, 5)
 
@@ -512,7 +512,7 @@ class TestBuildEnrichmentWarnings:
 
     def test_warning_when_all_unenriched(self) -> None:
         """Warning message when all PRs lack enrichment."""
-        from erk.core.services.plan_list_service import _build_enrichment_warnings
+        from erk.core.services.pr_list_service import _build_enrichment_warnings
 
         result = _build_enrichment_warnings(3, 3)
 
@@ -521,7 +521,7 @@ class TestBuildEnrichmentWarnings:
 
     def test_returns_tuple(self) -> None:
         """Return type is always a tuple."""
-        from erk.core.services.plan_list_service import _build_enrichment_warnings
+        from erk.core.services.pr_list_service import _build_enrichment_warnings
 
         assert isinstance(_build_enrichment_warnings(0, 0), tuple)
         assert isinstance(_build_enrichment_warnings(1, 1), tuple)

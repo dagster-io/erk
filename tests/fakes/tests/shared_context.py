@@ -29,8 +29,8 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.core import (
     FakeCodespaceRegistry,
     FakeObjectiveListService,
@@ -212,7 +212,7 @@ def context_for_test(
         agent_launcher=resolved_agent_launcher,
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
-        plan_list_service=FakePrListService(),
+        pr_list_service=FakePrListService(),
         objective_list_service=FakeObjectiveListService(data=None),
         cwd=resolved_cwd,
         repo=repo,

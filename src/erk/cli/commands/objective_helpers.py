@@ -13,7 +13,7 @@ from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.naming import extract_objective_number
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanState, PrNotFound
+from erk_shared.pr_store.types import PlanState, PrNotFound
 
 logger = logging.getLogger(__name__)
 

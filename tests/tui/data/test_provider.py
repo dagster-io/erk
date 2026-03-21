@@ -17,7 +17,7 @@ from erk_shared.gateway.github.types import (
 )
 from erk_shared.gateway.plan_data_provider.real import RealPrDataProvider
 from erk_shared.gateway.pr_service.real import RealPrService
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.browser import FakeBrowserLauncher
 from tests.fakes.gateway.clipboard import FakeClipboard
 from tests.fakes.gateway.git import FakeGit

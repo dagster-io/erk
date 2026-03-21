@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def create_sample_plan_issue(issue_number: str = "42") -> Plan:

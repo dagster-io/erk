@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:

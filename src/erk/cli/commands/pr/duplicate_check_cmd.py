@@ -11,8 +11,8 @@ from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
-from erk.core.plan_duplicate_checker import PlanDuplicateChecker
-from erk.core.plan_relevance_checker import PlanRelevanceChecker
+from erk.core.pr_duplicate_checker import PrDuplicateChecker
+from erk.core.pr_relevance_checker import PrRelevanceChecker
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
@@ -115,7 +115,7 @@ def duplicate_check_plan(
         root=root,
         repo_id=repo_id,
     )
-    plan_data = ctx.plan_list_service.get_pr_list_data(
+    plan_data = ctx.pr_list_service.get_pr_list_data(
         location=location,
         labels=["erk-pr"],
         state="open",
@@ -138,7 +138,7 @@ def duplicate_check_plan(
         user_output("Analyzing for semantic duplicates...")
         user_output("")
 
-        checker = PlanDuplicateChecker(ctx.prompt_executor)
+        checker = PrDuplicateChecker(ctx.prompt_executor)
         dup_result = checker.check(content, existing_plans)
 
         if dup_result.error is not None:
@@ -169,7 +169,7 @@ def duplicate_check_plan(
             )
             user_output("")
 
-            relevance_checker = PlanRelevanceChecker(ctx.prompt_executor)
+            relevance_checker = PrRelevanceChecker(ctx.prompt_executor)
             rel_result = relevance_checker.check(content, recent_commits)
 
             if rel_result.error is not None:

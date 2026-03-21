@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from erk_shared.context.types import PermissionMode
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PrListData, PrListService
+from erk_shared.core.pr_list_service import PrListData, PrListService
 from erk_shared.core.prompt_executor import (
     ExecutorEvent,
     PromptExecutor,
@@ -22,7 +22,7 @@ from erk_shared.core.prompt_executor import (
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
-from erk_shared.plan_store.types import PlanState
+from erk_shared.pr_store.types import PlanState
 
 if TYPE_CHECKING:
     from erk_shared.gateway.http.abc import HttpClient

@@ -1,6 +1,6 @@
-"""Tests for PlanRelevanceChecker."""
+"""Tests for PrRelevanceChecker."""
 
-from erk.core.plan_relevance_checker import PlanRelevanceChecker
+from erk.core.pr_relevance_checker import PrRelevanceChecker
 from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
@@ -27,7 +27,7 @@ def test_no_relevant_commits_found() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"already_implemented": false, "relevant_commits": []}',
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd user profile page",
         _make_commits(),
@@ -47,7 +47,7 @@ def test_relevant_commit_detected() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode",
         _make_commits(),
@@ -66,7 +66,7 @@ def test_executor_failure_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_error="LLM unavailable",
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         _make_commits(),
@@ -83,7 +83,7 @@ def test_empty_commits_no_llm_call() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"already_implemented": false, "relevant_commits": []}',
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check("# New Plan\n\nSome plan", [])
 
     assert result.already_implemented is False
@@ -98,7 +98,7 @@ def test_malformed_llm_response_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output="This is not JSON at all",
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         _make_commits(),
@@ -119,7 +119,7 @@ def test_unknown_sha_filtered_out() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         _make_commits(),
@@ -140,7 +140,7 @@ def test_json_wrapped_in_code_fence() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         _make_commits(),
@@ -156,7 +156,7 @@ def test_missing_already_implemented_field() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"relevant_commits": []}',
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         _make_commits(),
@@ -172,7 +172,7 @@ def test_missing_relevant_commits_field() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"already_implemented": true}',
     )
-    checker = PlanRelevanceChecker(executor)
+    checker = PrRelevanceChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         _make_commits(),

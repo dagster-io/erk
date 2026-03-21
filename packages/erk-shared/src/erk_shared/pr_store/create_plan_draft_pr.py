@@ -20,9 +20,9 @@ from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_utils import extract_title_from_pr, get_title_tag_from_labels
 
 
 @dataclass(frozen=True)
@@ -106,7 +106,7 @@ def create_plan_draft_pr(
     """
     # Step 1: Extract or use provided title
     if title is None:
-        title = extract_title_from_plan(plan_content)
+        title = extract_title_from_pr(plan_content)
 
     # Step 2: Detect trunk, fetch, create branch from origin/trunk
     trunk = git.branch.detect_trunk_branch(repo_root)

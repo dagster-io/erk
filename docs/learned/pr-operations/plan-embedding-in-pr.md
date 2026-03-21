@@ -21,20 +21,20 @@ When a PR originates from an erk plan, reviewers need the original plan for cont
 
 Plan content arrives at the PR through a multi-system chain:
 
-1. **Branch name** → `PlanContextProvider` extracts the issue number from the `P{number}-{slug}` convention
+1. **Branch name** → `PrContextProvider` extracts the issue number from the `P{number}-{slug}` convention
 2. **GitHub API** → fetches the plan body, then the plan comment containing the actual plan markdown
 3. **Phase 2** of the submit pipeline populates `state.plan_context` (a `PlanContext` with issue number, plan markdown, and optional objective summary) — runs concurrently with diff extraction
 4. **Phase 5** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string
 
-<!-- Source: src/erk/core/plan_context_provider.py, PlanContextProvider.get_plan_context -->
+<!-- Source: src/erk/core/pr_context_provider.py, PrContextProvider.get_plan_context -->
 
-See `PlanContextProvider.get_plan_context()` in `src/erk/core/plan_context_provider.py` for the extraction chain (branch name → issue → comment → plan content).
+See `PrContextProvider.get_plan_context()` in `src/erk/core/pr_context_provider.py` for the extraction chain (branch name → issue → comment → plan content).
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _build_plan_details_section -->
 
 See `_build_plan_details_section()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the HTML assembly.
 
-The embedding is **conditional** — `finalize_pr` only appends the plan section when `state.plan_context is not None`. Branches that don't follow the plan naming convention, or plans that fail to fetch, gracefully produce PRs with no plan section. Every step in `PlanContextProvider` returns `None` on failure rather than raising, so the embedding is always best-effort.
+The embedding is **conditional** — `finalize_pr` only appends the plan section when `state.plan_context is not None`. Branches that don't follow the plan naming convention, or plans that fail to fetch, gracefully produce PRs with no plan section. Every step in `PrContextProvider` returns `None` on failure rather than raising, so the embedding is always best-effort.
 
 ## Critical Invariant: Two-Target Body Separation
 

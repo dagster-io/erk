@@ -4,12 +4,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.shared import assemble_pr_body, recover_plan_header
-from erk.core.plan_context_provider import PrContext
+from erk.core.pr_context_provider import PrContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
 from tests.fakes.tests.shared_context import context_for_test

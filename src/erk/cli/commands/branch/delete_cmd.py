@@ -24,7 +24,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import SlotAssignment, load_pool_state
 from erk.core.worktree_utils import find_worktree_with_branch
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanState
+from erk_shared.pr_store.types import PlanState
 from erk_slots.unassign_cmd import execute_unassign
 
 

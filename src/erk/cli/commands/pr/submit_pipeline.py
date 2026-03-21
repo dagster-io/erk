@@ -29,7 +29,7 @@ from erk.cli.ensure import UserFacingCliError
 from erk.cli.repo_resolution import get_remote_github
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext, NoRepoSentinel
-from erk.core.plan_context_provider import PlanContextProvider, PrContext
+from erk.core.pr_context_provider import PrContext, PrContextProvider
 from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -619,7 +619,7 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
     if state.skip_description:
         return state
 
-    plan_provider = PlanContextProvider(
+    plan_provider = PrContextProvider(
         plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
     )
     github_info = ctx.repo.github if not isinstance(ctx.repo, NoRepoSentinel) else None

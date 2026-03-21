@@ -328,7 +328,7 @@ Rules triggered by matching actions in code.
 
 **using Path.cwd() directly in an exec script without CWD injection** → Read [Command Composition Pattern](command-composition.md) first. Use `cwd: Path | None = None` parameter defaulting to `Path.cwd()` for testability. This allows tests to override the working directory.
 
-**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+**using PrContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PrContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 
 **using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
 

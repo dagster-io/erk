@@ -37,12 +37,12 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import Plan, PrNotFound
 from erk_shared.plan_workflow import (
     PlanBranchSetup,
     PlanValidationFailed,
     prepare_plan_for_worktree,
 )
+from erk_shared.pr_store.types import Plan, PrNotFound
 
 
 def run_post_worktree_setup(

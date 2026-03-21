@@ -10,7 +10,7 @@ from erk.cli.commands.pr.metadata_helpers import (
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.commands.dispatch.conftest import create_plan, make_plan_body
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime

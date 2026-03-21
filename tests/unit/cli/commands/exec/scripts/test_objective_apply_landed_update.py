@@ -12,7 +12,7 @@ from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
 )
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails, RepoInfo
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues

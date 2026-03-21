@@ -52,13 +52,13 @@ from erk_shared.gateway.github.types import (
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.plan_data_provider.lifecycle import compute_status_indicators
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
-from erk_shared.plan_store.conversion import (
+from erk_shared.pr_store.conversion import (
     github_issue_to_plan,
     header_datetime,
     header_int,
     header_str,
 )
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.types import Plan
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class RealPrDataProvider(PrDataProvider):
                 http_client=self._http_client,
             )
         else:
-            plan_data = self._ctx.plan_list_service.get_pr_list_data(
+            plan_data = self._ctx.pr_list_service.get_pr_list_data(
                 location=self._location,
                 labels=list(filters.labels),
                 state=filters.state,

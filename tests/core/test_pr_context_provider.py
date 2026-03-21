@@ -1,15 +1,15 @@
-"""Tests for PlanContextProvider."""
+"""Tests for PrContextProvider."""
 
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.core.plan_context_provider import PlanContextProvider, PrContext
+from erk.core.pr_context_provider import PrContext, PrContextProvider
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import (
     format_plan_content_comment,
     format_plan_header_body,
 )
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
@@ -52,11 +52,11 @@ def _make_remote(
     )
 
 
-def _make_provider(github_issues: FakeGitHubIssues) -> PlanContextProvider:
-    """Create a PlanContextProvider with ManagedGitHubPrBackend backed by fake GitHub."""
+def _make_provider(github_issues: FakeGitHubIssues) -> PrContextProvider:
+    """Create a PrContextProvider with ManagedGitHubPrBackend backed by fake GitHub."""
     fake_github = FakeLocalGitHub(issues_gateway=github_issues)
     plan_backend = ManagedGitHubPrBackend(fake_github, github_issues, time=FakeTime())
-    return PlanContextProvider(plan_backend=plan_backend, remote_github=_make_remote())
+    return PrContextProvider(plan_backend=plan_backend, remote_github=_make_remote())
 
 
 def test_get_plan_context_returns_none_for_non_plan_branch(tmp_path: Path) -> None:

@@ -11,7 +11,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk_shared.context.context import ErkContext
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,

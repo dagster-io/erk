@@ -36,9 +36,9 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_store.types import PrNotFound
-from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.types import PrNotFound
+from erk_shared.pr_utils import extract_title_from_pr, get_title_tag_from_labels
 
 
 @click.command(name="plan-update")
@@ -126,7 +126,7 @@ def plan_update(
         _handle_update_error(f"Failed to update comment: {e}", cause=e)
 
     # Step 4: Update issue title from plan content
-    new_title = extract_title_from_plan(plan_content)
+    new_title = extract_title_from_pr(plan_content)
     title_tag = get_title_tag_from_labels(plan_result.labels)
     full_title = f"{title_tag} {new_title}"
 

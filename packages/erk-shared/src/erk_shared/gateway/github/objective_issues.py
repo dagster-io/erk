@@ -30,7 +30,7 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import InvalidObjectiveSlug, validate_objective_slug
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.pr_utils import extract_title_from_pr
 
 # Label configurations
 _LABEL_ERK_PR = "erk-pr"
@@ -151,7 +151,7 @@ def create_objective_issue(
 
     # Step 2: Extract or use provided title
     if title is None:
-        title = extract_title_from_plan(plan_content)
+        title = extract_title_from_pr(plan_content)
 
     # Step 2b: Validate slug if provided (gate - reject invalid, don't transform)
     if slug is not None:

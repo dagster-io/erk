@@ -28,7 +28,7 @@ import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
-from erk_shared.plan_store.types import PlanHeaderNotFoundError
+from erk_shared.pr_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)

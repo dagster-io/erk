@@ -26,7 +26,7 @@ from erk.core.prompt_executor import ClaudeCliPromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.objective_list_service import RealObjectiveListService
-from erk.core.services.plan_list_service import ManagedPrListService
+from erk.core.services.pr_list_service import ManagedPrListService
 from erk.core.shell import RealShell
 
 # Re-export ErkContext from erk_shared for isinstance() compatibility
@@ -37,7 +37,7 @@ from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PrListService
+from erk_shared.core.pr_list_service import PrListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_docs.real import RealAgentDocs
@@ -76,8 +76,8 @@ from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 
 if TYPE_CHECKING:
     pass
@@ -302,7 +302,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
 
     plan_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
-    plan_list_service: PrListService = ManagedPrListService(github, time=time)
+    pr_list_service: PrListService = ManagedPrListService(github, time=time)
 
     # Objectives use GitHub issues (not draft PRs)
     objective_list_service: ObjectiveListService = RealObjectiveListService(github, time=time)
@@ -368,7 +368,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         time=time,
         erk_installation=erk_installation,
         script_writer=RealScriptWriter(),
-        plan_list_service=plan_list_service,
+        pr_list_service=pr_list_service,
         objective_list_service=objective_list_service,
         codespace_registry=RealCodespaceRegistry.from_config_path(
             erk_installation.get_codespaces_config_path()

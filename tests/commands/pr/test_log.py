@@ -14,8 +14,8 @@ from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_metadata_block,
 )
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub

@@ -1,9 +1,9 @@
-"""Tests for PlanDuplicateChecker."""
+"""Tests for PrDuplicateChecker."""
 
 from datetime import datetime
 
-from erk.core.plan_duplicate_checker import PlanDuplicateChecker
-from erk_shared.plan_store.types import Plan, PlanState
+from erk.core.pr_duplicate_checker import PrDuplicateChecker
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
@@ -34,7 +34,7 @@ def test_no_duplicates_found() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode toggle",
         [_make_plan(pr_identifier="100", title="Refactor auth", body="Restructure auth flow")],
@@ -53,7 +53,7 @@ def test_duplicate_detected() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd dark mode",
         [_make_plan(pr_identifier="100", title="Dark mode support", body="Add dark mode to app")],
@@ -73,7 +73,7 @@ def test_executor_failure_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_error="LLM unavailable",
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -90,7 +90,7 @@ def test_empty_existing_plans_no_llm_call() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check("# New Plan\n\nSome plan", [])
 
     assert result.has_duplicates is False
@@ -105,7 +105,7 @@ def test_malformed_llm_response_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output="This is not JSON at all",
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -122,7 +122,7 @@ def test_malformed_json_structure_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"wrong_key": []}',
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -139,7 +139,7 @@ def test_duplicate_referencing_unknown_plan_filtered_out() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": [{"plan_id": "999", "explanation": "phantom"}]}',
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -155,7 +155,7 @@ def test_uses_haiku_model() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -174,7 +174,7 @@ def test_json_wrapped_in_code_fence() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -198,7 +198,7 @@ def test_code_fence_with_trailing_text() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [_make_plan(pr_identifier="100", title="Existing plan", body="body")],
@@ -221,7 +221,7 @@ def test_code_fence_with_trailing_text_and_duplicate() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nAdd auth",
         [_make_plan(pr_identifier="100", title="Add authentication", body="Add auth flow")],
@@ -244,7 +244,7 @@ def test_multiple_duplicates() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    checker = PlanDuplicateChecker(executor)
+    checker = PrDuplicateChecker(executor)
     result = checker.check(
         "# New Plan\n\nSome plan",
         [

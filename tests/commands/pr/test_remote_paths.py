@@ -6,11 +6,11 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.core.plan_list_service import PrListData
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.fakes.gateway.console import FakeConsole
 from tests.fakes.gateway.core import FakePrListService
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
@@ -288,7 +288,7 @@ def _make_plan(
     )
 
 
-def _make_plan_list_service(plans: list[Plan]) -> FakePrListService:
+def _make_pr_list_service(plans: list[Plan]) -> FakePrListService:
     return FakePrListService(
         data=PrListData(plans=plans, pr_linkages={}, workflow_runs={}),
     )
@@ -320,7 +320,7 @@ def test_duplicate_check_remote_no_duplicates() -> None:
         remote_github=fake_remote,
         prompt_executor=executor,
         console=_non_interactive_console(),
-        plan_list_service=_make_plan_list_service([existing]),
+        pr_list_service=_make_pr_list_service([existing]),
     )
 
     runner = CliRunner()
@@ -352,7 +352,7 @@ def test_duplicate_check_remote_finds_duplicate() -> None:
         remote_github=fake_remote,
         prompt_executor=executor,
         console=_non_interactive_console(),
-        plan_list_service=_make_plan_list_service([existing]),
+        pr_list_service=_make_pr_list_service([existing]),
     )
 
     runner = CliRunner()
@@ -380,7 +380,7 @@ def test_list_remote_shows_plans() -> None:
     ctx = context_for_test(
         repo=NoRepoSentinel(),
         remote_github=fake_remote,
-        plan_list_service=_make_plan_list_service([plan1, plan2]),
+        pr_list_service=_make_pr_list_service([plan1, plan2]),
     )
 
     runner = CliRunner()
@@ -403,7 +403,7 @@ def test_list_remote_empty() -> None:
     ctx = context_for_test(
         repo=NoRepoSentinel(),
         remote_github=fake_remote,
-        plan_list_service=_make_plan_list_service([]),
+        pr_list_service=_make_pr_list_service([]),
     )
 
     runner = CliRunner()

@@ -10,8 +10,8 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
 from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
@@ -396,7 +396,7 @@ def _make_pr_details(
     branch_name: str,
 ) -> PRDetails:
     """Create PRDetails with a plan-header metadata block containing branch_name."""
-    from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 
     metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
     plan_content = "# Old Plan Content"

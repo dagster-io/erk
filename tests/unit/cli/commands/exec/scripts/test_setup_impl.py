@@ -12,7 +12,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.setup_impl import setup_impl
 from erk_shared.context.context import ErkContext
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.graphite import FakeGraphite

@@ -9,7 +9,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
 from tests.fakes.tests.shared_context import context_for_test

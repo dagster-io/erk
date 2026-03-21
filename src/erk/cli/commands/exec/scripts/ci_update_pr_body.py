@@ -58,7 +58,7 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.planned_pr_lifecycle import (
     build_original_plan_section,
     extract_plan_content,
 )

@@ -13,8 +13,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from erk_shared.core.plan_list_service import PrListData as PrListData
-from erk_shared.core.plan_list_service import PrListService
+from erk_shared.core.pr_list_service import PrListData as PrListData
+from erk_shared.core.pr_list_service import PrListService
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -29,8 +29,8 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.conversion import github_issue_to_plan, pr_details_to_plan
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.conversion import github_issue_to_plan, pr_details_to_plan
+from erk_shared.pr_store.planned_pr_lifecycle import (
     extract_plan_content,
     has_original_plan_section,
 )

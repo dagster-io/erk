@@ -9,6 +9,10 @@ dependencies or I/O operations.
 """
 
 import re
+from pathlib import Path
+
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.scratch.scratch import get_scratch_dir
 
 # Prefixes commonly added by Claude's Plan Mode that should be stripped
 _PLAN_PREFIXES = ("Plan: ", "Implementation Plan: ", "Documentation Plan: ")
@@ -62,7 +66,7 @@ def _clean_title(raw_title: str) -> str:
     return _strip_plan_prefixes(title.strip())
 
 
-def wrap_plan_in_metadata_block(
+def wrap_pr_in_metadata_block(
     plan: str, intro_text: str = "This issue contains an implementation plan:"
 ) -> str:
     """Return plan content wrapped in collapsible details block for issue body.
@@ -81,7 +85,7 @@ def wrap_plan_in_metadata_block(
 
     Example:
         >>> plan = "## My Plan\\n\\n- Step 1\\n- Step 2"
-        >>> result = wrap_plan_in_metadata_block(plan)
+        >>> result = wrap_pr_in_metadata_block(plan)
         >>> "<details>" in result
         True
         >>> "This issue contains an implementation plan:" in result
@@ -103,7 +107,7 @@ def wrap_plan_in_metadata_block(
 </details>"""
 
 
-def extract_title_from_plan(plan: str) -> str:
+def extract_title_from_pr(plan: str) -> str:
     """Extract title from plan (H1 → H2 → first line fallback).
 
     Tries extraction in priority order:
@@ -122,23 +126,23 @@ def extract_title_from_plan(plan: str) -> str:
 
     Example:
         >>> plan = "# Feature Name\\n\\nDetails..."
-        >>> extract_title_from_plan(plan)
+        >>> extract_title_from_pr(plan)
         'Feature Name'
 
         >>> plan = "## My Feature\\n\\nDetails..."
-        >>> extract_title_from_plan(plan)
+        >>> extract_title_from_pr(plan)
         'My Feature'
 
         >>> plan = "Some plain text\\n\\nMore text..."
-        >>> extract_title_from_plan(plan)
+        >>> extract_title_from_pr(plan)
         'Some plain text'
 
         >>> plan = "# Plan: Add Feature X\\n\\nDetails..."
-        >>> extract_title_from_plan(plan)
+        >>> extract_title_from_pr(plan)
         'Add Feature X'
 
         >>> plan = "# Implementation Plan: Refactor Y\\n\\nDetails..."
-        >>> extract_title_from_plan(plan)
+        >>> extract_title_from_pr(plan)
         'Refactor Y'
     """
     if not plan or not plan.strip():
@@ -188,6 +192,40 @@ def get_title_tag_from_labels(labels: list[str]) -> str:
         Title tag string: "[erk-learn]" or "[erk-pr]"
     """
     return "[erk-learn]" if "erk-learn" in labels else "[erk-pr]"
+
+
+def resolve_plan_content(
+    *,
+    plan_file: Path | None,
+    session_id: str | None,
+    repo_root: Path,
+    claude_installation: ClaudeInstallation,
+    cwd: Path,
+) -> str | None:
+    """Resolve plan content from multiple sources with priority ordering.
+
+    Priority: plan_file > scratch dir plan.md > claude_installation.get_latest_plan()
+
+    Args:
+        plan_file: Explicit plan file path (highest priority)
+        session_id: Session ID for session-scoped lookup
+        repo_root: Repository root for scratch directory
+        claude_installation: ClaudeInstallation gateway for plan discovery
+        cwd: Current working directory
+
+    Returns:
+        Plan content as string, or None if no plan found
+    """
+    if plan_file is not None:
+        return plan_file.read_text(encoding="utf-8")
+
+    if session_id is not None:
+        scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+        scratch_plan_path = scratch_dir / "plan.md"
+        if scratch_plan_path.exists():
+            return scratch_plan_path.read_text(encoding="utf-8")
+
+    return claude_installation.get_latest_plan(cwd, session_id=session_id)
 
 
 def format_error(brief: str, details: str, actions: list[str]) -> str:

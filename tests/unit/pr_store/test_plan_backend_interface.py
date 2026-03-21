@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.types import PlanQuery, PlanState, PrNotFound
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.types import PlanQuery, PlanState, PrNotFound
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
 
