@@ -1,0 +1,668 @@
+<session>
+  <meta branch="plnd/fix-multinode-landing-node-03-21-0712" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_0164y7ykJAZLuHE5Z1SSbX1q">
+   300→            raise ValueError("retry_timestamp must be a string")
+   301→        if len(data["retry_timestamp"]) == 0:
+   302→            raise ValueError("retry_timestamp must not be empty")
+   303→
+   304→        if not isinstance(data["triggered_by"], str):
+   305→            raise ValueError("triggered_by must be a string")
+   306→        if len(data["triggered_by"]) == 0:
+   307→            raise ValueError("triggered_by must not be empty")
+   308→
+   309→        # Validate retry_count
+   310→        if not isinstance(data["retry_count"], int):
+   311→            raise ValueError("retry_count must be an integer")
+   312→        if data["retry_count"] &lt; 1:
+   313→            raise ValueError("retry_count must be at least 1")
+   314→
+   315→        # Validate optional fields
+   316→        if "previous_retry_timestamp" in data:
+   317→            if not isinstance(data["previous_retry_timestamp"], str):
+   318→                raise ValueError("previous_retry_timestamp must be a string")
+   319→            if len(data["previous_retry_timestamp"]) == 0:
+   320→                raise ValueError("previous_retry_timestamp must not be empty")
+   321→
+   322→        # Check for unexpected fields
+   323→        known_fields = required_fields | optional_fields
+   324→        unknown_fields = set(data.keys()) - known_fields
+   325→        if unknown_fields:
+   326→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   327→
+   328→    def get_key(self) -&gt; str:
+   329→        return BlockKeys.PLAN_RETRY
+
+... [565 lines omitted] ...
+
+   475→        ci_summary_comment_id: GitHub comment ID containing CI failure summaries (nullable)
+   549→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   553→            raise ValueError(f"Invalid schema_version '{data[SCHEMA_VERSION]}'. Must be '2'")
+   558→                raise ValueError(f"{field} must be a string")
+   560→                raise ValueError(f"{field} must not be empty")
+   565→                raise ValueError("worktree_name must be a string or null")
+   567→                raise ValueError("worktree_name must not be empty when provided")
+   572→                raise ValueError("branch_name must be a string or null")
+   574→                raise ValueError("branch_name must not be empty when provided")
+   579→                raise ValueError("plan_comment_id must be an integer or null")
+   581→                raise ValueError("plan_comment_id must be positive when provided")
+   586→                raise ValueError("ci_summary_comment_id must be an integer or null")
+   588→                raise ValueError("ci_summary_comment_id must be positive when provided")
+   594→                    warnings.warn(
+   601→                    raise ValueError("last_dispatched_run_id must be a string or null")
+   606→                    raise ValueError("last_dispatched_node_id must be a string or null")
+   611→                    raise ValueError("last_dispatched_at must be a string or null")
+   616→                    raise ValueError("last_local_impl_at must be a string or null")
+   621→                    raise ValueError("last_remote_impl_at must be a string or null")
+   627→                    warnings.warn(
+   634→                    raise ValueError("last_remote_impl_run_id must be a string or null")
+   640→                    raise ValueError("last_remote_impl_session_id must be a string or null")
+   646→                    raise ValueError("last_local_impl_event must be a string or null")
+   650→                    raise ValueError(
+   658→                    raise ValueError("last_local_impl_session must be a string or null")
+   664→                    raise ValueError("last_local_impl_user must be a string or null")
+   669→                raise ValueError("source_repo must be a string or null")
+   671→                raise ValueError("source_repo must not be empty when provided")
+   674→                raise ValueError("source_repo must be in 'owner/repo' format")
+   679→                raise ValueError("objective_issue must be an integer or null")
+   681→                raise ValueError("objective_issue must be positive when provided")
+   686→                raise ValueError("node_ids must be a list or null")
+   689→                    raise ValueError("node_ids items must be strings")
+   694→                raise ValueError("created_from_session must be a string or null")
+   696→                raise ValueError("created_from_session must not be empty when provided")
+   704→                raise ValueError("created_from_workflow_run_url must be a string or null")
+   706→                raise ValueError("created_from_workflow_run_url must not be empty when provided")
+   711→                raise ValueError("last_learn_session must be a string or null")
+   713→                raise ValueError("last_learn_session must not be empty when provided")
+   718→                raise ValueError("last_learn_at must be a string or null")
+   720→                raise ValueError("last_learn_at must not be empty when provided")
+   725→                raise ValueError("learn_status must be a string or null")
+   737→                raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
+   742→                warnings.warn(
+   748→                raise ValueError("learn_run_id must be a string or null")
+   750→                raise ValueError("learn_run_id must not be empty when provided")
+   755→                raise ValueError("last_session_branch must be a string or null")
+   757→                raise ValueError("last_session_branch must not be empty when provided")
+   762→                raise ValueError("last_session_id must be a string or null")
+   764→                raise ValueError("last_session_id must not be empty when provided")
+   769→                raise ValueError("last_session_at must be a string or null")
+   771→                raise ValueError("last_session_at must not be empty when provided")
+   776→                raise ValueError("last_session_source must be a string or null")
+   780→                raise ValueError(
+   787→                raise ValueError("learn_plan_issue must be an integer or null")
+   789→                raise ValueError("learn_plan_issue must be positive when provided")
+   794→                raise ValueError("learn_plan_pr must be an integer or null")
+   796→                raise ValueError("learn_plan_pr must be positive when provided")
+   801→                raise ValueError("learned_from_issue must be an integer or null")
+   803→                raise ValueError("learned_from_issue must be positive when provided")
+   808→                raise ValueError("learn_materials_branch must be a string or null")
+   810→                raise ValueError("learn_materials_branch must not be empty when provided")
+   815→                raise ValueError("lifecycle_stage must be a string or null")
+   827→                raise ValueError(
+   835→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   863→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   868→                raise ValueError(f"{field} must be a string")
+   870→                raise ValueError(f"{field} must not be empty")
+   875→                raise ValueError("objective_comment_id must be an integer or null")
+   877→                raise ValueError("objective_comment_id must be positive when provided")
+   882→                raise ValueError("slug must be a string")
+   884→                raise ValueError("slug must not be empty when provided")
+   890→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9781" cache_read_input_tokens="85252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9781}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me launch a Plan agent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9781" cache_read_input_tokens="85252" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9781}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01E7Af7mvK9g188X7VyPA8S2">
+    <param name="description">Design PlanHeaderData refactor</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design an implementation plan for introducing a `PlanHeaderData` frozen dataclass as an in...[truncated 5050 chars]...es in tests
+- What does NOT change in this PR (callers, Plan.header_fields, conversion.py)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9781" cache_read_input_tokens="85252" output_tokens="3129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9781, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E7Af7mvK9g188X7VyPA8S2">
+Good -- `LifecycleStageValue` is only defined in `schemas.py`, not imported elsewhere. The `create_plan_header_block` function uses `str | None` for `lifecycle_stage`, not `LifecycleStageValue`. Now I have everything I need to design the plan.
+
+---
+
+## Implementation Plan: `PlanHeaderData` Frozen Dataclass
+
+### 1. Problem Summary
+
+The `plan_header.py` module (1518 lines, ~40 public functions) suffers from four structural problems that a typed intermediate dataclass would solve:
+
+- **Repeated parsing**: Every `extract_plan_header_*` function independently calls `find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)`. Three field reads = three YAML parses.
+- **30-arg passthrough**: `create_plan_header_block()` and `format_plan_header_body()` take ~27 keyword arguments. Callers like `planned_pr.py` (lines 333-361), `one_shot_remote_dispatch.py` (lines 337-365), and `consolidate_learn_plans_dispatch.py` (lines 141-169) all pass 27 explicit args with most set to `None`.
+- **Untyped dict access**: All field reads use `block.data.get(STRING_KEY)` returning `Any`.
+- **Duplicated update boilerplate**: Every `update_plan_header_*` function repeats the same 7-line pattern: find block, copy dict, set field(s), validate, create block, render, replace in body.
+
+### 2. Design Decisions
+
+**2a. Where to define `PlanHeaderData`**
+
+Define it in a new file: `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header_data.py`
+
+Rationale:
+- Cannot go in `types.py` -- that file holds generic metadata types (`MetadataBlock`, `RawMetadataBlock`), not domain-specific plan-header structures.
+- Cannot go in `schemas.py` -- that file holds validation schemas, not data carriers.
+- Cannot go in `plan_header.py` -- that file is the module being refactored. Putting the data type there would create a circular dependency when `plan_header.py` imports from it, and it keeps the 1500-line file growing.
+- A dedicated file follows the existing pattern where each concern gets its own module (`types.py`, `schemas.py`, `core.py`, `session.py`, etc.).
+
+**2b. `schema_version` handling**
+
+`schema_version` should NOT be a field on the dataclass. It is always `"2"` and is a serialization detail. The `to_dict()` method will inject it. This keeps the dataclass focused on actual data and prevents callers from accidentally passing the wrong version.
+
+... [278 lines omitted] ...
+
+        raise ValueError("plan-header block not found in issue body")
+        raise ValueError("plan-header block not found in issue body")
+12. **`test_frozen`**: Verify that assignment to a field raises `FrozenInstanceError`.
+  </tool_result>
+  <assistant>
+
+Good exploration and design work. Let me read a couple of files to verify key details before writing the final plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8995" cache_read_input_tokens="95033" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8995}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TSMkPWPrK8vZwUUZEThK4C">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">68</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8995" cache_read_input_tokens="95033" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8995}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TSMkPWPrK8vZwUUZEThK4C">
+    68→def create_plan_header_block(
+    69→    *,
+    70→    created_at: str,
+    71→    created_by: str,
+    72→    worktree_name: str | None,
+    73→    branch_name: str | None,
+    74→    plan_comment_id: int | None,
+    75→    last_dispatched_run_id: str | None,
+    76→    last_dispatched_node_id: str | None,
+    77→    last_dispatched_at: str | None,
+    78→    last_local_impl_at: str | None,
+    79→    last_local_impl_event: str | None,
+    80→    last_local_impl_session: str | None,
+    81→    last_local_impl_user: str | None,
+    82→    last_remote_impl_at: str | None,
+    83→    last_remote_impl_run_id: str | None,
+    84→    last_remote_impl_session_id: str | None,
+    85→    source_repo: str | None,
+    86→    objective_issue: int | None,
+    87→    node_ids: list[str] | None,
+    88→    created_from_session: str | None,
+    89→    created_from_workflow_run_url: str | None,
+    90→    last_learn_session: str | None,
+    91→    last_learn_at: str | None,
+    92→    learn_status: LearnStatusValue | None,
+    93→    learn_plan_issue: int | None,
+    94→    learn_plan_pr: int | None,
+    95→    learned_from_issue: int | None,
+    96→    lifecycle_stage: str | None,
+    97→) -&gt; MetadataBlock:
+
+... [50 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1533" cache_read_input_tokens="104028" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1533}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1533" cache_read_input_tokens="104028" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1533}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DjWy5s1wkBT53t45VhYAFf">
+    <param name="file_path">/Users/schrockn/.claude/plans/humming-napping-sunset.md</param>
+    <param name="content"># Plan: Introduce `PlanHeaderData` frozen dataclass
+
+## Context
+
+`plan_header.py` (~1518 l...[truncated 6353 chars]...sting extraction/validation tests (93+ tests)
+3. Run `ty` and `ruff` for type/lint checks
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1533" cache_read_input_tokens="104028" output_tokens="2688" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1533, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DjWy5s1wkBT53t45VhYAFf">
+File created successfully at: /Users/schrockn/.claude/plans/humming-napping-sunset.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01BpyQLzLuPP3nQPmrhNCqqm">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2830" cache_read_input_tokens="105561" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2830}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BpyQLzLuPP3nQPmrhNCqqm">
+
+  </tool_result>
+  <assistant>
+
+Let me re-read the existing plan to understand where we left off.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1072" cache_read_input_tokens="108391" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1072}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0199ubAMw83u5HRGJibUvNhg">
+    <param name="file_path">/Users/schrockn/.claude/plans/humming-napping-sunset.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1072" cache_read_input_tokens="108391" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1072, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0199ubAMw83u5HRGJibUvNhg">
+     1→# Plan: Introduce `PlanHeaderData` frozen dataclass
+     2→
+     3→## Context
+     4→
+     5→`plan_header.py` (~1518 lines, ~40 public functions) trades in raw `dict[str, Any]` repeatedly. Every `extract_*` re-parses the metadata block from the issue body string. Every `update_*` repeats a 7-line find/copy/set/validate/create/render/replace pattern. The two constructor functions (`create_plan_header_block`, `format_plan_header_body`) each take ~27 keyword args that callers pass with most set to `None`. All field access is untyped (`block.data.get(STRING_KEY) -&gt; Any`).
+     6→
+     7→Introducing a typed frozen dataclass gives: parse-once/access-many, typed field access, `dataclasses.replace()` for updates, and a single object to pass instead of 27 args.
+     8→
+     9→**Scope**: Phase 1 only. Introduce `PlanHeaderData`, rewrite internals of `plan_header.py` to use it, but keep all existing function signatures unchanged. No caller changes, no `Plan.header_fields` changes.
+    10→
+    11→## Step 1: Create `plan_header_data.py`
+    12→
+    13→**New file**: `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header_data.py`
+    14→
+    15→Frozen dataclass with 2 required fields + 31 optional fields (all `T | None = None`):
+    16→
+    17→```python
+    18→@dataclass(frozen=True)
+    19→class PlanHeaderData:
+    20→    # Required
+    21→    created_at: str
+    22→    created_by: str
+    23→    # Optional (31 fields, all default None)
+    24→    worktree_name: str | None = None
+    25→    branch_name: str | None = None
+    26→    plan_comment_id: int | None = None
+    27→    ci_summary_comment_id: int | None = None
+    28→    # ... (all 31 optional fields from PlanHeaderSchema)
+    29→    node_ids: tuple[str, ...] | None = None  # tuple, not list
+    30→    lifecycle_stage: LifecycleStageValue | None = None
+
+... [106 lines omitted] ...
+
+    53→        raise ValueError("plan-header block not found in issue body")
+   113→11. `test_frozen` — assignment raises FrozenInstanceError
+  </tool_result>
+  <assistant>This is the same task — the user said "plan it" and I had just written the plan before. The plan looks complete and well-structured. Let me do a final check to make sure it's ready for approval.
+
+The plan is complete and covers all the key decisions. Let me exit plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2651" cache_read_input_tokens="109463" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01N4cbtsDMm5yexsA8wHu3ov">
+    <param name="plan"># Plan: Introduce `PlanHeaderData` frozen dataclass
+
+## Context
+
+`plan_header.py` (~1518 l...[truncated 6353 chars]...sting extraction/validation tests (93+ tests)
+3. Run `ty` and `ruff` for type/lint checks
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/humming-napping-sunset.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2651" cache_read_input_tokens="109463" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N4cbtsDMm5yexsA8wHu3ov">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/humming-napping-sunset.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Introduce `PlanHeaderData` frozen dataclass
+Current context: (wt:erk-slot-14) (br:plnd/fix-multinode-landing-node-03-21-0712) (pr:#9326)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/fix-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Save plan as a draft PR on a new branch. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 613a690c-8104-4f32-b437-d0e7783d48cd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/humming-napping-sunset.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Introduce `PlanHeaderData` frozen dataclass
+
+## Context
+
+`plan_header.py` (~1518 lines, ~40 public functions) trades in raw `dict[str, Any]` repeatedly. Every `extract_*` re-parses the metadata block from the issue body string. Every `update_*` repeats a 7-line find/copy/set/validate/create/render/replace pattern. The two constructor functions (`create_plan_header_block`, `format_plan_header_body`) each take ~27 keyword args that callers pass with most set to `None`. All field access is untyped (`block.data.get(STRING_KEY) -&gt; Any`).
+
+Introducing a typed frozen dataclass gives: parse-once/access-many, typed field access, `dataclasses.replace()` for updates, and a single object to pass instead of 27 args.
+
+**Scope**: Phase 1 only. Introduce `PlanHeaderData`, rewrite internals of `plan_header.py` to use it, but keep all existing function signatures unchanged. No caller changes, no `Plan.header_fields` changes.
+
+## Step 1: Create `plan_header_data.py`
+
+**New file**: `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header_data.py`
+
+Frozen dataclass with 2 required fields + 31 optional fields (all `T | None = None`). `schema_version` is NOT a field — always `"2"`, injected by `to_dict()`. `node_ids` uses `tuple[str, ...]`.
+
+Four methods:
+- `from_dict(cls, data)` — classmethod, YAML dict → typed dataclass
+- `from_issue_body(cls, issue_body)` — classmethod, parses metadata block once
+- `to_dict(self)` — serializes back, injects schema_version, only includes non-None optional fields
+- `to_metadata_block(self)` — validates via PlanHeaderSchema, returns MetadataBlock
+
+## Step 2: Add `_update_plan_header` helper to `plan_header.py`
+
+Private helper eliminating the 7-line boilerplate repeated in ~16 update functions.
+
+## Step 3: Rewrite `create_plan_header_block` to use `PlanHeaderData`
+
+Body becomes: construct `PlanHeaderData(...)`, call `.to_metadata_block()`. Signature unchanged.
+
+## Step 4: Rewrite all `update_plan_header_*` functions to use `_update_plan_header`
+
+Each ~12-line function becomes ~3-5 lines. 16 functions affected.
+
+## Step 5: Create tests for `PlanHeaderData`
+
+**New file**: `tests/unit/gateways/github/metadata_blocks/test_plan_header_data.py` — 11 tests covering from_dict, to_dict, round-trip, from_issue_body, frozen behavior.
+
+## What does NOT change
+
+- All existing function signatures and return types
+- No caller modifications
+- `Plan.header_fields` and `conversion.py` accessor helpers
+- `PlanHeaderSchema` validation logic
+- Test helpers
+
+## Files to modify
+
+| File | Action |
+|------|--------|
+| `packages/erk-shared/.../metadata/plan_header_data.py` | Create: PlanHeaderData dataclass |
+| `packages/erk-shared/.../metadata/plan_header.py` | Modify: add helper, rewrite internals |
+| `tests/unit/.../test_plan_header_data.py` | Create: 11 tests |
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="112114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 736}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01TA4qtiNcHUGH3Bm3Qr4M1X">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="112114" output_tokens="947" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 736, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TA4qtiNcHUGH3Bm3Qr4M1X">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01NLE8BG5GfFum3S7YnJshw7">
+    <param name="questions">[{'question': '📋 Plan: Introduce `PlanHeaderData` frozen dataclass\nCurrent context: (wt:e...[truncated 440 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2298" cache_read_input_tokens="112850" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NLE8BG5GfFum3S7YnJshw7">
+User has answered your questions: "📋 Plan: Introduce `PlanHeaderData` frozen dataclass
+Current context: (wt:erk-slot-14) (br:plnd/fix-multinode-landing-node-03-21-0712) (pr:#9326)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01PBfBLC8WntXboT2iCSzAK8">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="115148" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PBfBLC8WntXboT2iCSzAK8">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="613a690c-8104-4f32-b437-d0e7783d48cd" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="613a690c-8104-4f32-b437-d0e7783d48cd" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "613a690c-8104-4f32-b437-d0e7783d48cd" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "613a690c-8104-4f32-b437-d0e7783d48cd" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "613a690c-8104-4f32-b437-d0e7783d48cd" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "613a690c-8104-4f32-b437-d0e7783d48cd" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug**: `introduce-plan-header-data`
+
+**Plan summary**: Introduces a PlanHeaderData frozen dataclass as a typed intermediate for plan-header metadata, replacing repeated raw dict parsing and untyped field access. Rewrites plan_header.py internals to use the dataclass and a shared update helper, eliminating duplicated boilerplate across 16 update functions while keeping all existing public APIs unchanged.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="115507" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2278}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AbWuZE3zauV3h8oBNgKuEb">
+    <param name="command">erk exec plan-save --format json --session-id="613a690c-8104-4f32-b437-d0e7783d48cd" --bra...[truncated 291 chars]... boilerplate across 16 update functions while keeping all existing public APIs unchanged."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2278" cache_read_input_tokens="115507" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AbWuZE3zauV3h8oBNgKuEb">
+{"success": true, "pr_number": 9338, "pr_url": "https://github.com/dagster-io/erk/pull/9338", "title": "[erk-pr] Plan: Introduce `PlanHeaderData` frozen dataclass", "branch_name": "plnd/introduce-plan-header-data-03-21-0826", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/.erk/scratch/sessions/613a690c-8104-4f32-b437-d0e7783d48cd/plan_snapshots/000001-c03363bc"}
+  </tool_result>
+  <assistant>Now push the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="117785" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 618}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015K64owDy1LVXMhhnjPDJtc">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="117785" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 618, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015K64owDy1LVXMhhnjPDJtc">
+SESSION_ID=613a690c-8104-4f32-b437-d0e7783d48cd
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-14/613a690c-8104-4f32-b437-d0e7783d48cd.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H57K3BBvyVzXCRjrdrYY5t">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 88 chars]...32-b437-d0e7783d48cd" --stage planning --source local --pr-number 9338 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1399" cache_read_input_tokens="118403" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1399, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

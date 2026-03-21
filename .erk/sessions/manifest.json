@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9338,
+  "sessions": [
+    {
+      "session_id": "613a690c-8104-4f32-b437-d0e7783d48cd",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-21T08:27:19.038245+00:00",
+      "files": [
+        "planning-613a690c-8104-4f32-b437-d0e7783d48cd-613a690c-8104-4f32-b437-d0e7783d48cd-part1.xml",
+        "planning-613a690c-8104-4f32-b437-d0e7783d48cd-613a690c-8104-4f32-b437-d0e7783d48cd-part2.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 15,
+      "raw_size_kb": 1454,
+      "xml_size_kb": 97,
+      "git_branch": "plnd/fix-multinode-landing-node-03-21-0712"
+    }
+  ]
+}
