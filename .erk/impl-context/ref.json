@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Move slot allocation logic from `erk_slots.common` to `erk.core` and add branch name to checkout commands"
+}
