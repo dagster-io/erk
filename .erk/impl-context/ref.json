@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Add slot delete command + extract shared helpers",
+  "objective_id": 9272,
+  "node_ids": [
+    "2.3"
+  ]
+}
