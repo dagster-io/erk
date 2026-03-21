@@ -19,6 +19,24 @@
       "raw_size_kb": 1092,
       "xml_size_kb": 88,
       "git_branch": "plnd/prune-plan-header-fns-03-21-1006"
+    },
+    {
+      "session_id": "7176d21b-1146-437f-b981-15f1f29ea437",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T14:17:11.825139+00:00",
+      "files": [
+        "impl-7176d21b-1146-437f-b981-15f1f29ea437-7176d21b-1146-437f-b981-15f1f29ea437-part1.xml",
+        "impl-7176d21b-1146-437f-b981-15f1f29ea437-7176d21b-1146-437f-b981-15f1f29ea437-part2.xml",
+        "impl-7176d21b-1146-437f-b981-15f1f29ea437-7176d21b-1146-437f-b981-15f1f29ea437-part3.xml",
+        "impl-7176d21b-1146-437f-b981-15f1f29ea437-7176d21b-1146-437f-b981-15f1f29ea437-part4.xml",
+        "impl-7176d21b-1146-437f-b981-15f1f29ea437-7176d21b-1146-437f-b981-15f1f29ea437-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 6,
+      "raw_size_kb": 1114,
+      "xml_size_kb": 96,
+      "git_branch": "plnd/prune-plan-header-fns-03-21-1006"
     }
   ]
 }
