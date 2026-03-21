@@ -53,6 +53,23 @@
       "raw_size_kb": 1263,
       "xml_size_kb": 202,
       "git_branch": "plnd/reopen-contested-threads-03-21-1520"
+    },
+    {
+      "session_id": "751f9388-ea44-4da1-a2a2-22a869c62e2e",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T16:03:14.423085+00:00",
+      "files": [
+        "address-751f9388-ea44-4da1-a2a2-22a869c62e2e-751f9388-ea44-4da1-a2a2-22a869c62e2e-part1.xml",
+        "address-751f9388-ea44-4da1-a2a2-22a869c62e2e-751f9388-ea44-4da1-a2a2-22a869c62e2e-part2.xml",
+        "address-751f9388-ea44-4da1-a2a2-22a869c62e2e-751f9388-ea44-4da1-a2a2-22a869c62e2e-part3.xml",
+        "address-751f9388-ea44-4da1-a2a2-22a869c62e2e-751f9388-ea44-4da1-a2a2-22a869c62e2e-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 3,
+      "raw_size_kb": 181,
+      "xml_size_kb": 82,
+      "git_branch": "plnd/reopen-contested-threads-03-21-1520"
     }
   ]
 }
