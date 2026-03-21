@@ -64,7 +64,7 @@ from erk_shared.scratch.session_markers import (
     get_existing_saved_branch,
     get_existing_saved_issue,
     read_objective_context_marker,
-    read_roadmap_step_marker,
+    read_roadmap_step_markers,
 )
 
 
@@ -406,9 +406,7 @@ def _save_plan_via_planned_pr(
             click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
 
     if session_id is not None:
-        step_id = read_roadmap_step_marker(session_id, repo_root)
-        if step_id is not None:
-            node_ids = (step_id,)
+        node_ids = read_roadmap_step_markers(session_id, repo_root)
 
     # Extract plan content before dedup so we can key dedup by title
     plan = resolve_plan_content(

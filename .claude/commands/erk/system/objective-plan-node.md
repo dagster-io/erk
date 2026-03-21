@@ -1,6 +1,6 @@
 ---
 description: Create an implementation plan for a known objective node (inner skill)
-argument-hint: "<objective-number> --node <node-id>"
+argument-hint: "<objective-number> --node <node-id> [--node <node-id>...]"
 allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
 ---
 
@@ -14,9 +14,10 @@ This skips interactive node selection (Steps 4-5 of the outer command) since the
 
 ```bash
 /erk:system:objective-plan-node 3679 --node 2.1
+/erk:system:objective-plan-node 3679 --node 3.1 --node 3.2 --node 3.3
 ```
 
-Both `<objective-number>` and `--node <node-id>` are required.
+`<objective-number>` and at least one `--node <node-id>` are required. Multiple `--node` flags are supported for multi-node planning.
 
 ---
 
@@ -27,9 +28,14 @@ Both `<objective-number>` and `--node <node-id>` are required.
 Parse `$ARGUMENTS` to extract:
 
 - **Objective number**: The numeric objective reference (required)
-- **Node ID**: The `--node` value (required)
+- **Node IDs**: All `--node` values (at least one required; multiple allowed)
 
-If either is missing, STOP and report: "ERROR: Both objective number and --node are required. Usage: /erk:system:objective-plan-node <objective-number> --node <node-id>"
+Examples:
+
+- `3679 --node 2.1` → objective=3679, node_ids=["2.1"]
+- `3679 --node 3.1 --node 3.2 --node 3.3` → objective=3679, node_ids=["3.1", "3.2", "3.3"]
+
+If either objective number or at least one `--node` is missing, STOP and report: "ERROR: Both objective number and at least one --node are required. Usage: /erk:system:objective-plan-node <objective-number> --node <node-id> [--node <node-id>...]"
 
 ### Step 2: Create Objective Context Marker
 
@@ -98,22 +104,27 @@ erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objectiv
 
 ### Step 4: Create Roadmap Node Marker and Mark as Planning
 
-Create the roadmap-step marker for the known node:
+Create the roadmap-step marker with all selected node IDs as a comma-separated string:
 
 ```bash
+# Single node:
 erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
-  --content "<node-id>" roadmap-step
+  --content "3.1" roadmap-step
+
+# Multiple nodes:
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
+  --content "3.1,3.2,3.3" roadmap-step
 ```
 
-Replace `<node-id>` with the node ID from arguments.
+Join all node IDs from arguments with commas (no spaces) as the `--content` value.
 
-Then mark the node as `planning` in the objective's roadmap (best-effort — may already be marked by the CLI):
+Then mark all nodes as `planning` in the objective's roadmap (best-effort — may already be marked by the CLI):
 
 ```bash
-erk exec update-objective-node <objective-number> --node <node-id> --status planning
+erk exec update-objective-node <objective-number> --node <node-id-1> [--node <node-id-2> ...] --status planning
 ```
 
-If this fails, continue with planning — the CLI may have already marked it.
+Pass a `--node` flag for each node ID. If this fails, continue with planning — the CLI may have already marked them.
 
 ### Step 5: Load Objective Skill
 
@@ -176,7 +187,7 @@ Check that `value` matches the expected objective number.
 
 ## Output Format
 
-- **Start:** "Planning node <node-id> of objective #<number>..."
+- **Start:** "Planning node(s) <node-id(s)> of objective #<number>..."
 - **After context:** Display node description and gathered context
 - **In plan mode:** Show plan content
 - **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
@@ -201,5 +212,5 @@ Check that `value` matches the expected objective number.
 - **This is an inner skill** — it expects the node to be pre-selected, not interactive
 - **Best-effort marking** — the `planning` status update may already be done by the CLI before Claude launches
 - **Objective context matters:** Read the full objective for design decisions and lessons learned
-- **One node at a time:** Each plan should focus on a single roadmap node
+- **Plans can target one or multiple nodes:** Single node is typical; multi-node is supported for related steps in the same phase
 - **Link back:** Always reference the parent objective in the plan

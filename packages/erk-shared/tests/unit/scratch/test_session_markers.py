@@ -10,6 +10,7 @@ from erk_shared.scratch.session_markers import (
     get_existing_saved_issue,
     read_plan_saved_marker,
     read_roadmap_step_marker,
+    read_roadmap_step_markers,
 )
 
 # create_plan_saved_marker tests
@@ -269,6 +270,81 @@ def test_read_roadmap_step_marker_strips_whitespace(tmp_path: Path) -> None:
     result = read_roadmap_step_marker(session_id, tmp_path)
 
     assert result == "phase1.step2"
+
+
+# read_roadmap_step_markers tests
+
+
+def test_read_roadmap_step_markers_returns_single_node_as_tuple(tmp_path: Path) -> None:
+    """Verify single node ID is returned as a 1-tuple."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("phase1.step2", encoding="utf-8")
+
+    result = read_roadmap_step_markers(session_id, tmp_path)
+
+    assert result == ("phase1.step2",)
+
+
+def test_read_roadmap_step_markers_returns_multiple_nodes(tmp_path: Path) -> None:
+    """Verify comma-separated node IDs are returned as a tuple."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("3.1,3.2,3.3", encoding="utf-8")
+
+    result = read_roadmap_step_markers(session_id, tmp_path)
+
+    assert result == ("3.1", "3.2", "3.3")
+
+
+def test_read_roadmap_step_markers_strips_whitespace_around_nodes(tmp_path: Path) -> None:
+    """Verify whitespace around each node ID is stripped."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("  3.1 , 3.2 , 3.3  ", encoding="utf-8")
+
+    result = read_roadmap_step_markers(session_id, tmp_path)
+
+    assert result == ("3.1", "3.2", "3.3")
+
+
+def test_read_roadmap_step_markers_returns_none_when_no_marker(tmp_path: Path) -> None:
+    """Verify None is returned when no marker exists."""
+    result = read_roadmap_step_markers("nonexistent-session", tmp_path)
+
+    assert result is None
+
+
+def test_read_roadmap_step_markers_returns_none_for_empty_content(tmp_path: Path) -> None:
+    """Verify None is returned when marker contains empty content."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text("", encoding="utf-8")
+
+    result = read_roadmap_step_markers(session_id, tmp_path)
+
+    assert result is None
+
+
+def test_read_roadmap_step_markers_filters_empty_parts(tmp_path: Path) -> None:
+    """Verify empty parts from trailing/leading commas are filtered out."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "roadmap-step.marker"
+    marker_file.write_text(",3.1,,3.2,", encoding="utf-8")
+
+    result = read_roadmap_step_markers(session_id, tmp_path)
+
+    assert result == ("3.1", "3.2")
 
 
 def test_marker_roundtrip(tmp_path: Path) -> None:
