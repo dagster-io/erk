@@ -33,7 +33,7 @@ def _planned_pr_context(
     fake_claude: FakeClaudeInstallation | None = None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> ErkContext:
-    """Build an ErkContext configured for planned-PR plan backend."""
+    """Build an ErkContext configured for planned-PR pr backend."""
     if fake_git is None:
         fake_git = FakeGit(current_branches={tmp_path: "main"})
     if fake_github is None:
@@ -41,7 +41,7 @@ def _planned_pr_context(
     if fake_claude is None:
         fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
 
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     return context_for_test(
         github=fake_github,
         git=fake_git,
@@ -355,7 +355,7 @@ def test_planned_pr_tracks_branch_with_graphite_on_trunk(
     """When on trunk, plan branch is tracked with trunk as Graphite parent."""
     fake_git = FakeGit(current_branches={tmp_path: "master"}, trunk_branches={tmp_path: "master"})
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -396,7 +396,7 @@ def test_planned_pr_branch_stacked_on_current_feature_branch(
         remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -436,7 +436,7 @@ def test_planned_pr_feature_branch_creates_correct_pr_base(
         remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
     fake_github = FakeLocalGitHub()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
@@ -464,7 +464,7 @@ def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
         # No remote_branches — branch is not on remote
     )
     fake_github = FakeLocalGitHub()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
@@ -500,7 +500,7 @@ def test_planned_pr_learn_branch_uses_trunk_as_base(
         trunk_branches={tmp_path: "master"},
     )
     fake_github = FakeLocalGitHub()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
@@ -841,7 +841,7 @@ def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.Mon
     """--current-branch skips retrack_branch since no new branch was created."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    monkeypatch.setenv("ERK_PR_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
