@@ -83,7 +83,7 @@ Examples:
 | ------------------------ | --------------------------------- | ------------------------------------------------------------ |
 | `/erk:pr-submit`         | `erk pr submit`                   | Agent delegates PR submission from current branch to CLI     |
 | `/erk:pr-address-remote` | `erk launch pr-address --pr <pr>` | Agent finds PR in conversation, CLI triggers GitHub workflow |
-| `/erk:prepare`           | `erk br co --for-plan <issue>`    | Agent finds issue in conversation, CLI creates worktree      |
+| `/erk:prepare`           | `erk br co --for-pr <issue>`      | Agent finds issue in conversation, CLI creates worktree      |
 
 **Pattern characteristics:**
 

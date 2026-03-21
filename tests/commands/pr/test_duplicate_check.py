@@ -237,7 +237,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "200"],
+            ["pr", "duplicate-check", "--pr", "200"],
             obj=ctx,
         )
 
@@ -312,7 +312,7 @@ def test_plan_flag_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "999"],
+            ["pr", "duplicate-check", "--pr", "999"],
             obj=ctx,
         )
 
@@ -320,8 +320,8 @@ def test_plan_flag_not_found() -> None:
         assert "not found" in result.output
 
 
-def test_plan_and_file_mutually_exclusive() -> None:
-    """Using both --plan and --file produces an error."""
+def test_pr_and_file_mutually_exclusive() -> None:
+    """Using both --pr and --file produces an error."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env)
@@ -335,7 +335,7 @@ def test_plan_and_file_mutually_exclusive() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "100", "--file", temp_path],
+            ["pr", "duplicate-check", "--pr", "100", "--file", temp_path],
             obj=ctx,
         )
 

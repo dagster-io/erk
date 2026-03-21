@@ -1,13 +1,13 @@
-"""Fetch erk-plans linked to an objective.
+"""Fetch erk-prs linked to an objective.
 
 Usage:
-    erk exec get-plans-for-objective <OBJECTIVE_NUMBER>
+    erk exec get-prs-for-objective <OBJECTIVE_NUMBER>
 
 Output:
-    JSON with {success, objective_number, plans: [{number, state, title}]}
+    JSON with {success, objective_number, prs: [{number, state, title}]}
 
 Exit Codes:
-    0: Success - plans fetched
+    0: Success - prs fetched
     1: Error - API error
 """
 
@@ -25,11 +25,11 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.types import BlockKeys
 
 
-@click.command(name="get-plans-for-objective")
+@click.command(name="get-prs-for-objective")
 @click.argument("objective_number", type=int)
 @click.pass_context
-def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
-    """Fetch erk-plans linked to an objective.
+def get_prs_for_objective(ctx: click.Context, objective_number: int) -> None:
+    """Fetch erk-prs linked to an objective.
 
     Lists all erk-pr issues with [erk-pr] title prefix, then filters
     to those whose plan-header metadata contains objective_id matching the
@@ -39,7 +39,7 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
     repo_root = require_repo_root(ctx)
 
     try:
-        all_plans = github.list_issues(
+        all_prs = github.list_issues(
             repo_root=repo_root,
             labels=["erk-pr"],
             state="all",
@@ -49,27 +49,27 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to list erk-plans: {e}",
+                    "error": f"Failed to list erk-prs: {e}",
                 }
             )
         )
         raise SystemExit(1) from e
 
-    # Filter plans that reference this objective
-    linked_plans = []
-    for plan in all_plans:
-        block = find_metadata_block(plan.body, BlockKeys.PLAN_HEADER)
+    # Filter prs that reference this objective
+    linked_prs = []
+    for pr in all_prs:
+        block = find_metadata_block(pr.body, BlockKeys.PLAN_HEADER)
         if block is None:
             continue
 
         # Check both objective_id (new) and objective_issue (legacy)
         obj_id = block.data.get("objective_id") or block.data.get("objective_issue")
         if obj_id == objective_number:
-            linked_plans.append(
+            linked_prs.append(
                 {
-                    "number": plan.number,
-                    "state": plan.state,
-                    "title": plan.title,
+                    "number": pr.number,
+                    "state": pr.state,
+                    "title": pr.title,
                 }
             )
 
@@ -78,7 +78,7 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
             {
                 "success": True,
                 "objective_number": objective_number,
-                "plans": linked_plans,
+                "prs": linked_prs,
             }
         )
     )

@@ -53,9 +53,6 @@ from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
-from erk.cli.commands.exec.scripts.get_plans_for_objective import (
-    get_plans_for_objective,
-)
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
 from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
@@ -67,6 +64,9 @@ from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
 from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
+from erk.cli.commands.exec.scripts.get_prs_for_objective import (
+    get_prs_for_objective,
+)
 from erk.cli.commands.exec.scripts.get_review_activity_log import (
     get_review_activity_log,
 )
@@ -213,7 +213,7 @@ exec_group.add_command(fetch_sessions, name="fetch-sessions")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
 exec_group.add_command(get_plan_info, name="get-plan-info")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
-exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
+exec_group.add_command(get_prs_for_objective, name="get-prs-for-objective")
 exec_group.add_command(get_pr_view, name="get-pr-view")
 exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
 exec_group.add_command(get_issue_body, name="get-issue-body")

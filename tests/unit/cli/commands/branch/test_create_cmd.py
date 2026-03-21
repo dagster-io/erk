@@ -340,8 +340,8 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
         assert state.assignments[0].slot_name == "erk-slot-01"
 
 
-def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None:
-    """Test that --for-plan creates branch, slot, and .impl/ folder."""
+def test_branch_create_for_pr_creates_branch_and_impl_folder(tmp_path) -> None:
+    """Test that --for-pr creates branch, slot, and .impl/ folder."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -392,7 +392,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         )
 
         result = runner.invoke(
-            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "create", "--for-pr", "123"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -418,8 +418,8 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert str(activate_script) in result.output
 
 
-def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
-    """Test that --for-plan accepts GitHub issue URLs."""
+def test_branch_create_for_pr_with_issue_url(tmp_path) -> None:
+    """Test that --for-pr accepts GitHub issue URLs."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -469,7 +469,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
 
         result = runner.invoke(
             cli,
-            ["br", "create", "--for-plan", "https://github.com/owner/repo/issues/456"],
+            ["br", "create", "--for-pr", "https://github.com/owner/repo/issues/456"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -479,8 +479,8 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
         assert "Created .erk/impl-context/ folder from PR #456" in result.output
 
 
-def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
-    """Test that --for-plan with --no-slot creates branch but not .impl folder."""
+def test_branch_create_for_pr_with_no_slot_skips_impl() -> None:
+    """Test that --for-pr with --no-slot creates branch but not .impl folder."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -531,7 +531,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
 
         result = runner.invoke(
             cli,
-            ["br", "create", "--for-plan", "100", "--no-slot"],
+            ["br", "create", "--for-pr", "100", "--no-slot"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -543,8 +543,8 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
         assert ".impl folder not created" in result.output or "Note:" in result.output
 
 
-def test_branch_create_fails_with_both_branch_and_for_plan() -> None:
-    """Test that specifying both BRANCH and --for-plan fails."""
+def test_branch_create_fails_with_both_branch_and_for_pr() -> None:
+    """Test that specifying both BRANCH and --for-pr fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -568,17 +568,17 @@ def test_branch_create_fails_with_both_branch_and_for_plan() -> None:
 
         result = runner.invoke(
             cli,
-            ["br", "create", "my-branch", "--for-plan", "123"],
+            ["br", "create", "my-branch", "--for-pr", "123"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
         assert result.exit_code == 1
-        assert "Cannot specify both BRANCH and --for-plan" in result.output
+        assert "Cannot specify both BRANCH and --for-pr" in result.output
 
 
-def test_branch_create_fails_without_branch_or_for_plan() -> None:
-    """Test that omitting both BRANCH and --for-plan fails."""
+def test_branch_create_fails_without_branch_or_for_pr() -> None:
+    """Test that omitting both BRANCH and --for-pr fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -603,7 +603,7 @@ def test_branch_create_fails_without_branch_or_for_plan() -> None:
         result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
-        assert "Must provide BRANCH argument or --for-plan option" in result.output
+        assert "Must provide BRANCH argument or --for-pr option" in result.output
 
 
 def test_branch_create_stacks_on_current_branch() -> None:
@@ -650,8 +650,8 @@ def test_branch_create_stacks_on_current_branch() -> None:
         assert parent == "feature-parent"
 
 
-def test_branch_create_for_plan_stacks_on_current_branch() -> None:
-    """Test that --for-plan stacks on current branch when not on trunk."""
+def test_branch_create_for_pr_stacks_on_current_branch() -> None:
+    """Test that --for-pr stacks on current branch when not on trunk."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -703,7 +703,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
         )
 
         result = runner.invoke(
-            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "create", "--for-pr", "200"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -850,8 +850,8 @@ def test_branch_create_normal_allocation_from_root() -> None:
         assert state.assignments[0].branch_name == "new-feature"
 
 
-def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
-    """Test that --for-plan from assigned slot stacks in place AND creates .impl/."""
+def test_branch_create_for_pr_stacks_in_place_creates_impl() -> None:
+    """Test that --for-pr from assigned slot stacks in place AND creates .impl/."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -916,7 +916,7 @@ def test_branch_create_for_plan_stacks_in_place_creates_impl() -> None:
         )
 
         result = runner.invoke(
-            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "create", "--for-pr", "300"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0

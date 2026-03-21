@@ -87,7 +87,7 @@ Parse JSON output to get list of PRs that reference this objective. The output h
 ### Step 5: Fetch Associated Plans
 
 ```bash
-erk exec get-plans-for-objective <objective_number>
+erk exec get-prs-for-objective <objective_number>
 ```
 
 Parse JSON output to get plans linked to this objective. The output has format:

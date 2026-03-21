@@ -2,7 +2,7 @@
 
 This module provides the canonical logic for preparing plans for worktree creation,
 including validation, branch naming, and metadata extraction. Used by both
-`erk wt create --from-plan` and `erk implement`.
+`erk wt create --from-pr` and `erk implement`.
 """
 
 from dataclasses import dataclass
