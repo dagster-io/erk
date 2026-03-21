@@ -1,0 +1,1233 @@
+<session>
+  <meta branch="plnd/add-objective-execute-plan-03-21-1924" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9382&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9382` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9382. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28871" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28871, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019DtqyAYqtGoYkhkfppPdQh">
+    <param name="command">erk exec setup-impl --issue 9382 2&gt;&amp;1</param>
+    <param name="description">Set up implementation environment for plan #9382</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28871" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28871, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019DtqyAYqtGoYkhkfppPdQh">
+Already on PR branch 'plnd/add-objective-execute-plan-03-21-1924', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-objective-execute-plan-03-21-1924", "pr_number": 9382, "pr_url": "https://github.com/dagster-io/erk/pull/9382", "branch": "plnd/add-objective-execute-plan-03-21-1924", "pr_title": "[erk-pr] erk exec objective-execute-plan \u2014 Sequential Stacked Execution Skeleton", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9382, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_018cbNCEmE6tTVnveDM8sEH2">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-objective-execute-plan-03-21-1924/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28871" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018cbNCEmE6tTVnveDM8sEH2">
+     1→# Plan: `erk exec objective-execute-plan` — Sequential Stacked Execution Skeleton
+     2→
+     3→## Context
+     4→
+     5→We want to autonomously execute an objective as a Graphite stack of PRs. Each node in the objective's roadmap becomes a PR that builds on the previous node's branch, forming a linear stack.
+     6→
+     7→The first step is proving the mechanics: an exec script that resolves the next N nodes from the dependency graph in execution order, accounting for the fact that completing node 1 unblocks node 2. Dry-run / preview only — no actual dispatch.
+     8→
+     9→## Implementation
+    10→
+    11→### 1. Add `simulate_next_n()` to `DependencyGraph`
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`
+    14→
+    15→Add method to `DependencyGraph` class after `next_node()` (~line 100):
+    16→
+    17→```python
+    18→def simulate_next_n(self, *, count: int) -&gt; list[ObjectiveNode]:
+    19→```
+    20→
+    21→Logic: repeatedly find `next_node()`, record it, replace it with a done-status copy in a working list, rebuild graph, repeat. Returns original (pending-status) nodes. Pure function, no mutation.
+    22→
+    23→### 2. Create exec script `objective_execute_plan.py`
+    24→
+    25→**File:** `src/erk/cli/commands/exec/scripts/objective_execute_plan.py` (new)
+    26→
+    27→Command: `erk exec objective-execute-plan &lt;objective_number&gt; --count N [--json]`
+    28→
+    29→Follows the exec script pattern (Click command, `@click.pass_context`, context helpers):
+    30→
+
+... [69 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have the plan. Let me load the relevant documentation and read the reference files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1965" cache_read_input_tokens="28871" cache_creation="{'ephemeral_5m_input_tokens': 1965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_016o4cQZYpmknDQy373JqUoP">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'pending', 'acti...[truncated 453 chars]...and submit PR', 'status': 'pending', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1965" cache_read_input_tokens="28871" cache_creation="{'ephemeral_5m_input_tokens': 1965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016o4cQZYpmknDQy373JqUoP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GWV9MXeKdgweAAy6PpSahy">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="30836" cache_creation="{'ephemeral_5m_input_tokens': 292, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GWV9MXeKdgweAAy6PpSahy">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Erui4Feky3cQBy853JjRMH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="31128" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xc35t99EqnyKGZREBsukZw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_plan_setup.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="31128" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Erui4Feky3cQBy853JjRMH">
+     1→"""Dependency graph representation for objective roadmaps.
+     2→
+     3→Provides ObjectiveNode and DependencyGraph types that model node dependencies
+     4→explicitly, plus a graph_from_phases() parser that infers sequential dependencies
+     5→from existing RoadmapPhase/RoadmapNode data.
+     6→"""
+     7→
+     8→from collections import Counter
+     9→from dataclasses import dataclass
+    10→
+    11→from erk_shared.gateway.github.metadata.roadmap import (
+    12→    RoadmapNode,
+    13→    RoadmapNodeStatus,
+    14→    RoadmapPhase,
+    15→    group_nodes_by_phase,
+    16→    parse_v2_roadmap,
+    17→)
+    18→
+    19→_TERMINAL_STATUSES: set[RoadmapNodeStatus] = {"done", "skipped"}
+    20→
+    21→_STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
+    22→    "pending": 0,
+    23→    "blocked": 1,
+    24→    "planning": 2,
+    25→    "in_progress": 3,
+    26→    "done": 4,
+    27→    "skipped": 4,
+    28→}
+    29→
+    30→_STATUS_SYMBOLS: dict[RoadmapNodeStatus, str] = {
+
+... [293 lines omitted] ...
+
+   310→        (graph, enriched_phases, errors) or None if body is not v2 format.
+   315→    phases, errors = v2_result
+   317→    return (graph, phases, errors)
+  </tool_result>
+  <tool_result tool="toolu_01Xc35t99EqnyKGZREBsukZw">
+     1→"""Fetch, validate, and set up context for objective-plan command.
+     2→
+     3→Consolidates data fetching, validation, marker creation, and roadmap
+     4→serialization into a single exec command, eliminating the Task agent.
+     5→
+     6→Usage:
+     7→    erk exec objective-plan-setup 3679 --session-id SESSION_ID
+     8→
+     9→Output:
+    10→    JSON with objective data, roadmap, validation results, and marker status.
+    11→
+    12→Exit Codes:
+    13→    0: Success
+    14→    1: Error (not found, wrong label, validation error)
+    15→"""
+    16→
+    17→import json
+    18→from pathlib import Path
+    19→
+    20→import click
+    21→
+    22→from erk.cli.commands.objective.check.validation import (
+    23→    ERK_OBJECTIVE_LABEL,
+    24→    ObjectiveValidationError,
+    25→    validate_objective,
+    26→)
+    27→from erk.cli.repo_resolution import get_remote_github
+    28→from erk_shared.context.helpers import require_context, require_repo_root
+    29→from erk_shared.context.types import NoRepoSentinel
+    30→from erk_shared.gateway.github.issues.types import IssueNotFound
+
+... [148 lines omitted] ...
+
+    56→                "error": "not_found",
+    63→    warnings: list[str] = []
+    68→                "error": "is_plan",
+    75→        warnings.append(
+    92→    if isinstance(validation_result, ObjectiveValidationError):
+    96→                "error": "validation_error",
+    97→                "message": validation_result.error,
+   126→        "warnings": warnings,
+   152→                    "error": "no_repo",
+  </tool_result>
+  <assistant>Now let me read the reference files mentioned in the plan and the existing tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6692" cache_read_input_tokens="31128" cache_creation="{'ephemeral_5m_input_tokens': 6692, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W4HdSGFC4gBRnrKiDRUNrh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6692" cache_read_input_tokens="31128" cache_creation="{'ephemeral_5m_input_tokens': 6692, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013Y6dcj6XVsekT5JmDYjoFZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateway/github/metadata/test_dependency_graph.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6692" cache_read_input_tokens="31128" cache_creation="{'ephemeral_5m_input_tokens': 6692, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Y6dcj6XVsekT5JmDYjoFZ">
+     1→"""Unit tests for dependency_graph sparkline, find_graph_next_node, and head state."""
+     2→
+     3→import pytest
+     4→
+     5→from erk_shared.gateway.github.metadata.dependency_graph import (
+     6→    DependencyGraph,
+     7→    ObjectiveNode,
+     8→    build_state_sparkline,
+     9→    compute_objective_head_state,
+    10→    find_graph_next_node,
+    11→    phases_from_graph,
+    12→)
+    13→
+    14→
+    15→def _make_node(
+    16→    node_id: str,
+    17→    *,
+    18→    status: str = "pending",
+    19→    depends_on: tuple[str, ...] = (),
+    20→) -&gt; ObjectiveNode:
+    21→    return ObjectiveNode(
+    22→        id=node_id,
+    23→        description=f"Node {node_id}",
+    24→        status=status,
+    25→        pr=None,
+    26→        depends_on=depends_on,
+    27→        slug=None,
+    28→    )
+    29→
+    30→
+
+... [191 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01W4HdSGFC4gBRnrKiDRUNrh">
+     1→"""Create a plan from an objective node."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.exec.scripts.update_objective_node import (
+     8→    _replace_node_refs_in_body,
+     9→)
+    10→from erk.cli.commands.implement_shared import normalize_model_name
+    11→from erk.cli.commands.objective.check.validation import (
+    12→    ObjectiveValidationError,
+    13→    ObjectiveValidationSuccess,
+    14→    validate_objective,
+    15→)
+    16→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    17→from erk.cli.commands.one_shot_remote_dispatch import (
+    18→    OneShotDispatchParams,
+    19→    OneShotDispatchResult,
+    20→    dispatch_one_shot_remote,
+    21→)
+    22→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
+    25→from erk.core.branch_slug_generator import generate_branch_slug
+    26→from erk.core.context import ErkContext, NoRepoSentinel
+    27→from erk_shared.context.types import InteractiveAgentConfig
+    28→from erk_shared.core.prompt_executor import PromptExecutor
+    29→from erk_shared.gateway.github.issues.types import IssueNotFound
+    30→from erk_shared.gateway.github.metadata.core import extract_metadata_value
+
+... [858 lines omitted] ...
+
+    50→    Uses the prompt executor to generate a concise slug. On failure,
+   121→        click.ClickException: If objective cannot be resolved or has no pending nodes
+   131→            raise click.ClickException("Not on a branch")
+   134→            raise click.ClickException(
+   139→        raise click.ClickException(
+   151→    if isinstance(result, ObjectiveValidationError):
+   152→        raise click.ClickException(result.error)
+   156→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   160→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   166→        raise click.ClickException(
+   167→            f"Internal error: next node '{next_node.id}' not found in phases"
+   207→        click.ClickException: If objective cannot be resolved or has no pending unblocked nodes
+   217→            raise click.ClickException("Not on a branch")
+   220→            raise click.ClickException(
+   225→        raise click.ClickException(
+   237→    if isinstance(result, ObjectiveValidationError):
+   238→        raise click.ClickException(result.error)
+   242→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   246→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   255→            raise click.ClickException(f"Internal error: node '{node.id}' not found in phases")
+   296→        raise click.UsageError("--ref-current requires a local git repository")
+   486→    Silently catches all errors — the inner skill will retry if needed.
+   633→        raise click.ClickException("--all-unblocked and --node are mutually exclusive")
+   635→        raise click.ClickException("--all-unblocked and --next are mutually exclusive")
+   637→        raise click.ClickException("--next and --node are mutually exclusive")
+   641→        raise click.ClickException("--repo requires --one-shot or --all-unblocked")
+   644→        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+   653→            raise click.ClickException("--model requires --one-shot")
+   655→            raise click.ClickException("--dry-run requires --one-shot")
+   745→    except RuntimeError as e:
+   746→        raise click.ClickException(str(e)) from e
+   783→        if isinstance(result, ObjectiveValidationError):
+   784→            raise click.ClickException(result.error)
+   789→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   797→                raise click.ClickException(
+   811→                raise click.ClickException(
+   812→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+   823→        raise click.UsageError("--ref-current requires a local git repository")
+  </tool_result>
+  <assistant>Now let me look at a sample exec script test to understand the test pattern:</assistant>
+  <usage input_tokens="2858" cache_creation_input_tokens="11749" cache_read_input_tokens="37820" cache_creation="{'ephemeral_5m_input_tokens': 11749, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01A2yQcaz87yr6t8PkcktGsn">
+    <param name="command">ls /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/ 2&gt;&amp;1 | head -20</param>
+    <param name="description">List exec script test files</param>
+  </tool_use>
+  <usage input_tokens="2858" cache_creation_input_tokens="11749" cache_read_input_tokens="37820" cache_creation="{'ephemeral_5m_input_tokens': 11749, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016gjWijb5oLSfQhNtZ3SVXp">
+    <param name="command">ls /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ 2&gt;&amp;1 | head -30</param>
+    <param name="description">List exec script files</param>
+  </tool_use>
+  <usage input_tokens="2858" cache_creation_input_tokens="11749" cache_read_input_tokens="37820" cache_creation="{'ephemeral_5m_input_tokens': 11749, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016gjWijb5oLSfQhNtZ3SVXp">
+AGENTS.md
+CLAUDE.md
+__init__.py
+__pycache__
+add_objective_node.py
+add_plan_label.py
+add_plan_labels.py
+add_pr_labels_cmd.py
+add_remote_execution_note.py
+capture_session_info.py
+ci_fetch_summaries.py
+ci_generate_summaries.py
+ci_update_pr_body.py
+ci_verify_autofix.py
+classify_pr_feedback.py
+cleanup_impl_context.py
+close_pr.py
+close_prs.py
+cmux_checkout_workspace.py
+create_impl_context_from_plan.py
+create_pr_from_session.py
+dash_data.py
+detect_plan_from_branch.py
+detect_trunk_branch.py
+discover_reviews.py
+download_remote_session.py
+exit_plan_mode_hook.py
+extract_latest_plan.py
+fetch_sessions.py
+generate_pr_address_summary.py
+  </tool_result>
+  <tool_result tool="toolu_01A2yQcaz87yr6t8PkcktGsn">
+__init__.py
+fixtures.py
+test_add_objective_node.py
+test_add_plan_label.py
+test_add_plan_labels.py
+test_add_pr_labels_cmd.py
+test_add_remote_execution_note.py
+test_capture_session_info.py
+test_ci_fetch_summaries.py
+test_ci_generate_summaries.py
+test_ci_update_pr_body.py
+test_ci_verify_autofix.py
+test_classify_pr_feedback.py
+test_cleanup_impl_context.py
+test_close_pr.py
+test_close_prs.py
+test_cmux_checkout_workspace.py
+test_create_impl_context_from_plan.py
+test_dash_data.py
+test_detect_plan_from_branch.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_019NQfpWiUzKvf7HXNRYszP1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="272" cache_creation_input_tokens="3491" cache_read_input_tokens="49569" cache_creation="{'ephemeral_5m_input_tokens': 3491, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019NQfpWiUzKvf7HXNRYszP1">
+     1→"""Unit tests for add-objective-node command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    11→from tests.fakes.gateway.github import FakeLocalGitHub
+    12→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    13→
+    14→ROADMAP_BODY = """\
+    15→# Objective: Build Feature X
+    16→
+    17→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    18→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    19→&lt;details&gt;
+    20→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    21→
+    22→```yaml
+    23→
+    24→schema_version: '4'
+    25→nodes:
+    26→  - id: '1.1'
+    27→    slug: setup-project
+    28→    description: Set up project structure
+    29→    status: done
+    30→    pr: '#100'
+
+... [446 lines omitted] ...
+
+   106→            "Add error handling",
+   111→    assert result.exit_code == 0, f"Failed: {result.output}"
+   121→    assert "Add error handling" in updated_body
+   143→    assert result.exit_code == 0, f"Failed: {result.output}"
+   167→    assert result.exit_code == 0, f"Failed: {result.output}"
+   195→    assert result.exit_code == 0, f"Failed: {result.output}"
+   225→    assert result.exit_code == 0, f"Failed: {result.output}"
+   254→    assert result.exit_code == 0, f"Failed: {result.output}"
+   263→    """Error when issue doesn't exist."""
+   282→    assert output["error"] == "issue_not_found"
+   286→    """Error when issue has no roadmap metadata block."""
+   306→    assert output["error"] == "no_roadmap"
+   327→    assert result.exit_code == 0, f"Failed: {result.output}"
+   357→    assert result.exit_code == 0, f"Failed: {result.output}"
+   366→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   382→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   409→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   454→            "Add error handling",
+   459→    assert result.exit_code == 0, f"Failed: {result.output}"
+   470→    assert "Add error handling" in updated_comment
+  </tool_result>
+  <assistant>Now let me check how the exec scripts register commands and what the validate_objective function looks like:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9464" cache_read_input_tokens="49569" cache_creation="{'ephemeral_5m_input_tokens': 9464, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01J4dKqrMAfbU5hePVvcr2WK">
+    <param name="command">grep -n "objective_plan_setup\|objective-plan-setup\|objective_execute_plan\|objective-exe...[truncated 110 chars]...jective-execute-plan" /home/runner/work/erk/erk/src/erk/cli/commands/exec/ 2&gt;&amp;1 | head -20</param>
+    <param name="description">Check how exec scripts are registered</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9464" cache_read_input_tokens="49569" cache_creation="{'ephemeral_5m_input_tokens': 9464, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QMRCj1Jq7toreK7N1fafRE">
+    <param name="command">grep -rn "objective_plan_setup\|add_objective_node\|all_commands\|register" /home/runner/work/erk/erk/src/erk/cli/commands/exec/__init__.py 2&gt;&amp;1 | head -30</param>
+    <param name="description">Check exec command registration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9464" cache_read_input_tokens="49569" cache_creation="{'ephemeral_5m_input_tokens': 9464, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QMRCj1Jq7toreK7N1fafRE">
+
+  </tool_result>
+  <tool_result tool="toolu_01J4dKqrMAfbU5hePVvcr2WK">
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/exec/__pycache__/group.cpython-312.pyc: binary file matches
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py:99:from erk.cli.commands.exec.scripts.objective_plan_setup import (
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py:100:    objective_plan_setup,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py:247:exec_group.add_command(objective_plan_setup, name="objective-plan-setup")
+grep: /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__pycache__/objective_plan_setup.cpython-312.pyc: binary file matches
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_plan_setup.py:135:def objective_plan_setup(ctx: click.Context, objective_number: int, session_id: str) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XTpDCWvLaGCopKgy5Za8FT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="851" cache_read_input_tokens="59033" cache_creation="{'ephemeral_5m_input_tokens': 851, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XTpDCWvLaGCopKgy5Za8FT">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    13→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    21→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    22→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    23→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    24→from erk.cli.commands.exec.scripts.classify_pr_feedback import classify_pr_feedback
+    25→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    26→from erk.cli.commands.exec.scripts.close_pr import (
+    27→    close_pr,
+    28→)
+    29→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    30→from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01X6tEdLg5NJb3usUWkJcS26">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">50</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1129" cache_read_input_tokens="59884" cache_creation="{'ephemeral_5m_input_tokens': 1129, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X6tEdLg5NJb3usUWkJcS26">
+    50→    generate_pr_address_summary,
+    51→)
+    52→from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
+    53→from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
+    54→from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
+    55→from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
+    56→from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
+    57→from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+    58→from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
+    59→from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
+    60→from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
+    61→    get_pr_discussion_comments,
+    62→)
+    63→from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
+    64→from erk.cli.commands.exec.scripts.get_pr_review_comments import (
+    65→    get_pr_review_comments,
+    66→)
+    67→from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
+    68→from erk.cli.commands.exec.scripts.get_prs_for_objective import (
+    69→    get_prs_for_objective,
+    70→)
+    71→from erk.cli.commands.exec.scripts.get_review_activity_log import (
+    72→    get_review_activity_log,
+    73→)
+    74→from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
+    75→from erk.cli.commands.exec.scripts.impl_init import impl_init
+    76→from erk.cli.commands.exec.scripts.impl_signal import impl_signal
+    77→from erk.cli.commands.exec.scripts.impl_verify import impl_verify
+    78→from erk.cli.commands.exec.scripts.incremental_dispatch import (
+    79→    incremental_dispatch,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NYSTSzDa4wh56MxuW6eREu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="offset">150</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1892" cache_read_input_tokens="61013" cache_creation="{'ephemeral_5m_input_tokens': 1892, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NYSTSzDa4wh56MxuW6eREu">
+   150→    resolve_review_threads,
+   151→)
+   152→from erk.cli.commands.exec.scripts.run_review import run_review
+   153→from erk.cli.commands.exec.scripts.session_id_injector_hook import (
+   154→    session_id_injector_hook,
+   155→)
+   156→from erk.cli.commands.exec.scripts.set_local_review_marker import (
+   157→    set_local_review_marker,
+   158→)
+   159→from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+   160→from erk.cli.commands.exec.scripts.setup_impl import setup_impl
+   161→from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+   162→    setup_impl_from_pr,
+   163→)
+   164→from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
+   165→    store_tripwire_candidates,
+   166→)
+   167→from erk.cli.commands.exec.scripts.summarize_impl_failure import (
+   168→    summarize_impl_failure,
+   169→)
+   170→from erk.cli.commands.exec.scripts.track_learn_evaluation import (
+   171→    track_learn_evaluation,
+   172→)
+   173→from erk.cli.commands.exec.scripts.track_learn_result import (
+   174→    track_learn_result,
+   175→)
+   176→from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
+   177→from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
+   178→from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
+   179→from erk.cli.commands.exec.scripts.update_pr_description import (
+
+... [119 lines omitted] ...
+
+   276→exec_group.add_command(summarize_impl_failure, name="summarize-impl-failure")
+  </tool_result>
+  <assistant>Now let me check the `validate_objective` function and the `FakeGitHubIssues` to understand the test patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3616" cache_read_input_tokens="62905" cache_creation="{'ephemeral_5m_input_tokens': 3616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HLeSpy8giuKS4BLB4QkBSv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/check/validation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3616" cache_read_input_tokens="62905" cache_creation="{'ephemeral_5m_input_tokens': 3616, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HLeSpy8giuKS4BLB4QkBSv">
+     1→"""Pure validation logic for objective check.
+     2→
+     3→Contains validate_objective() and its helper functions, along with
+     4→the ObjectiveValidationSuccess and ObjectiveValidationError types.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueNotFound
+    10→from erk_shared.gateway.github.metadata.core import (
+    11→    find_metadata_block,
+    12→    has_metadata_block,
+    13→)
+    14→from erk_shared.gateway.github.metadata.dependency_graph import (
+    15→    DependencyGraph,
+    16→    build_graph,
+    17→    compute_graph_summary,
+    18→    find_graph_next_node,
+    19→)
+    20→from erk_shared.gateway.github.metadata.plan_header import (
+    21→    extract_plan_header_objective_issue,
+    22→)
+    23→from erk_shared.gateway.github.metadata.roadmap import parse_roadmap
+    24→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+    25→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    26→
+    27→ERK_OBJECTIVE_LABEL = "erk-objective"
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [277 lines omitted] ...
+
+    32→    """Validation completed (may have passed or failed checks).
+    37→        failed_count: Number of failed checks
+    38→        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+    41→        validation_errors: Parser-level warnings from roadmap parsing
+    47→    failed_count: int
+    51→    validation_errors: list[str]
+    56→class ObjectiveValidationError:
+    59→    error: str
+    62→ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+   164→        ObjectiveValidationError if unable to complete validation
+   171→        return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
+   181→    phases, validation_errors = parse_roadmap(issue.body)
+   186→        failed_count = sum(1 for passed, _ in checks if not passed)
+   188→            passed=failed_count == 0,
+   190→            failed_count=failed_count,
+   194→            validation_errors=[],
+   201→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   202→        failed_count = sum(1 for passed, _ in checks if not passed)
+   206→            failed_count=failed_count,
+   210→            validation_errors=validation_errors,
+   290→    failed_count = sum(1 for passed, _ in checks if not passed)
+   293→        passed=failed_count == 0,
+   295→        failed_count=failed_count,
+   299→        validation_errors=validation_errors,
+  </tool_result>
+  <assistant>Now I have enough context to implement everything. Let me check what FakeGitHubIssues looks like for the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4174" cache_read_input_tokens="66521" cache_creation="{'ephemeral_5m_input_tokens': 4174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GaSm6ZhjbF5Zrde36sozLc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github_issues.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4174" cache_read_input_tokens="66521" cache_creation="{'ephemeral_5m_input_tokens': 4174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GaSm6ZhjbF5Zrde36sozLc">
+     1→"""In-memory fake implementation of GitHub issues for testing."""
+     2→
+     3→from dataclasses import replace
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.types import (
+     9→    CreateIssueResult,
+    10→    IssueComment,
+    11→    IssueInfo,
+    12→    IssueNotFound,
+    13→)
+    14→from erk_shared.gateway.github.types import BodyContent, BodyFile, BodyText
+    15→
+    16→
+    17→class FakeGitHubIssues(GitHubIssues):
+    18→    """In-memory fake implementation for testing.
+    19→
+    20→    All state is provided via constructor using keyword arguments.
+    21→    """
+    22→
+    23→    def __init__(
+    24→        self,
+    25→        *,
+    26→        issues: dict[int, IssueInfo] | None = None,
+    27→        next_issue_number: int = 1,
+    28→        labels: set[str] | None = None,
+    29→        comments: dict[int, list[str]] | None = None,
+    30→        comments_with_urls: dict[int, list[IssueComment]] | None = None,
+
+... [55 lines omitted] ...
+
+    32→        add_reaction_error: str | None = None,
+    33→        get_comments_error: str | None = None,
+    46→            add_reaction_error: If set, add_reaction_to_comment raises RuntimeError
+    48→            get_comments_error: If set, get_issue_comments_with_urls raises
+    49→                RuntimeError with this message
+    60→        self._add_reaction_error = add_reaction_error
+    61→        self._get_comments_error = get_comments_error
+  </tool_result>
+  <assistant>Now I have enough context to start implementing. Let me check what `enrich_phase_names` does and check the exec scripts AGENTS.md for context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1609" cache_read_input_tokens="70695" cache_creation="{'ephemeral_5m_input_tokens': 1609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GEroPjDLZeieE1V9TGgyj8">
+    <param name="command">grep -n "enrich_phase_names" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py | head -10</param>
+    <param name="description">Find enrich_phase_names in roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1609" cache_read_input_tokens="70695" cache_creation="{'ephemeral_5m_input_tokens': 1609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GEroPjDLZeieE1V9TGgyj8">
+471:def enrich_phase_names(body: str, phases: list[RoadmapPhase]) -&gt; list[RoadmapPhase]:
+544:    phases = enrich_phase_names(body, phases)
+574:        phases = enrich_phase_names(body, phases)
+856:    phases = enrich_phase_names(comment_body, phases)
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me implement the plan:
+
+**Phase 1: Add `simulate_next_n()` to `DependencyGraph`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="72304" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_0125xZKKRxFENj7qJCm1RvGZ">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'in_progress', '...[truncated 457 chars]...and submit PR', 'status': 'pending', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="72304" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0125xZKKRxFENj7qJCm1RvGZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Wkvt8D2TCfemLSowYkejA3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+    <param name="old_string">    def next_node(self) -&gt; ObjectiveNode | None:
+        """First unblocked pending node b...[truncated 85 chars]...nodes:
+            return nodes[0]
+        return None
+
+    def is_complete(self) -&gt; bool:</param>
+    <param name="new_string">    def next_node(self) -&gt; ObjectiveNode | None:
+        """First unblocked pending node b...[truncated 1199 chars]...e in working_nodes
+            ]
+        return result
+
+    def is_complete(self) -&gt; bool:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="313" cache_read_input_tokens="72569" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wkvt8D2TCfemLSowYkejA3">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add the `replace` import from `dataclasses`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="72882" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QmSM5xf3p52a9q7KMnpxTP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+    <param name="old_string">from collections import Counter
+from dataclasses import dataclass</param>
+    <param name="new_string">from collections import Counter
+from dataclasses import dataclass, replace</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="72882" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QmSM5xf3p52a9q7KMnpxTP">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01WgeiEFB4RGhnE2mXoqZi1m">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'completed', 'ac...[truncated 459 chars]...and submit PR', 'status': 'pending', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="225" cache_read_input_tokens="73482" cache_creation="{'ephemeral_5m_input_tokens': 225, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WgeiEFB4RGhnE2mXoqZi1m">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 2: Create exec script `objective_execute_plan.py`**
+
+Now let me look at how `enrich_phase_names` and `phases_from_graph` work together to get phase names per node, and also check the `get_remote_github` function:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="73707" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JpHqQFTVk5a7jbYBGKw7RT">
+    <param name="command">grep -n "def get_remote_github\|def require_context\|def require_repo_root" /home/runner/w...[truncated 28 chars].../runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py 2&gt;&amp;1 | head -20</param>
+    <param name="description">Find helper function signatures</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="73707" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JpHqQFTVk5a7jbYBGKw7RT">
+/home/runner/work/erk/erk/src/erk/cli/repo_resolution.py:54:def get_remote_github(ctx: ErkContext) -&gt; RemoteGitHub:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py:31:def require_context(ctx: click.Context) -&gt; ErkContext:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py:97:def require_repo_root(ctx: click.Context) -&gt; Path:
+  </tool_result>
+  <assistant>Now I'll create the exec script. Let me look at how the exec script pattern handles the `--json` output:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="73981" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FXmSAFVVyNEgo1ijNvDFXo">
+    <param name="command">grep -l "\-\-json" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/*.py | head -5</param>
+    <param name="description">Find exec scripts that use --json flag</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="73981" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FXmSAFVVyNEgo1ijNvDFXo">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/pr_sync_commit.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VYdVCgbCRKisK6LsGVzsic">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_init.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="74369" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VYdVCgbCRKisK6LsGVzsic">
+     1→"""Initialize implementation by validating .erk/impl-context/ folder.
+     2→
+     3→This exec command validates .erk/impl-context/ folder for /erk:plan-implement:
+     4→- Validates .erk/impl-context/ folder structure (plan.md exists)
+     5→- Checks for GitHub issue tracking (plan-ref.json)
+     6→- Parses "Related Documentation" section for skills and docs
+     7→
+     8→Usage:
+     9→    erk exec impl-init --json
+    10→
+    11→Output:
+    12→    JSON with validation status and related docs
+    13→    Always outputs JSON (for machine parsing by slash command)
+    14→
+    15→Exit Codes:
+    16→    0: Success
+    17→    1: Validation error
+    18→
+    19→Examples:
+    20→    $ erk exec impl-init --json
+    21→    {"valid": true, "has_plan_tracking": true, ...}
+    22→"""
+    23→
+    24→import json
+    25→import re
+    26→from pathlib import Path
+    27→from typing import NoReturn
+    28→
+    29→import click
+    30→
+
+... [35 lines omitted] ...
+
+    35→def _error_json(error_type: str, message: str) -&gt; NoReturn:
+    36→    """Output error as JSON and exit with code 1."""
+    37→    result = {"valid": False, "error_type": error_type, "message": message}
+  </tool_result>
+  <assistant>Now I have enough context. Let me create the exec script:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1172" cache_read_input_tokens="74369" cache_creation="{'ephemeral_5m_input_tokens': 1172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_013C8naAuygggccwUg314CQk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_execute_plan.py</param>
+    <param name="content">"""Resolve the next N nodes from an objective's dependency graph in execution order.
+
+Dry-...[truncated 5012 chars]...           click.echo(f"  {i + 1}. [{node.id}] {node.description} (Phase: {phase_name})")
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1172" cache_read_input_tokens="74369" cache_creation="{'ephemeral_5m_input_tokens': 1172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013C8naAuygggccwUg314CQk">
+File created successfully at: /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_execute_plan.py
+  </tool_result>
+  <assistant>Now register the command in group.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1816" cache_read_input_tokens="75541" cache_creation="{'ephemeral_5m_input_tokens': 1816, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VtEMYfuHUtFHBnUGiJBmHw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.objective_plan_setup import (
+    objective_plan_setup,
+)</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.objective_execute_plan import (
+    objective_execute_plan,
+)
+from erk.cli.commands.exec.scripts.objective_plan_setup import (
+    objective_plan_setup,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1816" cache_read_input_tokens="75541" cache_creation="{'ephemeral_5m_input_tokens': 1816, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VtEMYfuHUtFHBnUGiJBmHw">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JPhLJnQ9QAnStqrPT31AB6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">exec_group.add_command(objective_plan_setup, name="objective-plan-setup")</param>
+    <param name="new_string">exec_group.add_command(objective_execute_plan, name="objective-execute-plan")
+exec_group.add_command(objective_plan_setup, name="objective-plan-setup")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="77357" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JPhLJnQ9QAnStqrPT31AB6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01CVcU986sBv6fingcFCmnuF">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'completed', 'ac...[truncated 461 chars]...and submit PR', 'status': 'pending', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="420" cache_read_input_tokens="77613" cache_creation="{'ephemeral_5m_input_tokens': 420, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CVcU986sBv6fingcFCmnuF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 3: Add unit tests for `simulate_next_n()`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="78033" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XZqrNWRZEfHm3up6NTzqFR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateway/github/metadata/test_dependency_graph.py</param>
+    <param name="old_string">"""Unit tests for dependency_graph sparkline, find_graph_next_node, and head state."""
+
+im...[truncated 120 chars]...line,
+    compute_objective_head_state,
+    find_graph_next_node,
+    phases_from_graph,
+)</param>
+    <param name="new_string">"""Unit tests for dependency_graph sparkline, find_graph_next_node, and head state."""
+
+im...[truncated 3950 chars]....simulate_next_n(count=2)
+    assert all(node.status == "pending" for node in graph.nodes)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="78033" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XZqrNWRZEfHm3up6NTzqFR">
+The file /home/runner/work/erk/erk/tests/unit/gateway/github/metadata/test_dependency_graph.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016pYG3VEQLLhm1dPocTJ2KH">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'completed', 'ac...[truncated 463 chars]...and submit PR', 'status': 'pending', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1606" cache_read_input_tokens="78307" cache_creation="{'ephemeral_5m_input_tokens': 1606, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016pYG3VEQLLhm1dPocTJ2KH">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Phase 4: Create test for exec script**
+
+I need to understand how FakeRemoteGitHub and ErkContext.for_test work:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="79913" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SNsymWVNrnCaDx9JmXWioP">
+    <param name="command">grep -rn "FakeRemoteGitHub\|for_test" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_add_objective_node.py | head -10</param>
+    <param name="description">Check test patterns for exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="79913" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SNsymWVNrnCaDx9JmXWioP">
+108:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+140:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+164:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+192:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+222:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+251:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+276:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+300:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+324:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+354:        obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SNUAd4TYbXWaJT847JTjy6">
+    <param name="command">grep -rn "FakeLocalGitHub\|for_test" /home/runner/work/erk/erk/tests/fakes/gateway/github.py | head -20</param>
+    <param name="description">Check FakeLocalGitHub construction</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="80187" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SNUAd4TYbXWaJT847JTjy6">
+3:FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+38:class FakeLocalGitHub(LocalGitHub):
+88:        """Create FakeLocalGitHub with pre-configured state.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UZqbPSZ3w6ftn8YRY4fPrU">
+    <param name="command">grep -n "def for_test" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py 2&gt;/dev/null || grep -rn "def for_test" /home/runner/work/erk/erk/src/erk/ | head -10</param>
+    <param name="description">Find for_test method</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="184" cache_read_input_tokens="80672" cache_creation="{'ephemeral_5m_input_tokens': 184, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UZqbPSZ3w6ftn8YRY4fPrU">
+213:    def for_test(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ESX2sTEz7Cm1pUa83yjMU9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">210</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="80856" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ESX2sTEz7Cm1pUa83yjMU9">
+   210→        )
+   211→
+   212→    @staticmethod
+   213→    def for_test(
+   214→        *,
+   215→        github_issues: GitHubIssues | None = None,
+   216→        git: Git | None = None,
+   217→        github: LocalGitHub | None = None,
+   218→        github_admin: GitHubAdmin | None = None,
+   219→        claude_installation: ClaudeInstallation | None = None,
+   220→        prompt_executor: PromptExecutor | None = None,
+   221→        pr_store: ManagedPrBackend | None = None,
+   222→        cmux: Cmux | None = None,
+   223→        remote_github: RemoteGitHub | None = None,
+   224→        debug: bool = False,
+   225→        repo_root: Path | None = None,
+   226→        cwd: Path | None = None,
+   227→        repo_info: RepoInfo | None = None,
+   228→        package_info: ErkPackageInfo | None = None,
+   229→    ) -&gt; ErkContext:
+   230→        """Create test context with optional pre-configured implementations.
+   231→
+   232→        Provides full control over all context parameters with sensible test defaults
+   233→        for any unspecified values. Uses fakes by default to avoid subprocess calls.
+   234→
+   235→        Args:
+   236→            github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
+   237→            git: Optional Git implementation. If None, creates FakeGit.
+   238→            github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
+   239→            claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015UUqQePj67eivmS6awtJyT">
+    <param name="command">grep -n "remote_github\|RemoteGitHub\|repo_info" /home/runner/work/erk/erk/tests/fakes/tests/shared_context.py | head -20</param>
+    <param name="description">Check shared context for test</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1011" cache_read_input_tokens="81028" cache_creation="{'ephemeral_5m_input_tokens': 1011, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015UUqQePj67eivmS6awtJyT">
+31:from erk_shared.gateway.remote_github.abc import RemoteGitHub
+58:    remote_github: RemoteGitHub | None = None,
+62:    repo_info: RepoInfo | None = None,
+90:        repo_info: Optional RepoInfo (owner/name). If None, repo_info will be None in context.
+165:    if repo_info is not None:
+166:        github_repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
+219:        repo_info=repo_info,
+226:        remote_github=remote_github,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JNQBo9kftFfA7mzmgqP9wf">
+    <param name="command">grep -rn "FakeRemoteGitHub\|remote_github" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/ | head -15</param>
+    <param name="description">Check how remote_github is used in tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1370" cache_read_input_tokens="81147" cache_creation="{'ephemeral_5m_input_tokens': 1370, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JNQBo9kftFfA7mzmgqP9wf">
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:19:from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:31:) -&gt; FakeRemoteGitHub:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:32:    return FakeRemoteGitHub(
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:204:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:278:                remote_github=_make_remote(
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:334:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:442:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:506:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:571:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:631:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:674:                remote_github=_make_remote({6513: plan}),
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:835:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py:896:                remote_github=remote,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_plan_setup.py:15:from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_plan_setup.py:79:def _make_remote(issues: dict[int, IssueInfo]) -&gt; FakeRemoteGitHub:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q1WM93MrVVga7jY4D15Fnb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_plan_setup.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="894" cache_read_input_tokens="82517" cache_creation="{'ephemeral_5m_input_tokens': 894, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+</session>

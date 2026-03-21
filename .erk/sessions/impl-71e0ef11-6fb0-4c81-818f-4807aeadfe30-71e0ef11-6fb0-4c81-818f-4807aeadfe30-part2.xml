@@ -1,0 +1,390 @@
+<session>
+  <meta branch="plnd/add-objective-execute-plan-03-21-1924" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01Q1WM93MrVVga7jY4D15Fnb">
+     1→"""Tests for objective-plan-setup exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.objective_plan_setup import objective_plan_setup
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.github.issues.types import IssueInfo
+    12→from erk_shared.gateway.github.types import RepoInfo
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    15→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    16→
+    17→_TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
+    18→
+    19→VALID_OBJECTIVE_BODY = """\
+    20→# Objective: Test Feature
+    21→
+    22→## Roadmap
+    23→
+    24→### Phase 1: Foundation
+    25→
+    26→### Phase 2: Core Implementation
+    27→
+    28→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    29→&lt;details&gt;
+    30→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+... [218 lines omitted] ...
+
+   108→    assert result.exit_code == 0, f"Failed: {result.output}"
+   123→    assert output["warnings"] == []
+   126→def test_not_found_error(tmp_path: Path) -&gt; None:
+   145→    assert output["error"] == "not_found"
+   148→def test_is_plan_error(tmp_path: Path) -&gt; None:
+   168→    assert output["error"] == "is_plan"
+   171→def test_warning_for_missing_label(tmp_path: Path) -&gt; None:
+   188→    # Still succeeds despite missing label (warning only)
+   192→    assert len(output["warnings"]) == 1
+   193→    assert "erk-objective" in output["warnings"][0]
+  </tool_result>
+  <assistant>Now I have a complete picture of how tests work. Let me create the exec script test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3259" cache_read_input_tokens="83411" cache_creation="{'ephemeral_5m_input_tokens': 3259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01QVWzCHKoVMz3X5vUaNeDEu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_execute_plan.py</param>
+    <param name="content">"""Tests for objective-execute-plan exec command."""
+
+import json
+from datetime import UTC...[truncated 6620 chars]..."resolved"] == 0
+    assert output["nodes"] == []
+    assert output["total_pending"] == 0
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3259" cache_read_input_tokens="83411" cache_creation="{'ephemeral_5m_input_tokens': 3259, 'ephemeral_1h_input_tokens': 0}" output_tokens="2309" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QVWzCHKoVMz3X5vUaNeDEu">
+File created successfully at: /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_execute_plan.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01EGDhwW7SUicfAZMGepdF7o">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'completed', 'ac...[truncated 465 chars]...submit PR', 'status': 'in_progress', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2552" cache_read_input_tokens="86670" cache_creation="{'ephemeral_5m_input_tokens': 2552, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EGDhwW7SUicfAZMGepdF7o">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the CI checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="89222" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01D3QEWLVh9r1EA7tFiMaBqd">
+    <param name="description">Run dependency graph tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report the results:
+uv run pytest tests/unit/gateway/github/metadata/test_dependency_graph.py -v
+
+Working directory: /home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="89222" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D3QEWLVh9r1EA7tFiMaBqd">
+pytest passed: 28 tests passed in 0.12s
+
+All tests in `tests/unit/gateway/github/metadata/test_dependency_graph.py` executed successfully with no failures.
+agentId: af90e62 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_use name="Task" id="toolu_01RPCoDpaPmrjXYiU8sqHXZ8">
+    <param name="description">Run exec script tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report the results:
+uv run pytest tests/unit/cli/commands/exec/scripts/test_objective_execute_plan.py -v
+
+Working directory: /home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="227" cache_read_input_tokens="89496" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RPCoDpaPmrjXYiU8sqHXZ8">
+**pytest passed: 6 tests passed in 1.40s**
+
+All tests in `test_objective_execute_plan.py` passed successfully:
+
+- Total tests: 6
+- Passed: 6
+- Failed: 0
+- Duration: 1.40 seconds
+agentId: a31df8e (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass. Now let's run the type checker and linter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="89723" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01HhFKHTvmptEAnZYRJzfPi3">
+    <param name="description">Run ty type check</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following command and report the results (focusing on any errors related to the ne...[truncated 151 chars]...n.py src/erk/cli/commands/exec/group.py 2&gt;&amp;1
+
+Working directory: /home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="244" cache_read_input_tokens="89723" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HhFKHTvmptEAnZYRJzfPi3">
+ty passed: All checks passed!
+
+**Summary:** All type checks completed successfully for the three modified files:
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`
+- `src/erk/cli/commands/exec/scripts/objective_execute_plan.py`
+- `src/erk/cli/commands/exec/group.py`
+
+No type errors were found.
+agentId: a08eb08 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_use name="Task" id="toolu_01ExRaxr48huwnU6943uu7W9">
+    <param name="description">Run ruff lint check</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following command and report any errors:
+uv run ruff check packages/erk-shared/src...[truncated 219 chars].../scripts/test_objective_execute_plan.py 2&gt;&amp;1
+
+Working directory: /home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="89967" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="226" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ExRaxr48huwnU6943uu7W9">
+ruff failed: 2 issues found
+
+The linter detected import sorting violations in two files:
+
+1. **src/erk/cli/commands/exec/group.py:7:1** - Import block is un-sorted or un-formatted
+   - The imports starting with `click` and all the script imports need to be reorganized
+
+2. **tests/unit/gateway/github/metadata/test_dependency_graph.py:3:1** - Import block is un-sorted or un-formatted
+   - The imports of `pytest` and the imports from `erk_shared.gateway.github.metadata.dependency_graph` need to be reorganized
+
+Both issues are fixable with the `--fix` option, indicating these are formatting violations rather than code quality issues.
+agentId: a686105 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me fix the import sorting issues:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="624" cache_read_input_tokens="90313" cache_creation="{'ephemeral_5m_input_tokens': 624, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01PuhieP43TKLCqJTGRbdMAw">
+    <param name="description">Fix ruff import sorting</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following command to auto-fix import sorting and report the results:
+uv run ruff c...[truncated 253 chars].../scripts/test_objective_execute_plan.py 2&gt;&amp;1
+
+Working directory: /home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="624" cache_read_input_tokens="90313" cache_creation="{'ephemeral_5m_input_tokens': 624, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PuhieP43TKLCqJTGRbdMAw">
+ruff passed: 2 import sorting errors fixed
+
+The command successfully fixed 2 import sorting errors across the specified files:
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`
+- `src/erk/cli/commands/exec/scripts/objective_execute_plan.py`
+- `src/erk/cli/commands/exec/group.py`
+- `tests/unit/gateway/github/metadata/test_dependency_graph.py`
+- `tests/unit/cli/commands/exec/scripts/test_objective_execute_plan.py`
+
+All remaining issues have been resolved (0 remaining).
+agentId: a1f2e6e (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Now let me run all the targeted tests again to confirm everything still passes after the auto-fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="90937" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01JiTzvF9hHFj1MVV1Rt9h7Z">
+    <param name="description">Run all new tests after fix</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following pytest command and report the results:
+uv run pytest tests/unit/gateway/...[truncated 52 chars]...ripts/test_objective_execute_plan.py -v 2&gt;&amp;1
+
+Working directory: /home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="90937" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JiTzvF9hHFj1MVV1Rt9h7Z">
+**pytest passed: 34 tests passed in 0.59s**
+
+All 34 tests passed successfully:
+- `tests/unit/gateway/github/metadata/test_dependency_graph.py`: 12 tests passed
+- `tests/unit/cli/commands/exec/scripts/test_objective_execute_plan.py`: 6 tests passed (collected from the two test files)
+agentId: a48ae7e (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass and lint is clean. Now let me submit the PR:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="507" cache_read_input_tokens="91373" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GpdbrZwzjHGAjSaFrpUf85">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="507" cache_read_input_tokens="91373" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GpdbrZwzjHGAjSaFrpUf85">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9382
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CDVPDmqvqcby5oJVEQaZD7">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload implementation session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="91880" cache_creation="{'ephemeral_5m_input_tokens': 154, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CDVPDmqvqcby5oJVEQaZD7">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DymNwEhu6YJ4CbqEvZpU7r">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="92034" cache_creation="{'ephemeral_5m_input_tokens': 320, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DymNwEhu6YJ4CbqEvZpU7r">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q3osCNf1Sq4ibYGPmiSKPE">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit the PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="108" cache_read_input_tokens="92354" cache_creation="{'ephemeral_5m_input_tokens': 108, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q3osCNf1Sq4ibYGPmiSKPE">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9382 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9382
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (20,754 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+✅ PR submitted
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MJcySA4TyX2WtYH56EXNDA">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal lifecycle transition to submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="92462" cache_creation="{'ephemeral_5m_input_tokens': 404, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MJcySA4TyX2WtYH56EXNDA">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9382
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WY2CgE3XJByhBDjfER19u5">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="92866" cache_creation="{'ephemeral_5m_input_tokens': 318, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WY2CgE3XJByhBDjfER19u5">
+Exit code 1
+Checking PR #9382 for branch plnd/add-objective-execute-plan-03-21-1924...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9382)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WLqJqxkBpD8Hm6caZNr6mA">
+    <param name="command">erk exec cleanup-impl-context --force 2&gt;&amp;1 || git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Remove impl-context after implementation" &amp;&amp; git push 2&gt;&amp;1</param>
+    <param name="description">Force cleanup impl context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="93184" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WLqJqxkBpD8Hm6caZNr6mA">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+
+Usage: erk exec cleanup-impl-context [OPTIONS]
+Try 'erk exec cleanup-impl-context -h' for help.
+
+Error: No such option: --force
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PR7zkj7LgELj3wyuouC8gS">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;&amp;1</param>
+    <param name="description">Check impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="93370" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PR7zkj7LgELj3wyuouC8gS">
+plan.md
+plnd--add-objective-execute-plan-03-21-1924
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SXPvQQdRZLhVDcT43XKSop">
+    <param name="command">git status .erk/ 2&gt;&amp;1</param>
+    <param name="description">Check git status of impl-context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="93572" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SXPvQQdRZLhVDcT43XKSop">
+On branch plnd/add-objective-execute-plan-03-21-1924
+Your branch and 'origin/plnd/add-objective-execute-plan-03-21-1924' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+  </tool_result>
+  <assistant>The `.erk/impl-context/` directory is untracked (in `.gitignore`), so the check is doing a filesystem check. Let me look at how cleanup-impl-context works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="93904" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0195SbZChWmhK7EKScZsEoW7">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Try cleanup-impl-context again</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="93904" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0195SbZChWmhK7EKScZsEoW7">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XkPDdLLhfz4FonXKDpLDGL">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; echo "Removed" 2&gt;&amp;1</param>
+    <param name="description">Remove impl-context directory manually</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="94092" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XkPDdLLhfz4FonXKDpLDGL">
+Removed
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CW3Rt2dXYcGR94Zvp1TdkY">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Re-validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="94440" cache_creation="{'ephemeral_5m_input_tokens': 120, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CW3Rt2dXYcGR94Zvp1TdkY">
+Checking PR #9382 for branch plnd/add-objective-execute-plan-03-21-1924...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_019W5iY3F9c5vptLHWUdtoC4">
+    <param name="todos">[{'content': 'Add simulate_next_n() method to DependencyGraph', 'status': 'completed', 'ac...[truncated 463 chars]...d submit PR', 'status': 'completed', 'activeForm': 'Running CI checks and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="94560" cache_creation="{'ephemeral_5m_input_tokens': 158, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019W5iY3F9c5vptLHWUdtoC4">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was implemented:
+
+**PR #9382**: https://github.com/dagster-io/erk/pull/9382
+
+### Changes
+
+**`packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py`**
+- Added `simulate_next_n(count)` method to `DependencyGraph` — repeatedly finds the next unblocked pending node, marks it done in a working copy, and repeats. Returns original pending-status nodes in execution order. Pure function, no mutation.
+
+**`src/erk/cli/commands/exec/scripts/objective_execute_plan.py`** (new)
+- `erk exec objective-execute-plan &lt;objective_number&gt; --count N [--json]`
+- Fetches and validates the objective, simulates N nodes in dependency order, outputs numbered execution plan in text or JSON
+
+**`src/erk/cli/commands/exec/group.py`**
+- Registered `objective-execute-plan` command
+
+**`tests/unit/gateway/github/metadata/test_dependency_graph.py`**
+- 8 new tests for `simulate_next_n()`: linear chain, cross-phase unblocking, requesting more than available, skipping non-pending nodes, already-satisfied deps, empty complete graph, count=1 matching `next_node()`, and immutability
+
+**`tests/unit/cli/commands/exec/scripts/test_objective_execute_plan.py`** (new)
+- 6 tests covering JSON output structure, dependency ordering, resolved &lt; requested behavior, text output format, not-found error, and all-done objective</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="94718" cache_creation="{'ephemeral_5m_input_tokens': 272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
