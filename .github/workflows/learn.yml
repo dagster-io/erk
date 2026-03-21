@@ -25,8 +25,8 @@ on:
         description: "Branch containing learn materials in .erk/impl-context/"
         required: true
         type: string
-      plan_backend:
-        description: "Plan backend type (github or planned_pr)"
+      pr_backend:
+        description: "PR backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"
@@ -44,7 +44,7 @@ jobs:
       contents: read
       issues: write
     env:
-      ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
+      ERK_PR_BACKEND: ${{ inputs.pr_backend }}
     steps:
       - uses: actions/checkout@v4
         with:

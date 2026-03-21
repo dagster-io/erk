@@ -16,7 +16,7 @@ The plan backend has inconsistent naming across different contexts. This glossar
 | ------------------------- | ------------------ | ------------------------------------------------ |
 | Provider name (API)       | `github-draft-pr`  | `pr_backend.get_provider_name()` returns this    |
 | Python class              | `PlannedPRBackend` | `from erk_shared.pr_store.planned_pr import ...` |
-| Config value (legacy)     | `planned_pr`       | Formerly `ERK_PLAN_BACKEND=planned_pr`           |
+| Config value (legacy)     | `planned_pr`       | Formerly `ERK_PR_BACKEND=planned_pr`             |
 | User-facing documentation | "planned PR"       | "Plans are stored as planned pull requests"      |
 
 ## Key Distinctions

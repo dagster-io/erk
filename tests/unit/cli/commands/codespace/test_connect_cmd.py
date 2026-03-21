@@ -164,12 +164,12 @@ def test_connect_with_env_injects_export() -> None:
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(
-        cli, ["codespace", "connect", "--env", "ERK_PLAN_BACKEND=draft_pr"], obj=ctx
+        cli, ["codespace", "connect", "--env", "ERK_PR_BACKEND=draft_pr"], obj=ctx
     )
 
     assert result.exit_code == 0
     assert fake_codespace.last_call is not None
-    assert "export ERK_PLAN_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
+    assert "export ERK_PR_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
     assert "git pull" in fake_codespace.last_call.remote_command
 
 

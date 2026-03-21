@@ -37,8 +37,8 @@ on:
         description: "Base branch for the implementation PR (may be stacked, not always trunk)"
         required: true
         type: string
-      plan_backend:
-        description: "Plan backend type (github or planned_pr)"
+      pr_backend:
+        description: "PR backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"
@@ -83,8 +83,8 @@ on:
         description: "Base branch for the implementation PR (may be stacked, not always trunk)"
         required: true
         type: string
-      plan_backend:
-        description: "Plan backend type (github or planned_pr)"
+      pr_backend:
+        description: "PR backend type (github or planned_pr)"
         required: false
         type: string
         default: "github"
@@ -108,7 +108,7 @@ jobs:
       pull-requests: write
       issues: write
     env:
-      ERK_PLAN_BACKEND: ${{ inputs.plan_backend }}
+      ERK_PR_BACKEND: ${{ inputs.pr_backend }}
     steps:
       - name: Validate required secrets
         env:
@@ -165,7 +165,7 @@ jobs:
             rm -rf .erk/impl-context
             erk exec create-impl-context-from-plan "$PR_NUMBER"
             if [ $? -ne 0 ]; then
-              if [ "$ERK_PLAN_BACKEND" = "planned_pr" ]; then
+              if [ "$ERK_PR_BACKEND" = "planned_pr" ]; then
                 gh pr comment "$PR_NUMBER" --body "Could not fetch plan content for plan #$PR_NUMBER."
               else
                 gh issue comment "$PR_NUMBER" --body "Could not fetch plan content for plan #$PR_NUMBER."
@@ -454,7 +454,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           PLANNED_PR_FLAG=""
-          if [ "${{ inputs.plan_backend }}" = "planned_pr" ]; then
+          if [ "${{ inputs.pr_backend }}" = "planned_pr" ]; then
             PLANNED_PR_FLAG="--planned-pr"
           fi
           erk exec ci-update-pr-body \

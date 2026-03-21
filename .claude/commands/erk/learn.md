@@ -718,7 +718,7 @@ fi
 eval "$CMD"
 ```
 
-Parse the JSON output to get `pr_number`, `plan_backend`, `title`, and `pr_url` (the new learn plan number).
+Parse the JSON output to get `pr_number`, `pr_backend`, `title`, and `pr_url` (the new learn plan number).
 
 Display the result:
 
