@@ -78,6 +78,22 @@
       "raw_size_kb": 166,
       "xml_size_kb": 88,
       "git_branch": "plnd/O9272-move-nav-to-slots-03-21-1437"
+    },
+    {
+      "session_id": "fac203db-87e5-4470-8a3a-3eb7d9f426e3",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T15:43:00.226961+00:00",
+      "files": [
+        "address-fac203db-87e5-4470-8a3a-3eb7d9f426e3-fac203db-87e5-4470-8a3a-3eb7d9f426e3-part1.xml",
+        "address-fac203db-87e5-4470-8a3a-3eb7d9f426e3-fac203db-87e5-4470-8a3a-3eb7d9f426e3-part2.xml",
+        "address-fac203db-87e5-4470-8a3a-3eb7d9f426e3-fac203db-87e5-4470-8a3a-3eb7d9f426e3-part3.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 2,
+      "raw_size_kb": 74,
+      "xml_size_kb": 67,
+      "git_branch": "plnd/O9272-move-nav-to-slots-03-21-1437"
     }
   ]
 }
