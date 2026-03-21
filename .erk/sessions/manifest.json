@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9325,
+  "sessions": [
+    {
+      "session_id": "e9e5a035-39b8-425f-af09-7d235345058e",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T07:17:39.785050+00:00",
+      "files": [
+        "impl-e9e5a035-39b8-425f-af09-7d235345058e-e9e5a035-39b8-425f-af09-7d235345058e-part1.xml",
+        "impl-e9e5a035-39b8-425f-af09-7d235345058e-e9e5a035-39b8-425f-af09-7d235345058e-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 9,
+      "raw_size_kb": 1038,
+      "xml_size_kb": 115,
+      "git_branch": "plnd/O9324-fix-escape-md-table-03-21-0705"
+    }
+  ]
+}
