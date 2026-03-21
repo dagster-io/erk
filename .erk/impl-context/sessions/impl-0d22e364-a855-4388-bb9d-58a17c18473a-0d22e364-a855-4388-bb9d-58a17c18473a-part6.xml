@@ -1,0 +1,1193 @@
+<session>
+  <meta source="agent-aa61afe" />
+  <meta branch="plnd/classify-pr-feedback-pushd-03-21-0955" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the following in the erk codebase at /home/runner/work/erk/erk:
+
+1. Look at existing exec scripts in `src/erk/cli/commands/exec/scripts/` - read 2-3 of them to understand the pattern (frozen dataclasses, Click commands, gateway calls)
+2. Look at `src/erk/cli/commands/exec/group.py` to understand how commands are registered
+3. Look at the gateway ABCs or functions for: `get_pr_reviews`, `get_pr_review_threads`, `get_pr_discussion_comments` - find their signatures and return types
+4. Look at `detect-trunk-branch` logic (probably in exec scripts) to understand branch detection
+5. Look at `.claude/skills/pr-feedback-classifier/SKILL.md` to understand what's currently there
+6. Look at `src/erk/cli/commands/exec/scripts/get_pr_feedback.py` if it exists
+
+Please report:
+- The import patterns used in exec scripts
+- How gateway calls are made (what ABC, what methods)
+- The return type structures from PR review/thread gateway calls
+- How trunk detection works
+- The full content of pr-feedback-classifier SKILL.md
+- Any existing get_pr_feedback.py content
+
+Focus on reading actual file contents, not just summarizing.</user>
+  <assistant>I'll help you understand the PR feedback classifier codebase. Let me start by checking the documentation index and then systematically explore the files you need.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19445" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19445, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016z6zP9YMSMyFLkMcx9EWXP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19445" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19445, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HAa5HZda1QkpLXDJZrHQkq">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19445" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19445, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012kVzLXQ7rfLggMmw25XCZf">
+    <param name="pattern">.claude/skills/pr-feedback-classifier/**</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19445" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19445, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016z6zP9YMSMyFLkMcx9EWXP">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012kVzLXQ7rfLggMmw25XCZf">
+/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md
+  </tool_result>
+  <tool_result tool="toolu_01HAa5HZda1QkpLXDJZrHQkq">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_objective_node.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_fetch_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_prs.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_remote_execution_note.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/capture_session_info.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/cleanup_impl_context.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_verify_autofix.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/discover_reviews.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/generate_pr_address_summary.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_issue_body.py
+
+... [63 lines omitted] ...
+
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/summarize_impl_failure.py
+  </tool_result>
+  <assistant>Great! Now let me read the key files:</assistant>
+  <usage input_tokens="57" cache_creation_input_tokens="4589" cache_read_input_tokens="19445" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RtobrX5fd4F8AsneCQ8stZ">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="4589" cache_read_input_tokens="19445" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Uw1jF84srBbpTHxzFRKX5g">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="4589" cache_read_input_tokens="19445" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AZA79CnhMh9giyR3aWGrCF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="4589" cache_read_input_tokens="19445" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LUrBte64Wn1JTHg9a9J9eF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_review_comments.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="4589" cache_read_input_tokens="19445" cache_creation="{'ephemeral_5m_input_tokens': 4589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RtobrX5fd4F8AsneCQ8stZ">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [220 lines omitted] ...
+
+   155→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   157→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   195→  "error": null
+   210→## Error Case
+   224→  "error": "No PR found for branch feature-xyz"
+   242→  "error": null
+  </tool_result>
+  <tool_result tool="toolu_01Uw1jF84srBbpTHxzFRKX5g">
+     1→"""Fetch all PR feedback (review threads + discussion comments) in a single command.
+     2→
+     3→Combines the functionality of get-pr-review-comments and get-pr-discussion-comments
+     4→into one command, eliminating redundant PR lookups and enabling parallel fetches.
+     5→
+     6→Usage:
+     7→    erk exec get-pr-feedback
+     8→    erk exec get-pr-feedback --pr 123
+     9→    erk exec get-pr-feedback --include-resolved
+    10→
+    11→Output:
+    12→    JSON with pr_info, review_threads, and discussion_comments sections
+    13→
+    14→Exit Codes:
+    15→    0: Success (or graceful error with JSON output)
+    16→    1: Context not initialized
+    17→"""
+    18→
+    19→from __future__ import annotations
+    20→
+    21→import json
+    22→from concurrent.futures import ThreadPoolExecutor
+    23→from typing import TypedDict
+    24→
+    25→import click
+    26→
+    27→from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+    28→from erk_shared.context.helpers import (
+    29→    get_current_branch,
+    30→    require_github,
+
+... [163 lines omitted] ...
+
+    37→from erk_shared.non_ideal_state import BranchDetectionFailed
+   138→        if isinstance(branch, BranchDetectionFailed):
+   140→        assert not isinstance(branch, BranchDetectionFailed)  # Type narrowing after NoReturn
+   169→        except RuntimeError as e:
+   170→            exit_with_error("github-api-failed", str(e))
+  </tool_result>
+  <tool_result tool="toolu_01AZA79CnhMh9giyR3aWGrCF">
+     1→#!/usr/bin/env python3
+     2→"""Detect whether repo uses `main` or `master` as trunk branch.
+     3→
+     4→This command checks the remote (origin) for the existence of trunk branches,
+     5→suitable for CI environments where local branches may not be available.
+     6→
+     7→This replaces bash-based detection in GitHub Actions workflows:
+     8→```bash
+     9→if git ls-remote --heads origin main | grep -q main; then
+    10→  echo "trunk_branch=main"
+    11→elif git ls-remote --heads origin master | grep -q master; then
+    12→  echo "trunk_branch=master"
+    13→else
+    14→  exit 1
+    15→fi
+    16→```
+    17→
+    18→Usage:
+    19→    erk exec detect-trunk-branch
+    20→
+    21→Output:
+    22→    JSON object with success status and detected trunk branch
+    23→
+    24→Exit Codes:
+    25→    0: Success (trunk branch detected)
+    26→    1: Error (neither main nor master exists on remote)
+    27→
+    28→Examples:
+    29→    $ erk exec detect-trunk-branch
+    30→    {
+
+... [97 lines omitted] ...
+
+    44→      "error": "trunk_not_found",
+    69→class DetectionError:
+    70→    """Error result when trunk branch cannot be detected."""
+    73→    error: Literal["trunk-not-found", "git-error"]
+    77→def _detect_trunk_branch_impl(git: Git, repo_root: Path) -&gt; DetectedTrunk | DetectionError:
+    80→    Checks origin remote for 'main' first, then 'master'. Returns error
+    88→        DetectedTrunk on success, DetectionError if neither branch found
+    96→    return DetectionError(
+    98→        error="trunk-not-found",
+   109→    Checks for 'main' first, then 'master'. Exits with error if neither exists.
+   119→    # Exit with error code if detection failed
+   120→    if isinstance(result, DetectionError):
+  </tool_result>
+  <tool_result tool="toolu_01LUrBte64Wn1JTHg9a9J9eF">
+     1→"""Fetch PR review comments for agent context injection.
+     2→
+     3→This exec command fetches unresolved (or all) PR review comments from GitHub
+     4→and outputs them as JSON for agent processing.
+     5→
+     6→Usage:
+     7→    erk exec get-pr-review-comments
+     8→    erk exec get-pr-review-comments --pr 123
+     9→    erk exec get-pr-review-comments --include-resolved
+    10→
+    11→Output:
+    12→    JSON with success status, PR info, and review threads
+    13→
+    14→Exit Codes:
+    15→    0: Success (or graceful error with JSON output)
+    16→    1: Context not initialized
+    17→
+    18→Examples:
+    19→    $ erk exec get-pr-review-comments
+    20→    {"success": true, "pr_number": 123, "threads": [...]}
+    21→
+    22→    $ erk exec get-pr-review-comments --pr 456
+    23→    {"success": true, "pr_number": 456, "threads": [...]}
+    24→"""
+    25→
+    26→from __future__ import annotations
+    27→
+    28→import json
+    29→from dataclasses import asdict, dataclass
+    30→from typing import TypedDict
+
+... [134 lines omitted] ...
+
+    34→from erk.cli.script_output import exit_with_error
+    69→    """Ensure branch was detected, exit with error if not."""
+    71→        exit_with_error("branch-detection-failed", "Could not determine current branch")
+    82→    """Ensure PR lookup succeeded, exit with appropriate error if not."""
+    85→            exit_with_error("no-pr-for-branch", f"No PR found for branch '{branch}'")
+    87→            exit_with_error("pr-not-found", f"PR #{pr_number} not found")
+   144→    except RuntimeError as e:
+   145→        exit_with_error("github-api-failed", str(e))
+  </tool_result>
+  <assistant>Now let me look at a couple more example exec scripts to understand the patterns better, and explore the gateway ABCs:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10416" cache_read_input_tokens="24034" cache_creation="{'ephemeral_5m_input_tokens': 10416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014ezNbffMoXxin5E1BZR1Uy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_discussion_comments.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10416" cache_read_input_tokens="24034" cache_creation="{'ephemeral_5m_input_tokens': 10416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HzKoaowTEEJdfN3qVx2eWL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10416" cache_read_input_tokens="24034" cache_creation="{'ephemeral_5m_input_tokens': 10416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JALgHsgJ7kXytLrs61kUTu">
+    <param name="pattern">src/erk_shared/gateway/github/types.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10416" cache_read_input_tokens="24034" cache_creation="{'ephemeral_5m_input_tokens': 10416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RbijF6J4EoFknDoH3Znn2g">
+    <param name="pattern">src/erk_shared/gateway/github/abc.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10416" cache_read_input_tokens="24034" cache_creation="{'ephemeral_5m_input_tokens': 10416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014ezNbffMoXxin5E1BZR1Uy">
+     1→"""Fetch PR discussion comments (main conversation thread) for agent context injection.
+     2→
+     3→This exec command fetches discussion comments from the PR's main conversation
+     4→(not inline code review comments) and outputs them as JSON for agent processing.
+     5→
+     6→Usage:
+     7→    erk exec get-pr-discussion-comments
+     8→    erk exec get-pr-discussion-comments --pr 123
+     9→
+    10→Output:
+    11→    JSON with success status, PR info, and discussion comments
+    12→
+    13→Exit Codes:
+    14→    0: Success (or graceful error with JSON output)
+    15→    1: Context not initialized
+    16→
+    17→Examples:
+    18→    $ erk exec get-pr-discussion-comments
+    19→    {"success": true, "pr_number": 123, "comments": [...]}
+    20→
+    21→    $ erk exec get-pr-discussion-comments --pr 456
+    22→    {"success": true, "pr_number": 456, "comments": [...]}
+    23→"""
+    24→
+    25→import json
+    26→from typing import TypedDict
+    27→
+    28→import click
+    29→
+    30→from erk.cli.script_output import exit_with_error
+
+... [110 lines omitted] ...
+
+    42→    BranchDetectionFailed,
+    44→    PRNotFoundError,
+    48→def _ensure_branch(branch_result: str | BranchDetectionFailed) -&gt; str:
+    49→    """Ensure branch was detected, exit with error if not."""
+    50→    if isinstance(branch_result, BranchDetectionFailed):
+    51→        exit_with_error(branch_result.error_type, branch_result.message)
+    52→    assert not isinstance(branch_result, BranchDetectionFailed)  # Type narrowing after NoReturn
+    59→    """Ensure PR lookup by branch succeeded, exit with appropriate error if not."""
+    61→        exit_with_error(pr_result.error_type, pr_result.message)
+    67→    pr_result: PRDetails | PRNotFoundError,
+    69→    """Ensure PR lookup by number succeeded, exit with appropriate error if not."""
+    70→    if isinstance(pr_result, PRNotFoundError):
+    71→        exit_with_error(pr_result.error_type, pr_result.message)
+    72→    assert not isinstance(pr_result, PRNotFoundError)  # Type narrowing after NoReturn
+   111→    # Fetch discussion comments (exits on failure)
+  </tool_result>
+  <tool_result tool="toolu_01HzKoaowTEEJdfN3qVx2eWL">
+     1→"""Static exec group for erk scripts.
+     2→
+     3→This module provides the `erk exec` command group with all scripts
+     4→statically registered.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→# Import and register all scripts
+    10→from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
+    11→from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+    12→from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+    13→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+    14→from erk.cli.commands.exec.scripts.add_remote_execution_note import (
+    15→    add_remote_execution_note,
+    16→)
+    17→from erk.cli.commands.exec.scripts.capture_session_info import (
+    18→    capture_session_info,
+    19→)
+    20→from erk.cli.commands.exec.scripts.ci_fetch_summaries import ci_fetch_summaries
+    21→from erk.cli.commands.exec.scripts.ci_generate_summaries import ci_generate_summaries
+    22→from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+    23→from erk.cli.commands.exec.scripts.ci_verify_autofix import ci_verify_autofix
+    24→from erk.cli.commands.exec.scripts.cleanup_impl_context import cleanup_impl_context
+    25→from erk.cli.commands.exec.scripts.close_pr import (
+    26→    close_pr,
+    27→)
+    28→from erk.cli.commands.exec.scripts.close_prs import close_prs
+    29→from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
+    30→from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
+
+... [262 lines omitted] ...
+
+   163→from erk.cli.commands.exec.scripts.summarize_impl_failure import (
+   164→    summarize_impl_failure,
+   270→exec_group.add_command(summarize_impl_failure, name="summarize-impl-failure")
+  </tool_result>
+  <tool_result tool="toolu_01RbijF6J4EoFknDoH3Znn2g">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01JALgHsgJ7kXytLrs61kUTu">
+No files found
+  </tool_result>
+  <assistant>Let me search for the gateway files more broadly:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="8106" cache_read_input_tokens="34450" cache_creation="{'ephemeral_5m_input_tokens': 8106, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01W7Zf6d7eRK9C43iNxoG3S1">
+    <param name="pattern">src/erk_shared/gateway/github/**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="8106" cache_read_input_tokens="34450" cache_creation="{'ephemeral_5m_input_tokens': 8106, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PhJBE2qfzZ3P9f49SxMBFb">
+    <param name="command">find /home/runner/work/erk/erk/src -name "*types.py" | grep github | head -5</param>
+    <param name="description">Find GitHub types files</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="8106" cache_read_input_tokens="34450" cache_creation="{'ephemeral_5m_input_tokens': 8106, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W7Zf6d7eRK9C43iNxoG3S1">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01PhJBE2qfzZ3P9f49SxMBFb">
+
+  </tool_result>
+  <assistant>Let me search for where these imports come from:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="414" cache_read_input_tokens="42556" cache_creation="{'ephemeral_5m_input_tokens': 414, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MizQjg3HXLg8oW3wg48YaM">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "class PRReviewThread" 2&gt;/dev/null | head -3</param>
+    <param name="description">Find PRReviewThread class definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="414" cache_read_input_tokens="42556" cache_creation="{'ephemeral_5m_input_tokens': 414, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Wq2eZ2TPQxCGoGsiiZAxr4">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "class PRReview" 2&gt;/dev/null | head -3</param>
+    <param name="description">Find PRReview class definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="414" cache_read_input_tokens="42556" cache_creation="{'ephemeral_5m_input_tokens': 414, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RnRWmPNXQYqf1Se2hVaXDk">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "get_pr_review_threads" 2&gt;/dev/null | head -5</param>
+    <param name="description">Find get_pr_review_threads function</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="414" cache_read_input_tokens="42556" cache_creation="{'ephemeral_5m_input_tokens': 414, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RnRWmPNXQYqf1Se2hVaXDk">
+/home/runner/work/erk/erk/tests/fakes/gateway/github.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_pr_review_threads.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py
+  </tool_result>
+  <tool_result tool="toolu_01MizQjg3HXLg8oW3wg48YaM">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <tool_result tool="toolu_01Wq2eZ2TPQxCGoGsiiZAxr4">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <assistant>Perfect! Now let me read the key gateway files:</assistant>
+  <usage input_tokens="196" cache_creation_input_tokens="602" cache_read_input_tokens="42970" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D6ZTYfKhQBhHCjtoq7yhEZ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="196" cache_creation_input_tokens="602" cache_read_input_tokens="42970" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011LndA4xM9iT9BAPXZqHAf5">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="196" cache_creation_input_tokens="602" cache_read_input_tokens="42970" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D6ZTYfKhQBhHCjtoq7yhEZ">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→PRReviewState = Literal["PENDING", "COMMENTED", "APPROVED", "CHANGES_REQUESTED", "DISMISSED"]
+    13→
+    14→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    15→
+    16→
+    17→class StatusCheckRollupData(TypedDict, total=False):
+    18→    state: str
+    19→    contexts: dict[str, Any]
+    20→
+    21→
+    22→def _epoch_sentinel() -&gt; datetime:
+    23→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    24→    return datetime(2000, 1, 1, tzinfo=UTC)
+    25→
+    26→
+    27→@dataclass(frozen=True)
+    28→class BodyText:
+    29→    """Body content as inline text.
+    30→
+
+... [401 lines omitted] ...
+
+   116→        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+   135→class MergeError:
+   136→    """Error result from merging a PR. Implements NonIdealState."""
+   142→    def error_type(self) -&gt; str:
+   143→        return "merge-failed"
+   150→    Used as part of union return types for LBYL-style error handling.
+   224→WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+   261→    Raises AttributeError when accessed as a string, preventing silent bugs
+   271→        raise AttributeError(msg)
+   282→        raise AttributeError(msg)
+   302→    Accessing unavailable fields raises AttributeError.
+   352→        raise AttributeError(msg)
+   356→        raise AttributeError(msg)
+   379→            str(value)  # Trigger the error
+   391→            str(value)  # Trigger the error
+  </tool_result>
+  <tool_result tool="toolu_011LndA4xM9iT9BAPXZqHAf5">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING, Any
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReview,
+    21→    PRReviewThread,
+    22→    PullRequestInfo,
+    23→    WorkflowRun,
+    24→)
+    25→
+    26→if TYPE_CHECKING:
+    27→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    28→
+    29→
+    30→class LocalGitHub(ABC):
+
+... [175 lines omitted] ...
+
+    78→    ) -&gt; MergeResult | MergeError:
+    92→            MergeResult on success, MergeError on failure
+  </tool_result>
+  <assistant>Let me continue reading the GitHub ABC to find the get_pr_review_threads and related methods:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8430" cache_read_input_tokens="42970" cache_creation="{'ephemeral_5m_input_tokens': 8430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W4beqSNEGzDQBe1eJN59PW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">200</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8430" cache_read_input_tokens="42970" cache_creation="{'ephemeral_5m_input_tokens': 8430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W4beqSNEGzDQBe1eJN59PW">
+   200→    @abstractmethod
+   201→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+   202→        """Get logs for a workflow run.
+   203→
+   204→        Args:
+   205→            repo_root: Repository root directory
+   206→            run_id: GitHub Actions run ID
+   207→
+   208→        Returns:
+   209→            Log text as string
+   210→
+   211→        Raises:
+   212→            RuntimeError: If gh CLI command fails
+   213→        """
+   214→        ...
+   215→
+   216→    @abstractmethod
+   217→    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+   218→        """Fetch logs from the ci-summarize job in a workflow run.
+   219→
+   220→        Looks for a job named "ci-summarize" in the given run and returns
+   221→        its raw log text containing ERK-CI-SUMMARY markers.
+   222→
+   223→        Args:
+   224→            repo_root: Repository root directory
+   225→            run_id: GitHub Actions run ID
+   226→
+   227→        Returns:
+   228→            Raw log text from the ci-summarize job, or None if the job
+   229→            doesn't exist or hasn't completed yet
+
+... [125 lines omitted] ...
+
+   297→        2. Failed completed runs (failures are more actionable than successes)
+  </tool_result>
+  <assistant>Let me search for the get_pr_review_threads method specifically:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2041" cache_read_input_tokens="51400" cache_creation="{'ephemeral_5m_input_tokens': 2041, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KA8XLHP2eDf7vp7EJyuLAv">
+    <param name="command">grep -n "def get_pr_review" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py | head -10</param>
+    <param name="description">Find get_pr_review methods in ABC</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2041" cache_read_input_tokens="51400" cache_creation="{'ephemeral_5m_input_tokens': 2041, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WpypWtZbiwxMdqhwAUZuzq">
+    <param name="command">grep -n "def get_pr" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py | head -20</param>
+    <param name="description">Find all get_pr methods in ABC</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2041" cache_read_input_tokens="51400" cache_creation="{'ephemeral_5m_input_tokens': 2041, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WpypWtZbiwxMdqhwAUZuzq">
+234:    def get_pr_comment(self, repo_root: Path, comment_id: int) -&gt; str | None:
+249:    def get_prs_by_numbers(
+269:    def get_pr_head_branches(
+428:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+445:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+552:    def get_pr_diff(self, repo_root: Path, pr_number: int) -&gt; str:
+568:    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+615:    def get_pr_review_threads(
+638:    def get_pr_reviews(
+659:    def get_pr_check_runs(
+  </tool_result>
+  <tool_result tool="toolu_01KA8XLHP2eDf7vp7EJyuLAv">
+615:    def get_pr_review_threads(
+638:    def get_pr_reviews(
+  </tool_result>
+  <assistant>Perfect! Now let me read those specific methods:</assistant>
+  <usage input_tokens="247" cache_creation_input_tokens="444" cache_read_input_tokens="53441" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014EAYidsAbAAcyvjk6nS3WE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">615</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="247" cache_creation_input_tokens="444" cache_read_input_tokens="53441" cache_creation="{'ephemeral_5m_input_tokens': 444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014EAYidsAbAAcyvjk6nS3WE">
+   615→    def get_pr_review_threads(
+   616→        self,
+   617→        repo_root: Path,
+   618→        pr_number: int,
+   619→        *,
+   620→        include_resolved: bool = False,
+   621→    ) -&gt; list[PRReviewThread]:
+   622→        """Get review threads for a pull request.
+   623→
+   624→        Uses GraphQL API (reviewThreads connection) since REST API
+   625→        doesn't expose resolution status.
+   626→
+   627→        Args:
+   628→            repo_root: Repository root directory
+   629→            pr_number: PR number to query
+   630→            include_resolved: If True, include resolved threads (default: False)
+   631→
+   632→        Returns:
+   633→            List of PRReviewThread sorted by (path, line)
+   634→        """
+   635→        ...
+   636→
+   637→    @abstractmethod
+   638→    def get_pr_reviews(
+   639→        self,
+   640→        repo_root: Path,
+   641→        pr_number: int,
+   642→    ) -&gt; list[PRReview]:
+   643→        """Get PR-level reviews for a pull request.
+   644→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now let me look at one more example script to understand patterns and look at IssueComment types:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1131" cache_read_input_tokens="53885" cache_creation="{'ephemeral_5m_input_tokens': 1131, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NXk2HdAF1Chd4zRNMPdBPi">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1131" cache_read_input_tokens="53885" cache_creation="{'ephemeral_5m_input_tokens': 1131, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Jvis6J9PwvZuGRY1ZoJZUD">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f | xargs grep -l "class IssueComment" 2&gt;/dev/null</param>
+    <param name="description">Find IssueComment definition</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1131" cache_read_input_tokens="53885" cache_creation="{'ephemeral_5m_input_tokens': 1131, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NXk2HdAF1Chd4zRNMPdBPi">
+     1→"""Backend-aware label addition for plans.
+     2→
+     3→Usage:
+     4→    erk exec add-plan-label &lt;pr-number&gt; --label &lt;label&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, pr_number, label}
+     8→
+     9→Exit Codes:
+    10→    0: Success - label added
+    11→    1: Error - plan not found or API error
+    12→    2: Usage error - missing required --label flag
+    13→"""
+    14→
+    15→import json
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    20→
+    21→
+    22→@click.command(name="add-plan-label")
+    23→@click.argument("pr_number", type=int)
+    24→@click.option(
+    25→    "--label",
+    26→    required=True,
+    27→    help="Label to add to the PR",
+    28→)
+    29→@click.pass_context
+    30→def add_plan_label(
+
+... [39 lines omitted] ...
+
+    44→    except RuntimeError as e:
+    49→                    "error": f"Failed to add label to plan #{pr_number}: {e}",
+  </tool_result>
+  <tool_result tool="toolu_01Jvis6J9PwvZuGRY1ZoJZUD">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py
+  </tool_result>
+  <assistant>Now let me read the IssueComment types:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1140" cache_read_input_tokens="55016" cache_creation="{'ephemeral_5m_input_tokens': 1140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HZX4BKPNF6aegNdbhxfNDp">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1140" cache_read_input_tokens="55016" cache_creation="{'ephemeral_5m_input_tokens': 1140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0135cEey4uPH2juGot1XQy3B">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_review_thread.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1140" cache_read_input_tokens="55016" cache_creation="{'ephemeral_5m_input_tokens': 1140, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HZX4BKPNF6aegNdbhxfNDp">
+     1→"""Data types for GitHub issues integration."""
+     2→
+     3→from collections.abc import Iterator
+     4→from dataclasses import dataclass
+     5→from datetime import datetime
+     6→
+     7→from erk_shared.non_ideal_state import EnsurableResult
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class IssueInfo:
+    12→    """Information about a GitHub issue."""
+    13→
+    14→    number: int
+    15→    title: str
+    16→    body: str
+    17→    state: str  # "OPEN" or "CLOSED"
+    18→    url: str
+    19→    labels: list[str]
+    20→    assignees: list[str]
+    21→    created_at: datetime
+    22→    updated_at: datetime
+    23→    author: str  # GitHub login of the issue creator
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class IssueNotFound:
+    28→    """Sentinel indicating an issue was not found.
+    29→
+    30→    Used as part of union return types for LBYL-style error handling.
+
+... [53 lines omitted] ...
+
+    71→    in T | GitHubAPIFailed union return types.
+  </tool_result>
+  <tool_result tool="toolu_0135cEey4uPH2juGot1XQy3B">
+     1→"""Resolve a PR review thread via GraphQL mutation.
+     2→
+     3→This exec command resolves a single PR review thread and outputs
+     4→JSON with the result. Optionally adds a reply comment before resolving.
+     5→
+     6→Usage:
+     7→    erk exec resolve-review-thread --thread-id "PRRT_xxxx"
+     8→    erk exec resolve-review-thread --thread-id "PRRT_xxxx" --comment "Resolved via ..."
+     9→
+    10→Output:
+    11→    JSON with success status
+    12→
+    13→Exit Codes:
+    14→    0: Always (even on error, to support || true pattern)
+    15→    1: Context not initialized
+    16→
+    17→Examples:
+    18→    $ erk exec resolve-review-thread --thread-id "PRRT_abc123"
+    19→    {"success": true, "thread_id": "PRRT_abc123"}
+    20→
+    21→    $ erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed"
+    22→    {"success": true, "thread_id": "PRRT_abc123", "comment_added": true}
+    23→
+    24→    $ erk exec resolve-review-thread --thread-id "invalid"
+    25→    {"success": false, "error_type": "resolution_failed", "message": "..."}
+    26→"""
+    27→
+    28→from __future__ import annotations
+    29→
+    30→import json
+
+... [75 lines omitted] ...
+
+    56→class ResolveThreadError:
+    57→    """Error response for thread resolution."""
+    60→    error_type: str
+    77→def _ensure_not_error(result: T | ResolveThreadError) -&gt; T:
+    78→    """Ensure result is not an error, otherwise output JSON and exit.
+    80→    Provides type narrowing: takes `T | ResolveThreadError` and returns `T`.
+    83→        result: Value that may be a ResolveThreadError
+    86→        The value unchanged if not an error (with narrowed type T)
+    89→        SystemExit: If result is ResolveThreadError (with exit code 0)
+    91→    if isinstance(result, ResolveThreadError):
+  </tool_result>
+  <assistant>Perfect! Now let me get one more script example to see the patterns more clearly:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2435" cache_read_input_tokens="56156" cache_creation="{'ephemeral_5m_input_tokens': 2435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QGkGAspozdnnyrkacBoyf7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2435" cache_read_input_tokens="56156" cache_creation="{'ephemeral_5m_input_tokens': 2435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QGkGAspozdnnyrkacBoyf7">
+     1→"""Fetch PR commits using REST API (avoids GraphQL rate limits).
+     2→
+     3→Usage:
+     4→    erk exec get-pr-commits &lt;PR_NUMBER&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, pr_number, commits: [{sha, message}]}
+     8→
+     9→Exit Codes:
+    10→    0: Success - commits fetched
+    11→    1: Error - PR not found or API error
+    12→"""
+    13→
+    14→import json
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import require_cwd
+    19→from erk_shared.subprocess_utils import run_subprocess_with_context
+    20→
+    21→
+    22→@click.command(name="get-pr-commits")
+    23→@click.argument("pr_number", type=int)
+    24→@click.pass_context
+    25→def get_pr_commits(ctx: click.Context, pr_number: int) -&gt; None:
+    26→    """Fetch PR commits using REST API (avoids GraphQL rate limits)."""
+    27→    cwd = require_cwd(ctx)
+    28→
+    29→    # Use gh api to get commits from REST API
+    30→    # The endpoint is /repos/{owner}/{repo}/pulls/{pull_number}/commits
+
+... [42 lines omitted] ...
+
+    44→    except RuntimeError as e:
+    49→                    "error": f"Failed to get commits for PR #{pr_number}: {e}",
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile a comprehensive report:
+
+## Summary Report: PR Feedback Classifier Codebase Analysis
+
+Based on my thorough exploration of the erk codebase, here are the findings organized by topic:
+
+---
+
+### 1. Import Patterns in Exec Scripts
+
+**Standard imports:**
+```python
+from __future__ import annotations
+
+import json
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import TypedDict, TYPE_CHECKING
+
+import click
+
+from erk_shared.context.helpers import (
+    get_current_branch,
+    require_github,
+    require_repo_root,
+    require_issues,
+    require_cwd,
+)
+from erk_shared.gateway.github.checks import GitHubChecks
+from erk_shared.gateway.github.types import PRReview, PRReviewThread, PRDetails
+from erk_shared.gateway.github.issues.types import IssueComment
+from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+```
+
+**Key patterns:**
+- Always use `@click.command(name="kebab-case-name")` decorator
+- Always use `@click.pass_context` decorator
+- Function signature: `def command_name(ctx: click.Context, **options) -&gt; None:`
+- Never use relative imports (only absolute from `erk.*` or `erk_shared.*`)
+- Use frozen dataclasses for return types
+- Use TypedDict for JSON output structures
+
+---
+
+### 2. Gateway Calls and Interfaces
+
+**Gateway ABC methods** (from `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py`):
+
+```python
+@abstractmethod
+def get_pr_review_threads(
+    self,
+    repo_root: Path,
+    pr_number: int,
+    *,
+    include_resolved: bool = False,
+) -&gt; list[PRReviewThread]:
+    """Get review threads for a pull request.
+    
+    Uses GraphQL API (reviewThreads connection) since REST API
+    doesn't expose resolution status.
+    
+    Returns:
+        List of PRReviewThread sorted by (path, line)
+    """
+    ...
+
+@abstractmethod
+def get_pr_reviews(
+    self,
+    repo_root: Path,
+    pr_number: int,
+) -&gt; list[PRReview]:
+    """Get PR-level reviews for a pull request.
+    
+    Fetches reviews submitted via GitHub's "Review changes" flow
+    (not inline thread comments). Returns APPROVED, CHANGES_REQUESTED,
+    and COMMENTED reviews. Excludes PENDING (draft) and DISMISSED.
+    
+    Returns:
+        List of PRReview sorted by submitted_at
+    """
+    ...
+```
+
+**Getting discussion comments** uses the GitHubIssues gateway via `require_issues(ctx)`:
+```python
+github_issues = require_issues(ctx)
+comments = GitHubChecks.issue_comments(github_issues, repo_root, pr_number).ensure()
+```
+
+---
+
+### 3. Return Type Structures
+
+**PRReviewThread** (frozen dataclass):
+```python
+@dataclass(frozen=True)
+class PRReviewThread:
+    """A review thread on a PR."""
+    id: str  # GraphQL node ID (needed for resolution mutation)
+    path: str
+    line: int | None
+    is_resolved: bool
+    is_outdated: bool
+    comments: tuple[PRReviewComment, ...]
+```
+
+**PRReviewComment** (nested):
+```python
+@dataclass(frozen=True)
+class PRReviewComment:
+    """A single comment within a PR review thread."""
+    id: int
+    body: str
+    author: str
+    path: str
+    line: int | None
+    created_at: str  # ISO format string
+```
+
+**PRReview** (PR-level review):
+```python
+@dataclass(frozen=True)
+class PRReview:
+    """A PR-level review submission (not an inline thread comment)."""
+    id: str
+    author: str
+    body: str
+    state: PRReviewState  # "APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "PENDING" | "DISMISSED"
+    submitted_at: str
+```
+
+**IssueComment** (discussion comments):
+```python
+@dataclass(frozen=True)
+class IssueComment:
+    """A comment on a GitHub issue/PR discussion thread."""
+    body: str
+    url: str
+    id: int
+    author: str
+```
+
+---
+
+### 4. Trunk Branch Detection Logic
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py`
+
+**Pattern:**
+```python
+@dataclass(frozen=True)
+class DetectedTrunk:
+    success: bool
+    trunk_branch: str
+
+@dataclass(frozen=True)
+class DetectionError:
+    success: bool
+    error: Literal["trunk-not-found", "git-error"]
+    message: str
+
+def _detect_trunk_branch_impl(git: Git, repo_root: Path) -&gt; DetectedTrunk | DetectionError:
+    """Detect trunk branch by checking remote for main or master."""
+    for candidate in ["main", "master"]:
+        if git.branch.branch_exists_on_remote(repo_root, "origin", candidate):
+            return DetectedTrunk(success=True, trunk_branch=candidate)
+    
+    return DetectionError(
+        success=False,
+        error="trunk-not-found",
+        message="Could not detect trunk branch (neither 'main' nor 'master' exists on origin)",
+    )
+
+@click.command(name="detect-trunk-branch")
+@click.pass_context
+def detect_trunk_branch(ctx: click.Context) -&gt; None:
+    git = require_git(ctx)
+    repo_root = require_repo_root(ctx)
+    result = _detect_trunk_branch_impl(git, repo_root)
+    click.echo(json.dumps(asdict(result), indent=2))
+    if isinstance(result, DetectionError):
+        raise SystemExit(1)
+```
+
+**Output JSON:**
+```json
+{
+  "success": true,
+  "trunk_branch": "main"
+}
+```
+
+---
+
+### 5. PR Feedback Classifier SKILL.md (Full Content)
+
+**File:** `/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md`
+
+The full content is in the initial read output. Key sections:
+
+- **Critical Constraint:** "DO NOT write Python scripts or any code files." Classify using direct AI reasoning only.
+- **Steps:** 1) Fetch PR info via `erk exec get-pr-feedback`, 2) Detect restructuring via `git diff --stat`, 3) Classify each comment, 4) Group by complexity, 5) Output structured JSON.
+- **Classification Model:** Reviews, review threads, discussion comments - each with `type`, `path`, `line`, `is_outdated`, `classification` (actionable/informational), `pre_existing`, `complexity`.
+- **Batch Ordering:** Pre-Existing (auto_proceed: true) → Local Fixes → Single-File → Cross-Cutting → Complex → Informational
+- **Output Format:** Specific JSON schema with `success`, `pr_number`, `pr_title`, `pr_url`, `actionable_threads`, `discussion_actions`, `informational_count`, `batches`.
+
+---
+
+### 6. get_pr_feedback.py Content (Full File)
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py`
+
+**Key features:**
+- Fetches PR reviews, review threads, and discussion comments in parallel using ThreadPoolExecutor
+- Combines functionality of `get-pr-review-comments` and `get-pr-discussion-comments`
+- Returns JSON with unified structure: `pr_info`, `reviews`, `review_threads`, `discussion_comments`
+- Uses frozen dataclasses for output types
+- Filters out threads with invalid IDs: `valid_threads = [t for t in threads if t.id]`
+- Output structure:
+  ```python
+  result = {
+      "success": True,
+      "pr_number": pr_details.number,
+      "pr_url": pr_details.url,
+      "pr_title": pr_details.title,
+      "reviews": [_format_review(r) for r in reviews],
+      "review_threads": [_format_thread(t) for t in valid_threads],
+      "discussion_comments": [_format_discussion_comment(c) for c in comments],
+  }
+  ```
+
+---
+
+### 7. Command Registration
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py`
+
+**Pattern:**
+```python
+# 1. Import the command function
+from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
+
+# 2. Create group
+@click.group(name="exec", hidden=True)
+def exec_group() -&gt; None:
+    """Execute erk workflow scripts."""
+
+# 3. Register the command
+exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
+```
+
+All commands follow `@click.command(name="kebab-case")` pattern and are statically registered in the group.
+
+---
+
+### 8. Error Handling Pattern
+
+**Standard pattern from exec scripts:**
+
+1. **LBYL (Look Before You Leap)** - Check conditions before executing:
+   ```python
+   if isinstance(branch_result, BranchDetectionFailed):
+       exit_with_error(branch_result.error_type, branch_result.message)
+   ```
+
+2. **Union return types** - Functions return discriminated unions:
+   ```python
+   def func() -&gt; SuccessType | ErrorType:
+       if condition_not_met:
+           return ErrorType(...)
+       return SuccessType(...)
+   ```
+
+3. **Type narrowing** - Use `isinstance` checks with assert:
+   ```python
+   if isinstance(result, PRNotFound):
+       exit_with_error("pr-not-found", "...")
+   assert not isinstance(result, PRNotFound)  # Type narrowing
+   return result
+   ```
+
+4. **Exit codes** - Usually:
+   - `0`: Success
+   - `1`: Error (context not initialized or operation failed)
+   - Some commands use `SystemExit(0)` for both success and graceful errors
+
+---
+
+### 9. Dependency Injection Pattern
+
+**Always required in exec scripts:**
+
+```python
+@click.command(name="my-command")
+@click.pass_context
+def my_command(ctx: click.Context, **options) -&gt; None:
+    """Command description."""
+    repo_root = require_repo_root(ctx)
+    github = require_github(ctx)
+    git = require_git(ctx)
+    github_issues = require_issues(ctx)
+    cwd = require_cwd(ctx)
+    # ... use dependencies instead of calling Path.cwd(), etc.
+```
+
+**Available helpers in `erk_shared.context.helpers`:**
+- `require_cwd(ctx)` → `Path`
+- `require_repo_root(ctx)` → `Path`
+- `require_git(ctx)` → `Git`
+- `require_github(ctx)` → `LocalGitHub`
+- `require_issues(ctx)` → `GitHubIssues`
+- `require_plan_backend(ctx)` → Plan backend
+- `get_current_branch(ctx)` → `str | BranchDetectionFailed`
+
+---
+
+### 10. Key Absolute File Paths
+
+- PR feedback classifier skill: `/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md`
+- get_pr_feedback exec script: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py`
+- Exec group registration: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py`
+- GitHub types: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+- GitHub ABC: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+- Issues types: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`
+- Detect trunk branch script: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/detect_trunk_branch.py`
+
+This comprehensive exploration covers all the patterns, types, and integration points needed to understand how PR feedback classification fits into the erk ecosystem.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="957" cache_read_input_tokens="58591" cache_creation="{'ephemeral_5m_input_tokens': 957, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
