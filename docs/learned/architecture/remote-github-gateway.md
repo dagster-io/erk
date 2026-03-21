@@ -56,43 +56,27 @@ Defined in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
 
 ### `RemotePRInfo`
 
-```python
-@dataclass(frozen=True)
-class RemotePRInfo:
-    number: int
-    title: str
-    state: str           # "OPEN", "CLOSED", or "MERGED" (uppercase, from GitHub REST API)
-    url: str
-    head_ref_name: str   # PR's source branch
-    base_ref_name: str   # PR's target branch
-    owner: str
-    repo: str
-    labels: list[str]    # Always list[str], never None
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/remote_github/types.py, RemotePRInfo -->
 
-State values are uppercase strings matching GitHub REST API: `"OPEN"`, `"CLOSED"`, `"MERGED"`.
+See `RemotePRInfo` in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
+
+This frozen dataclass holds complete PR metadata: number, title, state (uppercase strings like `"OPEN"`, `"CLOSED"`, `"MERGED"` from GitHub REST API), URL, source and target branch names, repository owner and name, and a guaranteed list of label strings.
 
 ### `RemotePRNotFound`
 
-Sentinel for when a PR does not exist:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/remote_github/types.py, RemotePRNotFound -->
 
-```python
-@dataclass(frozen=True)
-class RemotePRNotFound:
-    pr_number: int
-```
+See `RemotePRNotFound` in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
+
+Sentinel frozen dataclass used in discriminated union returns from `get_pr()` to indicate that a pull request with the requested number does not exist. The `pr_number` field stores the number that was queried.
 
 ### LBYL Pattern for PR Lookup
 
-```python
-pr = remote.get_pr(owner=owner, repo=repo_name, number=pr_number)
-Ensure.invariant(
-    not isinstance(pr, RemotePRNotFound),
-    f"No pull request found with number #{pr_number}",
-)
-assert not isinstance(pr, RemotePRNotFound)
-# pr is now RemotePRInfo
-```
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
+
+See the LBYL lookup pattern in `src/erk/cli/commands/launch_cmd.py`, `launch` command. Cross-reference [discriminated-union-error-handling.md](discriminated-union-error-handling.md) for the complete error handling pattern.
+
+The pattern checks the discriminated union return value using `isinstance()` before accessing PR fields, ensuring type safety when a PR lookup may fail.
 
 ### Issues
 

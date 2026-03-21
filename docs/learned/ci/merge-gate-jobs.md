@@ -74,22 +74,9 @@ tripwires:
 
 ## `ci-summarize` (AI Failure Summarization)
 
-When any of the core jobs fail on a non-draft PR, the `ci-summarize` job runs a Claude-based failure summarizer:
+<!-- Source: .github/workflows/ci.yml:196-220 -->
 
-```yaml
-needs:
-  [
-    format,
-    lint,
-    fix-formatting,
-    docs-check,
-    ty,
-    unit-tests,
-    integration-tests,
-    erk-mcp-tests,
-  ]
-if: vars.CLAUDE_ENABLED != 'false' && always() && ...failure conditions...
-```
+When any of the core jobs fail on a non-draft PR, the `ci-summarize` job runs a Claude-based failure summarizer. See the ci-summarize job in `.github/workflows/ci.yml`.
 
 Disabled via `CLAUDE_ENABLED=false` repository variable.
 

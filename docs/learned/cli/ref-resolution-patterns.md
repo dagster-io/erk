@@ -28,29 +28,22 @@ Returns `None` if no ref is configured — callers then fall through to default 
 
 The `launch` command implements the full resolution chain after calling `resolve_dispatch_ref()`:
 
-```python
-if has_local_repo:
-    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
-else:
-    ref = dispatch_ref  # Only --ref flag applies without local repo
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-if ref is None:
-    # Final fallback: query default branch name from GitHub API
-    ref = remote.get_default_branch_name(owner=repo_id.owner, repo=repo_id.repo)
-```
+When a local repo is available, `launch()` calls `resolve_dispatch_ref()` to apply the priority rules above. Without a local repo, only the `--ref` flag applies (no config fallback). In both cases, if the resolved ref is `None`, a final fallback queries the default branch name via GitHub API using `remote.get_default_branch_name()`.
 
-The final fallback calls `remote.get_default_branch_name()` — this is a GitHub REST API call.
+See `launch()` in `src/erk/cli/commands/launch_cmd.py` for the full implementation.
 
 ## Flags
 
 Both flags are standard across dispatch commands:
 
-```python
-@click.option("--ref", "dispatch_ref", type=str, default=None,
-    help="Branch to dispatch workflow from (overrides config dispatch_ref)")
-@click.option("--ref-current", is_flag=True, default=False,
-    help="Dispatch workflow from the current branch")
-```
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
+
+- `--ref` (text): Branch name to dispatch workflow from. Overrides the configured `dispatch_ref` if provided.
+- `--ref-current` (flag): Dispatch workflow from the current branch. Mutually exclusive with `--ref`.
+
+See `launch()` in `src/erk/cli/commands/launch_cmd.py` for the Click option definitions.
 
 ## Remote Mode Behavior
 

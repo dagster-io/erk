@@ -17,9 +17,10 @@ tripwires:
 
 ## Function Signature
 
-```python
-def sync_branch_to_sha(ctx: ErkContext, repo_root: Path, branch: str, target_sha: str) -> None:
-```
+<!-- Source: src/erk/cli/commands/pr/dispatch_helpers.py, sync_branch_to_sha -->
+
+The function takes four parameters: `ctx` (ErkContext), `repo_root` (Path), `branch` (str), and `target_sha` (str).
+See `sync_branch_to_sha()` in `src/erk/cli/commands/pr/dispatch_helpers.py`.
 
 ## Behavior
 
@@ -31,13 +32,10 @@ def sync_branch_to_sha(ctx: ErkContext, repo_root: Path, branch: str, target_sha
 
 ## Error Pattern
 
-Dirty worktree errors use `SystemExit(1)` (not exceptions), consistent with other dispatch error paths:
+<!-- Source: src/erk/cli/commands/pr/dispatch_helpers.py, sync_branch_to_sha -->
 
-```python
-if ctx.git.status.has_uncommitted_changes(checked_out_path):
-    user_output(click.style("Error: ", fg="red") + f"Branch '{branch}' is checked out at ...")
-    raise SystemExit(1)
-```
+Dirty worktree errors use `SystemExit(1)` (not exceptions), consistent with other dispatch error paths.
+See `sync_branch_to_sha()` in `src/erk/cli/commands/pr/dispatch_helpers.py`.
 
 ## Distinction from `ensure_trunk_synced`
 

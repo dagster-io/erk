@@ -16,63 +16,29 @@ Tests for commands using `RemoteGitHub` (the `--repo` flag remote mode) follow a
 
 ## Core Pattern
 
-```python
-from tests.fakes.gateway.remote_github import FakeRemoteGitHub
-from tests.test_utils.test_context import context_for_test
-from erk_shared.context.types import NoRepoSentinel
+<!-- Source: tests/commands/launch/test_launch_remote_paths.py, _build_remote_context -->
 
-def _build_remote_context(fake_remote: FakeRemoteGitHub):
-    return context_for_test(
-        repo=NoRepoSentinel(),      # No local git
-        remote_github=fake_remote,  # Injected via ctx.remote_github
-    )
-```
+To set up a test context for remote paths, use `context_for_test()` with `NoRepoSentinel()` for local repo (indicating no git context) and pass the `FakeRemoteGitHub` instance via the `remote_github` parameter. See `_build_remote_context()` in tests/commands/launch/test_launch_remote_paths.py.
 
 `get_remote_github(ctx)` checks `ctx.remote_github is not None` first, so `FakeRemoteGitHub` is used instead of `RealRemoteGitHub`.
 
 ## `FakeRemoteGitHub` Construction
 
-```python
-FakeRemoteGitHub(
-    authenticated_user="test-user",
-    default_branch_name="main",
-    default_branch_sha="abc123",
-    next_pr_number=1,
-    dispatch_run_id="run-123",
-    issues=None,
-    issue_comments=None,
-    prs=prs,  # dict[int, RemotePRInfo] | None
-)
-```
+<!-- Source: tests/fakes/gateway/remote_github.py, FakeRemoteGitHub -->
+
+See `FakeRemoteGitHub` constructor in tests/fakes/gateway/remote_github.py. Key parameters: `authenticated_user` (username string), `default_branch_name` (branch name), `default_branch_sha` (commit SHA), `next_pr_number` (initial PR counter), `dispatch_run_id` (workflow run ID), and `prs` (dict mapping PR numbers to `RemotePRInfo` instances, or None for empty PRs).
 
 ## `RemotePRInfo` Construction
 
-```python
-from erk_shared.gateway.remote_github.types import RemotePRInfo
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/remote_github/types.py, RemotePRInfo -->
 
-RemotePRInfo(
-    number=123,
-    title="Test PR",
-    state="OPEN",  # "OPEN", "CLOSED", or "MERGED"
-    url="https://github.com/owner/repo/pull/123",
-    head_ref_name="feature-branch",
-    base_ref_name="main",
-    owner="owner",
-    repo="repo",
-    labels=[],  # list[str], never None
-)
-```
+See `RemotePRInfo` in packages/erk-shared/src/erk_shared/gateway/remote_github/types.py. For detailed field descriptions and the RemoteGitHub gateway API, see [RemoteGitHub Gateway](../architecture/remote-github-gateway.md).
 
 ## Verifying Dispatch Calls
 
-```python
-assert len(fake_remote.dispatched_workflows) == 1
-dispatched = fake_remote.dispatched_workflows[0]
-assert dispatched.workflow == WORKFLOW_COMMAND_MAP["pr-rebase"]
-assert dispatched.inputs["branch_name"] == "feature-branch"
-assert dispatched.inputs["pr_number"] == "123"
-assert dispatched.ref == "main"  # default branch when no --ref
-```
+<!-- Source: tests/commands/launch/test_launch_remote_paths.py -->
+
+See dispatch assertion patterns in tests/commands/launch/test_launch_remote_paths.py. Common assertions check `fake_remote.dispatched_workflows` list length, workflow type via `WORKFLOW_COMMAND_MAP`, input parameters (`inputs["branch_name"]`, `inputs["pr_number"]`), and the dispatched ref (defaults to `default_branch_name`).
 
 ## Test File Locations
 

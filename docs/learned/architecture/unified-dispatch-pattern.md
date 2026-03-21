@@ -31,20 +31,9 @@ All handlers receive `RemoteGitHub + explicit params`. PR-targeting handlers ret
 
 ## Handler Signature Pattern
 
-PR-targeting handlers:
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-```python
-def _dispatch_pr_<name>(
-    remote: RemoteGitHub,
-    *,
-    owner: str,
-    repo_name: str,
-    pr_number: int,
-    model: str | None,
-    ref: str,
-) -> tuple[str, str]:
-    """Dispatch <name> workflow. Returns (branch_name, run_id)."""
-```
+PR-targeting handlers follow a consistent pattern: they accept `RemoteGitHub`, owner, repo_name, pr_number, model, and ref, then return a tuple of (branch_name, run_id). See the handler implementations in `src/erk/cli/commands/launch_cmd.py` for concrete examples like `_dispatch_pr_rebase()` and `_dispatch_pr_address()`.
 
 ## Handler Implementation Pattern
 
@@ -60,30 +49,15 @@ Each PR-targeting handler follows this sequence:
 
 ## `_dispatch_workflow` (Generic Wrapper)
 
-```python
-def _dispatch_workflow(
-    remote: RemoteGitHub,
-    *,
-    owner: str,
-    repo_name: str,
-    workflow_name: str,
-    inputs: dict[str, str],
-    ref: str,
-) -> str:  # run_id
-```
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-Looks up workflow filename via `WORKFLOW_COMMAND_MAP`, dispatches via `remote.dispatch_workflow()`, prints run URL, returns run ID.
+The generic workflow dispatcher accepts `RemoteGitHub`, owner, repo_name, workflow_name, inputs dict, and ref. It looks up the workflow filename via `WORKFLOW_COMMAND_MAP`, dispatches via `remote.dispatch_workflow()`, prints the run URL to the user, and returns the run ID for post-dispatch metadata enrichment. See `_dispatch_workflow()` in `src/erk/cli/commands/launch_cmd.py`.
 
 ## Post-Dispatch: Metadata Enrichment
 
-After all handlers complete, the `launch` command calls:
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-```python
-if has_local_repo and branch_name is not None and run_id is not None:
-    maybe_update_plan_dispatch_metadata(ctx, ctx.repo, branch_name, run_id)
-```
-
-This updates plan metadata with the dispatch run ID when a local repo is available. `learn` and `consolidate-learn-plans` handlers don't return `(branch_name, run_id)`, so they skip this step.
+After a PR-targeting handler completes, the `launch` command updates plan metadata with the dispatch run ID when a local repo is available. This enrichment calls `maybe_update_plan_dispatch_metadata()` with the branch name and run ID returned by the handler. `learn` and `consolidate-learn-plans` handlers don't return `(branch_name, run_id)`, so they skip this metadata enrichment step. See the post-dispatch logic in `src/erk/cli/commands/launch_cmd.py`.
 
 ## Ref Resolution
 
@@ -98,14 +72,9 @@ See [Ref Resolution Patterns](../cli/ref-resolution-patterns.md) for details.
 
 ## `plan-implement` Exception
 
-`plan-implement` workflow is blocked at the handler level:
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-```python
-elif workflow_name == "plan-implement":
-    raise click.UsageError("Use 'erk pr dispatch' instead...")
-```
-
-The plan-implement workflow requires branch and PR setup handled by `erk pr dispatch`.
+The `plan-implement` workflow is blocked at the handler level and raises a `UsageError` directing users to use `erk pr dispatch` instead. This is because the plan-implement workflow requires branch and PR setup that is only handled by the dedicated `erk pr dispatch` command. See the workflow routing logic in `src/erk/cli/commands/launch_cmd.py`.
 
 ## Related Documentation
 

@@ -26,62 +26,29 @@ Dispatches a remote workflow to consolidate all open erk-learn PRs into a single
 
 ## Dispatch Function
 
-`dispatch_consolidate_learn_plans()` in `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`:
+<!-- Source: src/erk/cli/commands/consolidate_learn_plans_dispatch.py, dispatch_consolidate_learn_plans -->
 
-```python
-def dispatch_consolidate_learn_plans(
-    *,
-    remote: RemoteGitHub,
-    owner: str,
-    repo: str,
-    model: str | None,
-    dry_run: bool,
-    ref: str | None,
-    time_gateway: Time,
-) -> ConsolidateLearnPlansDispatchResult | None:
-```
-
-Returns `ConsolidateLearnPlansDispatchResult(pr_number, run_id, branch_name)` or `None` in dry-run mode.
+See `dispatch_consolidate_learn_plans()` in `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`. The function accepts a `RemoteGitHub` gateway, owner/repo identifiers, optional model name, dry-run flag, optional ref override, and a time gateway. Returns `ConsolidateLearnPlansDispatchResult(pr_number, run_id, branch_name)` or `None` in dry-run mode.
 
 ## Branch Naming
 
 Branch name format: `consolidate-learn-plans-{MM-DD-HHMM}`
 
-Uses `format_branch_timestamp_suffix()` from `erk_shared.naming` — no LLM-generated slug needed because the purpose is fixed. Example: `consolidate-learn-plans-03-20-1430`.
+<!-- Source: src/erk/cli/commands/consolidate_learn_plans_dispatch.py, dispatch_consolidate_learn_plans -->
 
-```python
-BRANCH_PREFIX = "consolidate-learn-plans"
-
-def _generate_branch_name(*, time_gateway: Time) -> str:
-    timestamp = format_branch_timestamp_suffix(time_gateway.now())
-    return f"{BRANCH_PREFIX}{timestamp}"
-```
+See `dispatch_consolidate_learn_plans()` in `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`. The function generates branch names using `format_branch_timestamp_suffix()` from `erk_shared.naming` — no LLM-generated slug needed because the purpose is fixed. Example: `consolidate-learn-plans-03-20-1430`.
 
 ## Static Prompt
 
-The prompt is hardcoded (not config-driven):
+<!-- Source: src/erk/cli/commands/consolidate_learn_plans_dispatch.py, dispatch_consolidate_learn_plans -->
 
-```python
-prompt_content = (
-    "Consolidate all open erk-learn PRs into a single documentation update.\n"
-    "Run /erk:system:consolidate-learn-plans-plan to query, consolidate, and implement.\n"
-)
-```
-
-Committed to `.erk/impl-context/prompt.md` on the new branch via `remote.create_file_commit()`.
+The prompt is hardcoded (not config-driven). See `dispatch_consolidate_learn_plans()` in `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`. The static prompt directs users to consolidate all open erk-learn PRs into a single documentation update and run the `/erk:system:consolidate-learn-plans-plan` command. The prompt content is committed to `.erk/impl-context/prompt.md` on the new branch via `remote.create_file_commit()`.
 
 ## Labels
 
-Both labels applied to the created PR:
+<!-- Source: src/erk/cli/commands/consolidate_learn_plans_dispatch.py, dispatch_consolidate_learn_plans -->
 
-```python
-remote.add_labels(
-    owner=owner,
-    repo=repo,
-    issue_number=pr_number,
-    labels=("erk-pr", "erk-learn"),
-)
-```
+Both labels (`erk-pr` and `erk-learn`) are applied to the created PR. See `dispatch_consolidate_learn_plans()` in `src/erk/cli/commands/consolidate_learn_plans_dispatch.py` for the label application logic.
 
 ## Dispatch Sequence
 
@@ -110,11 +77,9 @@ The CI workflow:
 
 ## Workflow Constant
 
-```python
-CONSOLIDATE_LEARN_PLANS_WORKFLOW = "consolidate-learn-plans.yml"
-```
+<!-- Source: src/erk/cli/commands/consolidate_learn_plans_dispatch.py, CONSOLIDATE_LEARN_PLANS_WORKFLOW -->
 
-Located at top of `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`.
+See `CONSOLIDATE_LEARN_PLANS_WORKFLOW` in `src/erk/cli/commands/consolidate_learn_plans_dispatch.py`. The constant holds the workflow filename `"consolidate-learn-plans.yml"` and is used to dispatch the CI workflow.
 
 ## Related Documentation
 
