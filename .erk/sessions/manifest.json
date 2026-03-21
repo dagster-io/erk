@@ -16,6 +16,21 @@
       "raw_size_kb": 543,
       "xml_size_kb": 111,
       "git_branch": "master"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T15:46:03.991354+00:00",
+      "files": [
+        "impl--7395db1d-167a-42ef-85e8-8e86208e6da8-part1.xml",
+        "impl--7395db1d-167a-42ef-85e8-8e86208e6da8-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 79,
+      "xml_size_kb": 26,
+      "git_branch": "plnd/enable-dangerous-mode-03-21-1541"
     }
   ]
 }
