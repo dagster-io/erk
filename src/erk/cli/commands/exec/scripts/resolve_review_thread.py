@@ -42,6 +42,8 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
+PR_ADDRESS_MARKER = "<!-- erk:pr-address-resolved -->"
+
 
 @dataclass(frozen=True)
 class ResolveThreadSuccess:
@@ -71,7 +73,7 @@ def _format_resolution_comment(comment: str) -> str:
         Formatted comment with timestamp and /erk:pr-address attribution
     """
     timestamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
-    return f"{comment}\n\n_Addressed via `/erk:pr-address` at {timestamp}_"
+    return f"{comment}\n\n_Addressed via `/erk:pr-address` at {timestamp}_\n{PR_ADDRESS_MARKER}"
 
 
 def _ensure_not_error(result: T | ResolveThreadError) -> T:

@@ -693,6 +693,11 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def unresolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
+        """Unresolve a PR review thread."""
+        ...
+
+    @abstractmethod
     def add_review_thread_reply(
         self,
         repo_root: Path,
