@@ -1,9 +1,12 @@
 """Unit tests for roadmap parsing, utility functions, and table rendering."""
 
+import re
+
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
     RoadmapPhase,
     compute_summary,
+    escape_md_table_cell,
     find_next_node,
     parse_roadmap,
     parse_v2_roadmap,
@@ -812,6 +815,23 @@ def test_v2_body_round_trips_through_v4_render() -> None:
 
 
 # ---------------------------------------------------------------------------
+# escape_md_table_cell tests
+# ---------------------------------------------------------------------------
+
+
+def test_escape_md_table_cell_pipes() -> None:
+    assert escape_md_table_cell("A | B") == r"A \| B"
+
+
+def test_escape_md_table_cell_newlines() -> None:
+    assert escape_md_table_cell("line1\nline2") == "line1 line2"
+
+
+def test_escape_md_table_cell_no_change() -> None:
+    assert escape_md_table_cell("plain text") == "plain text"
+
+
+# ---------------------------------------------------------------------------
 # render_roadmap_tables tests
 # ---------------------------------------------------------------------------
 
@@ -1115,6 +1135,33 @@ class TestRenderRoadmapTables:
         assert "| 1.2 | One dep | 1.1 | pending | - | - |" in result
         # ("1.1", "1.2") renders as "1.1, 1.2"
         assert "| 1.3 | Two deps | 1.1, 1.2 | pending | - | - |" in result
+
+    def test_pipe_in_description_escaped(self) -> None:
+        phases = [
+            RoadmapPhase(
+                number=1,
+                suffix="",
+                name="Test",
+                nodes=[
+                    RoadmapNode(
+                        id="1.1",
+                        description="SuccessType | ErrorType",
+                        status="pending",
+                        pr=None,
+                        depends_on=None,
+                        slug=None,
+                        comment=None,
+                    ),
+                ],
+            )
+        ]
+        result = render_roadmap_tables(phases)
+        assert r"SuccessType \| ErrorType" in result
+        for line in result.strip().splitlines():
+            if line.startswith("|") and "---" not in line:
+                # Count unescaped pipes (not preceded by backslash)
+                unescaped = len(re.findall(r"(?<!\\)\|", line))
+                assert unescaped == 5  # 4 columns = 5 pipe delimiters
 
 
 # ---------------------------------------------------------------------------

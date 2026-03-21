@@ -578,6 +578,11 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
     return ([], [_LEGACY_FORMAT_ERROR])
 
 
+def escape_md_table_cell(value: str) -> str:
+    """Escape a string for safe inclusion in a markdown table cell."""
+    return value.replace("|", r"\|").replace("\n", " ")
+
+
 def _format_depends_on(depends_on: tuple[str, ...] | None) -> str:
     """Format depends_on for table display.
 
@@ -634,7 +639,7 @@ def render_roadmap_tables(phases: list[RoadmapPhase]) -> str:
                     step.pr if step.pr is not None else "-",
                 ]
             )
-            rows.append("| " + " | ".join(cells) + " |")
+            rows.append("| " + " | ".join(escape_md_table_cell(c) for c in cells) + " |")
 
         sections.append(header + "\n" + "\n".join(rows))
 
