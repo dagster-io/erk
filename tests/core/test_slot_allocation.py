@@ -14,6 +14,7 @@ from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_slots.common import (
     DEFAULT_POOL_SIZE,
     find_assignment_by_worktree,
+    find_current_slot_assignment,
     find_inactive_slot,
     find_next_available_slot,
     find_oldest_assignment,
@@ -881,3 +882,50 @@ def test_eviction_uses_synced_state(tmp_path: Path) -> None:
     # assigned so none should be available for eviction
     inactive = find_inactive_slot(sync_result.state, git, repo_root)
     assert inactive is None
+
+
+class TestFindCurrentSlotAssignment:
+    """Tests for find_current_slot_assignment function."""
+
+    def test_returns_matching_assignment(self, tmp_path: Path) -> None:
+        """Returns assignment when cwd matches a worktree path."""
+        wt_path = tmp_path / "erk-slot-01"
+        wt_path.mkdir()
+        assignment = SlotAssignment(
+            slot_name="erk-slot-01",
+            branch_name="feature",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=wt_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+
+        result = find_current_slot_assignment(state, cwd=wt_path)
+
+        assert result is assignment
+
+    def test_returns_none_when_no_match(self, tmp_path: Path) -> None:
+        """Returns None when cwd does not match any assignment."""
+        wt_path = tmp_path / "erk-slot-01"
+        wt_path.mkdir()
+        other_path = tmp_path / "other-dir"
+        other_path.mkdir()
+        assignment = SlotAssignment(
+            slot_name="erk-slot-01",
+            branch_name="feature",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=wt_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+
+        result = find_current_slot_assignment(state, cwd=other_path)
+
+        assert result is None
+
+    def test_returns_none_when_cwd_does_not_exist(self, tmp_path: Path) -> None:
+        """Returns None when cwd path does not exist."""
+        nonexistent = tmp_path / "does-not-exist"
+        state = PoolState.test(assignments=())
+
+        result = find_current_slot_assignment(state, cwd=nonexistent)
+
+        assert result is None
