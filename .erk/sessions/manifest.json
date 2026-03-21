@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9320,
+  "sessions": [
+    {
+      "session_id": "7f441a86-d14a-447b-a14d-eb4015311804",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T06:38:56.236489+00:00",
+      "files": [
+        "impl-7f441a86-d14a-447b-a14d-eb4015311804-7f441a86-d14a-447b-a14d-eb4015311804.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 135,
+      "xml_size_kb": 34,
+      "git_branch": "plnd/fix-slot-co-copy-paste-03-21-0635"
+    }
+  ]
+}
