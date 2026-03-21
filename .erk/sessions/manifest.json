@@ -22,6 +22,27 @@
       "raw_size_kb": 1585,
       "xml_size_kb": 216,
       "git_branch": "plnd/O9272-move-nav-to-slots-03-21-1437"
+    },
+    {
+      "session_id": "ca65f712-f46e-4fe0-9c37-4bf4822fb105",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T14:53:47.592381+00:00",
+      "files": [
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part1.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part2.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part3.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part4.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part5.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part6.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part7.xml",
+        "impl-ca65f712-f46e-4fe0-9c37-4bf4822fb105-ca65f712-f46e-4fe0-9c37-4bf4822fb105-part8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 13,
+      "raw_size_kb": 1630,
+      "xml_size_kb": 232,
+      "git_branch": "plnd/O9272-move-nav-to-slots-03-21-1437"
     }
   ]
 }
