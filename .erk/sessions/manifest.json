@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9319,
+  "sessions": [
+    {
+      "session_id": "5d068b4b-b614-48d6-887f-d903a3acfd02",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T06:35:30.907039+00:00",
+      "files": [
+        "impl-5d068b4b-b614-48d6-887f-d903a3acfd02-5d068b4b-b614-48d6-887f-d903a3acfd02-part1.xml",
+        "impl-5d068b4b-b614-48d6-887f-d903a3acfd02-5d068b4b-b614-48d6-887f-d903a3acfd02-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 6,
+      "raw_size_kb": 616,
+      "xml_size_kb": 92,
+      "git_branch": "plnd/O9318-rename-plan-types-to-03-21-1026"
+    }
+  ]
+}
