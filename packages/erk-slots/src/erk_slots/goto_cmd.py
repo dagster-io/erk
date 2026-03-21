@@ -31,6 +31,7 @@ def slot_goto(ctx: ErkContext, slot: str, script: bool) -> None:
     Navigate to target slot:
       source <(erk slot goto SLOT --script)
 
+    \b
     Examples:
 
         erk slot goto 1              # Navigate to slot 1
@@ -53,12 +54,14 @@ def _slot_goto_body(ctx: ErkContext, *, slot: str, script: bool) -> None:
     state = load_pool_state(repo.pool_json_path)
 
     # Find matching assignment
-    assignment = None
-    if state is not None:
-        for a in state.assignments:
-            if a.slot_name == slot_name:
-                assignment = a
-                break
+    assignment = (
+        next(
+            (a for a in state.assignments if a.slot_name == slot_name),
+            None,
+        )
+        if state is not None
+        else None
+    )
 
     if assignment is None:
         user_output(f"Error: Slot {slot_name} is not assigned to any branch")
