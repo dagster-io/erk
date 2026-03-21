@@ -6,11 +6,13 @@ from erk_shared.cli_alias import register_with_aliases
 from erk_shared.cli_group import ErkCommandGroup
 from erk_slots.assign_cmd import slot_assign
 from erk_slots.checkout_cmd import slot_checkout
+from erk_slots.down_cmd import slot_down
 from erk_slots.goto_cmd import slot_goto
 from erk_slots.init_pool_cmd import slot_init_pool
 from erk_slots.list_cmd import slot_list
 from erk_slots.repair_cmd import slot_repair
 from erk_slots.unassign_cmd import slot_unassign
+from erk_slots.up_cmd import slot_up
 
 
 @click.group("slot", cls=ErkCommandGroup, grouped=False)
@@ -21,8 +23,10 @@ def slot_group() -> None:
 
 slot_group.add_command(slot_assign)
 register_with_aliases(slot_group, slot_checkout)
+slot_group.add_command(slot_down)
 slot_group.add_command(slot_goto)
 slot_group.add_command(slot_init_pool)
 slot_group.add_command(slot_repair)
 slot_group.add_command(slot_unassign)
+slot_group.add_command(slot_up)
 register_with_aliases(slot_group, slot_list)

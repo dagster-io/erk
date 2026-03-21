@@ -16,7 +16,6 @@ from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
 from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.doctor_workflow import workflow_group
-from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.implement import implement
 from erk.cli.commands.info.release_notes_cmd import release_notes_cmd
@@ -34,7 +33,6 @@ from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
 from erk.cli.commands.reconcile_cmd import reconcile
 from erk.cli.commands.stack import stack_group
-from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
 from erk.core.command_log import get_cli_args, log_command_start, register_exit_handler
 from erk.core.context import create_context
@@ -189,7 +187,6 @@ cli.add_command(codespace_group)
 cli.add_command(completion_group)
 cli.add_command(config_group)
 cli.add_command(doctor_cmd)
-cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_group)
 cli.add_command(land)
@@ -206,7 +203,6 @@ cli.add_command(objective_group)
 cli.add_command(one_shot)
 cli.add_command(project_group)
 cli.add_command(stack_group)
-cli.add_command(up_cmd)
 cli.add_command(launch)
 cli.add_command(workflow_group)
 cli.add_command(wt_group)

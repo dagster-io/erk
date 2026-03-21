@@ -70,7 +70,9 @@ def test_down_with_existing_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         # Should generate script for feature-1 (verify in-memory)
@@ -114,7 +116,9 @@ def test_down_to_trunk_root() -> None:
         )
 
         # Navigate down from feature-1 to root (main)
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         # Should generate script for root (verify in-memory)
@@ -143,7 +147,9 @@ def test_down_at_trunk() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert_cli_error(result, 1, "Already at the bottom of the stack", "trunk branch 'main'")
 
@@ -188,7 +194,9 @@ def test_down_parent_has_no_worktree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         # Should succeed and allocate a slot
         assert result.exit_code == 0
@@ -216,7 +224,9 @@ def test_down_graphite_not_enabled() -> None:
         graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
-        result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert_cli_error(
             result,
@@ -239,7 +249,9 @@ def test_down_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, use_graphite=True)
 
-        result = runner.invoke(cli, ["down"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 
@@ -281,7 +293,9 @@ def test_down_script_flag() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         # Output should be a script path (verify in-memory)
@@ -355,7 +369,9 @@ def test_down_with_mismatched_worktree_name() -> None:
         # Navigate down from feature/auth-tests to feature/auth
         # This would fail before the fix because it would try to find a worktree named
         # "feature/auth" instead of resolving to "auth-work"
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         if result.exit_code != 0:
             print(f"stderr: {result.stderr}")
@@ -935,7 +951,9 @@ def test_down_count_moves_multiple_levels() -> None:
         )
 
         # Navigate down 2 levels from feature-3 to feature-1
-        result = runner.invoke(cli, ["down", "2", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "2", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
@@ -977,7 +995,9 @@ def test_down_count_1_is_default_behavior() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "1", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "1", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
@@ -1016,7 +1036,9 @@ def test_down_count_zero_fails() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "0", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "0", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert_cli_error(result, 1, "Count must be at least 1")
 
@@ -1058,7 +1080,9 @@ def test_down_count_to_root() -> None:
         )
 
         # From f2, down 2 should reach root (f2 -> f1 -> main/root)
-        result = runner.invoke(cli, ["down", "2", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "2", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
@@ -1307,7 +1331,9 @@ def test_down_from_root_worktree_non_trunk_branch() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
@@ -1444,7 +1470,9 @@ def test_down_worktree_branch_mismatch() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(
+            cli, ["slot", "down", "--script"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         script_content = result.stdout
