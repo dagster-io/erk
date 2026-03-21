@@ -16,6 +16,40 @@
       "raw_size_kb": 224,
       "xml_size_kb": 75,
       "git_branch": "master"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T12:45:06.329672+00:00",
+      "files": [
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part1.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part10.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part11.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part12.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part13.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part14.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part15.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part16.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part17.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part18.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part19.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part2.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part20.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part21.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part3.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part4.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part5.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part6.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part7.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part8.xml",
+        "impl--c34609db-cf9c-4332-a20a-145c122ac270-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 7,
+      "raw_size_kb": 947,
+      "xml_size_kb": 330,
+      "git_branch": "plnd/O9318-rename-plan-context-03-21-1236"
     }
   ]
 }

@@ -1,0 +1,322 @@
+<session>
+  <meta source="agent-a41b5ec" />
+  <meta branch="plnd/O9318-rename-plan-context-03-21-1236" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py`:
+
+Rename all occurrences of `PlanContext` to `PrContext`.
+
+This includes:
+- The import: `from erk.core.plan_context_provider import PlanContext` → `from erk.core.plan_context_provider import PrContext`
+- All type annotations referencing `PlanContext` (e.g., `PlanContext | None`)
+- All function parameter type hints referencing `PlanContext`
+- All variable references to `PlanContext` as a type
+
+DO NOT rename:
+- `PlanContextProvider` (that class is NOT being renamed)
+- The module path `plan_context_provider` (only the class name changes)
+- Any variable/attribute names that don't contain "PlanContext" exactly (e.g., `plan_context` variables stay as-is)
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename `PlanContext` to `PrContext` in the file. Let me start by reading the file to see all occurrences.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6105" cache_read_input_tokens="10103" cache_creation="{'ephemeral_5m_input_tokens': 6105, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cv9BFnuzdD7EwwQJhJjVTR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6105" cache_read_input_tokens="10103" cache_creation="{'ephemeral_5m_input_tokens': 6105, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cv9BFnuzdD7EwwQJhJjVTR">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import queue
+    10→import re
+    11→import threading
+    12→from dataclasses import dataclass
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.core.commit_message_generator import (
+    18→    CommitMessageGenerator,
+    19→    CommitMessageRequest,
+    20→    CommitMessageResult,
+    21→)
+    22→from erk.core.context import ErkContext
+    23→from erk.core.plan_context_provider import PlanContext
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    CREATED_AT,
+    27→    CREATED_BY,
+    28→    LIFECYCLE_STAGE,
+    29→    SCHEMA_VERSION,
+    30→)
+
+... [418 lines omitted] ...
+
+    59→        click.ClickException: If in detached HEAD state
+    63→        raise click.ClickException("Not on a branch (detached HEAD state)")
+   102→        Path to diff file, or None if extraction failed
+   159→    Silently returns on any failure — lifecycle updates must never block submission.
+   171→    except RuntimeError as e:
+   173→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   237→        except OSError:
+   338→    elif event.style == "warning":
+   340→    elif event.style == "error":
+   347→    """Verify Claude CLI is available, raising ClickException if not.
+   353→        click.ClickException: If Claude CLI is not available
+   356→        raise click.ClickException(
+   393→        CommitMessageResult with the generated title/body or error info
+   439→            error_message="Commit message generation did not complete",
+  </tool_result>
+  <assistant>Now I'll apply all the renames. I found the following occurrences of `PlanContext`:
+
+1. Line 23: Import statement
+2. Line 123: Function parameter type annotation
+3. Line 246: Function parameter type annotation
+4. Line 280: Function parameter type annotation
+5. Line 372: Function parameter type annotation
+
+Let me apply these changes:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="5454" cache_read_input_tokens="16208" cache_creation="{'ephemeral_5m_input_tokens': 5454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0141BJbxHE5BtvsRH89ZDJZo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">from erk.core.plan_context_provider import PlanContext</param>
+    <param name="new_string">from erk.core.plan_context_provider import PrContext</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="5454" cache_read_input_tokens="16208" cache_creation="{'ephemeral_5m_input_tokens': 5454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0141BJbxHE5BtvsRH89ZDJZo">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RCqfy9meLtjgKxVr3um3MV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">def echo_plan_context_status(plan_context: PlanContext | None) -&gt; None:</param>
+    <param name="new_string">def echo_plan_context_status(plan_context: PrContext | None) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="274" cache_read_input_tokens="21662" cache_creation="{'ephemeral_5m_input_tokens': 274, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RCqfy9meLtjgKxVr3um3MV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LjSM2BDEKnGDK5nwWhtCxu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">def build_plan_details_section(plan_context: PlanContext) -&gt; str:</param>
+    <param name="new_string">def build_plan_details_section(plan_context: PrContext) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="203" cache_read_input_tokens="21936" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LjSM2BDEKnGDK5nwWhtCxu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UaNeJvdTbtiedhkkF3agna">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">def assemble_pr_body(
+    *,
+    body: str,
+    plan_context: PlanContext | None,
+    pr_n...[truncated 4 chars]...str,
+    existing_pr_body: str,
+    recovered_plan_header: MetadataBlock | None,
+) -&gt; str:</param>
+    <param name="new_string">def assemble_pr_body(
+    *,
+    body: str,
+    plan_context: PrContext | None,
+    pr_num...[truncated 2 chars]...str,
+    existing_pr_body: str,
+    recovered_plan_header: MetadataBlock | None,
+) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="199" cache_read_input_tokens="22139" cache_creation="{'ephemeral_5m_input_tokens': 199, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UaNeJvdTbtiedhkkF3agna">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018TYBenRKzAdkUkakoZ4ufy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">def run_commit_message_generation(
+    *,
+    generator: CommitMessageGenerator,
+    diff_...[truncated 107 chars]...an_context: PlanContext | None,
+    debug: bool,
+    time: Time,
+) -&gt; CommitMessageResult:</param>
+    <param name="new_string">def run_commit_message_generation(
+    *,
+    generator: CommitMessageGenerator,
+    diff_...[truncated 105 chars]...plan_context: PrContext | None,
+    debug: bool,
+    time: Time,
+) -&gt; CommitMessageResult:</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="411" cache_read_input_tokens="22338" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018TYBenRKzAdkUkakoZ4ufy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by reading the file again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="22749" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019A2QcdVmz4BiksMyFTcYaF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="22749" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019A2QcdVmz4BiksMyFTcYaF">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import queue
+    10→import re
+    11→import threading
+    12→from dataclasses import dataclass
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.core.commit_message_generator import (
+    18→    CommitMessageGenerator,
+    19→    CommitMessageRequest,
+    20→    CommitMessageResult,
+    21→)
+    22→from erk.core.context import ErkContext
+    23→from erk.core.plan_context_provider import PrContext
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    CREATED_AT,
+    27→    CREATED_BY,
+    28→    LIFECYCLE_STAGE,
+    29→    SCHEMA_VERSION,
+    30→)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_014SPjyYUPuDYhH4aWLMymUv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="offset">120</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="896" cache_read_input_tokens="23106" cache_creation="{'ephemeral_5m_input_tokens': 896, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014SPjyYUPuDYhH4aWLMymUv">
+   120→# ---------------------------------------------------------------------------
+   121→
+   122→
+   123→def echo_plan_context_status(plan_context: PrContext | None) -&gt; None:
+   124→    """Echo plan context status to the CLI."""
+   125→    if plan_context is not None:
+   126→        click.echo(
+   127→            click.style(
+   128→                f"   Incorporating plan #{plan_context.pr_id}",
+   129→                fg="green",
+   130→            )
+   131→        )
+   132→        if plan_context.objective_summary is not None:
+   133→            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
+   134→    else:
+   135→        click.echo(click.style("   No linked plan found", dim=True))
+   136→    click.echo("")
+   137→
+   138→
+   139→# ---------------------------------------------------------------------------
+   140→# Lifecycle Stage
+   141→# ---------------------------------------------------------------------------
+   142→
+   143→_STAGES_BEFORE_IMPL = {None, "prompted", "planning", "planned"}
+   144→
+   145→
+   146→def maybe_advance_lifecycle_to_impl(
+   147→    ctx: ErkContext,
+   148→    *,
+   149→    repo_root: Path,
+
+... [105 lines omitted] ...
+
+   159→    Silently returns on any failure — lifecycle updates must never block submission.
+   171→    except RuntimeError as e:
+   173→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   237→        except OSError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NNM4Kmw3ChfJbWtE1cAEoE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="offset">277</param>
+    <param name="limit">330</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2507" cache_read_input_tokens="23229" cache_creation="{'ephemeral_5m_input_tokens': 2507, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NNM4Kmw3ChfJbWtE1cAEoE">
+   277→def assemble_pr_body(
+   278→    *,
+   279→    body: str,
+   280→    plan_context: PrContext | None,
+   281→    pr_number: int,
+   282→    header: str,
+   283→    existing_pr_body: str,
+   284→    recovered_plan_header: MetadataBlock | None,
+   285→) -&gt; str:
+   286→    """Assemble final PR body with plan details and footer.
+   287→
+   288→    Args:
+   289→        body: AI-generated body content
+   290→        plan_context: Optional plan context for &lt;details&gt; section
+   291→        pr_number: PR number for footer checkout command
+   292→        header: Existing PR header to preserve (may be empty)
+   293→        existing_pr_body: Full PR body captured before gt submit overwrites it.
+   294→            Used to extract plan-header metadata block. When the extracted block
+   295→            is non-empty, uses original-plan details format.
+   296→        recovered_plan_header: Fallback plan-header block recovered from the plan
+   297→            backend, used when the plan-header is missing from existing_pr_body.
+   298→
+   299→    Returns:
+   300→        Complete PR body ready for GitHub API
+   301→    """
+   302→    plan_header = find_metadata_block(existing_pr_body, BlockKeys.PLAN_HEADER)
+   303→    if plan_header is None and recovered_plan_header is not None:
+   304→        plan_header = recovered_plan_header
+   305→
+   306→    pr_body_content = body
+
+... [142 lines omitted] ...
+
+   338→    elif event.style == "warning":
+   340→    elif event.style == "error":
+   347→    """Verify Claude CLI is available, raising ClickException if not.
+   353→        click.ClickException: If Claude CLI is not available
+   356→        raise click.ClickException(
+   393→        CommitMessageResult with the generated title/body or error info
+   439→            error_message="Commit message generation did not complete",
+  </tool_result>
+  <assistant>Perfect! All the renames have been successfully applied. Let me provide a summary of the changes made.
+
+## Summary
+
+I have successfully renamed all occurrences of `PlanContext` to `PrContext` in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py`. 
+
+### Changes Applied:
+
+1. **Line 23** - Import statement:
+   - Changed: `from erk.core.plan_context_provider import PlanContext`
+   - To: `from erk.core.plan_context_provider import PrContext`
+
+2. **Line 123** - Function parameter type in `echo_plan_context_status()`:
+   - Changed: `plan_context: PlanContext | None`
+   - To: `plan_context: PrContext | None`
+
+3. **Line 246** - Function parameter type in `build_plan_details_section()`:
+   - Changed: `plan_context: PlanContext`
+   - To: `plan_context: PrContext`
+
+4. **Line 280** - Function parameter type in `assemble_pr_body()`:
+   - Changed: `plan_context: PlanContext | None`
+   - To: `plan_context: PrContext | None`
+
+5. **Line 372** - Function parameter type in `run_commit_message_generation()`:
+   - Changed: `plan_context: PlanContext | None`
+   - To: `plan_context: PrContext | None`
+
+All type annotations referencing `PlanContext` have been updated to `PrContext`. The module path `plan_context_provider` and variable names like `plan_context` remain unchanged as per your instructions. `PlanContextProvider` (the class) was not present in this file and therefore was not affected.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="25736" cache_creation="{'ephemeral_5m_input_tokens': 2253, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
