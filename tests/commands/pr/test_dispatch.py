@@ -20,7 +20,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -> None:
-    """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_pr.
+    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
 
     Planned-PR plans already have a branch and PR. Dispatch should:
     - Validate the PR has the erk-pr label and is OPEN
@@ -77,7 +77,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         fake_time = FakeTime()
 
         # ManagedGitHubPrBackend makes get_provider_name() return "github-draft-pr"
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -110,7 +110,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
@@ -206,7 +206,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -235,7 +235,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         # Invoke WITHOUT issue number argument
@@ -281,7 +281,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -310,7 +310,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
@@ -335,7 +335,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -364,7 +364,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch"], obj=ctx)
@@ -423,7 +423,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -456,7 +456,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(
@@ -492,7 +492,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         # Simulate: plan branch is checked out in the current worktree
         git = FakeGit(
@@ -532,7 +532,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
@@ -580,7 +580,7 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         # Simulate: plan branch is checked out with dirty worktree
         git = FakeGit(
@@ -621,7 +621,7 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            pr_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
