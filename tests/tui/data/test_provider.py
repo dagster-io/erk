@@ -541,8 +541,8 @@ class TestClosePlan:
         assert request.data == {"state": "closed"}
         assert closed_prs == []
 
-    def test_close_pr_closes_linked_prs(self, tmp_path: Path) -> None:
-        """close_pr should close linked PRs before closing issue."""
+    def test_close_pr_works_with_graphite_url(self, tmp_path: Path) -> None:
+        """close_pr should work with Graphite URLs (uses repo_id, not URL parsing)."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -557,39 +557,13 @@ class TestClosePlan:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        # Configure fake GitHub to return linked PRs
-        from erk_shared.gateway.github.types import PullRequestInfo
-        from tests.fakes.gateway.github import FakeLocalGitHub
-
-        github = FakeLocalGitHub(
-            pr_plan_linkages={
-                123: [
-                    PullRequestInfo(
-                        number=456,
-                        state="OPEN",
-                        url="https://github.com/test/repo/pulls/456",
-                        is_draft=False,
-                        title="Fix issue",
-                        checks_passing=None,
-                        owner="test",
-                        repo="repo",
-                    ),
-                ],
-            }
-        )
-
         ctx = create_test_context(
             git=git,
-            github=github,
             cwd=repo_root,
             repo=_make_repo_context(repo_root, tmp_path),
         )
 
         http_client = FakeHttpClient()
-        http_client.set_response(
-            "repos/test/repo/pulls/456",
-            response={"state": "closed"},
-        )
         http_client.set_response(
             "repos/test/repo/issues/123",
             response={"state": "closed"},
@@ -607,27 +581,16 @@ class TestClosePlan:
             http_client=http_client,
         )
 
-        closed_prs = service.close_pr(123, "https://github.com/test/repo/issues/123")
+        # Pass a Graphite URL — previously this would silently fail
+        closed_prs = service.close_pr(123, "https://app.graphite.dev/github/pr/test/repo/123")
 
-        # Verify HTTP client was used to close PR first, then issue
-        assert len(http_client.requests) == 2
-        assert http_client.requests[0].endpoint == "repos/test/repo/pulls/456"
-        assert http_client.requests[1].endpoint == "repos/test/repo/issues/123"
-        assert closed_prs == [456]
-
-    def test_parse_owner_repo_from_url(self) -> None:
-        """_parse_owner_repo_from_url should extract owner/repo from URL."""
-        from erk_shared.gateway.pr_service.real import _parse_owner_repo_from_url
-
-        result = _parse_owner_repo_from_url("https://github.com/owner/repo/issues/123")
-        assert result == ("owner", "repo")
-
-        result = _parse_owner_repo_from_url("https://github.com/anthropic/erk/pulls/456")
-        assert result == ("anthropic", "erk")
-
-        # Invalid URL returns None
-        result = _parse_owner_repo_from_url("invalid")
-        assert result is None
+        # Verify HTTP client was used to close the issue despite Graphite URL
+        assert len(http_client.requests) == 1
+        request = http_client.requests[0]
+        assert request.method == "PATCH"
+        assert request.endpoint == "repos/test/repo/issues/123"
+        assert request.data == {"state": "closed"}
+        assert closed_prs == []
 
 
 class TestCommentCountsDisplay:
