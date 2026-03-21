@@ -30,7 +30,7 @@ Rules triggered by matching actions in code.
 
 **adding --json flag to a human-facing command** → Read [Machine Command Architecture](json-command-decorator.md) first. Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a json_cli.py machine adapter in the command's subpackage.
 
-**adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use `erk slot teleport` for sync. Checkout preserves local state; teleport force-resets to remote.
+**adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
 
@@ -148,7 +148,7 @@ Rules triggered by matching actions in code.
 
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
 
-**modifying teleport in-place without updating slot assignment** → Read [Teleport Slot Awareness](teleport-slot-awareness.md) first. When teleporting in-place, the current worktree's slot assignment must be updated to track the new branch. Missing this breaks the slot pool's branch tracking. See `_teleport_in_place()` in `packages/erk-slots/src/erk_slots/teleport_cmd.py`.
+**modifying teleport in-place without updating slot assignment** → Read [Teleport Slot Awareness](teleport-slot-awareness.md) first. When teleporting in-place, the current worktree's slot assignment must be updated to track the new branch. Missing this breaks the slot pool's branch tracking. See `_teleport_in_place()` in teleport_cmd.py.
 
 **moving uv sync inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync runs OUTSIDE the guard (always executes, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.
 
