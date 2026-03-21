@@ -1,0 +1,1132 @@
+<session>
+  <meta branch="plnd/O9318-rename-plan-types-to-03-21-1026" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="5d068b4b-b614-48d6-887f-d903a3acfd02" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="5d068b4b-b614-48d6-887f-d903a3acfd02" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="5d068b4b-b614-48d6-887f-d903a3acfd02" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="5d068b4b-b614-48d6-887f-d903a3acfd02" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15525" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15525}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15525" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15525}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QiXQX3iQocKihbJ7upGTmG">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from branch/impl-context</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15525" cache_read_input_tokens="9015" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15525, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QiXQX3iQocKihbJ7upGTmG">
+Found existing impl dir for PR #9319, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/.erk/impl-context/plnd--O9318-rename-plan-types-to-03-21-1026", "pr_number": 9319, "pr_url": "https://github.com/dagster-io/erk/pull/9319", "branch": "plnd/O9318-rename-plan-types-to-03-21-1026", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9319, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="24540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 446}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GvNvzJSHFhxcRGwhFrK2qZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/.erk/impl-context/plnd--O9318-rename-plan-types-to-03-21-1026/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="24540" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GvNvzJSHFhxcRGwhFrK2qZ">
+     1→# Plan: Rename plan-oriented types to PR terminology (Nodes 1.1–1.4)
+     2→
+     3→Part of Objective #9318, Nodes 1.1, 1.2, 1.3, 1.4
+     4→
+     5→## Context
+     6→
+     7→Objective #9318 tracks the complete plan-to-PR terminology rename across the codebase. Nodes 1.1–1.4 are purely mechanical class/type renames with no behavioral changes — ideal for the `rename-swarm` skill which parallelizes bulk renames across many files using haiku agents.
+     8→
+     9→## Renames
+    10→
+    11→### Node 1.1: PlanNotFound → PrNotFound
+    12→- **Definition:** `packages/erk-shared/src/erk_shared/plan_store/types.py:84`
+    13→- **Import sites:** 31 files across `src/erk/` and `tests/`
+    14→
+    15→### Node 1.2: PlanListService → PrListService, PlanListData → PrListData
+    16→- **Definition:** `packages/erk-shared/src/erk_shared/core/plan_list_service.py`
+    17→  - `PlanListData` (line 26) → `PrListData`
+    18→  - `PlanListService` (line 48) → `PrListService`
+    19→- **Import sites:** 19 files
+    20→- Also rename method `get_plan_list_data()` → `get_pr_list_data()` on the ABC and all implementations
+    21→
+    22→### Node 1.3: PlannedPRPlanListService → ManagedPrListService
+    23→- **Definition:** `src/erk/core/services/plan_list_service.py:42`
+    24→- **Import sites:** 6 files
+    25→- Note: This fixes mixed terminology ("PlannedPR" + "Plan") into consistent "ManagedPr"
+    26→
+    27→### Node 1.4: ValidPlanTitle → ValidPrTitle, InvalidPlanTitle → InvalidPrTitle
+    28→- **Definition:** `packages/erk-shared/src/erk_shared/naming.py` (lines 88, 99)
+    29→- **Import sites:** 3 files
+    30→
+
+... [48 lines omitted] ...
+
+    72→1. Run `ruff check` to verify no import errors
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="24986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1570}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01C4r4DPhcnzqeFrW8nutoMZ">
+    <param name="query">select:TaskCreate,TaskUpdate</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="24986" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1570, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C4r4DPhcnzqeFrW8nutoMZ">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1971" cache_read_input_tokens="26556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1971}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01XDVW8xqN7BFPWNow2TCUAZ">
+    <param name="subject">Phase 1: Rename class names via rename-swarm</param>
+    <param name="description">Run 6 rename-swarm operations: PlanNotFound→PrNotFound, PlanListData→PrListData, PlanListS...[truncated 19 chars]...Service→ManagedPrListService, ValidPlanTitle→ValidPrTitle, InvalidPlanTitle→InvalidPrTitle</param>
+    <param name="activeForm">Renaming class names</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1971" cache_read_input_tokens="26556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1971}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XDVW8xqN7BFPWNow2TCUAZ">
+Task #1 created successfully: Phase 1: Rename class names via rename-swarm
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01CpcFxkiv6w2cvcKgo25Y19">
+    <param name="subject">Phase 2: Rename method get_plan_list_data → get_pr_list_data</param>
+    <param name="description">Rename method on ABC + all implementations and call sites</param>
+    <param name="activeForm">Renaming methods</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1971" cache_read_input_tokens="26556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1971}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CpcFxkiv6w2cvcKgo25Y19">
+Task #2 created successfully: Phase 2: Rename method get_plan_list_data → get_pr_list_data
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01SSmw27q2L9tXm3mifQ3cZh">
+    <param name="subject">Phase 3: Update docstrings and comments in definition files</param>
+    <param name="description">Update docstrings referencing old names in types.py, plan_list_service.py (both), and naming.py</param>
+    <param name="activeForm">Updating docstrings</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1971" cache_read_input_tokens="26556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1971}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SSmw27q2L9tXm3mifQ3cZh">
+Task #3 created successfully: Phase 3: Update docstrings and comments in definition files
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_018cVgkwwVBS7Teyz7daPJ3V">
+    <param name="subject">Phase 4: Update re-exports in __init__.py</param>
+    <param name="description">Check and update packages/erk-shared/src/erk_shared/core/__init__.py for re-exports of renamed symbols</param>
+    <param name="activeForm">Updating re-exports</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1971" cache_read_input_tokens="26556" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1971}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018cVgkwwVBS7Teyz7daPJ3V">
+Task #4 created successfully: Phase 4: Update re-exports in __init__.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01UdDR3EQTHT8j2TsfAU9Quj">
+    <param name="subject">Run CI verification</param>
+    <param name="description">Run ruff check, ty, and pytest to verify no breakage</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1971" cache_read_input_tokens="26556" output_tokens="638" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1971, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UdDR3EQTHT8j2TsfAU9Quj">
+Task #5 created successfully: Run CI verification
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Whaccy6JWQNtWpV5U4ckSK">
+    <param name="command">erk exec impl-signal started --session-id="5d068b4b-b614-48d6-887f-d903a3acfd02" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="871" cache_read_input_tokens="28527" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 871, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Whaccy6JWQNtWpV5U4ckSK">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9319
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01NZyzZZwrRDTgrk7fXB86kD">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="29398" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 153, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NZyzZZwrRDTgrk7fXB86kD">
+Updated task #1 status
+  </tool_result>
+  <assistant>Let me first read the definition files to understand current state, then run the rename-swarm operations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="29551" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K6EDys3XD465kGscZArHwE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/plan_store/types.py</param>
+    <param name="offset">75</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="29551" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K6EDys3XD465kGscZArHwE">
+    75→    pr_id: str
+    76→    url: str
+    77→
+    78→
+    79→class PlanHeaderNotFoundError(RuntimeError):
+    80→    """Raised when a plan exists but has no plan-header metadata block."""
+    81→
+    82→
+    83→@dataclass(frozen=True)
+    84→class PlanNotFound:
+    85→    """Result when a plan cannot be found by identifier."""
+    86→
+    87→    pr_id: str
+    88→
+  </tool_result>
+  <tool_use name="Read" id="toolu_013GJsacRmE2hxa1Yi1cQ9Hi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="29551" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013GJsacRmE2hxa1Yi1cQ9Hi">
+     1→"""Plan list service abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface for efficiently fetching plan list data.
+     4→The real implementation remains in erk.core.services.plan_list_service.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from dataclasses import dataclass
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.github.types import (
+    14→    GitHubRepoLocation,
+    15→    IssueFilterState,
+    16→    PullRequestInfo,
+    17→    WorkflowRun,
+    18→)
+    19→from erk_shared.plan_store.types import Plan
+    20→
+    21→if TYPE_CHECKING:
+    22→    from erk_shared.gateway.http.abc import HttpClient
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class PlanListData:
+    27→    """Combined data for plan listing.
+    28→
+    29→    Attributes:
+    30→        plans: List of Plan objects with enriched metadata
+
+... [56 lines omitted] ...
+
+    36→        warnings: User-facing warnings about degraded data quality
+    45→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XwUQ7UpYhhkqfphC5thn1v">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="29551" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XwUQ7UpYhhkqfphC5thn1v">
+     1→"""Service for efficiently fetching plan list data via batched API calls.
+     2→
+     3→Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+     4→All plans store last_dispatched_node_id in the plan-header metadata block.
+     5→
+     6→Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+     7→get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+     8→instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→from typing import TYPE_CHECKING, Any
+    15→
+    16→from erk_shared.core.plan_list_service import PlanListData as PlanListData
+    17→from erk_shared.core.plan_list_service import PlanListService
+    18→from erk_shared.gateway.github.abc import LocalGitHub
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    21→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    22→from erk_shared.gateway.github.pr_data_parsing import (
+    23→    merge_rest_graphql_pr_data,
+    24→    parse_workflow_runs_nodes_response,
+    25→)
+    26→from erk_shared.gateway.github.types import (
+    27→    GitHubRepoLocation,
+    28→    IssueFilterState,
+    29→    WorkflowRun,
+    30→)
+
+... [403 lines omitted] ...
+
+   177→        warnings = _build_enrichment_warnings(unenriched_count, len(pr_details_list))
+   186→            warnings=warnings,
+   265→        except Exception as e:
+   266→            logging.warning("Failed to fetch workflow runs via HTTP: %s", e)
+   308→            except RuntimeError as e:
+   309→                logging.warning("Failed to fetch workflow runs: %s", e)
+   313→def _build_enrichment_warnings(unenriched_count: int, total_count: int) -&gt; tuple[str, ...]:
+   314→    """Build warning messages for degraded GraphQL enrichment data.
+   321→        Tuple of warning strings (empty if no warnings)
+   326→        f"GraphQL enrichment failed for {unenriched_count}/{total_count} PRs "
+   415→                except Exception as e:
+   416→                    # Network/API failure - continue without workflow run data
+   418→                    logging.warning("Failed to fetch workflow runs: %s", e)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UXioVo8fjKvJLdTWyXg5Lk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">80</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="29551" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UXioVo8fjKvJLdTWyXg5Lk">
+    80→_OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+    81→
+    82→# Plan title constraints
+    83→_PLAN_TITLE_MIN_LENGTH = 5
+    84→_PLAN_TITLE_MAX_LENGTH = 100
+    85→
+    86→
+    87→@dataclass(frozen=True)
+    88→class ValidPlanTitle:
+    89→    """Validation success for a plan title.
+    90→
+    91→    Attributes:
+    92→        title: The validated title value.
+    93→    """
+    94→
+    95→    title: str
+    96→
+    97→
+    98→@dataclass(frozen=True)
+    99→class InvalidPlanTitle:
+   100→    """Validation failure for a plan title.
+   101→
+   102→    Attributes:
+   103→        raw_title: The original title value that failed validation.
+   104→        reason: A short description of why validation failed.
+   105→    """
+   106→
+   107→    raw_title: str
+   108→    reason: str
+   109→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TV1eYdvS329zkXZXDz8iAy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="29551" output_tokens="513" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TV1eYdvS329zkXZXDz8iAy">
+     1→"""Core ABCs for erk and erk-kits.
+     2→
+     3→This module provides abstract base classes that define interfaces for erk-specific
+     4→operations. These ABCs are in erk_shared so that ErkContext can have proper type
+     5→hints without circular imports.
+     6→
+     7→Real implementations remain in the erk package. Test fakes are in erk_shared.
+     8→
+     9→Import from submodules:
+    10→- erk_shared.core.prompt_executor: PromptExecutor, events
+    11→- erk_shared.core.fakes: FakePromptExecutor, FakePlanListService, etc.
+    12→- erk_shared.core.plan_list_service: PlanListService, PlanListData
+    13→- erk_shared.core.script_writer: ScriptWriter, ScriptResult
+    14→"""
+    15→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find all files needing renames to plan the execution efficiently.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FzQaymMF4SUZpWKapTvUhp">
+    <param name="pattern">PlanNotFound</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FzQaymMF4SUZpWKapTvUhp">
+Found 31 files
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/branch/create_cmd.py
+tests/unit/cli/commands/pr/test_lifecycle_update.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+src/erk/cli/commands/pr/close_cmd.py
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+src/erk/core/plan_context_provider.py
+src/erk/cli/commands/pr/view/operation.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+packages/erk-shared/src/erk_shared/plan_store/types.py
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LtS3CWj444UsLw6v2pcALv">
+    <param name="pattern">PlannedPRPlanListService</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LtS3CWj444UsLw6v2pcALv">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py
+tests/unit/services/test_plan_list_service_http.py
+tests/unit/services/test_plan_list_service.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/context.py
+packages/erk-shared/src/erk_shared/gateway/github/pr_data_parsing.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SKW5wKpaD4KjzW1y8ogXH7">
+    <param name="pattern">ValidPlanTitle|InvalidPlanTitle</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SKW5wKpaD4KjzW1y8ogXH7">
+Found 3 files
+src/erk/cli/commands/exec/scripts/plan_save.py
+tests/core/utils/test_naming.py
+packages/erk-shared/src/erk_shared/naming.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FA9ZrBLvi4wFfYfz5R8ySv">
+    <param name="pattern">\bPlanListData\b</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FA9ZrBLvi4wFfYfz5R8ySv">
+Found 12 files
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_remote_paths.py
+src/erk/tui/data/real_provider.py
+tests/commands/pr/test_list.py
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+tests/unit/services/test_plan_list_service.py
+tests/test_utils/context_builders.py
+tests/fakes/gateway/core.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/services/objective_list_service.py
+packages/erk-shared/src/erk_shared/core/objective_list_service.py
+packages/erk-shared/src/erk_shared/core/__init__.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BxgcyktugCdRaMykpPAoSM">
+    <param name="pattern">\bPlanListService\b</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8206}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BxgcyktugCdRaMykpPAoSM">
+Found 9 files
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+tests/unit/services/test_plan_list_service.py
+tests/test_utils/test_context.py
+tests/fakes/gateway/core.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/context.py
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/core/objective_list_service.py
+packages/erk-shared/src/erk_shared/core/__init__.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015XmJJT2VQ9GibS6pBZoTaL">
+    <param name="pattern">get_plan_list_data</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8206" cache_read_input_tokens="29641" output_tokens="1366" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015XmJJT2VQ9GibS6pBZoTaL">
+Found 8 files
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+src/erk/tui/data/real_provider.py
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+tests/unit/services/test_plan_list_service_http.py
+tests/unit/services/test_plan_list_service.py
+tests/fakes/gateway/core.py
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+src/erk/core/services/plan_list_service.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3000" cache_read_input_tokens="37847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3000}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check for `FakePlanListService` and `RealPlanListService` references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3000" cache_read_input_tokens="37847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3000}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RKmiYUotRiMXx9W3J8d6MQ">
+    <param name="pattern">FakePlanListService|RealPlanListService</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3000" cache_read_input_tokens="37847" output_tokens="1173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3000, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RKmiYUotRiMXx9W3J8d6MQ">
+Found 9 files
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_remote_paths.py
+tests/unit/services/test_plan_list_service.py
+tests/test_utils/test_context.py
+tests/test_utils/context_builders.py
+tests/fakes/tests/shared_context.py
+tests/fakes/gateway/core.py
+src/erk/core/services/plan_list_service.py
+packages/erk-shared/src/erk_shared/core/__init__.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1307" cache_read_input_tokens="40847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1307}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll do the mechanical renames using sed across the codebase. The key ordering constraint is to rename `PlannedPRPlanListService` before `PlanListService` to avoid partial matches.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1307" cache_read_input_tokens="40847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1307}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YDpRursuNpJpmkaQo5YWtk">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'PlannedPRPlanListService' {} \; | xargs sed -i '' 's/PlannedPRPlanListService/ManagedPrListService/g'</param>
+    <param name="description">Rename PlannedPRPlanListService → ManagedPrListService (must be before PlanListService)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1307" cache_read_input_tokens="40847" output_tokens="746" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YDpRursuNpJpmkaQo5YWtk">
+(Bash completed with no output)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DBRFoypcQDVYmroMFd2g5f">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'PlanNotFound' {} \; | xargs sed -i '' 's/PlanNotFound/PrNotFound/g'</param>
+    <param name="description">Rename PlanNotFound → PrNotFound</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="42154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 723}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CfPuQEuyFsiaj17paLMaRt">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'PlanListData' {} \; | xargs sed -i '' 's/PlanListData/PrListData/g'</param>
+    <param name="description">Rename PlanListData → PrListData</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="42154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 723}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L1cyWfrmbuJN8CVL7qVGN7">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'ValidPlanTitle' {} \; | xargs sed -i '' 's/ValidPlanTitle/ValidPrTitle/g'</param>
+    <param name="description">Rename ValidPlanTitle → ValidPrTitle</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="42154" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 723}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VJg3cP2r1MRKsVSwgs72kh">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'InvalidPlanTitle' {} \; | xargs sed -i '' 's/InvalidPlanTitle/InvalidPrTitle/g'</param>
+    <param name="description">Rename InvalidPlanTitle → InvalidPrTitle</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="42154" output_tokens="449" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 723, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DBRFoypcQDVYmroMFd2g5f">
+(Bash completed with no output)
+  </tool_result>
+  <tool_result tool="toolu_01CfPuQEuyFsiaj17paLMaRt">
+(Bash completed with no output)
+  </tool_result>
+  <tool_result tool="toolu_01L1cyWfrmbuJN8CVL7qVGN7">
+(Bash completed with no output)
+  </tool_result>
+  <tool_result tool="toolu_01VJg3cP2r1MRKsVSwgs72kh">
+(Bash completed with no output)
+  </tool_result>
+  <assistant>Now rename `PlanListService` (which will also catch `FakePlanListService`, `RealPlanListService`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="42877" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 582}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NeHsjxxnbXhyuybt5PnHCv">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'PlanListService' {} \; | xargs sed -i '' 's/PlanListService/PrListService/g'</param>
+    <param name="description">Rename PlanListService → PrListService (also catches FakePlanListService, RealPlanListService)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="42877" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 582, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NeHsjxxnbXhyuybt5PnHCv">
+(Bash completed with no output)
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01XhVYnct7BZXQJjSrwTP7v6">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="43459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 409}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Chty3t5PsGCCCDYpsD9XaK">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="43459" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 409, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Chty3t5PsGCCCDYpsD9XaK">
+Updated task #2 status
+  </tool_result>
+  <tool_result tool="toolu_01XhVYnct7BZXQJjSrwTP7v6">
+Updated task #1 status
+  </tool_result>
+  <assistant>Phase 2: Rename method `get_plan_list_data` → `get_pr_list_data`.</assistant>
+  <usage input_tokens="37" cache_creation_input_tokens="162" cache_read_input_tokens="43868" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DLQPRkribPy2m1uHmVSCRa">
+    <param name="command">find src packages tests -name '*.py' -exec grep -l 'get_plan_list_data' {} \; | xargs sed -i '' 's/get_plan_list_data/get_pr_list_data/g'</param>
+    <param name="description">Rename get_plan_list_data → get_pr_list_data across all files</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="162" cache_read_input_tokens="43868" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DLQPRkribPy2m1uHmVSCRa">
+(Bash completed with no output)
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01UWSuuSf9f4xexMbTkWAExJ">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="44030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 224}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UWSuuSf9f4xexMbTkWAExJ">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PHrN2qes6a8eiAD4vCh8RV">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="44030" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 224, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PHrN2qes6a8eiAD4vCh8RV">
+Updated task #3 status
+  </tool_result>
+  <assistant>Phase 3: Update docstrings in definition files. Let me read the affected files to update their docstrings.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="44030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KASWftFVTEP1D5MavQNYo3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/plan_store/types.py</param>
+    <param name="offset">79</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="44030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KASWftFVTEP1D5MavQNYo3">
+    79→class PlanHeaderNotFoundError(RuntimeError):
+    80→    """Raised when a plan exists but has no plan-header metadata block."""
+    81→
+    82→
+    83→@dataclass(frozen=True)
+    84→class PrNotFound:
+    85→    """Result when a plan cannot be found by identifier."""
+    86→
+    87→    pr_id: str
+    88→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FvWmUqFk66R9rufoXoe6Y2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="44030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FvWmUqFk66R9rufoXoe6Y2">
+     1→"""Plan list service abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface for efficiently fetching plan list data.
+     4→The real implementation remains in erk.core.services.plan_list_service.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from dataclasses import dataclass
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.github.types import (
+    14→    GitHubRepoLocation,
+    15→    IssueFilterState,
+    16→    PullRequestInfo,
+    17→    WorkflowRun,
+    18→)
+    19→from erk_shared.plan_store.types import Plan
+    20→
+    21→if TYPE_CHECKING:
+    22→    from erk_shared.gateway.http.abc import HttpClient
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class PrListData:
+    27→    """Combined data for plan listing.
+    28→
+    29→    Attributes:
+    30→        plans: List of Plan objects with enriched metadata
+
+... [56 lines omitted] ...
+
+    36→        warnings: User-facing warnings about degraded data quality
+    45→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R4eHQqcEbnU8nRZKrqJLvz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="offset">1</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="44030" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 422}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R4eHQqcEbnU8nRZKrqJLvz">
+     1→"""Service for efficiently fetching plan list data via batched API calls.
+     2→
+     3→Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+     4→All plans store last_dispatched_node_id in the plan-header metadata block.
+     5→
+     6→Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+     7→get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+     8→instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→from typing import TYPE_CHECKING, Any
+    15→
+    16→from erk_shared.core.plan_list_service import PrListData as PrListData
+    17→from erk_shared.core.plan_list_service import PrListService
+    18→from erk_shared.gateway.github.abc import LocalGitHub
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    21→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    22→from erk_shared.gateway.github.pr_data_parsing import (
+    23→    merge_rest_graphql_pr_data,
+    24→    parse_workflow_runs_nodes_response,
+    25→)
+    26→from erk_shared.gateway.github.types import (
+    27→    GitHubRepoLocation,
+    28→    IssueFilterState,
+    29→    WorkflowRun,
+    30→)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qpro5VofPRkRFZjGd34e6v">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">87</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="44030" output_tokens="470" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qpro5VofPRkRFZjGd34e6v">
+    87→@dataclass(frozen=True)
+    88→class ValidPrTitle:
+    89→    """Validation success for a plan title.
+    90→
+    91→    Attributes:
+    92→        title: The validated title value.
+    93→    """
+    94→
+    95→    title: str
+    96→
+    97→
+    98→@dataclass(frozen=True)
+    99→class InvalidPrTitle:
+   100→    """Validation failure for a plan title.
+   101→
+   102→    Attributes:
+   103→        raw_title: The original title value that failed validation.
+   104→        reason: A short description of why validation failed.
+   105→    """
+   106→
+   107→    raw_title: str
+   108→    reason: str
+   109→
+   110→    @property
+   111→    def error_type(self) -&gt; str:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now updating docstrings in the definition files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CPBcGdjDVZ7FGPg9Zvmor7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/plan_store/types.py</param>
+    <param name="old_string">    """Result when a plan cannot be found by identifier."""</param>
+    <param name="new_string">    """Result when a PR cannot be found by identifier."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CPBcGdjDVZ7FGPg9Zvmor7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/plan_store/types.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ji46u6MwpdsWb21X7PqqFL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+    <param name="old_string">"""Plan list service abstraction - ABC and types.
+
+This module provides the abstract inter...[truncated 11 chars]...lan list data.
+The real implementation remains in erk.core.services.plan_list_service.
+"""</param>
+    <param name="new_string">"""PR list service abstraction - ABC and types.
+
+This module provides the abstract interfa...[truncated 7 chars]... PR list data.
+The real implementation remains in erk.core.services.plan_list_service.
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ji46u6MwpdsWb21X7PqqFL">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R7gswLL8A3SCbwKmsnoKSH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+    <param name="old_string">    """Combined data for plan listing.</param>
+    <param name="new_string">    """Combined data for PR listing.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R7gswLL8A3SCbwKmsnoKSH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SCNnamWhjaxUTCP7VZWMY6">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+    <param name="old_string">    """Abstract interface for efficiently fetching plan list data.
+
+    Composes GitHub an...[truncated 69 chars]...phQL nodes(ids: [...]) for efficient
+    batch lookup of workflow runs by node_id.
+    """</param>
+    <param name="new_string">    """Abstract interface for efficiently fetching PR list data.
+
+    Composes GitHub and ...[truncated 65 chars]...phQL nodes(ids: [...]) for efficient
+    batch lookup of workflow runs by node_id.
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SCNnamWhjaxUTCP7VZWMY6">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HTCP8Sy6HeNTY7WHt8doYb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+    <param name="old_string">        """Batch fetch all data needed for plan listing.</param>
+    <param name="new_string">        """Batch fetch all data needed for PR listing.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2759}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HTCP8Sy6HeNTY7WHt8doYb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01F8Wz9i2WQbzMCFFusEJvxB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py</param>
+    <param name="old_string">            PrListData containing plans, PR linkages, and workflow runs</param>
+    <param name="new_string">            PrListData containing PRs, PR linkages, and workflow runs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2759" cache_read_input_tokens="44452" output_tokens="1266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2759, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F8Wz9i2WQbzMCFFusEJvxB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/packages/erk-shared/src/erk_shared/core/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `src/erk/core/services/plan_list_service.py` docstrings:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2079" cache_read_input_tokens="47211" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2079}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CycugP6LARxNRweMSs4P9z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2079" cache_read_input_tokens="47211" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2079}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CycugP6LARxNRweMSs4P9z">
+     1→"""Service for efficiently fetching plan list data via batched API calls.
+     2→
+     3→Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+     4→All plans store last_dispatched_node_id in the plan-header metadata block.
+     5→
+     6→Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+     7→get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+     8→instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→from typing import TYPE_CHECKING, Any
+    15→
+    16→from erk_shared.core.plan_list_service import PrListData as PrListData
+    17→from erk_shared.core.plan_list_service import PrListService
+    18→from erk_shared.gateway.github.abc import LocalGitHub
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    21→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    22→from erk_shared.gateway.github.pr_data_parsing import (
+    23→    merge_rest_graphql_pr_data,
+    24→    parse_workflow_runs_nodes_response,
+    25→)
+    26→from erk_shared.gateway.github.types import (
+    27→    GitHubRepoLocation,
+    28→    IssueFilterState,
+    29→    WorkflowRun,
+    30→)
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MGmazL2DAG4GYjBLuGjc68">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="old_string">"""Service for efficiently fetching plan list data via batched API calls.
+
+Uses GraphQL no...[truncated 294 chars]...all (~600ms),
+instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+"""</param>
+    <param name="new_string">"""Service for efficiently fetching PR list data via batched API calls.
+
+Uses GraphQL node...[truncated 290 chars]...all (~600ms),
+instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1456" cache_read_input_tokens="49290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1456}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MGmazL2DAG4GYjBLuGjc68">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018pCdgkUmFbrZxbuRjFP6c1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="old_string">    """Plan list service for planned-PR-backed plans.</param>
+    <param name="new_string">    """PR list service for managed-PR-backed plans.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1456" cache_read_input_tokens="49290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1456}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018pCdgkUmFbrZxbuRjFP6c1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WBtDJ5Y6mTv4Vd4NVhDAT9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="old_string">        """Fetch plan list data from draft PRs via direct HTTP calls.</param>
+    <param name="new_string">        """Fetch PR list data from draft PRs via direct HTTP calls.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1456" cache_read_input_tokens="49290" output_tokens="672" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1456, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WBtDJ5Y6mTv4Vd4NVhDAT9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the remaining docstrings in the services file and naming.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="958" cache_read_input_tokens="50746" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 958}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MGAUzjhAAUL4yWUJeKzSQa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="offset">98</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="958" cache_read_input_tokens="50746" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 958, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MGAUzjhAAUL4yWUJeKzSQa">
+    98→    def _get_pr_list_data_http(
+    99→        self,
+   100→        http_client: HttpClient,
+   101→        *,
+   102→        location: GitHubRepoLocation,
+   103→        labels: list[str],
+   104→        state: str | None,
+   105→        limit: int | None,
+   106→        skip_workflow_runs: bool,
+   107→        creator: str | None,
+   108→        exclude_labels: list[str] | None,
+   109→    ) -&gt; PrListData:
+   110→        """Fetch plan list data via direct HTTP calls (no subprocess overhead).
+   111→
+   112→        Replicates the logic of list_plan_prs_with_details() but uses
+   113→        HttpClient.get_list() and HttpClient.graphql() directly.
+   114→        """
+   115→        repo_id = location.repo_id
+   116→
+   117→        # Step 1: REST issues list with server-side filtering
+   118→        rest_state = state.lower() if state else "open"
+   119→        effective_limit = limit if limit is not None else 100
+   120→
+   121→        params = [
+   122→            f"labels={','.join(labels)}",
+   123→            f"state={rest_state}",
+   124→            f"per_page={effective_limit}",
+   125→            "sort=updated",
+   126→            "direction=desc",
+   127→        ]
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GMKcdDPTXwekWuR3zU1hHo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py</param>
+    <param name="old_string">        """Fetch plan list data via direct HTTP calls (no subprocess overhead).
+
+        R...[truncated 27 chars]...ls() but uses
+        HttpClient.get_list() and HttpClient.graphql() directly.
+        """</param>
+    <param name="new_string">        """Fetch PR list data via direct HTTP calls (no subprocess overhead).
+
+        Rep...[truncated 25 chars]...ls() but uses
+        HttpClient.get_list() and HttpClient.graphql() directly.
+        """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="51704" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GMKcdDPTXwekWuR3zU1hHo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-10/src/erk/core/services/plan_list_service.py has been updated successfully.
+  </tool_result>
+</session>
