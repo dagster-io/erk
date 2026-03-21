@@ -1,0 +1,18 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Bash" id="toolu_01KYCgdL3TytNPyGjUSxGFgV">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="53356" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 285, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KYCgdL3TytNPyGjUSxGFgV">
+SESSION_ID=4f783234-ae50-4d49-896c-9d0e77a4d13f
+SESSION_FILE=/home/vscode/.claude/projects/-workspaces-erk/4f783234-ae50-4d49-896c-9d0e77a4d13f.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CKkKWc8ZLsaepLYAbSECQQ">
+    <param name="command">erk exec push-session --session-file "/home/vscode/.claude/projects/-workspaces-erk/4f7832...[truncated 48 chars]...49-896c-9d0e77a4d13f" --stage planning --source local --pr-number 9340 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="203" cache_read_input_tokens="53641" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 203, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
