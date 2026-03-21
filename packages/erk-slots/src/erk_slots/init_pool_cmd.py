@@ -5,10 +5,6 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.core.slot_allocation import (
-    get_pool_size,
-    is_slot_initialized,
-)
 from erk.core.worktree_pool import (
     PoolState,
     SlotInfo,
@@ -18,6 +14,10 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.output.output import user_output
 from erk_shared.slots.naming import generate_slot_name, get_placeholder_branch_name
+from erk_slots.common import (
+    get_pool_size,
+    is_slot_initialized,
+)
 
 
 @click.command("init-pool")

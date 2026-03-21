@@ -15,10 +15,10 @@ from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.core.slot_allocation import allocate_slot_for_branch
 from erk_shared.cli_alias import alias
 from erk_shared.core.script_error import script_error_handler
 from erk_shared.output.output import user_output
+from erk_slots.common import allocate_slot_for_branch
 
 
 @alias("co")
