@@ -1,0 +1,1113 @@
+<session>
+  <meta source="agent-ae7cc5c" />
+  <meta branch="plnd/O9324-submit-stack-discrim-03-21-1132" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find where EnsurableResult and NonIdealStateMixin are defined in the erk codebase. Look for their class definitions and how other types implement them (like PushResult, PushError, BranchCreated, BranchAlreadyExists). I need to understand the patterns to implement similar types for submit_stack.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Working directory: /home/runner/work/erk/erk</user>
+  <assistant>I'll help you find and understand EnsurableResult, NonIdealStateMixin, and how they're used in the codebase. Let me start by checking the documentation and then explore the code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="19235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19235, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HXAsfQQHb1JL5Q5VAsioNQ">
+    <param name="pattern">EnsurableResult|NonIdealStateMixin|discriminated</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19235, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017eSnzkTX2qbBbJeKJ7Syka">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19235" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 19235, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017eSnzkTX2qbBbJeKJ7Syka">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HXAsfQQHb1JL5Q5VAsioNQ">
+Found 60 files
+docs/learned/uncategorized/tripwires.md
+docs/learned/universal-tripwires.md
+docs/learned/testing/testing.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/gateway-fake-testing-exemplar.md
+docs/learned/testing/index.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/pr-operations/pr-creation-patterns.md
+docs/learned/planning/objective-update-after-land.md
+docs/learned/planning/plan-backend-migration.md
+docs/learned/planning/branch-plan-resolution.md
+docs/learned/planning/learn-without-pr-context.md
+docs/learned/objectives/objective-roadmap-check.md
+docs/learned/objectives/roadmap-mutation-patterns.md
+docs/learned/objectives/roadmap-validation.md
+docs/learned/objectives/tripwires.md
+docs/learned/glossary.md
+docs/learned/cli/tripwires.md
+docs/learned/cli/two-phase-validation-model.md
+docs/learned/cli/pr-submit-pipeline.md
+docs/learned/cli/slash-command-exec-migration.md
+docs/learned/cli/slash-command-llm-turn-optimization.md
+docs/learned/cli/commands/update-objective-node.md
+docs/learned/cli/dependency-injection-patterns.md
+docs/learned/cli/ensure-ideal-pattern.md
+docs/learned/cli/erk-exec-commands.md
+docs/learned/cli/error-detection-patterns.md
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/cli/exec-script-patterns.md
+
+... [31 lines omitted] ...
+
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/discriminated-union-error-handling.md
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>Perfect! I found a key document on discriminated union error handling. Let me read that and the architecture docs:</assistant>
+  <usage input_tokens="1083" cache_creation_input_tokens="1139" cache_read_input_tokens="19235" cache_creation="{'ephemeral_5m_input_tokens': 1139, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RczSx86f64p3tLYc5ejgpj">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="1139" cache_read_input_tokens="19235" cache_creation="{'ephemeral_5m_input_tokens': 1139, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E3TDkA9wGHi1861eRbPsFu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/ensure-ideal-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="1139" cache_read_input_tokens="19235" cache_creation="{'ephemeral_5m_input_tokens': 1139, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RczSx86f64p3tLYc5ejgpj">
+     1→---
+     2→title: Discriminated Union Error Handling
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "designing return types for operations that may fail"
+     7→  - "implementing T | ErrorType patterns"
+     8→  - "handling errors without exceptions"
+     9→tripwires:
+    10→  - action: "choosing between exceptions and discriminated unions for operation failures"
+    11→    warning: "If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section."
+    12→  - action: "migrating a gateway method to return discriminated union"
+    13→    warning: "Update all implementations (ABC, real, fake; add dry_run only for dry-run-participating gateways) AND all call sites AND tests. Incomplete migrations break type safety."
+    14→  - action: "accessing properties on a discriminated union result without isinstance() check"
+    15→    warning: "Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type."
+    16→  - action: "using None as a success return value in a validation function (ErrorType | None where None = success)"
+    17→    warning: "None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types."
+    18→  - action: "using if/else on a discriminated union without isinstance() for type narrowing"
+    19→    warning: "Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches."
+    20→  - action: "returning a collection (list, tuple, str) directly from a function with NonIdealState return type"
+    21→    warning: "Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements __iter__ if needed. See 'The Wrapping Rule' section."
+    22→  - action: "using Protocol property descriptors on a frozen dataclass NonIdealState class"
+    23→    warning: "Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields."
+    24→  - action: "placing @handle_non_ideal_exit before @click.command() or @click.pass_context"
+    25→    warning: "@handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments."
+    26→---
+    27→
+    28→# Discriminated Union Error Handling
+    29→
+    30→Erk uses discriminated unions (`SuccessType | ErrorType`) at gateway and pipeline boundaries. Non-ideal states are **optional outcomes visible in the type signature** — any reader (human or AI agent) can see from `T | ErrorType` what can happen and write control flow accordingly. This is the primary advantage over exceptions: **Python exceptions are not knowable from the type signature**, making them hostile to agent-driven development and harder for both humans and agents to reason about.
+
+... [396 lines omitted] ...
+
+    32→## The Core Trade-off: Unions vs Exceptions
+    34→**Use discriminated unions when the caller continues after failure** — branching logic, multiple error types, or inspection of error fields (like `pr_number`, `branch_name`).
+    36→**Use exceptions when all callers terminate identically** — error just surfaces as a message, no branching logic, no meaningful field inspection.
+    38→### When Exceptions Are Better: The Worktree Operations Case
+    40→Worktree add/remove failures are _expected_ (path collisions, missing branches), but they're still better as exceptions because no caller does anything beyond extracting the message and terminating:
+    46→except RuntimeError as e:
+    47→    raise UserFacingCliError(str(e))
+    50→The exception pattern is simpler here: no caller branches on error content, no caller inspects error structure, and every call site terminates identically. A discriminated union would add ceremony without value.
+    54→Contrast with `create_branch` and `submit_branch`, where callers _do_ branch on error types:
+    72→1. **Branching logic** — different handling for "already exists" vs other failures
+    74→3. **Type-safe continuation** — caller keeps running after handling the error
+    78→Gateway methods return `SuccessType | ErrorType` where:
+    81→- **Error types** are frozen dataclasses with `message: str` and `error_type` property
+    83→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushResult, PushError --&gt;
+    85→See `PushResult` and `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`.
+    90→if isinstance(push_result, PushError):
+    91→    raise UserFacingCliError(push_result.message)
+   101→- **Error types** (`NonIdealState`): `.ensure()` raises `NonIdealStateError`
+   105→# One-liner: raises if error, returns the value if success
+   116→def _ensure_comments(result: list[IssueComment] | GitHubAPIFailed) -&gt; list[IssueComment]:
+   117→    if isinstance(result, GitHubAPIFailed):
+   118→        exit_with_error(result.error_type, result.message)
+   119→    assert not isinstance(result, GitHubAPIFailed)
+   131→def issue_comments(...) -&gt; list[IssueComment] | GitHubAPIFailed: ...
+   146→| All error paths should raise (caller can't recover) | `.ensure()` one-liner          |
+   147→| Caller branches on success vs error                 | `isinstance()` check           |
+   148→| Caller branches on multiple error types             | `isinstance()` checks per type |
+   154→# isinstance() — when caller handles the error path explicitly
+   156→if isinstance(result, GitHubAPIFailed):
+   157→    log_warning(result.message)
+   170→- **`NonIdealStateMixin`**: Provides `.ensure()` for error types that use `message: str` as a field (frozen dataclass field conflicts with `NonIdealState` protocol's `@property message`). Used by `GitHubAPIFailed`.
+   171→- **`NonIdealState`**: Protocol for error types with computed `message` properties. `.ensure()` raises `NonIdealStateError`.
+   175→&lt;!-- Source: src/erk/cli/ensure.py, UserFacingCliError --&gt;
+   177→CLI commands use `UserFacingCliError` for error propagation. See `UserFacingCliError` in `src/erk/cli/ensure.py`.
+   180→# Check error case first and raise
+   182→if isinstance(result, PushError):
+   183→    raise UserFacingCliError(result.message)
+   187→**Why `UserFacingCliError`:**
+   189→- Caught at CLI entry point (`main()`) with consistent error styling
+   191→- One-line pattern replaces verbose `user_output(error) + raise SystemExit(1)`
+   193→## Pipeline Discriminated Unions: Structured Error Propagation
+   195→Both submit and land pipelines use discriminated unions to thread errors through multi-step operations:
+   197→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitState, SubmitError --&gt;
+   198→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, LandState, LandError --&gt;
+   200→See `SubmitError` in `src/erk/cli/commands/pr/submit_pipeline.py` and `LandError` in `src/erk/cli/commands/land_pipeline.py`.
+   205→PipelineStep = Callable[[ErkContext, State], State | Error]
+   211→- `Error` to short-circuit pipeline
+   213→**Why structured error types?**
+   215→1. **Phase tracking** — caller knows if error occurred in validation vs execution
+   216→2. **Machine-readable `error_type`** — enables specific error handling (e.g., "pr-checks-failing" vs "merge-conflict")
+   220→**Why `dict[str, str]` for details?** Not `dict[str, Any]` or `dict[str, str] | None`. Every error has details (even if empty `{}`), and string values enable consistent serialization/logging without type uncertainty.
+   224→def run_validation_pipeline(ctx: ErkContext, state: State) -&gt; State | Error:
+   225→    """Run all validation steps, short-circuit on first error."""
+   228→        if isinstance(result, Error):
+   242→    """Returns True on success, error message string on failure."""
+   247→    error_detail = merge_result if isinstance(merge_result, str) else "Unknown"
+   248→    return f"Failed to merge: {error_detail}"
+   253→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/types.py, MergeResult, MergeError --&gt;
+   255→See `MergeResult` and `MergeError` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`.
+   258→def merge_pr(self, repo_root: Path, pr_number: int, ...) -&gt; MergeResult | MergeError:
+   259→    """Returns MergeResult on success, MergeError on failure."""
+   263→if isinstance(merge_result, MergeError):
+   264→    return LandError(
+   266→        error_type="merge-failed",
+   267→        message=f"Failed to merge PR #{pr_number}\n\n{merge_result.message}",
+   279→5. Update tests to check `isinstance(result, ErrorType)`
+   287→Error types implement the `NonIdealState` protocol. See `packages/erk-shared/src/erk_shared/non_ideal_state.py`.
+   291→- `error_type` property (read-only, machine-readable classification)
+   294→This enables generic error handling without coupling to specific error types:
+   297→def handle_error(result: Any) -&gt; str:
+   305→### Error Types Are Frozen Dataclasses
+   307→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py, PushError --&gt;
+   309→All error types use `@dataclass(frozen=True)` for immutability. See `PushError` in `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py` for the canonical pattern: a single `message: str` field and an `error_type` property returning a kebab-case string like `"push-failed"`.
+   313→Error types should carry domain-meaningful fields for caller inspection:
+   317→See `PRNotFound` in `packages/erk-shared/src/erk_shared/gateway/github/types.py`. It carries `pr_number: int | None` (set when looking up by number) and `branch: str | None` (set when looking up by branch), enabling callers to construct better error messages or branch on specific failure modes.
+   323→| `&lt;Operation&gt;Error`   | `SubmitError`, `MergeError`   | Operation failed               |
+   331→### vs. Exceptions
+   333→| Discriminated Unions                            | Exceptions                                        |
+   344→| Preserves error context       | Loses information    |
+   346→| Multiple error types possible | Single failure state |
+   354→def fetch() -&gt; Data | Error: ...
+   357→def fetch() -&gt; Result[Data, Error]: ...
+   372→# T | ErrorType: isinstance() required for type narrowing
+   374→if isinstance(result, FetchError):
+   375→    handle_error(result.message)
+   382→**Anti-pattern:** `validate_thing() -&gt; ErrorType | None` where `None` means success.
+   384→This is counterintuitive because `None` typically signals absence or failure, not success. Callers end up writing `if result is not None:` to check for errors, which reads backwards.
+   394→error = validate_slug(slug)
+   395→if error is not None:  # "if not nothing" = error?
+   396→    handle_error(error)
+   411→    handle_error(result)
+  </tool_result>
+  <tool_result tool="toolu_01E3TDkA9wGHi1861eRbPsFu">
+     1→---
+     2→title: EnsureIdeal Pattern for Type Narrowing
+     3→read_when:
+     4→  - "handling discriminated union returns in CLI commands"
+     5→  - "narrowing types from T | NonIdealState or T | ErrorType"
+     6→  - "working with PR lookups, branch detection, or API calls that return union types"
+     7→  - "seeing EnsureIdeal in code and wondering when to use it vs Ensure"
+     8→tripwires:
+     9→  - action: "using EnsureIdeal for discriminated union narrowing"
+    10→    warning: "Only use when the error type implements NonIdealState protocol OR provides a message field. For custom error types without standard fields, add a specific EnsureIdeal method."
+    11→  - action: "choosing between Ensure and EnsureIdeal"
+    12→    warning: "Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal."
+    13→last_audited: "2026-02-16 14:20 PT"
+    14→audit_result: edited
+    15→---
+    16→
+    17→# EnsureIdeal Pattern for Type Narrowing
+    18→
+    19→`EnsureIdeal` provides CLI-level type narrowing for gateway operations that return discriminated unions. It's a specialized tool for the validation phase of CLI commands, converting `T | ErrorType` into `T` or terminating with styled error output.
+    20→
+    21→## Why Two Classes?
+    22→
+    23→The separation between `Ensure` and `EnsureIdeal` reflects two distinct validation concerns:
+    24→
+    25→| Class         | Validates                    | Source of Values               | Failure Meaning                       |
+    26→| ------------- | ---------------------------- | ------------------------------ | ------------------------------------- |
+    27→| `Ensure`      | Invariants and preconditions | Arguments, config, local state | Programming error or user input error |
+    28→| `EnsureIdeal` | Gateway operation results    | I/O operations, API calls      | Expected external failure             |
+    29→
+    30→**Decision rule**: If the value originates from a gateway method returning `T | ErrorType`, use `EnsureIdeal`. If it's an argument check, config validation, or state assertion, use `Ensure`.
+
+... [91 lines omitted] ...
+
+    34→`Ensure.invariant(not isinstance(result, PRNotFound), "...")` mixes type checking with error handling, bypassing the type narrowing that Python's `isinstance()` provides. `EnsureIdeal` methods explicitly handle the error type and return the narrowed success type, giving you both error handling AND type safety.
+    44→Use with gateway methods returning `PRDetails | PRNotFound`. Call `EnsureIdeal.unwrap_pr(result, message)` where you supply the error message because `PRNotFound` is a minimal sentinel without a `message` field.
+    52→Use with `GitHubChecks` methods returning `PRDetails | NoPRForBranch | PRNotFoundError`. Call `EnsureIdeal.pr(result)` with no message parameter — the error types implement `NonIdealState` protocol which includes a `message` property.
+    66→1. **Gateway returns a discriminated union** — not an exception, not a boolean
+    68→3. **Error type has a `message` field or implements `NonIdealState`** — otherwise the pattern doesn't fit
+    75→- **Exception-based errors** — those bypass type narrowing entirely
+    77→- **Error types without messages** — either add `unwrap_*` pattern (like PR) or refactor the error type
+    81→`EnsureIdeal` is a Phase 1 (validation) tool. It terminates on failure, so it must run _before_ any mutations occur.
+   104→1. **Type check**: `isinstance(result, ErrorType)`
+   105→2. **Styled output**: `user_output(click.style("Error: ", fg="red") + message)`
+   110→Why `SystemExit`? It exits immediately without stack traces, which is appropriate for expected failures like "PR not found". These aren't bugs — they're operational conditions that should present cleanly to users.
+   114→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — When to use unions vs exceptions
+  </tool_result>
+  <assistant>Excellent! Now I have the documentation. Let me search for the actual implementation files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10161" cache_read_input_tokens="20374" cache_creation="{'ephemeral_5m_input_tokens': 10161, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01CiM6Y6ERYgb7tcZaMDgpMc">
+    <param name="pattern">**/non_ideal_state.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10161" cache_read_input_tokens="20374" cache_creation="{'ephemeral_5m_input_tokens': 10161, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01V88F6ZBhh1gtcvqYwZ87n5">
+    <param name="pattern">**/branch_ops/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10161" cache_read_input_tokens="20374" cache_creation="{'ephemeral_5m_input_tokens': 10161, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Px3EA1khAdwE8c2Wr1CMCm">
+    <param name="pattern">**/remote_ops/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="10161" cache_read_input_tokens="20374" cache_creation="{'ephemeral_5m_input_tokens': 10161, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Px3EA1khAdwE8c2Wr1CMCm">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py
+  </tool_result>
+  <tool_result tool="toolu_01V88F6ZBhh1gtcvqYwZ87n5">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py
+  </tool_result>
+  <tool_result tool="toolu_01CiM6Y6ERYgb7tcZaMDgpMc">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/non_ideal_state.py
+  </tool_result>
+  <assistant>Perfect! Now let me read these core files:</assistant>
+  <usage input_tokens="129" cache_creation_input_tokens="374" cache_read_input_tokens="30535" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MemYzCibhPoUqKiCzQKctG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/non_ideal_state.py</param>
+  </tool_use>
+  <usage input_tokens="129" cache_creation_input_tokens="374" cache_read_input_tokens="30535" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GUeBZ6PAbHToUAALyqwndg">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py</param>
+  </tool_use>
+  <usage input_tokens="129" cache_creation_input_tokens="374" cache_read_input_tokens="30535" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XqZJpaheX8T2wct7ZtPoBC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py</param>
+  </tool_use>
+  <usage input_tokens="129" cache_creation_input_tokens="374" cache_read_input_tokens="30535" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MemYzCibhPoUqKiCzQKctG">
+     1→"""Non-ideal state types for operations that can fail gracefully.
+     2→
+     3→This module provides:
+     4→- NonIdealState: Marker interface for error states (Protocol)
+     5→- NonIdealStateError: Exception raised by NonIdealState.ensure()
+     6→- Specific error classes: BranchDetectionFailed, NoPRForBranch, etc.
+     7→
+     8→The NonIdealState pattern allows functions to return T | NonIdealState,
+     9→letting callers decide how to handle errors (exit, log, retry, etc.)
+    10→rather than forcing early exit.
+    11→
+    12→Usage:
+    13→    from erk_shared.non_ideal_state import NonIdealState, BranchDetectionFailed
+    14→
+    15→    # Check if result is a non-ideal state
+    16→    result = some_operation()
+    17→    if isinstance(result, NonIdealState):
+    18→        print(f"Error: {result.message}")
+    19→
+    20→    # Or raise immediately
+    21→    result = some_operation()
+    22→    if isinstance(result, NonIdealState):
+    23→        result.ensure()
+    24→"""
+    25→
+    26→from __future__ import annotations
+    27→
+    28→from dataclasses import dataclass
+    29→from typing import NoReturn, Protocol, Self, runtime_checkable
+    30→
+
+... [130 lines omitted] ...
+
+    32→class NonIdealStateError(Exception):
+    36→        self.error_type = state.error_type
+    49→        raise NonIdealStateError(self)  # type: ignore[arg-type]
+    57→    - If result is a NonIdealState (error): raises NonIdealStateError
+    73→    All NonIdealState implementations must provide error_type and message
+    74→    properties for consistent error handling.
+    78→    def error_type(self) -&gt; str: ...
+    84→        """Raise NonIdealStateError with this state's details."""
+    85→        raise NonIdealStateError(self)
+    89→class BranchDetectionFailed(NonIdealState):
+    93→    def error_type(self) -&gt; str:
+    94→        return "branch-detection-failed"
+   108→    def error_type(self) -&gt; str:
+   117→class PRNotFoundError(NonIdealState):
+   123→    def error_type(self) -&gt; str:
+   132→class GitHubAPIFailed(NonIdealStateMixin):
+   133→    """GitHub API call failed with an error."""
+   138→    def error_type(self) -&gt; str:
+   139→        return "github-api-failed"
+   149→    def error_type(self) -&gt; str:
+  </tool_result>
+  <tool_result tool="toolu_01GUeBZ6PAbHToUAALyqwndg">
+     1→"""Discriminated union types for Git remote operations.
+     2→
+     3→PushResult | PushError and PullRebaseResult | PullRebaseError follow
+     4→the NonIdealState pattern established by MergeResult | MergeError.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class PushResult:
+    12→    """Success result from pushing to remote."""
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class PushError:
+    17→    """Error result from pushing to remote. Implements NonIdealState."""
+    18→
+    19→    message: str
+    20→
+    21→    @property
+    22→    def error_type(self) -&gt; str:
+    23→        return "push-failed"
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class PullRebaseResult:
+    28→    """Success result from pull --rebase."""
+    29→
+    30→
+
+... [15 lines omitted] ...
+
+    32→class PullRebaseError:
+    33→    """Error result from pull --rebase. Implements NonIdealState."""
+    38→    def error_type(self) -&gt; str:
+    39→        return "pull-rebase-failed"
+  </tool_result>
+  <tool_result tool="toolu_01XqZJpaheX8T2wct7ZtPoBC">
+     1→"""Discriminated union types for Git branch operations.
+     2→
+     3→BranchCreated | BranchAlreadyExists follows the NonIdealState pattern
+     4→established by PushResult | PushError in remote_ops/types.py.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class BranchCreated:
+    12→    """Success result from creating a branch."""
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class BranchAlreadyExists:
+    17→    """Error: branch already exists. Implements NonIdealState."""
+    18→
+    19→    branch_name: str
+    20→    message: str
+    21→
+    22→    @property
+    23→    def error_type(self) -&gt; str:
+    24→        return "branch-already-exists"
+    25→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Great! Now let me check for MergeResult/MergeError mentioned in the docs and also look for how gateways implement these types:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3104" cache_read_input_tokens="30909" cache_creation="{'ephemeral_5m_input_tokens': 3104, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_012N6Yf9hWPRhwU2ReWBiwGg">
+    <param name="pattern">**/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3104" cache_read_input_tokens="30909" cache_creation="{'ephemeral_5m_input_tokens': 3104, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RVfnuNdd4j1ywsvMsdCRue">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f -exec grep -l "class MergeResult\|class MergeError" {} \;</param>
+    <param name="description">Find MergeResult and MergeError definitions</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3104" cache_read_input_tokens="30909" cache_creation="{'ephemeral_5m_input_tokens': 3104, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012N6Yf9hWPRhwU2ReWBiwGg">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <tool_result tool="toolu_01RVfnuNdd4j1ywsvMsdCRue">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_018W89KtWi5UGnQvMGLvJEdF">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="463" cache_read_input_tokens="34013" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018W89KtWi5UGnQvMGLvJEdF">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→PRReviewState = Literal["PENDING", "COMMENTED", "APPROVED", "CHANGES_REQUESTED", "DISMISSED"]
+    13→
+    14→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    15→
+    16→
+    17→class StatusCheckRollupData(TypedDict, total=False):
+    18→    state: str
+    19→    contexts: dict[str, Any]
+    20→
+    21→
+    22→def _epoch_sentinel() -&gt; datetime:
+    23→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    24→    return datetime(2000, 1, 1, tzinfo=UTC)
+    25→
+    26→
+    27→@dataclass(frozen=True)
+    28→class BodyText:
+    29→    """Body content as inline text.
+    30→
+
+... [401 lines omitted] ...
+
+   116→        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+   135→class MergeError:
+   136→    """Error result from merging a PR. Implements NonIdealState."""
+   142→    def error_type(self) -&gt; str:
+   143→        return "merge-failed"
+   150→    Used as part of union return types for LBYL-style error handling.
+   224→WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+   261→    Raises AttributeError when accessed as a string, preventing silent bugs
+   271→        raise AttributeError(msg)
+   282→        raise AttributeError(msg)
+   302→    Accessing unavailable fields raises AttributeError.
+   352→        raise AttributeError(msg)
+   356→        raise AttributeError(msg)
+   379→            str(value)  # Trigger the error
+   391→            str(value)  # Trigger the error
+  </tool_result>
+  <assistant>Now let me find where `IssueComments` is defined, as mentioned in the docs:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5162" cache_read_input_tokens="34476" cache_creation="{'ephemeral_5m_input_tokens': 5162, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015jx5AcYgswze6XosUSsLBR">
+    <param name="command">find /home/runner/work/erk/erk -name "*.py" -type f -exec grep -l "class IssueComments" {} \;</param>
+    <param name="description">Find IssueComments class definition</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5162" cache_read_input_tokens="34476" cache_creation="{'ephemeral_5m_input_tokens': 5162, 'ephemeral_1h_input_tokens': 0}" output_tokens="134" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015jx5AcYgswze6XosUSsLBR">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DSfrvX11avxks6Y6GhpbU3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="321" cache_read_input_tokens="39638" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DSfrvX11avxks6Y6GhpbU3">
+     1→"""Data types for GitHub issues integration."""
+     2→
+     3→from collections.abc import Iterator
+     4→from dataclasses import dataclass
+     5→from datetime import datetime
+     6→
+     7→from erk_shared.non_ideal_state import EnsurableResult
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class IssueInfo:
+    12→    """Information about a GitHub issue."""
+    13→
+    14→    number: int
+    15→    title: str
+    16→    body: str
+    17→    state: str  # "OPEN" or "CLOSED"
+    18→    url: str
+    19→    labels: list[str]
+    20→    assignees: list[str]
+    21→    created_at: datetime
+    22→    updated_at: datetime
+    23→    author: str  # GitHub login of the issue creator
+    24→
+    25→
+    26→@dataclass(frozen=True)
+    27→class IssueNotFound:
+    28→    """Sentinel indicating an issue was not found.
+    29→
+    30→    Used as part of union return types for LBYL-style error handling.
+
+... [53 lines omitted] ...
+
+    71→    in T | GitHubAPIFailed union return types.
+  </tool_result>
+  <assistant>Perfect! Now let me check how gateway ABC methods use these types, and look for a graphite/submit_stack specific file:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="980" cache_read_input_tokens="39959" cache_creation="{'ephemeral_5m_input_tokens': 980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XTNpdNfsMjvPGits92TWAh">
+    <param name="command">find /home/runner/work/erk/erk -path "*graphite*submit*" -name "*.py" | head -20</param>
+    <param name="description">Find graphite submit_stack related files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="980" cache_read_input_tokens="39959" cache_creation="{'ephemeral_5m_input_tokens': 980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UySWj2FwqvrMBQzg78rdyC">
+    <param name="command">find /home/runner/work/erk/erk -path "*gateway*graphite*" -name "*.py" | head -20</param>
+    <param name="description">Find graphite gateway files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="980" cache_read_input_tokens="39959" cache_creation="{'ephemeral_5m_input_tokens': 980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XTNpdNfsMjvPGits92TWAh">
+
+  </tool_result>
+  <tool_result tool="toolu_01UySWj2FwqvrMBQzg78rdyC">
+/home/runner/work/erk/erk/tests/unit/gateways/graphite/__init__.py
+/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py
+/home/runner/work/erk/erk/tests/fakes/gateway/graphite_branch_ops.py
+/home/runner/work/erk/erk/tests/fakes/gateway/graphite.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/test_types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr/graphite_enhance.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YNM9K4XXdrmr6EYgpy4RRB">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/types.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1100" cache_read_input_tokens="40939" cache_creation="{'ephemeral_5m_input_tokens': 1100, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SoFoj3pRDoDuJrqegcyJsS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1100" cache_read_input_tokens="40939" cache_creation="{'ephemeral_5m_input_tokens': 1100, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YNM9K4XXdrmr6EYgpy4RRB">
+     1→"""Branch metadata dataclass for Graphite integration."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import secrets
+     6→from dataclasses import dataclass
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class BranchMetadata:
+    11→    """Metadata for a single gt-tracked branch.
+    12→
+    13→    This is used by the gt commands to provide machine-readable branch information.
+    14→
+    15→    Attributes:
+    16→        name: Branch name
+    17→        parent: Parent branch name, or None for trunk
+    18→        children: List of child branch names
+    19→        is_trunk: True if this is the trunk branch (main/master)
+    20→        commit_sha: Actual git commit SHA from git branch head
+    21→        tracked_revision: Graphite's cached branchRevision from .graphite_cache_persist
+    22→            (may differ from commit_sha after rebase/restack)
+    23→    """
+    24→
+    25→    name: str
+    26→    parent: str | None
+    27→    children: list[str]
+    28→    is_trunk: bool
+    29→    commit_sha: str | None
+    30→    tracked_revision: str | None = None
+
+... [66 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SoFoj3pRDoDuJrqegcyJsS">
+     1→"""Abstract base class for Graphite operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.git.abc import Git, WorktreeInfo
+    10→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.gateway.gt.types import (
+    15→        SquashError,
+    16→        SquashSuccess,
+    17→    )
+    18→
+    19→
+    20→class Graphite(ABC):
+    21→    """Abstract interface for Graphite operations.
+    22→
+    23→    All implementations (real and fake) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -&gt; str:
+    28→        """Get Graphite PR URL for a pull request.
+    29→
+    30→        Args:
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Let me look at the actual plan and search for submit_stack related types and structures:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2682" cache_read_input_tokens="42039" cache_creation="{'ephemeral_5m_input_tokens': 2682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AeCX9n7VaUosSD6RknAVbY">
+    <param name="command">find /home/runner/work/erk/erk -name "*.md" -path "*impl-context*" -o -name "plan.md" | head -5</param>
+    <param name="description">Find implementation context plan files</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2682" cache_read_input_tokens="42039" cache_creation="{'ephemeral_5m_input_tokens': 2682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VJu75toRsupxVcYVaBrpBA">
+    <param name="command">grep -r "submit_stack" /home/runner/work/erk/erk/packages/erk-shared/src --include="*.py" | head -20</param>
+    <param name="description">Find submit_stack references in shared package</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2682" cache_read_input_tokens="42039" cache_creation="{'ephemeral_5m_input_tokens': 2682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VJu75toRsupxVcYVaBrpBA">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:        # submit_stack is a subprocess call (gt submit) — no LBYL alternative exists
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:            self.graphite.submit_stack(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py:    def submit_stack(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:    def submit_stack(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:        """Raise error - submit_stack is a mutating operation."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py:    def submit_stack(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py:    def submit_stack(
+  </tool_result>
+  <tool_result tool="toolu_01AeCX9n7VaUosSD6RknAVbY">
+/home/runner/work/erk/erk/.erk/impl-context/plan.md
+/home/runner/work/erk/erk/.erk/impl-context/plnd--O9324-submit-stack-discrim-03-21-1132/plan.md
+/home/runner/work/erk/erk/docs/learned/planning/impl-context.md
+/home/runner/work/erk/erk/docs/learned/architecture/impl-context-api.md
+/home/runner/work/erk/erk/.worker-impl/plan.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Xj6e6G8satUn9uCqvPcRH1">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O9324-submit-stack-discrim-03-21-1132/plan.md</param>
+  </tool_use>
+  <usage input_tokens="361" cache_creation_input_tokens="544" cache_read_input_tokens="44721" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KYr6TNd7gZcWPudvzi6oap">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="361" cache_creation_input_tokens="544" cache_read_input_tokens="44721" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xj6e6G8satUn9uCqvPcRH1">
+     1→# Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)
+     2→
+     3→## Context
+     4→
+     5→Objective #9324 aims to eliminate exceptions as control flow from gateway methods. Phase 1 targets `submit_stack` in the Graphite gateway — the method currently raises `RuntimeError` on failure, and callers parse error message strings to distinguish failure modes (restack required, nothing to submit, generic failure). This is fragile and not self-documenting.
+     6→
+     7→The codebase already has a well-established discriminated union pattern (e.g., `PushResult | PushError`, `BranchCreated | BranchAlreadyExists`) using frozen dataclasses with `NonIdealState` protocol and `EnsurableResult` mixin.
+     8→
+     9→## Node 1.1: Define Discriminated Union Types
+    10→
+    11→**File:** `packages/erk-shared/src/erk_shared/gateway/graphite/types.py` (add to existing file)
+    12→
+    13→Define 4 types to eliminate all string parsing at call sites:
+    14→
+    15→```python
+    16→@dataclass(frozen=True)
+    17→class SubmitStackResult(EnsurableResult):
+    18→    """Stack submitted successfully."""
+    19→
+    20→@dataclass(frozen=True)
+    21→class SubmitStackNothingToSubmit:
+    22→    """Benign: stack had no changes to submit. Callers may treat as success."""
+    23→
+    24→@dataclass(frozen=True)
+    25→class SubmitStackRestackRequired(NonIdealStateMixin):
+    26→    """Stack has conflicts requiring manual restack before submit."""
+    27→    message: str
+    28→
+    29→    @property
+    30→    def error_type(self) -&gt; str:
+
+... [118 lines omitted] ...
+
+    34→class SubmitStackError(NonIdealStateMixin):
+    35→    """Generic submit_stack failure (timeout, exit code, etc.)."""
+    39→    def error_type(self) -&gt; str:
+    40→        return "submit-failed"
+    43→**Why 4 types instead of 2:** Call sites currently branch on 3 distinct outcomes beyond success: (a) "restack" in error → custom user guidance, (b) "nothing to submit" → treat as success, (c) generic failure. Separate types make these branches type-safe with no string parsing.
+    47→SubmitStackOutcome = SubmitStackResult | SubmitStackNothingToSubmit | SubmitStackRestackRequired | SubmitStackError
+    54→- Remove `Raises: RuntimeError` from docstring
+    57→- Remove `raise RuntimeError(...)` calls
+    58→- Convert subprocess exceptions to return values:
+    59→  - `TimeoutExpired` → `SubmitStackError(message="gt submit timed out...")`
+    60→  - `CalledProcessError` with "restack" in stderr → `SubmitStackRestackRequired(message=...)`
+    61→  - `CalledProcessError` with "nothing to submit"/"no changes" in stderr → `SubmitStackNothingToSubmit()`
+    62→  - `CalledProcessError` other → `SubmitStackError(message=...)`
+    66→- Change `submit_stack_raises: Exception | None` constructor param to `submit_stack_result: SubmitStackOutcome` defaulting to `SubmitStackResult()`
+    68→- Update all test call sites that pass `submit_stack_raises=RuntimeError(...)`:
+    69→  - `test_graphite_first_flow.py:94` → `submit_stack_result=SubmitStackError(message="gt submit failed")`
+    71→  - `test_enhance_with_graphite.py:151` → `submit_stack_result=SubmitStackError(message="network timeout")`
+    73→  - `fake_ops.py:531,640` → convert error param to appropriate result type
+    79→- Return `SubmitStackError(message=f"Graphite is disabled: {self.reason}")` instead of raising `GraphiteDisabledError`
+    80→- **Note:** This changes behavior — disabled sentinel currently raises a different exception type. Callers that catch `GraphiteDisabledError` separately need checking. Search for `GraphiteDisabledError` catch blocks.
+    90→    return SubmitError(phase="push_and_create_pr", error_type="graphite_restack_required", ...)
+    91→if isinstance(result, (SubmitStackError, SubmitStackNothingToSubmit)):
+    92→    return SubmitError(phase="push_and_create_pr", error_type="graphite_submit_failed", ...)
+   104→if isinstance(result, (SubmitStackRestackRequired, SubmitStackError)):
+   105→    return SubmitError(phase="enhance_with_graphite", error_type="graphite_enhance_failed", ...)
+   110→# Before: try/except converting to SubmitBranchError
+   115→return SubmitBranchError(message=result.message if hasattr(result, 'message') else "Unknown error")
+   126→| `packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py` | Return error instead of raising |
+  </tool_result>
+  <tool_result tool="toolu_01KYr6TNd7gZcWPudvzi6oap">
+   100→
+   101→        Runs `gt auth` and parses the output to determine authentication status.
+   102→        This is a LBYL check to validate Graphite authentication before operations
+   103→        that require it (like gt submit).
+   104→
+   105→        Returns:
+   106→            Tuple of (is_authenticated, username, repo_info):
+   107→            - is_authenticated: True if gt is authenticated
+   108→            - username: Authenticated username (e.g., "schrockn") or None if not authenticated
+   109→            - repo_info: Repository info string (e.g., "dagster-io/erk") or None
+   110→
+   111→        Example:
+   112→            &gt;&gt;&gt; graphite.check_auth_status()
+   113→            (True, "schrockn", "dagster-io/erk")
+   114→            &gt;&gt;&gt; # If not authenticated:
+   115→            (False, None, None)
+   116→        """
+   117→        ...
+   118→
+   119→    @abstractmethod
+   120→    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+   121→        """Squash all commits on the current branch into one.
+   122→
+   123→        Uses `gt squash` to consolidate commits. This is typically called
+   124→        before submitting a PR to create a clean single-commit branch.
+   125→
+   126→        Args:
+   127→            repo_root: Repository root directory
+   128→            quiet: If True, suppress output
+   129→
+
+... [75 lines omitted] ...
+
+   131→            RuntimeError: If gt squash fails
+   159→            RuntimeError: If gt submit fails or times out
+  </tool_result>
+  <assistant>Perfect! Now let me check how the real implementation of submit_stack works currently:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="4684" cache_read_input_tokens="45265" cache_creation="{'ephemeral_5m_input_tokens': 4684, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01THtaVmjsbWr5VWr2DEx4nn">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py</param>
+    <param name="offset">200</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="4684" cache_read_input_tokens="45265" cache_creation="{'ephemeral_5m_input_tokens': 4684, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01THtaVmjsbWr5VWr2DEx4nn">
+   200→
+   201→        # Extract repo info from "Ready to submit PRs to OWNER/REPO"
+   202→        repo_info: str | None = None
+   203→        for line in output.split("\n"):
+   204→            if "Ready to submit PRs to" in line:
+   205→                parts = line.split("Ready to submit PRs to")
+   206→                if len(parts) &gt;= 2:
+   207→                    repo_info = parts[1].strip()
+   208→                break
+   209→
+   210→        return (True, username, repo_info)
+   211→
+   212→    def squash_branch(self, repo_root: Path, *, quiet: bool) -&gt; None:
+   213→        """Squash all commits on the current branch into one."""
+   214→        cmd = ["gt", "squash", "--no-edit", "--no-interactive"]
+   215→
+   216→        run_subprocess_with_context(
+   217→            cmd=cmd,
+   218→            operation_context="squash branch commits with Graphite",
+   219→            cwd=repo_root,
+   220→            stdout=DEVNULL if quiet else sys.stdout,
+   221→            stderr=subprocess.PIPE,
+   222→        )
+   223→
+   224→    def submit_stack(
+   225→        self,
+   226→        repo_root: Path,
+   227→        *,
+   228→        publish: bool,
+   229→        restack: bool,
+
+... [75 lines omitted] ...
+
+   264→            raise RuntimeError(
+   267→        except subprocess.CalledProcessError as e:
+   270→            raise RuntimeError(
+   271→                f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}"
+   288→        return (False, result.stderr.strip() or "gt restack failed")
+   294→        means the branch is tracked, non-zero means untracked or error.
+  </tool_result>
+  <assistant>Perfect! Now let me examine how the call sites currently use submit_stack:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1660" cache_read_input_tokens="49949" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014hBccsSWgDGqnjPdvSuhqu">
+    <param name="command">grep -n -A 10 "submit_stack" /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py | head -80</param>
+    <param name="description">Find submit_stack usage in submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1660" cache_read_input_tokens="49949" cache_creation="{'ephemeral_5m_input_tokens': 1660, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014hBccsSWgDGqnjPdvSuhqu">
+324:        ctx.graphite.submit_stack(
+325-            state.repo_root,
+326-            publish=True,
+327-            restack=False,
+328-            quiet=state.quiet,
+329-            force=effective_force,
+330-        )
+331-    except RuntimeError as e:
+332-        error_str = str(e)
+333-        if "restack" in error_str.lower():
+334-            return SubmitError(
+--
+757:        ctx.graphite.submit_stack(
+758-            repo_root,
+759-            publish=True,
+760-            restack=False,
+761-            quiet=state.quiet,
+762-            force=state.force,
+763-        )
+764-    except RuntimeError as e:
+765-        error_msg = str(e).lower()
+766-        if "nothing to submit" in error_msg or "no changes" in error_msg:
+767-            click.echo(click.style("   PR already up to date with Graphite", fg="green"))
+  </tool_result>
+  <assistant>Excellent! Now I have all the information I need. Let me create a comprehensive summary document for the user:
+
+## Summary: EnsurableResult, NonIdealStateMixin, and Discriminated Union Pattern
+
+Based on my exploration of the erk codebase, here's what I found about the pattern you need to implement for submit_stack:
+
+### Core Architecture: Three Key Base Classes/Protocols
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/non_ideal_state.py`**
+
+This file contains the foundational types for discriminated union error handling:
+
+1. **`NonIdealStateError(Exception)`** — The exception raised by `.ensure()` on error types
+2. **`NonIdealStateMixin`** — Mixin class for error types with `message: str` as a frozen dataclass field
+3. **`EnsurableResult`** — Mixin class for success types that provides `.ensure()` returning self
+4. **`NonIdealState`** — Protocol defining the interface for all error types (requires `error_type` and `message` properties)
+
+### Pattern Usage: Real Examples in Codebase
+
+**1. Simple Success/Error Pairs (like your submit_stack case)**
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py`**
+```python
+@dataclass(frozen=True)
+class PushResult:
+    """Success result from pushing to remote."""
+    # Empty marker class — operation itself (successful push) is the signal
+
+@dataclass(frozen=True)
+class PushError:
+    """Error result from pushing to remote. Implements NonIdealState."""
+    message: str
+
+    @property
+    def error_type(self) -&gt; str:
+        return "push-failed"
+```
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py`**
+```python
+@dataclass(frozen=True)
+class BranchCreated:
+    """Success result from creating a branch."""
+
+@dataclass(frozen=True)
+class BranchAlreadyExists:
+    """Error: branch already exists. Implements NonIdealState."""
+    branch_name: str  # Domain-specific field
+    message: str
+
+    @property
+    def error_type(self) -&gt; str:
+        return "branch-already-exists"
+```
+
+**2. More Complex: Success with Data (implements `EnsurableResult`)**
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`**
+```python
+@dataclass(frozen=True)
+class MergeResult:
+    """Success result from merging a PR."""
+    pr_number: int  # Carries domain context
+
+@dataclass(frozen=True)
+class MergeError:
+    """Error result from merging a PR. Implements NonIdealState."""
+    pr_number: int
+    message: str
+
+    @property
+    def error_type(self) -&gt; str:
+        return "merge-failed"
+```
+
+**3. Wrapped Collections (implements `EnsurableResult`)**
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py`**
+```python
+@dataclass(frozen=True)
+class IssueComments(EnsurableResult):
+    """Wrapper for tuple[IssueComment, ...] to enable .ensure() unwrapping."""
+    comments: tuple[IssueComment, ...]
+
+    def __iter__(self) -&gt; Iterator[IssueComment]:
+        return iter(self.comments)
+```
+
+This pattern allows:
+- One-liner unwrapping: `result.ensure()` 
+- Type-safe branching: `if isinstance(result, ErrorType):`
+- No string parsing at call sites
+
+### Your Case: submit_stack Discriminated Union
+
+**File: `/home/runner/work/erk/erk/.erk/impl-context/plnd--O9324-submit-stack-discrim-03-21-1132/plan.md`** (contains complete implementation plan)
+
+The plan defines 4 types for submit_stack to eliminate string parsing in two call sites:
+
+```python
+@dataclass(frozen=True)
+class SubmitStackResult(EnsurableResult):
+    """Stack submitted successfully."""
+
+@dataclass(frozen=True)
+class SubmitStackNothingToSubmit:
+    """Benign: stack had no changes to submit. Callers may treat as success."""
+
+@dataclass(frozen=True)
+class SubmitStackRestackRequired(NonIdealStateMixin):
+    """Stack has conflicts requiring manual restack before submit."""
+    message: str
+
+    @property
+    def error_type(self) -&gt; str:
+        return "restack-required"
+
+@dataclass(frozen=True)
+class SubmitStackError(NonIdealStateMixin):
+    """Generic submit_stack failure (timeout, exit code, etc.)."""
+    message: str
+
+    @property
+    def error_type(self) -&gt; str:
+        return "submit-failed"
+
+# Type alias
+SubmitStackOutcome = (
+    SubmitStackResult 
+    | SubmitStackNothingToSubmit 
+    | SubmitStackRestackRequired 
+    | SubmitStackError
+)
+```
+
+### Key Design Decisions
+
+1. **Use `EnsurableResult` for:**
+   - Success types in `T | ErrorType` unions
+   - Enables `.ensure()` that returns self
+   - Used when callers will call `.ensure()` directly
+
+2. **Use `NonIdealStateMixin` for:**
+   - Error types with `message: str` as a frozen dataclass field
+   - Provides `.ensure()` that raises `NonIdealStateError`
+   - Avoids descriptor conflicts with `NonIdealState` protocol properties
+
+3. **Use bare frozen dataclass for:**
+   - Non-error variants that aren't success or failure (like `SubmitStackNothingToSubmit`)
+   - Sentinel/marker types
+
+4. **Include domain context fields:**
+   - `BranchAlreadyExists` carries `branch_name`
+   - `MergeError` carries `pr_number`
+   - Enables callers to construct better error messages without additional lookups
+
+5. **Four submit_stack types instead of two:**
+   - Current code branches on three distinct non-success outcomes via string parsing
+   - Separate types make these branches type-safe: `SubmitStackRestackRequired` vs `SubmitStackNothingToSubmit` vs `SubmitStackError`
+
+### How Call Sites Currently Parse Errors
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py:323-350`**
+```python
+try:
+    ctx.graphite.submit_stack(...)
+except RuntimeError as e:
+    error_str = str(e)
+    if "restack" in error_str.lower():  # ← String parsing!
+        return SubmitError(...)
+```
+
+**File: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py:757-767`**
+```python
+try:
+    ctx.graphite.submit_stack(...)
+except RuntimeError as e:
+    error_msg = str(e).lower()
+    if "nothing to submit" in error_msg or "no changes" in error_msg:  # ← String parsing!
+        click.echo("PR already up to date...")
+```
+
+### Current Exception Raising (to be replaced)
+
+**File: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py:224-276`**
+```python
+def submit_stack(...) -&gt; None:
+    try:
+        result = subprocess.run(...)
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError("gt submit timed out after 90 seconds...")  # → SubmitStackError
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"gt submit failed (exit code {e.returncode}): {e.stderr or ''}")
+        # Logic needs to check if "restack" in stderr → SubmitStackRestackRequired
+        # Check if "nothing to submit"/"no changes" in stderr → SubmitStackNothingToSubmit
+        # Otherwise → SubmitStackError
+```
+
+### Related Documentation References
+
+- **[Discriminated Union Error Handling](file:///home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md)** — Comprehensive pattern explanation
+- **[EnsureIdeal Pattern](file:///home/runner/work/erk/erk/docs/learned/cli/ensure-ideal-pattern.md)** — CLI-level type narrowing
+- **[Gateway ABC Implementation](file:///home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md)** — 4-place implementation pattern (ABC, Real, Fake, DryRun, etc.)
+
+### File Locations
+
+| Purpose | File Path |
+|---------|-----------|
+| Core mixins/protocols | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/non_ideal_state.py` |
+| Git remote ops types | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py` |
+| Git branch ops types | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py` |
+| GitHub types | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py` |
+| GitHub issues types | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/types.py` |
+| Graphite gateway ABC | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py` |
+| Graphite real impl | `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py` |
+| Implementation plan | `/home/runner/work/erk/erk/.erk/impl-context/plnd--O9324-submit-stack-discrim-03-21-1132/plan.md` |
+
+This should give you everything you need to implement similar types for your submit_stack work!</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="51609" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

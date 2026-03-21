@@ -37,6 +37,28 @@
       "raw_size_kb": 1098,
       "xml_size_kb": 245,
       "git_branch": "plnd/O9324-submit-stack-discrim-03-21-1132"
+    },
+    {
+      "session_id": "aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T11:48:33.772467+00:00",
+      "files": [
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part1.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part2.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part3.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part4.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part5.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part6.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part7.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part8.xml",
+        "impl-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part9.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 12,
+      "raw_size_kb": 1136,
+      "xml_size_kb": 263,
+      "git_branch": "plnd/O9324-submit-stack-discrim-03-21-1132"
     }
   ]
 }
