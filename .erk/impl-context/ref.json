@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Rename PlanContext and validate_plan_title (Nodes 1.5\u20131.6)",
+  "pr_id": "9340",
+  "url": "https://github.com/dagster-io/erk/pull/9340",
+  "created_at": "2026-03-21T12:37:49.353897",
+  "synced_at": "2026-03-21T12:37:49.353897",
+  "labels": [],
   "objective_id": 9318,
-  "node_ids": [
-    "1.5"
-  ]
+  "node_ids": null
 }
