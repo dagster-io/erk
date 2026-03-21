@@ -140,7 +140,7 @@ These represent opportunities for future migration.
 
 ## PlanBackend Methods
 
-Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):
+Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/pr_store/backend.py`):
 
 | Method                                           | Returns                  | Description                                 |
 | ------------------------------------------------ | ------------------------ | ------------------------------------------- |
@@ -154,7 +154,7 @@ Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store
 
 ## Source Code
 
-The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
+The canonical implementation lives in `packages/erk-shared/src/erk_shared/pr_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
 
 ## get_metadata_field Returns object | PlanNotFound
 
