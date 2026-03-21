@@ -167,7 +167,8 @@ def _validate_planned_pr_for_dispatch(
     if not has_plan_title_prefix(pr_result.title):
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{pr_number} does not have a valid plan title prefix ([erk-pr] or [erk-learn])\n\n"
+            + f"PR #{pr_number} does not have a valid plan title prefix"
+            " ([erk-pr] or [erk-learn])\n\n"
             "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)
@@ -410,7 +411,8 @@ def _validate_planned_pr_for_dispatch_remote(
     if not has_plan_title_prefix(issue.title):
         user_output(
             click.style("Error: ", fg="red")
-            + f"PR #{pr_number} does not have a valid plan title prefix ([erk-pr] or [erk-learn])\n\n"
+            + f"PR #{pr_number} does not have a valid plan title prefix"
+            " ([erk-pr] or [erk-learn])\n\n"
             "Cannot dispatch non-plan PRs for automated implementation."
         )
         raise SystemExit(1)

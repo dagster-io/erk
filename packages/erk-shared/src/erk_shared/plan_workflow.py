@@ -87,8 +87,9 @@ def prepare_plan_for_worktree(
     # Validate plan title prefix
     if not _has_plan_title_prefix(plan.title):
         return PlanValidationFailed(
-            f"Plan #{plan.pr_identifier} does not have a valid plan title prefix ([erk-pr] or [erk-learn]).\n"
-            f"Create a plan using 'erk pr create' to ensure correct formatting."
+            f"Plan #{plan.pr_identifier} does not have a valid plan title prefix"
+            " ([erk-pr] or [erk-learn]).\n"
+            "Create a plan using 'erk pr create' to ensure correct formatting."
         )
 
     # Validate plan_identifier can be converted to int (LBYL)

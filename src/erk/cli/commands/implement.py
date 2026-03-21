@@ -175,7 +175,8 @@ def _implement_from_issue(
     if not has_plan_title_prefix(plan.title):
         user_output(
             click.style("Error: ", fg="red")
-            + f"Plan #{pr_number} does not have a valid plan title prefix ([erk-pr] or [erk-learn]).\n"
+            + f"Plan #{pr_number} does not have a valid plan title prefix"
+            " ([erk-pr] or [erk-learn]).\n"
             "Create a plan using 'erk pr create' to ensure correct formatting."
         )
         raise SystemExit(1) from None

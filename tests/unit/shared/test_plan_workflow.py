@@ -64,7 +64,22 @@ def test_prepare_plan_missing_title_prefix_returns_failure() -> None:
     result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
 
     assert isinstance(result, PlanValidationFailed)
-    assert "'[erk-pr]' title prefix" in result.message
+    assert "valid plan title prefix" in result.message
+
+
+def test_prepare_plan_valid_erk_learn_prefix() -> None:
+    """Valid plan with [erk-learn] title prefix returns PlanBranchSetup."""
+    plan = _make_plan(
+        title="[erk-learn] Document testing patterns",
+        labels=["erk-pr", "erk-learn"],
+        header_fields={"branch_name": "plan-doc-testing-01-15-1430"},
+    )
+    timestamp = datetime(2024, 1, 15, 14, 30)
+
+    result = prepare_plan_for_worktree(plan, timestamp, warn_non_open=True)
+
+    assert isinstance(result, PlanBranchSetup)
+    assert result.warnings == ()
 
 
 def test_prepare_plan_non_open_generates_warning() -> None:
