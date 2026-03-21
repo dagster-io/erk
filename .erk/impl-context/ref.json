@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Multi-Node Objective Planning Should Mark All Selected Nodes"
+  "pr_id": "9366",
+  "url": "https://github.com/dagster-io/erk/pull/9366",
+  "created_at": "2026-03-21T15:47:08.954120",
+  "synced_at": "2026-03-21T15:47:08.954120",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
