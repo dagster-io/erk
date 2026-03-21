@@ -1,0 +1,72 @@
+<session>
+  <meta source="agent-a37700a" />
+  <meta branch="plnd/fix-stale-pr-doc-refs-03-21-1140" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Change to repository root /home/runner/work/erk/erk and execute: make fast-ci. Report the full output and exit code.</user>
+  <assistant>I'll change to the repository root and execute the `make fast-ci` command, then report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5902" cache_read_input_tokens="6481" cache_creation="{'ephemeral_5m_input_tokens': 5902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GgG165SibXt9gTdyFM7YyK">
+    <param name="command">make fast-ci</param>
+    <param name="description">Execute fast-ci target from Makefile</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5902" cache_read_input_tokens="6481" cache_creation="{'ephemeral_5m_input_tokens': 5902, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GgG165SibXt9gTdyFM7YyK">
+Exit code 2
+[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
+[[33mwarn[39m] docs/learned/tui/status-indicators.md
+[[33mwarn[39m] Code style issues found in 2 files. Run Prettier with --write to fix.
+✓ AGENTS.md standard: PASSED
+
+All CLAUDE.md and AGENTS.md files properly paired.
+
+CLAUDE.md files checked: 19
+Violations: 0
+make: *** [Makefile:97: fast-ci] Error 1
+
+=== Fast CI ===
+
+--- Lint ---
+All checks passed!
+
+--- Format Check ---
+1739 files already formatted
+
+--- Prettier Check ---
+Checking formatting...
+
+--- Markdown Check ---
+
+--- Exec Reference Check ---
+OK: .claude/skills/erk-exec/reference.md is up to date
+
+--- ty ---
+All checks passed!
+
+... [108 lines omitted] ...
+  </tool_result>
+  <assistant>## Summary
+
+**Exit Code: 2** (failure)
+
+The `make fast-ci` command failed due to **Prettier formatting issues** in 2 documentation files:
+
+**Files Needing Formatting:**
+1. `docs/learned/integrations/github-review-decision.md`
+2. `docs/learned/tui/status-indicators.md`
+
+**Full CI Results:**
+
+- **Lint**: All checks passed
+- **Format Check**: 1739 files already formatted
+- **Prettier Check**: 2 files have code style issues (warning: requires --write to fix)
+- **Markdown Check**: OK
+- **Exec Reference Check**: OK (.claude/skills/erk-exec/reference.md is up to date)
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5920 passed in 25.35s
+- **Tests (erk-dev)**: 138 passed in 5.46s
+- **Tests (erk-statusline)**: 123 passed in 0.86s
+- **Tests (erk-mcp)**: 50 passed (output cut off)
+
+The root failure is the Prettier formatting check failing on 2 markdown files. All other checks and tests passed successfully.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1237" cache_read_input_tokens="12383" cache_creation="{'ephemeral_5m_input_tokens': 1237, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
