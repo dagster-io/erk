@@ -1,0 +1,853 @@
+<session>
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2357" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Bash" id="toolu_0157eiriHb5itcNbGjaL76xv">
+    <param name="command">grep -n "get_plans_for_objective\|get-plans-for-objective" /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py | head -10</param>
+    <param name="description">Find registration of get_plans_for_objective in group.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="62578" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0157eiriHb5itcNbGjaL76xv">
+56:from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+57:    get_plans_for_objective,
+216:exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")
+  </tool_result>
+  <assistant>Now I'll create the new file and update the import in group.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="62996" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UAGpWsL4w1Hkq6t7cjXc8q">
+    <param name="command">cp /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plans_for_objective.py \
+   /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py &amp;&amp; echo "Copied"</param>
+    <param name="description">Copy the script to new name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="62996" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UAGpWsL4w1Hkq6t7cjXc8q">
+Copied
+  </tool_result>
+  <tool_use name="Read" id="toolu_015JSof16XYNFRBqx7sByMSB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="63205" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="88" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015JSof16XYNFRBqx7sByMSB">
+     1→"""Fetch erk-plans linked to an objective.
+     2→
+     3→Usage:
+     4→    erk exec get-plans-for-objective &lt;OBJECTIVE_NUMBER&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, objective_number, plans: [{number, state, title}]}
+     8→
+     9→Exit Codes:
+    10→    0: Success - plans fetched
+    11→    1: Error - API error
+    12→"""
+    13→
+    14→import json
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import (
+    19→    require_issues as require_github_issues,
+    20→)
+    21→from erk_shared.context.helpers import (
+    22→    require_repo_root,
+    23→)
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→
+    28→@click.command(name="get-plans-for-objective")
+    29→@click.argument("objective_number", type=int)
+    30→@click.pass_context
+
+... [60 lines omitted] ...
+
+    47→    except RuntimeError as e:
+    52→                    "error": f"Failed to list erk-plans: {e}",
+  </tool_result>
+  <assistant>Now update the new file with the correct name, function name, and docstring:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1457" cache_read_input_tokens="63390" cache_creation="{'ephemeral_5m_input_tokens': 1457, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01XCCdXMHD7XTdhrR9MboA3e">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py</param>
+    <param name="content">"""Fetch erk-prs linked to an objective.
+
+Usage:
+    erk exec get-prs-for-objective &lt;OBJEC...[truncated 2111 chars]...": objective_number,
+                "plans": linked_plans,
+            }
+        )
+    )
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1457" cache_read_input_tokens="63390" cache_creation="{'ephemeral_5m_input_tokens': 1457, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XCCdXMHD7XTdhrR9MboA3e">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_prs_for_objective.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Fetch erk-prs linked to an objective.
+     2→
+     3→Usage:
+     4→    erk exec get-prs-for-objective &lt;OBJECTIVE_NUMBER&gt;
+     5→
+     6→Output:
+     7→    JSON with {success, objective_number, plans: [{number, state, title}]}
+     8→
+     9→Exit Codes:
+    10→    0: Success - prs fetched
+    11→    1: Error - API error
+    12→"""
+    13→
+    14→import json
+    15→
+    16→import click
+    17→
+    18→from erk_shared.context.helpers import (
+    19→    require_issues as require_github_issues,
+    20→)
+    21→from erk_shared.context.helpers import (
+    22→    require_repo_root,
+    23→)
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→
+    28→@click.command(name="get-prs-for-objective")
+    29→@click.argument("objective_number", type=int)
+
+... [56 lines omitted] ...
+
+    47→    except RuntimeError as e:
+    52→                    "error": f"Failed to list erk-prs: {e}",
+  </tool_result>
+  <assistant>Now update group.py to use the new import and registration:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1776" cache_read_input_tokens="64847" cache_creation="{'ephemeral_5m_input_tokens': 1776, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SoyUFU7DkfrYLHj47NjBFq">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+    get_plans_for_objective,
+)</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.get_prs_for_objective import (
+    get_prs_for_objective,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1776" cache_read_input_tokens="64847" cache_creation="{'ephemeral_5m_input_tokens': 1776, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SoyUFU7DkfrYLHj47NjBFq">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01K7sxrrdv2AKtLDGuZBwSDn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">exec_group.add_command(get_plans_for_objective, name="get-plans-for-objective")</param>
+    <param name="new_string">exec_group.add_command(get_prs_for_objective, name="get-prs-for-objective")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="66623" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K7sxrrdv2AKtLDGuZBwSDn">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <assistant>Now delete the old file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="214" cache_read_input_tokens="67227" cache_creation="{'ephemeral_5m_input_tokens': 214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011B2ZthGjbHNHCSYscfYtKR">
+    <param name="command">git -C /home/runner/work/erk/erk rm src/erk/cli/commands/exec/scripts/get_plans_for_objective.py &amp;&amp; echo "Deleted"</param>
+    <param name="description">Delete old get_plans_for_objective.py file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="214" cache_read_input_tokens="67227" cache_creation="{'ephemeral_5m_input_tokens': 214, 'ephemeral_1h_input_tokens': 0}" output_tokens="130" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011B2ZthGjbHNHCSYscfYtKR">
+rm 'src/erk/cli/commands/exec/scripts/get_plans_for_objective.py'
+Deleted
+  </tool_result>
+  <assistant>Now let me move to Phase 4 - TUI hardcoded strings:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="67441" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01XfjhnUePaJjxqpZamciges">
+    <param name="todos">[{'content': 'Phase 1: erk-shared package - rename --for-plan to --for-pr in next_steps.py...[truncated 1248 chars]...'}, {'content': 'Phase 9: Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="67441" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="500" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XfjhnUePaJjxqpZamciges">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012yvRdLH56FwPTKdaiAGd7R">
+    <param name="command">grep -n "for.plan\|from.plan" /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py | head -20</param>
+    <param name="description">Find --for-plan references in plan_detail_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="67975" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012yvRdLH56FwPTKdaiAGd7R">
+362:        cmd = f"erk br co --for-plan {self._row.pr_number}"
+368:            f'source "$(erk br co --for-plan {self._row.pr_number} --script)"'
+680:            cmd = f"erk br co --for-plan {row.pr_number}"
+686:                f'source "$(erk br co --for-plan {row.pr_number} --script)"'
+993:            prepare_cmd = f"erk br co --for-plan {self._row.pr_number}"
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MeLGeUt5JwvXoa42Wbae5j">
+    <param name="command">sed -i 's/--for-plan/--for-pr/g' /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail...[truncated 37 chars]...ork/erk/erk/src/erk/tui/screens/plan_detail_screen.py | grep -v "def\|class\|#" | head -10</param>
+    <param name="description">Rename --for-plan to --for-pr in plan_detail_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="68517" cache_creation="{'ephemeral_5m_input_tokens': 272, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MeLGeUt5JwvXoa42Wbae5j">
+/bin/bash: line 1: : command not found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DHARjKxvbjWYsWFd8MNzVV">
+    <param name="command">sed -i 's/--for-plan/--for-pr/g' /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="description">Rename --for-plan to --for-pr in plan_detail_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="68789" cache_creation="{'ephemeral_5m_input_tokens': 221, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DHARjKxvbjWYsWFd8MNzVV">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0143D7kGHFpT5AhXqeemrWQ9">
+    <param name="command">grep -n "for-plan\|for-pr" /home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py | head -10</param>
+    <param name="description">Verify TUI changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="69010" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0143D7kGHFpT5AhXqeemrWQ9">
+362:        cmd = f"erk br co --for-pr {self._row.pr_number}"
+368:            f'source "$(erk br co --for-pr {self._row.pr_number} --script)"'
+680:            cmd = f"erk br co --for-pr {row.pr_number}"
+686:                f'source "$(erk br co --for-pr {row.pr_number} --script)"'
+993:            prepare_cmd = f"erk br co --for-pr {self._row.pr_number}"
+  </tool_result>
+  <assistant>Phase 4 complete. Now let me handle Phase 5 - tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="69170" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01VJprANScfPKgWHGMjyCiq7">
+    <param name="todos">[{'content': 'Phase 1: erk-shared package - rename --for-plan to --for-pr in next_steps.py...[truncated 1250 chars]...'}, {'content': 'Phase 9: Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="69170" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="500" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VJprANScfPKgWHGMjyCiq7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Dd6XGCkgXucLcHycsKHYHY">
+    <param name="command">ls /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/ | grep "plan\|objective"</param>
+    <param name="description">List test files for exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="69433" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dd6XGCkgXucLcHycsKHYHY">
+test_add_objective_node.py
+test_add_plan_label.py
+test_add_plan_labels.py
+test_create_impl_context_from_plan.py
+test_detect_plan_from_branch.py
+test_exit_plan_mode_hook.py
+test_get_plan_info.py
+test_get_plan_metadata.py
+test_get_plans_for_objective.py
+test_land_execute_objective_detection.py
+test_migrate_objective_schema.py
+test_objective_apply_landed_update.py
+test_objective_fetch_context.py
+test_objective_link_pr.py
+test_objective_plan_setup.py
+test_objective_post_action_comment.py
+test_objective_render_roadmap.py
+test_objective_save_to_issue.py
+test_objective_update_after_land.py
+test_plan_save.py
+test_plan_update.py
+test_register_one_shot_plan.py
+test_resolve_objective_ref.py
+test_update_objective_node.py
+test_update_plan_header.py
+test_validate_plan_content.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019y4AMCdqr4dDxxvt7LH1kz">
+    <param name="command">grep -rn "for.plan\|from.plan\|learn.plan\|get.plans.for.objective" \
+  /home/runner/work/erk/erk/tests/ \
+  --include="*.py" | grep -v "Binary\|__pycache__" | head -40</param>
+    <param name="description">Find all test files with old flag names</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="69975" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019y4AMCdqr4dDxxvt7LH1kz">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:106:    def test_routes_to_plan_service_for_learn_plans(self) -&gt; None:
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:107:        """Routes to plan_list_service for learn plans (erk-learn label)."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:1:"""Tests for land_learn module: learn plan creation logic."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:193:    """Skips learn plan creation when skip_learn=True."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:227:def test_skips_for_erk_learn_plan(tmp_path: Path) -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:278:    """Skips learn plan creation when no sessions were tracked."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:305:    assert "Skipping learn plan for #100" in captured.err
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:315:    """Skips learn plan when sessions were tracked but no XML could be extracted."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:369:    assert "Skipping learn plan for #100" in captured.err
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:422:    assert "Created learn plan" in captured.err
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:1118:    # Success output should mention fetching from planned-pr-context branch
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:1120:    assert "Fetched 1 file(s) from planned-pr-context/100" in captured.err
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:1121:    assert "Created learn plan" in captured.err
+/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_land_learn.py:1177:    assert "Skipping learn plan for #100" in captured.err
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:343:def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:344:    """Test that --for-plan creates branch, slot, and .impl/ folder."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:395:            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:421:def test_branch_create_for_plan_with_issue_url(tmp_path) -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:422:    """Test that --for-plan accepts GitHub issue URLs."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:472:            ["br", "create", "--for-plan", "https://github.com/owner/repo/issues/456"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:482:def test_branch_create_for_plan_with_no_slot_skips_impl() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:483:    """Test that --for-plan with --no-slot creates branch but not .impl folder."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:534:            ["br", "create", "--for-plan", "100", "--no-slot"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:546:def test_branch_create_fails_with_both_branch_and_for_plan() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:547:    """Test that specifying both BRANCH and --for-plan fails."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:571:            ["br", "create", "my-branch", "--for-plan", "123"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:577:        assert "Cannot specify both BRANCH and --for-plan" in result.output
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:580:def test_branch_create_fails_without_branch_or_for_plan() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:581:    """Test that omitting both BRANCH and --for-plan fails."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:606:        assert "Must provide BRANCH argument or --for-plan option" in result.output
+
+... [11 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:706:            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:919:            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NfnwVt2jWogTNQRk4LycrJ">
+    <param name="command">grep -rn "\"--for-plan\|'--for-plan\|\"--from-plan\|'--from-plan\|\"--learn-plan\|'--learn...[truncated 47 chars]...runner/work/erk/erk/tests/ \
+  --include="*.py" | grep -v "Binary\|__pycache__" | head -50</param>
+    <param name="description">Find test files with exact CLI flag strings</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2350" cache_read_input_tokens="70372" cache_creation="{'ephemeral_5m_input_tokens': 2350, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NfnwVt2jWogTNQRk4LycrJ">
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:395:            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:472:            ["br", "create", "--for-plan", "https://github.com/owner/repo/issues/456"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:534:            ["br", "create", "--for-plan", "100", "--no-slot"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:571:            ["br", "create", "my-branch", "--for-plan", "123"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:706:            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:919:            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:1:"""Unit tests for get-plans-for-objective command."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:8:from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:9:    get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:77:def test_get_plans_for_objective_returns_empty_list() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:83:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:95:def test_get_plans_for_objective_finds_linked_plans() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:126:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:143:def test_get_plans_for_objective_finds_multiple_plans() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:167:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:182:def test_get_plans_for_objective_supports_legacy_field() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:194:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:206:def test_get_plans_for_objective_skips_plans_without_metadata() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:219:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:241:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:86:            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:161:            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:274:                "--learn-plan",
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:311:                "--learn-plan",
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:139:            ["wt", "create", "--from-plan-file", str(plan_file), "--copy-plan"],
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:150:        assert "--from-plan-file" in result.output
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:47:            ["wt", "create", "--from-plan-file", str(plan_file)],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:99:                cli, ["wt", "create", "--from-plan-file", str(plan_file)], obj=test_ctx
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:127:            ["wt", "create", "--from-plan-file", "nonexistent.md"],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:165:            ["wt", "create", "--from-plan-file", str(plan_file), "--keep-plan-file"],
+
+... [22 lines omitted] ...
+  </tool_result>
+  <assistant>Let me also check the other test files mentioned in the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2965" cache_read_input_tokens="72722" cache_creation="{'ephemeral_5m_input_tokens': 2965, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VM2LUmvHFFjKDGsZRfshY9">
+    <param name="command">grep -rn "\"--for-plan\|'--for-plan\|\"--from-plan\|'--from-plan\|\"--learn-plan\|'--learn...[truncated 227 chars]...st_finalize_pr\|test_metadata_helpers\|test_create_impl_context" | grep -v "# " | head -50</param>
+    <param name="description">Get full list of test files needing updates</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2965" cache_read_input_tokens="72722" cache_creation="{'ephemeral_5m_input_tokens': 2965, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VM2LUmvHFFjKDGsZRfshY9">
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:344:    """Test that --for-plan creates branch, slot, and .impl/ folder."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:395:            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:422:    """Test that --for-plan accepts GitHub issue URLs."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:472:            ["br", "create", "--for-plan", "https://github.com/owner/repo/issues/456"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:483:    """Test that --for-plan with --no-slot creates branch but not .impl folder."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:534:            ["br", "create", "--for-plan", "100", "--no-slot"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:547:    """Test that specifying both BRANCH and --for-plan fails."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:571:            ["br", "create", "my-branch", "--for-plan", "123"],
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:577:        assert "Cannot specify both BRANCH and --for-plan" in result.output
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:581:    """Test that omitting both BRANCH and --for-plan fails."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:606:        assert "Must provide BRANCH argument or --for-plan option" in result.output
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:654:    """Test that --for-plan stacks on current branch when not on trunk."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:706:            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:854:    """Test that --for-plan from assigned slot stacks in place AND creates .impl/."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py:919:            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:1:"""Unit tests for get-plans-for-objective command."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:8:from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:9:    get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:77:def test_get_plans_for_objective_returns_empty_list() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:83:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:95:def test_get_plans_for_objective_finds_linked_plans() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:126:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:143:def test_get_plans_for_objective_finds_multiple_plans() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:167:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:182:def test_get_plans_for_objective_supports_legacy_field() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:194:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:206:def test_get_plans_for_objective_skips_plans_without_metadata() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:219:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py:241:        get_plans_for_objective,
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:86:            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+
+... [22 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:78:    """Test --copy-plan errors when current directory has no .impl/."""
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LSrQti4H2MXXkcLNLmqm6w">
+    <param name="command">grep -rn "\"--for-plan\|'--for-plan\|\"--from-plan\|'--from-plan\|\"--learn-plan\|'--learn...[truncated 227 chars]...st_finalize_pr\|test_metadata_helpers\|test_create_impl_context" | grep -v "# " | tail -50</param>
+    <param name="description">Get remaining test file references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2944" cache_read_input_tokens="75687" cache_creation="{'ephemeral_5m_input_tokens': 2944, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LSrQti4H2MXXkcLNLmqm6w">
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:139:            ["wt", "create", "--from-plan-file", str(plan_file), "--copy-plan"],
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:149:        assert "--copy-plan" in result.output
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:150:        assert "--from-plan-file" in result.output
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:154:    """Test --copy-plan preserves progress.md checkboxes exactly."""
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:196:            ["wt", "create", "phase-2", "--copy-plan"],
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:213:    """Test --copy-plan preserves YAML front matter in progress.md."""
+/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py:252:            ["wt", "create", "next-phase", "--copy-plan"],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:47:            ["wt", "create", "--from-plan-file", str(plan_file)],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:63:    """Test that --from-plan-file flag removes 'plan' from worktree names."""
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:99:                cli, ["wt", "create", "--from-plan-file", str(plan_file)], obj=test_ctx
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:127:            ["wt", "create", "--from-plan-file", "nonexistent.md"],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:136:    """Test that --keep-plan-file copies instead of moves the plan file."""
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:165:            ["wt", "create", "--from-plan-file", str(plan_file), "--keep-plan-file"],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:182:    """Test that --keep-plan-file without --from-plan-file fails with error message."""
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:191:            ["wt", "create", "test-feature", "--keep-plan-file"],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:196:        assert "--keep-plan-file requires --from-plan-file" in result.output
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:200:    """Test that --from-plan-file ensures uniqueness with date suffix and versioning."""
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:222:            ["wt", "create", "--from-plan-file", str(plan_file)],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:239:            ["wt", "create", "--from-plan-file", str(plan_file)],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py:298:            ["wt", "create", "--from-plan-file", str(plan_file)],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py:140:            ["wt", "create", "--json", "--from-plan-file", str(plan_file)],
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py:250:    """Test that --stay works with --from-plan-file flag."""
+/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py:279:            ["wt", "create", "--from-plan-file", str(plan_file), "--script", "--stay"],
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:264:    """Test that --for-plan resolves plan, creates branch, and sets up .impl/.
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:298:            result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:316:    """Test that --for-plan checkout prints activation instructions even when sync status fails.
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:319:    instructions from being printed after --for-plan checkout. This happens when
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:370:            result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:377:    """Test that providing both BRANCH and --for-plan fails."""
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py:390:            branch_group, ["checkout", "my-branch", "--for-plan", "123"], obj=ctx
+
+... [22 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/management/test_impl.py:116:    """Test that providing both NAME and --from-plan-file is an error."""
+  </tool_result>
+  <assistant>I need to also check if there are TUI/exit_plan_mode test references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3249" cache_read_input_tokens="78631" cache_creation="{'ephemeral_5m_input_tokens': 3249, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012oeKoSFMDgDrefY1PLDBAq">
+    <param name="command">grep -n "for.plan\|for-plan" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py | head -10</param>
+    <param name="description">Check exit_plan_mode_hook test for for-plan references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3249" cache_read_input_tokens="78631" cache_creation="{'ephemeral_5m_input_tokens': 3249, 'ephemeral_1h_input_tokens': 0}" output_tokens="154" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012oeKoSFMDgDrefY1PLDBAq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TXMEWPvyDBDsATKzNpeYHh">
+    <param name="command">grep -rn "\"--for-plan\|'--for-plan" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/ | head -10</param>
+    <param name="description">Check exec scripts tests for for-plan references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="81880" cache_creation="{'ephemeral_5m_input_tokens': 180, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TXMEWPvyDBDsATKzNpeYHh">
+
+  </tool_result>
+  <assistant>Now let me do the test file renames in parallel. First rename the test file for get_plans_for_objective, and then update all the other test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="82060" cache_creation="{'ephemeral_5m_input_tokens': 496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Af1FwPkqWxyf7bMR2tHDrX">
+    <param name="command">cp /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objec...[truncated 12 chars]...rk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py &amp;&amp; echo "Copied"</param>
+    <param name="description">Copy test file to new name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="82060" cache_creation="{'ephemeral_5m_input_tokens': 496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Af1FwPkqWxyf7bMR2tHDrX">
+Copied
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VTyNM2G9CTQKTAZiUmmKCm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="82556" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VTyNM2G9CTQKTAZiUmmKCm">
+     1→"""Unit tests for get-plans-for-objective command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.get_plans_for_objective import (
+     9→    get_plans_for_objective,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    15→
+    16→
+    17→def _make_plan_header(
+    18→    *,
+    19→    objective_id: int | None,
+    20→    use_legacy_field: bool = False,
+    21→) -&gt; str:
+    22→    """Create a plan-header metadata block."""
+    23→    # Use objective_id (new) or objective_issue (legacy)
+    24→    field_name = "objective_issue" if use_legacy_field else "objective_id"
+    25→    value = objective_id if objective_id is not None else "null"
+    26→
+    27→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    28→&lt;!-- erk:metadata-block:plan-header --&gt;
+    29→&lt;details&gt;
+    30→&lt;summary&gt;&lt;code&gt;plan-header&lt;/code&gt;&lt;/summary&gt;
+
+... [239 lines omitted] ...
+
+    88→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I'll write the new test file and delete the old one. The new test file needs to update imports and function names:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3731" cache_read_input_tokens="82762" cache_creation="{'ephemeral_5m_input_tokens': 3731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_015SAc1QJeYwGbM5pTjqN6y5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py</param>
+    <param name="content">"""Unit tests for get-prs-for-objective command."""
+
+import json
+from datetime import UTC,...[truncated 7093 chars]...ert "number" in plan_data
+    assert "state" in plan_data
+    assert "title" in plan_data
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3731" cache_read_input_tokens="82762" cache_creation="{'ephemeral_5m_input_tokens': 3731, 'ephemeral_1h_input_tokens': 0}" output_tokens="2502" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015SAc1QJeYwGbM5pTjqN6y5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Unit tests for get-prs-for-objective command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.get_prs_for_objective import (
+     9→    get_prs_for_objective,
+    10→)
+    11→from erk_shared.context.context import ErkContext
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    15→
+    16→
+    17→def _make_plan_header(
+    18→    *,
+    19→    objective_id: int | None,
+    20→    use_legacy_field: bool = False,
+    21→) -&gt; str:
+    22→    """Create a plan-header metadata block."""
+    23→    # Use objective_id (new) or objective_issue (legacy)
+    24→    field_name = "objective_issue" if use_legacy_field else "objective_id"
+    25→    value = objective_id if objective_id is not None else "null"
+    26→
+    27→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    28→&lt;!-- erk:metadata-block:plan-header --&gt;
+    29→&lt;details&gt;
+
+... [235 lines omitted] ...
+
+    88→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now delete the old test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5785" cache_read_input_tokens="86493" cache_creation="{'ephemeral_5m_input_tokens': 5785, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E5xQZmJMj9H9zyJ9vaqW1j">
+    <param name="command">git -C /home/runner/work/erk/erk rm tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py &amp;&amp; echo "Deleted"</param>
+    <param name="description">Delete old test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5785" cache_read_input_tokens="86493" cache_creation="{'ephemeral_5m_input_tokens': 5785, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E5xQZmJMj9H9zyJ9vaqW1j">
+rm 'tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py'
+Deleted
+  </tool_result>
+  <assistant>Now let me update all the remaining test files with old flag names using sed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="92278" cache_creation="{'ephemeral_5m_input_tokens': 529, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LMbEzFcByd4EkLFVECkW6D">
+    <param name="command">
+# Update test_track_learn_result.py - change --learn-plan to --learn-pr
+sed -i 's/--learn...[truncated 179 chars]...r/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py | head -10
+</param>
+    <param name="description">Update test_track_learn_result.py for --learn-plan rename</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="92278" cache_creation="{'ephemeral_5m_input_tokens': 529, 'ephemeral_1h_input_tokens': 0}" output_tokens="243" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LMbEzFcByd4EkLFVECkW6D">
+track_learn_result done
+86:            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],
+117:    """Test error when completed_with_plan is missing --learn-pr."""
+143:    assert "learn-plan is required" in output["message"]
+147:    """Test error when completed_no_plan has --learn-pr."""
+161:            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],
+253:    """Test error when pending_review has --learn-pr."""
+274:                "--learn-pr",
+288:    assert "learn-plan should not be provided" in output["message"]
+311:                "--learn-pr",
+  </tool_result>
+  <assistant>I see there are still error message assertions like `"learn-plan is required"` and `"learn-plan should not be provided"` on lines 143, 288. Let me check the source to see what the actual error messages say now:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="92807" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HTZXf3zgLDMfk8uP75Qxpp">
+    <param name="command">grep -n "missing-learn-pr\|unexpected-learn-pr\|learn.pr is required\|learn.pr should not" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py | head -10</param>
+    <param name="description">Check actual error messages in track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="92807" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HTZXf3zgLDMfk8uP75Qxpp">
+104:            error="missing-learn-pr",
+105:            message="--learn-pr is required when status is 'completed_with_plan'",
+114:            error="unexpected-learn-pr",
+115:            message="--learn-pr should not be provided when status is 'completed_no_plan'",
+134:            error="unexpected-learn-pr",
+135:            message="--learn-pr should not be provided when status is 'pending_review'",
+  </tool_result>
+  <assistant>The error messages in the source now say `"--learn-pr is required"` and `"--learn-pr should not be provided"`. The test file still has `"learn-plan is required"` and `"learn-plan should not be provided"`. Let me fix those:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="93240" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019AusabP2TjCEAP8LhTns2P">
+    <param name="command">sed -i 's/learn-plan is required/learn-pr is required/g; s/learn-plan should not be provid...[truncated 138 chars]...ner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py | head -5</param>
+    <param name="description">Fix error message assertions in test_track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="685" cache_read_input_tokens="93240" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="265" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019AusabP2TjCEAP8LhTns2P">
+sed: can't read grep: No such file or directory
+sed: can't read learn-plan: No such file or directory
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014by41U7TBbKKrYyPP3jtJt">
+    <param name="command">sed -i 's/learn-plan is required/learn-pr is required/g' /home/runner/work/erk/erk/tests/u...[truncated 236 chars]...ner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py | head -5</param>
+    <param name="description">Fix error message assertions in test_track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="93925" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014by41U7TBbKKrYyPP3jtJt">
+sed: can't read sed: No such file or directory
+sed: can't read s/learn-plan should not be provided/learn-pr should not be provided/g: No such file or directory
+sed: can't read grep: No such file or directory
+sed: can't read learn-plan: No such file or directory
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GdEVk7tk7A4egMG6cmcr1m">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">138</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="687" cache_read_input_tokens="94229" cache_creation="{'ephemeral_5m_input_tokens': 687, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GdEVk7tk7A4egMG6cmcr1m">
+&lt;system-reminder&gt;Warning: the file exists but is shorter than the provided offset (138). The file has 1 lines.&lt;/system-reminder&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AQwK6UyZCgPqTt14r7PHXB">
+    <param name="command">wc -l /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="description">Check file length</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="94916" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AQwK6UyZCgPqTt14r7PHXB">
+0 /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+  </tool_result>
+  <assistant>The file was wiped! The sed command cleared it. Let me check git to restore it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="95078" cache_creation="{'ephemeral_5m_input_tokens': 156, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SuGPHMnjZQpsG2mN7SxGrU">
+    <param name="command">git -C /home/runner/work/erk/erk show HEAD:tests/unit/cli/commands/exec/scripts/test_track_learn_result.py | wc -l</param>
+    <param name="description">Check if file was tracked in git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="95078" cache_creation="{'ephemeral_5m_input_tokens': 156, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SuGPHMnjZQpsG2mN7SxGrU">
+327
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SbdhsPd2S12NxWix1U8GCd">
+    <param name="command">git -C /home/runner/work/erk/erk checkout HEAD -- tests/unit/cli/commands/exec/scripts/test_track_learn_result.py &amp;&amp; echo "Restored"</param>
+    <param name="description">Restore test_track_learn_result.py from git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="515" cache_read_input_tokens="95234" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SbdhsPd2S12NxWix1U8GCd">
+Restored
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ScG2B5KcPvnhnvTovxyzC3">
+    <param name="command">grep -n "learn.plan" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py | head -10</param>
+    <param name="description">Check restored test file for learn-plan references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="95749" cache_creation="{'ephemeral_5m_input_tokens': 139, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ScG2B5KcPvnhnvTovxyzC3">
+60:    assert output["learn_plan_issue"] is None
+68:    assert "learn_plan_issue" not in block.data or block.data.get("learn_plan_issue") is None
+86:            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+100:    assert output["learn_plan_issue"] == 456
+108:    assert block.data.get("learn_plan_issue") == 456
+117:    """Test error when completed_with_plan is missing --learn-plan."""
+143:    assert "learn-plan is required" in output["message"]
+147:    """Test error when completed_no_plan has --learn-plan."""
+161:            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
+210:    assert output["learn_plan_issue"] is None
+  </tool_result>
+  <assistant>Now let me do proper targeted edits to the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="95888" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017KSx8sPL3H4WEjAT1V6mpe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">80</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="95888" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017KSx8sPL3H4WEjAT1V6mpe">
+    80→
+    81→    runner = CliRunner()
+    82→    with runner.isolated_filesystem(temp_dir=tmp_path):
+    83→        cwd = Path.cwd()
+    84→        result = runner.invoke(
+    85→            track_learn_result,
+    86→            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+    87→            obj=ErkContext.for_test(
+    88→                github=fake_github,
+    89→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+    90→                cwd=cwd,
+    91→                repo_root=cwd,
+    92→            ),
+    93→        )
+    94→
+    95→    assert result.exit_code == 0, result.output
+    96→    output = json.loads(result.output)
+    97→    assert output["success"] is True
+    98→    assert output["pr_number"] == "42"
+    99→    assert output["learn_status"] == "completed_with_plan"
+   100→    assert output["learn_plan_issue"] == 456
+   101→
+   102→    # Verify plan-header was updated with both status and plan
+   103→    updated_pr = fake_github.get_pr(cwd, 42)
+   104→    assert not isinstance(updated_pr, PRNotFound)
+   105→    block = find_metadata_block(updated_pr.body, "plan-header")
+   106→    assert block is not None
+   107→    assert block.data.get("learn_status") == "completed_with_plan"
+   108→    assert block.data.get("learn_plan_issue") == 456
+   109→
+
+... [55 lines omitted] ...
+
+   112→# Validation Error Cases
+   117→    """Test error when completed_with_plan is missing --learn-plan."""
+   147→    """Test error when completed_no_plan has --learn-plan."""
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T6MSzBagz6L7pNYNe5yxHR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">158</param>
+    <param name="limit">170</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1774" cache_read_input_tokens="96237" cache_creation="{'ephemeral_5m_input_tokens': 1774, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T6MSzBagz6L7pNYNe5yxHR">
+   158→        cwd = Path.cwd()
+   159→        result = runner.invoke(
+   160→            track_learn_result,
+   161→            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
+   162→            obj=ErkContext.for_test(
+   163→                github=fake_github,
+   164→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   165→                cwd=cwd,
+   166→                repo_root=cwd,
+   167→            ),
+   168→        )
+   169→
+   170→    assert result.exit_code == 1
+   171→    output = json.loads(result.output)
+   172→    assert output["success"] is False
+   173→    assert "should not be provided" in output["message"]
+   174→
+   175→
+   176→# ============================================================================
+   177→# pending_review Status Tests
+   178→# ============================================================================
+   179→
+   180→
+   181→def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -&gt; None:
+   182→    """Test tracking pending_review status with plan PR."""
+   183→    plan_body = format_plan_header_body_for_test(learn_status="pending")
+   184→    issue = create_test_issue(42, "Test Plan #42", plan_body)
+   185→    fake_issues = FakeGitHubIssues(issues={42: issue})
+   186→    fake_github = FakeLocalGitHub(
+   187→        pr_details={42: issue_info_to_pr_details(issue)},
+
+... [145 lines omitted] ...
+
+   223→    """Test error when pending_review is missing --plan-pr."""
+   253→    """Test error when pending_review has --learn-plan."""
+   292→    """Test error when completed_with_plan has --plan-pr."""
+  </tool_result>
+  <assistant>Now I can see the specific changes needed. Let me make targeted edits to test_track_learn_result.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2586" cache_read_input_tokens="98011" cache_creation="{'ephemeral_5m_input_tokens': 2586, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Qq2LvvxPshdwRCPuNxefh4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],</param>
+    <param name="new_string">            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2586" cache_read_input_tokens="98011" cache_creation="{'ephemeral_5m_input_tokens': 2586, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qq2LvvxPshdwRCPuNxefh4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VymYV1a2Ha6P4K4kKpNc5S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    """Test error when completed_with_plan is missing --learn-plan."""</param>
+    <param name="new_string">    """Test error when completed_with_plan is missing --learn-pr."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="621" cache_read_input_tokens="100597" cache_creation="{'ephemeral_5m_input_tokens': 621, 'ephemeral_1h_input_tokens': 0}" output_tokens="156" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VymYV1a2Ha6P4K4kKpNc5S">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KKaSnAe6dzTE9U2VAsQFJC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    assert "learn-plan is required" in output["message"]</param>
+    <param name="new_string">    assert "learn-pr is required" in output["message"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="101218" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KKaSnAe6dzTE9U2VAsQFJC">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RC7AuTbmzoa6S1ycpvYNUX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    """Test error when completed_no_plan has --learn-plan."""</param>
+    <param name="new_string">    """Test error when completed_no_plan has --learn-pr."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="101426" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RC7AuTbmzoa6S1ycpvYNUX">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015p2hUbk5AZHPKhvJYJR7m2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],</param>
+    <param name="new_string">            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="101628" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015p2hUbk5AZHPKhvJYJR7m2">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CVCMYANZzt9gfkp9ZAiZXr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    """Test error when pending_review has --learn-plan."""</param>
+    <param name="new_string">    """Test error when pending_review has --learn-pr."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="102198" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="150" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CVCMYANZzt9gfkp9ZAiZXr">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JaxYqVzrAfGv4A6sAh6VF7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">                "--learn-plan",
+                "456",
+            ],
+            obj=ErkC...[truncated 296 chars]...ut["success"] is False
+    assert "learn-plan should not be provided" in output["message"]</param>
+    <param name="new_string">                "--learn-pr",
+                "456",
+            ],
+            obj=ErkCon...[truncated 292 chars]...tput["success"] is False
+    assert "learn-pr should not be provided" in output["message"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="102428" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="398" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JaxYqVzrAfGv4A6sAh6VF7">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Now for the last `--learn-plan` in the test file (line 311 with completed_with_plan):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="814" cache_read_input_tokens="102630" cache_creation="{'ephemeral_5m_input_tokens': 814, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PSeXjGP1p1tTptFpzBfsbG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">                "--learn-plan",
+                "456",
+                "--plan-pr",
+                "789",</param>
+    <param name="new_string">                "--learn-pr",
+                "456",
+                "--plan-pr",
+                "789",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="814" cache_read_input_tokens="102630" cache_creation="{'ephemeral_5m_input_tokens': 814, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PSeXjGP1p1tTptFpzBfsbG">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Uwcs6jMvv7zbarqhE3CTFQ">
+    <param name="command">grep -n "learn.plan\|learn.pr" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py | head -15</param>
+    <param name="description">Verify all learn-plan references updated in test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="103444" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uwcs6jMvv7zbarqhE3CTFQ">
+60:    assert output["learn_plan_issue"] is None
+68:    assert "learn_plan_issue" not in block.data or block.data.get("learn_plan_issue") is None
+86:            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],
+100:    assert output["learn_plan_issue"] == 456
+108:    assert block.data.get("learn_plan_issue") == 456
+117:    """Test error when completed_with_plan is missing --learn-pr."""
+143:    assert "learn-pr is required" in output["message"]
+147:    """Test error when completed_no_plan has --learn-pr."""
+161:            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],
+210:    assert output["learn_plan_issue"] is None
+211:    assert output["learn_plan_pr"] == 789
+219:    assert block.data.get("learn_plan_pr") == 789
+253:    """Test error when pending_review has --learn-pr."""
+274:                "--learn-pr",
+288:    assert "learn-pr should not be provided" in output["message"]
+  </tool_result>
+</session>

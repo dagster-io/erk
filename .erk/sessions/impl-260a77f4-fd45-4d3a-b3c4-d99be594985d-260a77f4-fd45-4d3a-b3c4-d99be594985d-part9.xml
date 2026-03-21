@@ -1,0 +1,1035 @@
+<session>
+  <meta source="agent-a14ae4e" />
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2357" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the following test files to rename CLI flags from the old names to new names. Do NOT use sed commands - use the Edit tool to make targeted replacements. Read each file first.
+
+## Changes needed:
+
+### File 1: `/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py`
+
+Replace all occurrences of:
+- `"--for-plan"` → `"--for-pr"` (in CLI invocation lists like `["br", "create", "--for-plan", "123"]`)
+- In docstrings/comments: `--for-plan` → `--for-pr`
+- Error message assertions: `"Cannot specify both BRANCH and --for-plan"` → `"Cannot specify both BRANCH and --for-pr"`
+- Error message assertions: `"Must provide BRANCH argument or --for-plan option"` → `"Must provide BRANCH argument or --for-pr option"`
+
+### File 2: `/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py`
+
+Replace all occurrences of:
+- `"--for-plan"` → `"--for-pr"` (in CLI invocation lists)
+- In docstrings/comments: `--for-plan` → `--for-pr`
+- Error message assertions: `"Cannot specify both BRANCH and --for-plan"` → `"Cannot specify both BRANCH and --for-pr"`
+- Error message assertions: `"Must provide BRANCH argument or --for-plan option"` → `"Must provide BRANCH argument or --for-pr option"`
+
+### File 3: `/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py`
+
+Replace all occurrences of:
+- `"--from-plan-file"` → `"--from-pr-file"` (in CLI invocation lists)
+- `"--keep-plan-file"` → `"--keep-pr-file"` (in CLI invocation lists)
+- Error message assertions: `"--keep-plan-file requires --from-plan-file"` → `"--keep-pr-file requires --from-pr-file"`
+- Error message assertions: `"Cannot specify both NAME and --from-plan-file"` → `"Cannot specify both NAME and --from-pr-file"`
+- In docstrings/comments: `--from-plan-file` → `--from-pr-file`, `--keep-plan-file` → `--keep-pr-file`
+
+### File 4: `/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py`
+
+Replace all occurrences of:
+- `"--from-plan-file"` → `"--from-pr-file"` (in CLI invocation lists)
+- In docstrings/comments: `--from-plan-file` → `--from-pr-file`
+
+### File 5: `/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py`
+
+Replace all occurrences of:
+- `"--copy-plan"` → `"--copy-pr"` (in CLI invocation lists)
+- `"--from-plan-file"` → `"--from-pr-file"` (in CLI invocation lists)
+- Error message assertions: `"--copy-plan"` → `"--copy-pr"`, `"--from-plan-file"` → `"--from-pr-file"`
+- In docstrings/comments: `--copy-plan` → `--copy-pr`, `--from-plan-file` → `--from-pr-file`
+
+### File 6: `/home/runner/work/erk/erk/tests/commands/management/test_impl.py`
+
+Replace all occurrences of:
+- `"--from-plan-file"` → `"--from-pr-file"` (in CLI invocation lists)
+- Error message assertions: `"Cannot specify both NAME and --from-plan-file"` → `"Cannot specify both NAME and --from-pr-file"`
+- In docstrings/comments: `--from-plan-file` → `--from-pr-file`
+
+### File 7: `/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py`
+
+Replace all occurrences of:
+- `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"` (in assertions)
+- `"Copied: erk br co --for-plan 123"` → `"Copied: erk br co --for-pr 123"` (in assertions)
+
+### File 8: `/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py`
+
+Replace all occurrences of:
+- `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"` (in assertions)
+
+IMPORTANT: 
+- Only change CLI flag strings like `"--for-plan"` and docstring/comment/assertion strings that reference those flags
+- Do NOT change Python variable names like `for_plan` (those were handled separately)
+- Do NOT change things like `test_branch_create_for_plan_creates_branch_and_impl_folder` (function names, these describe the test concept and can stay)
+- Do NOT change things like `"Derive name from plan filename"` (conceptual references)
+- Only change strings that are literally CLI flag invocations or error messages about CLI flags
+
+Read each file first before editing. Make targeted edits.
+</user>
+  <assistant>I'll read each file first and then make the targeted replacements to rename the CLI flags.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fu3UoufuPrJazx2rK1i5H9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0164ZaLxcBeULeVyuC8Pd3eP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ErECHezrDSQEy39Gaq6n3p">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dbis5s63LrzrM4DJgR4Zw5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016a6cmwozYEdZx8SARHywWh">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y1b3HfrYetppwXg3z9bJwx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/management/test_impl.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B8aRxWoaUnjcYJW9xyjZUp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015RZa5JxJQLHVjm3ku2rZpx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="21414" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 21414, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ErECHezrDSQEy39Gaq6n3p">
+     1→"""Tests for plan file handling in worktree creation."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.config import LoadedConfig
+     7→from erk.core.repo_discovery import RepoContext
+     8→from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT, default_branch_for_worktree
+     9→from tests.fakes.gateway.git import FakeGit
+    10→from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→# Deterministic date suffix from FakeTime, used by ctx.time.now() in tests
+    14→_FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    15→
+    16→
+    17→def test_create_with_plan_file() -&gt; None:
+    18→    """Test creating a worktree with a plan file."""
+    19→    runner = CliRunner()
+    20→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    21→        # Create plan file
+    22→        plan_file = env.cwd / "my-feature-plan.md"
+    23→        plan_file.write_text("# My Feature Plan\n", encoding="utf-8")
+    24→
+    25→        repo_dir = env.setup_repo_structure()
+    26→
+    27→        # Pass local config directly
+    28→        local_config = LoadedConfig.test()
+    29→
+    30→        git_ops = FakeGit(
+
+... [318 lines omitted] ...
+
+   102→            assert result.exit_code == 0, f"Failed for {plan_filename}: {result.output}"
+   182→    """Test that --keep-plan-file without --from-plan-file fails with error message."""
+  </tool_result>
+  <tool_result tool="toolu_01Dbis5s63LrzrM4DJgR4Zw5">
+     1→"""Tests for output modes (JSON, script, --stay) in worktree creation."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.cli.config import LoadedConfig
+     9→from erk.core.repo_discovery import RepoContext
+    10→from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
+    11→from tests.fakes.gateway.git import FakeGit
+    12→from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
+    13→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    14→
+    15→
+    16→def test_create_with_json_output() -&gt; None:
+    17→    """Test creating a worktree with JSON output."""
+    18→    runner = CliRunner()
+    19→    with erk_inmem_env(runner) as env:
+    20→        repo_dir = env.setup_repo_structure()
+    21→
+    22→        config_toml = repo_dir / "config.toml"
+    23→        config_toml.write_text("", encoding="utf-8")
+    24→
+    25→        git_ops = FakeGit(
+    26→            git_common_dirs={env.cwd: env.git_dir},
+    27→            default_branches={env.cwd: "main"},
+    28→        )
+    29→
+    30→        test_ctx = env.build_context(git=git_ops)
+
+... [295 lines omitted] ...
+
+    73→        # Verify JSON error output
+   101→        # Should fail with validation error
+  </tool_result>
+  <tool_result tool="toolu_016a6cmwozYEdZx8SARHywWh">
+     1→"""Tests for erk create --copy-plan flag."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.abc import WorktreeInfo
+     7→from tests.fakes.gateway.git import FakeGit
+     8→from tests.test_utils.env_helpers import erk_isolated_fs_env
+     9→
+    10→
+    11→def test_create_copy_plan_success() -&gt; None:
+    12→    """Test --copy-plan copies plan directory to new worktree."""
+    13→    from erk_shared.impl_folder import get_impl_dir
+    14→
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        # Setup: Create branch-scoped impl folder in current worktree (at repo root)
+    18→        source_impl_dir = get_impl_dir(env.cwd, branch_name="main")
+    19→        source_impl_dir.mkdir(parents=True, exist_ok=True)
+    20→        (source_impl_dir / "plan.md").write_text("# Plan content", encoding="utf-8")
+    21→        progress_content = (
+    22→            "---\ncompleted_steps: 2\ntotal_steps: 5\n---\n\n"
+    23→            "- [x] Step 1\n- [x] Step 2\n- [ ] Step 3"
+    24→        )
+    25→        (source_impl_dir / "progress.md").write_text(progress_content, encoding="utf-8")
+    26→
+    27→        # Setup: Configure git state
+    28→        git = FakeGit(
+    29→            git_common_dirs={env.cwd: env.git_dir},
+    30→            default_branches={env.cwd: "main"},
+
+... [243 lines omitted] ...
+
+    46→            catch_exceptions=False,
+    77→def test_create_copy_plan_missing_plan_error() -&gt; None:
+    78→    """Test --copy-plan errors when current directory has no .impl/."""
+   100→            catch_exceptions=False,
+   103→        # Assert: Command failed with error
+   106→        # Assert: Error message mentions missing implementation directory
+   141→            catch_exceptions=False,
+   144→        # Assert: Command failed with error
+   147→        # Assert: Error message explains mutual exclusion
+   198→            catch_exceptions=False,
+   254→            catch_exceptions=False,
+  </tool_result>
+  <tool_result tool="toolu_01Y1b3HfrYetppwXg3z9bJwx">
+     1→from pathlib import Path
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.shell_utils import render_cd_script
+     7→from erk_shared.gateway.git.abc import WorktreeInfo
+     8→from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
+     9→from tests.fakes.gateway.erk_installation import FakeErkInstallation, GlobalConfig
+    10→from tests.fakes.gateway.git import FakeGit
+    11→from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
+    12→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    13→from tests.test_utils.test_context import context_for_test
+    14→
+    15→# Deterministic date suffix from FakeTime, used by ctx.time.now() in tests
+    16→_FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    17→
+    18→
+    19→def test_create_with_plan_file() -&gt; None:
+    20→    """Test creating a worktree from a plan file."""
+    21→    runner = CliRunner()
+    22→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    23→        # Create a plan file in root worktree
+    24→        plan_file = env.root_worktree / "Add_Auth_Feature.md"
+    25→        plan_content = "# Auth Feature Plan\n\n- Add login\n- Add signup\n"
+    26→        plan_file.write_text(plan_content, encoding="utf-8")
+    27→
+    28→        # Configure FakeGit with root worktree only
+    29→        git_ops = FakeGit(
+    30→            worktrees={
+
+... [374 lines omitted] ...
+
+    49→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   101→        assert result.exit_code == 0, f"Command failed: {result.output}"
+   116→    """Test that providing both NAME and --from-plan-file is an error."""
+   194→        # Should fail with reserved name error
+   197→            f"Expected error about 'root' being reserved, got: {result.output}"
+   240→            # Should fail with reserved name error
+   241→            assert result.exit_code != 0, f"Expected failure for name '{name_variant}'"
+   242→            error_msg = (
+   243→                f"Expected error about 'root' being reserved for '{name_variant}', "
+   246→            assert "reserved" in result.output.lower(), error_msg
+   284→        # Should fail with error suggesting to use root
+   330→        # Should fail with error suggesting to use root
+   377→        assert result.exit_code == 0, f"Command failed: {result.output}"
+  </tool_result>
+  <tool_result tool="toolu_01B8aRxWoaUnjcYJW9xyjZUp">
+     1→"""Tests for PlanDetailScreen.execute_command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from erk.tui.data.types import PrRowData
+     6→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+     7→from erk.tui.views.types import ViewMode
+     8→from tests.fakes.gateway.command_executor import FakeCommandExecutor
+     9→from tests.fakes.gateway.plan_data_provider import make_pr_row
+    10→
+    11→
+    12→class TestExecuteCommandBrowserCommands:
+    13→    """Tests for browser-related commands."""
+    14→
+    15→    def test_open_browser_opens_pr_url_when_available(self) -&gt; None:
+    16→        """open_browser opens PR URL when PR is available."""
+    17→        row = make_pr_row(
+    18→            123,
+    19→            "Test",
+    20→            pr_url="https://github.com/test/repo/pull/456",
+    21→        )
+    22→        executor = FakeCommandExecutor()
+    23→        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+    24→        screen.execute_command("open_browser")
+    25→        assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
+    26→
+    27→    def test_open_browser_opens_issue_url_when_no_pr(self) -&gt; None:
+    28→        """open_browser opens issue URL when no PR is available."""
+    29→        row = make_pr_row(123, "Test", pr_url="https://github.com/test/repo/issues/123")
+    30→        executor = FakeCommandExecutor()
+
+... [367 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015RZa5JxJQLHVjm3ku2rZpx">
+     1→"""Tests for PlanDetailScreen modal."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PrFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from tests.fakes.gateway.clipboard import FakeClipboard
+    11→from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
+    12→from tests.fakes.gateway.pr_service import FakePrService
+    13→
+    14→
+    15→class TestPlanDetailScreen:
+    16→    """Tests for PlanDetailScreen modal."""
+    17→
+    18→    @pytest.mark.asyncio
+    19→    async def test_space_opens_detail_screen(self) -&gt; None:
+    20→        """Pressing space opens the plan detail modal."""
+    21→        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan", pr_title="Test PR")])
+    22→        filters = PrFilters.default()
+    23→        app = ErkDashApp(
+    24→            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
+    25→        )
+    26→
+    27→        async with app.run_test() as pilot:
+    28→            await pilot.pause()
+    29→            await pilot.pause()
+    30→
+
+... [451 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Fu3UoufuPrJazx2rK1i5H9">
+     1→"""Unit tests for branch create command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk.cli.config import LoadedConfig
+     9→from erk.core.repo_discovery import RepoContext
+    10→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    11→from erk_shared.gateway.git.abc import WorktreeInfo
+    12→from erk_shared.plan_store.types import Plan, PlanState
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.graphite import FakeGraphite
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→from tests.test_utils.plan_helpers import create_pr_backend_with_plans
+    17→
+    18→# Fixed timestamp for test Plan objects - deterministic test data
+    19→TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    20→
+    21→
+    22→def test_branch_create_creates_new_branch_and_assignment(tmp_path) -&gt; None:
+    23→    """Test that branch create creates a new branch and assignment."""
+    24→    runner = CliRunner()
+    25→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    26→        repo_dir = env.setup_repo_structure()
+    27→
+    28→        git_ops = FakeGit(
+    29→            worktrees=env.build_worktrees("main"),
+    30→            current_branches={env.cwd: "main"},
+
+... [1033 lines omitted] ...
+
+    47→            cli, ["branch", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+    87→            cli, ["br", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+   120→            cli, ["br", "create", "--no-slot", "feature-test"], obj=test_ctx, catch_exceptions=False
+   165→            cli, ["br", "create", "feature-a"], obj=test_ctx, catch_exceptions=False
+   171→            cli, ["br", "create", "feature-b"], obj=test_ctx, catch_exceptions=False
+   209→            cli, ["br", "create", "existing-branch"], obj=test_ctx, catch_exceptions=False
+   241→            cli, ["br", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+   257→    (not add_worktree) to avoid 'fatal: already exists' error from git.
+   311→            cli, ["br", "create", "--force", "new-branch"], obj=test_ctx, catch_exceptions=False
+   395→            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+   474→            catch_exceptions=False,
+   536→            catch_exceptions=False,
+   573→            catch_exceptions=False,
+   603→        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False)
+   636→            cli, ["br", "create", "feature-child"], obj=test_ctx, catch_exceptions=False
+   706→            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+   739→            cli, ["br", "create", "new-feature"], obj=test_ctx, catch_exceptions=False
+   795→            cli, ["br", "create", "new-stacked-branch"], obj=test_ctx, catch_exceptions=False
+   838→            cli, ["br", "create", "new-feature"], obj=test_ctx, catch_exceptions=False
+   919→            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+   982→            catch_exceptions=False,
+  1041→            catch_exceptions=False,
+  </tool_result>
+  <tool_result tool="toolu_0164ZaLxcBeULeVyuC8Pd3eP">
+     1→"""Tests for erk br co (branch checkout) command."""
+     2→
+     3→import os
+     4→from datetime import UTC, datetime
+     5→from unittest.mock import patch
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.cli.commands.branch import branch_group
+    11→from erk.core.repo_discovery import RepoContext
+    12→from erk.core.worktree_pool import (
+    13→    PoolState,
+    14→    SlotAssignment,
+    15→    load_pool_state,
+    16→    save_pool_state,
+    17→)
+    18→from erk_shared.gateway.git.abc import WorktreeInfo
+    19→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    20→from erk_shared.plan_store.types import Plan, PlanState
+    21→from tests.fakes.gateway.git import FakeGit
+    22→from tests.fakes.gateway.graphite import FakeGraphite
+    23→from tests.test_utils.context_builders import build_workspace_test_context
+    24→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    25→from tests.test_utils.plan_helpers import create_pr_backend_with_plans
+    26→
+    27→# Fixed timestamp for test Plan objects
+    28→TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+    29→
+    30→
+
+... [711 lines omitted] ...
+
+    67→            cli, ["br", "co", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+    72→        # Should not show Graphite error
+   112→            cli, ["br", "co", "feature-branch", "--script"], obj=test_ctx, catch_exceptions=False
+   117→        # Should not show Graphite error
+   141→        assert result.exit_code == 0, f"Failed: {result.output}"
+   177→        assert result.exit_code == 0, f"Failed: {result.output}"
+   188→    """Test that checking out a non-existent branch fails with helpful error."""
+   253→        assert result.exit_code == 0, f"Failed: {result.output}"
+   300→        assert result.exit_code == 0, f"Failed: {result.output}"
+   318→    Verifies the fix where display_sync_status errors could prevent activation
+   348→            ahead_behind_raises=RuntimeError("upstream tracking ref not set"),
+   367→        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+   372→        assert result.exit_code == 0, f"Failed: {result.output}"
+   376→def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+   397→def test_checkout_for_plan_error_neither_branch_nor_for_plan() -&gt; None:
+   455→        assert result.exit_code == 0, f"Failed: {result.output}"
+   464→# --- Script mode error resilience tests ---
+   468→    """Regression test: --script success path is not broken by error handler."""
+   505→            catch_exceptions=False,
+   511→        # The written script should NOT be an error script
+   556→        assert result.exit_code == 0, f"Failed: {result.output}"
+   609→        assert result.exit_code == 0, f"Failed: {result.output}"
+   666→        assert result.exit_code == 0, f"Failed: {result.output}"
+   726→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Now I'll make the targeted edits to rename the CLI flags from the old names to new names:</assistant>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015gpnoqcBA3UoK7LvAw1CHW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-pr", "123"], obj=test_ctx, catch_exceptions=False
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ko7enEQHKGtvtGWkADf8iE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_with_issue_url(tmp_path) -&gt; None:
+    """Test that --for-plan accepts GitHub issue URLs."""</param>
+    <param name="new_string">def test_branch_create_for_plan_with_issue_url(tmp_path) -&gt; None:
+    """Test that --for-pr accepts GitHub issue URLs."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UFG3AJG4msws4S5gGUGKab">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan"...[truncated 8 chars]...repo/issues/456"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-pr", ...[truncated 6 chars]...repo/issues/456"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RfZcGZPMPDaGLouV9iXQwT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_with_no_slot_skips_impl() -&gt; None:
+    """Test that --for-plan with --no-slot creates branch but not .impl folder."""</param>
+    <param name="new_string">def test_branch_create_for_plan_with_no_slot_skips_impl() -&gt; None:
+    """Test that --for-pr with --no-slot creates branch but not .impl folder."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AWzvqncbrF6n421WvBqsr6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan", "100", "--no-slot"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-pr", "100", "--no-slot"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GNmztERTYxhqjE3BrGZHjp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_fails_with_both_branch_and_for_plan() -&gt; None:
+    """Test that specifying both BRANCH and --for-plan fails."""</param>
+    <param name="new_string">def test_branch_create_fails_with_both_branch_and_for_plan() -&gt; None:
+    """Test that specifying both BRANCH and --for-pr fails."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01K4K9ubgH9y76ksQ7LmwZ5k">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "my-branch",...[truncated 98 chars]...exit_code == 1
+        assert "Cannot specify both BRANCH and --for-plan" in result.output</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["br", "create", "my-branch",...[truncated 94 chars]...t.exit_code == 1
+        assert "Cannot specify both BRANCH and --for-pr" in result.output</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D8EeWDwn2qwnCRWF937rp8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_fails_without_branch_or_for_plan() -&gt; None:
+    """Test that omitting both BRANCH and --for-plan fails."""</param>
+    <param name="new_string">def test_branch_create_fails_without_branch_or_for_plan() -&gt; None:
+    """Test that omitting both BRANCH and --for-pr fails."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S6cDN1GP8wa9QV2pa1hEWJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False...[truncated 13 chars]...e == 1
+        assert "Must provide BRANCH argument or --for-plan option" in result.output</param>
+    <param name="new_string">        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False...[truncated 11 chars]...ode == 1
+        assert "Must provide BRANCH argument or --for-pr option" in result.output</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AQYYJ7wWinY83sejHqhmmd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_stacks_on_current_branch() -&gt; None:
+    """Test that --for-plan stacks on current branch when not on trunk."""</param>
+    <param name="new_string">def test_branch_create_for_plan_stacks_on_current_branch() -&gt; None:
+    """Test that --for-pr stacks on current branch when not on trunk."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V7fJj8pug19nyA7sn29CwD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-pr", "200"], obj=test_ctx, catch_exceptions=False
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AF4tLBaUDTf36zdEamdPyn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_stacks_in_place_creates_impl() -&gt; None:
+    """Test that --for-plan from assigned slot stacks in place AND creates .impl/."""</param>
+    <param name="new_string">def test_branch_create_for_plan_stacks_in_place_creates_impl() -&gt; None:
+    """Test that --for-pr from assigned slot stacks in place AND creates .impl/."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EaypUrp6rKs5ot3bmpiGDa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "300"], obj=test_ctx, catch_exceptions=False
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli, ["br", "create", "--for-pr", "300"], obj=test_ctx, catch_exceptions=False
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RWrcAYe4C5ptTKXQorXDeF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/branch/test_create_cmd.py</param>
+    <param name="old_string">def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -&gt; None:
+    """Test that --for-plan creates branch, slot, and .impl/ folder."""</param>
+    <param name="new_string">def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -&gt; None:
+    """Test that --for-pr creates branch, slot, and .impl/ folder."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SdEh94FZYC1HnArx5i6Tdo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+    """Test that --for-plan reso...[truncated 21 chars]...mpl/.
+
+    The branch is checked out in the current worktree (no slot allocation).
+    """</param>
+    <param name="new_string">def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+    """Test that --for-pr resolv...[truncated 19 chars]...mpl/.
+
+    The branch is checked out in the current worktree (no slot allocation).
+    """</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EgVaWfQmpcn8uLwUEuwLRi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--for-plan", "500"], obj=ctx)</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "--for-pr", "500"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014vZryFxxu3KyrPraDXzxtj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+    """Test...[truncated 306 chars]...   Uses stack-in-place path (pool slot assigned) to test activation script output.
+    """</param>
+    <param name="new_string">def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+    """Test...[truncated 302 chars]...   Uses stack-in-place path (pool slot assigned) to test activation script output.
+    """</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AHxdQyq7wr1fN5KR4VN8dZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+...[truncated 136 chars]...          result = runner.invoke(branch_group, ["checkout", "--for-plan", "600"], obj=ctx)</param>
+    <param name="new_string">        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+...[truncated 134 chars]...            result = runner.invoke(branch_group, ["checkout", "--for-pr", "600"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UBeHz2yNpdR6kWmRSFSijP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+    """Test that providing both BRANCH and --for-plan fails."""</param>
+    <param name="new_string">def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+    """Test that providing both BRANCH and --for-pr fails."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01722YFmG2gxKqfykBxS684r">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(
+            branch_group, ["checkout", "my-branch", "--for...[truncated 37 chars]...exit_code == 1
+        assert "Cannot specify both BRANCH and --for-plan" in result.output</param>
+    <param name="new_string">        result = runner.invoke(
+            branch_group, ["checkout", "my-branch", "--for...[truncated 33 chars]...t.exit_code == 1
+        assert "Cannot specify both BRANCH and --for-pr" in result.output</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Wme1m75WdjFH3hvLoB4f8x">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_error_neither_branch_nor_for_plan() -&gt; None:
+    """Test that providing neither BRANCH nor --for-plan fails."""</param>
+    <param name="new_string">def test_checkout_for_plan_error_neither_branch_nor_for_plan() -&gt; None:
+    """Test that providing neither BRANCH nor --for-pr fails."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KN4dQxuPkhR9gtq8EVpGp8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        result = runner.invoke(branch_group, ["checkout"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Must provide BRANCH argument or --for-plan option" in result.output</param>
+    <param name="new_string">        result = runner.invoke(branch_group, ["checkout"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Must provide BRANCH argument or --for-pr option" in result.output</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018HtPUESVaKQcmoQ9pE4An7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -&gt; None:
+    """--for-plan with planned_pr backend tracks with base_ref_name from plan metadata."""</param>
+    <param name="new_string">def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -&gt; None:
+    """--for-pr with planned_pr backend tracks with base_ref_name from plan metadata."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01B2xQeD9Nwi69PHkKPkyako">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "600", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "600", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AgZgUyqirG5RZb1YmwBvUy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+    """When plan metadata has no base_ref_name, falls back to trunk as parent."""</param>
+    <param name="new_string">def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+    """When plan metadata has no base_ref_name, falls back to trunk as parent."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0193XETQE8AV5LV8RLht1fZn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "601", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "601", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HTTg4gRoYfxS1VsaLjbVRW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_rebases_onto_stale_parent() -&gt; None:
+    """--for-plan with sta...[truncated 177 chars]...k.
+    This ensures gt track succeeds even if the parent advanced since plan-save.
+    """</param>
+    <param name="new_string">def test_checkout_for_plan_rebases_onto_stale_parent() -&gt; None:
+    """--for-pr with stack...[truncated 175 chars]...k.
+    This ensures gt track succeeds even if the parent advanced since plan-save.
+    """</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DvK76U2ydndE8P68Unnuh8">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "602", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "602", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U19ZhMaDJjv8hzQYLkqnRo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_skips_rebase_for_trunk_parent() -&gt; None:
+    """--for-plan with...[truncated 74 chars]... trunk), there's no need
+    to rebase since the branch is already based on trunk.
+    """</param>
+    <param name="new_string">def test_checkout_for_plan_skips_rebase_for_trunk_parent() -&gt; None:
+    """--for-pr with t...[truncated 72 chars]... trunk), there's no need
+    to rebase since the branch is already based on trunk.
+    """</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VK1aUxVW3U62stbHQtU9HK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "603", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "603", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KrHiiikRjuR9kjPLgpTeCZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_updates_stale_local_parent() -&gt; None:
+    """--for-plan syncs s...[truncated 159 chars]...cal ref should be
+    updated to match origin so gt track sees consistent history.
+    """</param>
+    <param name="new_string">def test_checkout_for_plan_updates_stale_local_parent() -&gt; None:
+    """--for-pr syncs sta...[truncated 157 chars]...cal ref should be
+    updated to match origin so gt track sees consistent history.
+    """</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SSsh2nNkSw8qbfs7atAPjM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "604", "--script"], obj=ctx
+            )</param>
+    <param name="new_string">        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-pr", "604", "--script"], obj=ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GUHaA6xjvX9LqqubRHXrvz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-pr-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018kzZnXUv38nzTaHjb9px9t">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">def test_create_with_plan_file_removes_plan_word() -&gt; None:
+    """Test that --from-plan-file flag removes 'plan' from worktree names."""</param>
+    <param name="new_string">def test_create_with_plan_file_removes_plan_word() -&gt; None:
+    """Test that --from-pr-file flag removes 'plan' from worktree names."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018H3GL9ob2N2VHqXFELALVv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">            result = runner.invoke(
+                cli, ["wt", "create", "--from-plan-file", str(plan_file)], obj=test_ctx
+            )</param>
+    <param name="new_string">            result = runner.invoke(
+                cli, ["wt", "create", "--from-pr-file", str(plan_file)], obj=test_ctx
+            )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YBza85XRLKqy95379NNfrT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", "nonexistent.md"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-pr-file", "nonexistent.md"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013eQSHxDLiHqyT7MYhSft2S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">def test_create_with_keep_plan_file_flag() -&gt; None:
+    """Test that --keep-plan-file copies instead of moves the plan file."""</param>
+    <param name="new_string">def test_create_with_keep_plan_file_flag() -&gt; None:
+    """Test that --keep-pr-file copies instead of moves the plan file."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Mw3yf8cyGbunYAVNvvkhfU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file), "--keep-plan-file"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-pr-file", str(plan_file), "--keep-pr-file"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01P8QCBjwhz6EUdYQnJAtc2E">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">def test_create_keep_plan_file_without_plan_file_fails() -&gt; None:
+    """Test that --keep-plan-file without --from-plan-file fails with error message."""</param>
+    <param name="new_string">def test_create_keep_plan_file_without_plan_file_fails() -&gt; None:
+    """Test that --keep-pr-file without --from-pr-file fails with error message."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KmqZZdUFNZTzGpWxjqacy7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "test-featur...[truncated 65 chars]...xit_code == 1
+        assert "--keep-plan-file requires --from-plan-file" in result.output</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "test-featur...[truncated 59 chars]...lt.exit_code == 1
+        assert "--keep-pr-file requires --from-pr-file" in result.output</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RH8MgCVVieHmkK1ucq4AQw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">def test_create_with_plan_file_ensures_uniqueness() -&gt; None:
+    """Test that --from-plan-file ensures uniqueness with date suffix and versioning."""</param>
+    <param name="new_string">def test_create_with_plan_file_ensures_uniqueness() -&gt; None:
+    """Test that --from-pr-file ensures uniqueness with date suffix and versioning."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SZbzMz7MYKBn5HVLZw128c">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        # Create first worktree from plan
+        result1 = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        # Create first worktree from plan
+        result1 = runner.invoke(
+            cli,
+            ["wt", "create", "--from-pr-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FccvzXTVY4XQQ2RaVFCp5e">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        # Create second worktree from same plan (same timestamp from FakeTime)
+        res...[truncated 30 chars]... ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        # Create second worktree from same plan (same timestamp from FakeTime)
+        res...[truncated 28 chars]...   ["wt", "create", "--from-pr-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EMEWFBxNwtf84EfcCcgrSj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_plan_file_operations.py</param>
+    <param name="old_string">        # Create worktree from long plan filename
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        # Create worktree from long plan filename
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-pr-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BEY4A3ZaQBwmCK9ACKKTTF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py</param>
+    <param name="old_string">        # Don't provide NAME - it's derived from plan filename
+        result = runner.inv...[truncated 23 chars]...reate", "--json", "--from-plan-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        # Don't provide NAME - it's derived from plan filename
+        result = runner.inv...[truncated 21 chars]..."create", "--json", "--from-pr-file", str(plan_file)],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ViMmq2xgKbSG2yTzKAp5Mx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py</param>
+    <param name="old_string">def test_create_with_stay_and_plan_file() -&gt; None:
+    """Test that --stay works with --from-plan-file flag."""</param>
+    <param name="new_string">def test_create_with_stay_and_plan_file() -&gt; None:
+    """Test that --stay works with --from-pr-file flag."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HmM1uTcDwW92s6745nFE6M">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/workspace/create/test_output_modes.py</param>
+    <param name="old_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-plan-file", str(plan_file), "--script", "--stay"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-pr-file", str(plan_file), "--script", "--stay"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Nk8TXnB9QiSZMvkrvDitNj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py</param>
+    <param name="old_string">def test_create_copy_plan_mutual_exclusion_with_plan_file() -&gt; None:
+    """Test --copy-plan and --from-plan-file are mutually exclusive."""</param>
+    <param name="new_string">def test_create_copy_plan_mutual_exclusion_with_plan_file() -&gt; None:
+    """Test --copy-plan and --from-pr-file are mutually exclusive."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ci5EgNv53mN1SUqArZFUdc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/test_create_copy_impl.py</param>
+    <param name="old_string">        # Act: Try to use both --copy-plan and --from-plan-file
+        result = runner.in...[truncated 356 chars]...  assert "--copy-plan" in result.output
+        assert "--from-plan-file" in result.output</param>
+    <param name="new_string">        # Act: Try to use both --copy-plan and --from-pr-file
+        result = runner.invo...[truncated 350 chars]...    assert "--copy-plan" in result.output
+        assert "--from-pr-file" in result.output</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017cZKHJTUGPTHRhD8xY1sYZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/management/test_impl.py</param>
+    <param name="old_string">        # Run erk create with --from-plan-file
+        result = runner.invoke(
+           ...[truncated 17 chars]...-from-plan-file", "Add_Auth_Feature.md", "--no-post"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        # Run erk create with --from-pr-file
+        result = runner.invoke(
+            c...[truncated 13 chars]..."--from-pr-file", "Add_Auth_Feature.md", "--no-post"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NtoCLnb6ooWmAu2y3jaPbG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/management/test_impl.py</param>
+    <param name="old_string">        # --from-plan-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        expected_name = f"add-auth-feature-{_FAKE_DATE_SUFFIX}"</param>
+    <param name="new_string">        # --from-pr-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        expected_name = f"add-auth-feature-{_FAKE_DATE_SUFFIX}"</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UQvSpPN3a5V2oe7sSq45g3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/management/test_impl.py</param>
+    <param name="old_string">        # Run erk create with --from-plan-file
+        result = runner.invoke(
+           ...[truncated 18 chars]...from-plan-file", "MY_COOL_Plan_File.md", "--no-post"],
+            obj=test_ctx,
+        )</param>
+    <param name="new_string">        # Run erk create with --from-pr-file
+        result = runner.invoke(
+            c...[truncated 14 chars]...--from-pr-file", "MY_COOL_Plan_File.md", "--no-post"],
+            obj=test_ctx,
+        )</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HJUEf7Cfj8XWLNqRSVRXsv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/management/test_impl.py</param>
+    <param name="old_string">        # --from-plan-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        expected_name = f"my-cool-file-{_FAKE_DATE_SUFFIX}"</param>
+    <param name="new_string">        # --from-pr-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        expected_name = f"my-cool-file-{_FAKE_DATE_SUFFIX}"</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MJ8aMz3gfaHo44eQbcpa1z">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/management/test_impl.py</param>
+    <param name="old_string">def test_create_with_both_name_and_plan_file_fails() -&gt; None:
+    """Test that providing both NAME and --from-plan-file is an error."""</param>
+    <param name="new_string">def test_create_with_both_name_and_plan_file_fails() -&gt; None:
+    """Test that providing both NAME and --from-pr-file is an error."""</param>
+  </tool_use>
+  <usage input_tokens="32133" cache_creation_input_tokens="34597" cache_read_input_tokens="21414" cache_creation="{'ephemeral_5m_input_tokens': 34597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

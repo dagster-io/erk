@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "pr_number": 9310,
+  "sessions": [
+    {
+      "session_id": "260a77f4-fd45-4d3a-b3c4-d99be594985d",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T00:38:28.883265+00:00",
+      "files": [
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part1.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part10.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part11.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part12.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part13.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part14.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part15.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part16.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part17.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part18.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part19.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part2.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part3.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part4.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part5.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part6.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part7.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part8.xml",
+        "impl-260a77f4-fd45-4d3a-b3c4-d99be594985d-260a77f4-fd45-4d3a-b3c4-d99be594985d-part9.xml"
+      ],
+      "user_turns": 6,
+      "duration_minutes": 39,
+      "raw_size_kb": 2158,
+      "xml_size_kb": 568,
+      "git_branch": "plnd/O9109-rename-cli-flags-pla-03-20-2357"
+    }
+  ]
+}
