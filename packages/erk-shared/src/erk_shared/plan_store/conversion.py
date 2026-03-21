@@ -9,10 +9,26 @@ from datetime import datetime
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
-from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+from erk_shared.gateway.github.metadata.schemas import NODE_IDS, OBJECTIVE_ISSUE
 from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.types import Plan, PlanState
+
+
+def _parse_node_ids(value: object) -> tuple[str, ...] | None:
+    """Parse node_ids from header_fields value.
+
+    Args:
+        value: Raw value from header_fields (list of strings, or None)
+
+    Returns:
+        Tuple of node ID strings, or None if not present
+    """
+    if value is None:
+        return None
+    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+        return tuple(str(item) for item in value)
+    return None
 
 
 def github_issue_to_plan(issue: IssueInfo) -> Plan:
@@ -42,6 +58,8 @@ def github_issue_to_plan(issue: IssueInfo) -> Plan:
     if isinstance(raw_objective, int):
         objective_id = raw_objective
 
+    node_ids = _parse_node_ids(header_fields.get(NODE_IDS))
+
     return Plan(
         pr_identifier=str(issue.number),
         title=issue.title,
@@ -55,6 +73,7 @@ def github_issue_to_plan(issue: IssueInfo) -> Plan:
         metadata={"number": issue.number, "author": issue.author},
         objective_id=objective_id,
         header_fields=header_fields,
+        node_ids=node_ids,
     )
 
 
@@ -87,6 +106,8 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
     if isinstance(raw_objective, int):
         objective_id = raw_objective
 
+    node_ids = _parse_node_ids(header_fields.get(NODE_IDS))
+
     body = plan_body if plan_body is not None else pr.body
 
     return Plan(
@@ -111,6 +132,7 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
         },
         objective_id=objective_id,
         header_fields=header_fields,
+        node_ids=node_ids,
     )
 
 

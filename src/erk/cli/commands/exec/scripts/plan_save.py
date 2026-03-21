@@ -280,6 +280,9 @@ def _save_as_planned_pr(
     if objective_issue is not None:
         metadata["objective_issue"] = objective_issue
 
+    if node_ids is not None:
+        metadata["node_ids"] = list(node_ids)
+
     if session_id is not None:
         metadata["created_from_session"] = session_id
 

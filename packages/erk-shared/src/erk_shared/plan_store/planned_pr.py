@@ -27,6 +27,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     CREATED_FROM_SESSION,
     CREATED_FROM_WORKFLOW_RUN_URL,
     LEARNED_FROM_ISSUE,
+    NODE_IDS,
     OBJECTIVE_ISSUE,
     SOURCE_REPO,
     PlanHeaderSchema,
@@ -321,6 +322,13 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             else None
         )
 
+        node_ids_raw = metadata.get(NODE_IDS)
+        node_ids_val: list[str] | None = (
+            [str(item) for item in node_ids_raw]
+            if isinstance(node_ids_raw, (list, tuple))
+            else None
+        )
+
         created_at = self._time.now().replace(tzinfo=UTC).isoformat()
         metadata_body = format_plan_header_body(
             created_at=created_at,
@@ -340,6 +348,7 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             last_remote_impl_session_id=None,
             source_repo=source_repo_str,
             objective_issue=objective_id,
+            node_ids=node_ids_val,
             created_from_session=created_from_session_str,
             created_from_workflow_run_url=created_from_workflow_run_url_val,
             last_learn_session=None,
@@ -664,6 +673,7 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             last_remote_impl_session_id=None,
             source_repo=None,
             objective_issue=None,
+            node_ids=None,
             created_from_session=None,
             created_from_workflow_run_url=None,
             last_learn_session=None,

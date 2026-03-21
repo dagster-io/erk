@@ -46,6 +46,7 @@ class Plan:
     metadata: dict[str, object]
     objective_id: int | None
     header_fields: dict[str, object] = field(default_factory=dict)
+    node_ids: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)

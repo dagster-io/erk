@@ -326,6 +326,75 @@ def test_extract_plan_content_backward_compat_flat_format() -> None:
 # =============================================================================
 
 
+def test_create_plan_writes_node_ids_to_plan_header() -> None:
+    """create_managed_pr writes node_ids to plan-header when provided in metadata."""
+    fake_github = FakeLocalGitHub()
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    result = backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-pr",),
+        metadata={
+            "branch_name": "test-branch",
+            "objective_issue": 100,
+            "node_ids": ["1.1", "1.2", "2.1"],
+        },
+        summary="",
+    )
+
+    pr = fake_github.get_pr(Path("/repo"), int(result.pr_id))
+    assert not isinstance(pr, PRNotFound)
+    assert "node_ids" in pr.body
+    assert "1.1" in pr.body
+    assert "1.2" in pr.body
+    assert "2.1" in pr.body
+
+
+def test_create_and_get_plan_roundtrip_with_node_ids() -> None:
+    """Round-trip: create with node_ids → get → verify plan.node_ids populated."""
+    fake_github = FakeLocalGitHub()
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    result = backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-pr",),
+        metadata={
+            "branch_name": "test-branch",
+            "objective_issue": 100,
+            "node_ids": ["1.1", "1.2"],
+        },
+        summary="",
+    )
+
+    plan = backend.get_managed_pr(Path("/repo"), result.pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert plan.node_ids == ("1.1", "1.2")
+    assert plan.objective_id == 100
+
+
+def test_create_and_get_plan_roundtrip_without_node_ids() -> None:
+    """Round-trip: create without node_ids → get → verify plan.node_ids is None."""
+    fake_github = FakeLocalGitHub()
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    result = backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan content",
+        labels=("erk-pr",),
+        metadata={"branch_name": "test-branch"},
+        summary="",
+    )
+
+    plan = backend.get_managed_pr(Path("/repo"), result.pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert plan.node_ids is None
+
+
 def test_create_plan_includes_checkout_footer() -> None:
     """create_plan appends a checkout footer to the PR body."""
     fake_github = FakeLocalGitHub()

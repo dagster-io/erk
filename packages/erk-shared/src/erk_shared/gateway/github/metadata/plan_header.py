@@ -52,6 +52,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LEARN_STATUS,
     LEARNED_FROM_ISSUE,
     LIFECYCLE_STAGE,
+    NODE_IDS,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     SCHEMA_VERSION,
@@ -83,6 +84,7 @@ def create_plan_header_block(
     last_remote_impl_session_id: str | None,
     source_repo: str | None,
     objective_issue: int | None,
+    node_ids: list[str] | None,
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
     last_learn_session: str | None,
@@ -113,6 +115,7 @@ def create_plan_header_block(
         last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
+        node_ids: Optional list of objective roadmap node IDs covered by this plan
         created_from_session: Optional session ID that created this plan
         created_from_workflow_run_url: Optional workflow run URL that created this plan
         last_learn_session: Optional session ID that last invoked learn
@@ -159,6 +162,10 @@ def create_plan_header_block(
     # Include objective_issue if provided
     if objective_issue is not None:
         data[OBJECTIVE_ISSUE] = objective_issue
+
+    # Include node_ids if provided
+    if node_ids is not None:
+        data[NODE_IDS] = node_ids
 
     # Include created_from_session if provided
     if created_from_session is not None:
@@ -222,6 +229,7 @@ def format_plan_header_body(
     last_remote_impl_session_id: str | None,
     source_repo: str | None,
     objective_issue: int | None,
+    node_ids: list[str] | None,
     created_from_session: str | None,
     created_from_workflow_run_url: str | None,
     last_learn_session: str | None,
@@ -255,6 +263,7 @@ def format_plan_header_body(
         last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
+        node_ids: Optional list of objective roadmap node IDs covered by this plan
         created_from_session: Optional session ID that created this plan
         created_from_workflow_run_url: Optional workflow run URL that created this plan
         last_learn_session: Optional session ID that last invoked learn
@@ -286,6 +295,7 @@ def format_plan_header_body(
         last_remote_impl_session_id=last_remote_impl_session_id,
         source_repo=source_repo,
         objective_issue=objective_issue,
+        node_ids=node_ids,
         created_from_session=created_from_session,
         created_from_workflow_run_url=created_from_workflow_run_url,
         last_learn_session=last_learn_session,
@@ -839,6 +849,59 @@ def extract_plan_header_objective_issue(issue_body: str) -> int | None:
         return None
 
     return block.data.get(OBJECTIVE_ISSUE)
+
+
+def extract_plan_header_node_ids(issue_body: str) -> tuple[str, ...] | None:
+    """Extract node_ids from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Tuple of node ID strings if found, None if block is missing or field is unset
+    """
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        return None
+
+    value = block.data.get(NODE_IDS)
+    if value is None:
+        return None
+    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+        return tuple(value)
+    return None
+
+
+def update_plan_header_node_ids(
+    issue_body: str,
+    node_ids: list[str],
+) -> str:
+    """Update node_ids field in plan-header metadata block.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        node_ids: List of objective roadmap node IDs
+
+    Returns:
+        Updated issue body with new node_ids field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    updated_data = dict(block.data)
+    updated_data[NODE_IDS] = node_ids
+
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_created_from_session(issue_body: str) -> str | None:
