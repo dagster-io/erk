@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9366,
+  "sessions": [
+    {
+      "session_id": "e144d595-229c-4b01-9979-b6b17fe64647",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T15:55:29.746294+00:00",
+      "files": [
+        "impl-e144d595-229c-4b01-9979-b6b17fe64647-e144d595-229c-4b01-9979-b6b17fe64647-part1.xml",
+        "impl-e144d595-229c-4b01-9979-b6b17fe64647-e144d595-229c-4b01-9979-b6b17fe64647-part2.xml",
+        "impl-e144d595-229c-4b01-9979-b6b17fe64647-e144d595-229c-4b01-9979-b6b17fe64647-part3.xml",
+        "impl-e144d595-229c-4b01-9979-b6b17fe64647-e144d595-229c-4b01-9979-b6b17fe64647-part4.xml",
+        "impl-e144d595-229c-4b01-9979-b6b17fe64647-e144d595-229c-4b01-9979-b6b17fe64647-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 8,
+      "raw_size_kb": 448,
+      "xml_size_kb": 84,
+      "git_branch": "plnd/fix-multinode-planning-mar-03-21-1546"
+    }
+  ]
+}
