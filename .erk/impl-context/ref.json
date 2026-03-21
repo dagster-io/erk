@@ -1,0 +1,5 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Eliminate Exceptions from Graphite `submit_stack` (Objective #9324, Phase 1)",
+  "objective_id": 9324
+}
