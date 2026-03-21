@@ -42,9 +42,7 @@ def _find_phase_name(phases: list[RoadmapPhase], node_id: str) -> str:
     )
 
 
-def _build_node_dict(
-    position: int, node: ObjectiveNode, phase_name: str
-) -> dict[str, object]:
+def _build_node_dict(position: int, node: ObjectiveNode, phase_name: str) -> dict[str, object]:
     return {
         "position": position,
         "id": node.id,
