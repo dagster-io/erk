@@ -86,6 +86,25 @@ class TestGithubIssueToPlan:
 
         assert plan.objective_id == 200
 
+    def test_node_ids_parsed_from_plan_header(self) -> None:
+        """node_ids are parsed from plan-header metadata block."""
+        body = format_plan_header_body_for_test(
+            objective_issue=100,
+            node_ids=["1.1", "1.2"],
+        )
+        issue = _make_issue(body=body)
+        plan = github_issue_to_plan(issue)
+
+        assert plan.node_ids == ("1.1", "1.2")
+
+    def test_node_ids_none_when_absent(self) -> None:
+        """node_ids is None when not in plan-header."""
+        body = format_plan_header_body_for_test(objective_issue=100)
+        issue = _make_issue(body=body)
+        plan = github_issue_to_plan(issue)
+
+        assert plan.node_ids is None
+
     def test_empty_body_produces_empty_header_fields(self) -> None:
         """Empty body produces empty header_fields dict."""
         issue = _make_issue(body="")
@@ -93,6 +112,7 @@ class TestGithubIssueToPlan:
 
         assert plan.header_fields == {}
         assert plan.objective_id is None
+        assert plan.node_ids is None
 
     def test_body_without_plan_header_produces_empty_header_fields(self) -> None:
         """Body without plan-header block produces empty header_fields."""
@@ -101,6 +121,7 @@ class TestGithubIssueToPlan:
 
         assert plan.header_fields == {}
         assert plan.objective_id is None
+        assert plan.node_ids is None
 
 
 class TestHeaderStr:

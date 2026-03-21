@@ -519,6 +519,131 @@ class TestApplyLandedUpdateAutoMatch:
         matched_ids = {u["node_id"] for u in node_updates}
         assert matched_ids == {"1.1", "1.2"}
 
+    def test_explicit_node_flags_override_plan_metadata(self, tmp_path: Path) -> None:
+        """Explicit --node flags take priority over node_ids in plan metadata."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+
+        # Plan has node_ids ["1.1", "1.2"] but we'll pass --node 2.1 explicitly
+        plan_body = format_plan_header_body_for_test(
+            objective_issue=6423,
+            node_ids=["1.1", "1.2"],
+        )
+        pr = _make_pr_details(number=6517, title="Add auth system", body=plan_body)
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={
+                6423: objective,
+                6517: _make_issue(number=6517, title="Plan", body=plan_body),
+            },
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr},
+        )
+        remote = _make_remote(
+            {6423: objective},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+                "--node",
+                "2.1",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Only node 2.1 was matched (explicit flag overrides plan metadata)
+        node_updates = data["node_updates"]
+        assert len(node_updates) == 1
+        assert node_updates[0]["node_id"] == "2.1"
+
+    def test_falls_back_to_roadmap_scan_when_no_node_ids(self, tmp_path: Path) -> None:
+        """Without --node flags or plan metadata node_ids, falls back to roadmap pr-ref scan."""
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY_WITH_PR_REF)
+
+        # Plan has NO node_ids in metadata — only objective_issue
+        plan_body = format_plan_header_body_for_test(objective_issue=6423)
+        pr = _make_pr_details(number=6517, title="Add auth system", body=plan_body)
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={
+                6423: objective,
+                6517: _make_issue(number=6517, title="Plan", body=plan_body),
+            },
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr},
+        )
+        remote = _make_remote(
+            {6423: objective},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Node 1.1 was found via roadmap pr-ref scan (its pr field is "#6517")
+        node_updates = data["node_updates"]
+        assert len(node_updates) == 1
+        assert node_updates[0]["node_id"] == "1.1"
+
 
 class TestApplyLandedUpdateErrors:
     def test_objective_not_found(self, tmp_path: Path) -> None:
