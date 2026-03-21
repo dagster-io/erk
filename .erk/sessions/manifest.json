@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9335,
+  "sessions": [
+    {
+      "session_id": "6e8e909e-4d7b-4cd1-9a0e-052a95459834",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T08:12:53.795728+00:00",
+      "files": [
+        "impl-6e8e909e-4d7b-4cd1-9a0e-052a95459834-6e8e909e-4d7b-4cd1-9a0e-052a95459834.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 4,
+      "raw_size_kb": 245,
+      "xml_size_kb": 55,
+      "git_branch": "plnd/delete-branch-create-03-21-0753"
+    }
+  ]
+}
