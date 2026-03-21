@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9363,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T15:46:42.605333+00:00",
+      "files": [
+        "impl--59e2f52c-8e53-4c8a-965c-3d60232636c8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 139,
+      "xml_size_kb": 40,
+      "git_branch": "plnd/fix-stale-pr-doc-refs-03-21-1140"
+    }
+  ]
+}
