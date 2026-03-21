@@ -54,7 +54,7 @@ Instructions:
 1. Run: erk exec get-issue-body <objective-number>
 2. Validate this is an objective:
    - Check for 'erk-objective' label
-   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
+   - If 'erk-pr' label instead: return error "This is an erk-pr PR, not an objective"
    - If neither label: include warning but proceed
 3. Create objective context marker:
    erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
@@ -200,7 +200,7 @@ Check that `value` matches the expected objective number.
 | --------------------------------------- | ---------------------------------------------------------------- |
 | Missing objective number or node ID     | Report error with usage instructions                             |
 | Objective not found                     | Report error and exit                                            |
-| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| Reference is erk-pr                     | Redirect to `/erk:plan-implement`                                |
 | Node not found in roadmap               | Report error and list available nodes                            |
 | Marker creation fails                   | Report error with manual command                                 |
 | Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |

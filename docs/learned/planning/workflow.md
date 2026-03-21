@@ -306,7 +306,7 @@ erk pr submit <issue-number>
 
 This command:
 
-- Validates the issue has the `erk-plan` label
+- Validates the issue has the `erk-pr` label
 - Verifies the issue is OPEN (not closed)
 - Triggers the `plan-implement.yml` GitHub Actions workflow via direct workflow dispatch
 - Displays the workflow run URL

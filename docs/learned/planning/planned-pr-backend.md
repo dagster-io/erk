@@ -47,7 +47,7 @@ Key design decisions:
 Plan PRs use a structured body format: metadata block + separator + plan content.
 
 - **Separator**: `"\n\n---\n\n"`
-- **Label**: `"erk-plan"`
+- **Label**: `"erk-pr"`
 - **Structure**: `<!-- plan-header metadata -->` + separator + `# Plan: Title` + content
 
 Helper functions `build_plan_stage_body()` and `extract_plan_content()` (public, in `planned_pr_lifecycle.py`) handle composition and extraction.

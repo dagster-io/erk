@@ -56,7 +56,7 @@ Launch a Task agent with:
 > IS_LEARN_PLAN: true or false (true if ANY plan has erk-learn label)
 >
 > PLANS:
-> # | Title | State | erk-plan | erk-learn | objective_issue
+> # | Title | State | erk-pr | erk-learn | objective_issue
 > <number> | <title> | <open/closed> | <yes/no> | <yes/no> | <number or none>
 > ...
 >
@@ -78,7 +78,7 @@ Launch a Task agent with:
 > Rules for VALIDATION:
 >
 > - FAIL if any plan does not exist
-> - FAIL if any plan is missing BOTH the erk-plan AND erk-learn labels (must have at least one)
+> - FAIL if any plan is missing BOTH the erk-pr AND erk-learn labels (must have at least one)
 > - PASS otherwise (closed plans are warnings, not failures)
 
 **After the agent returns**, parse the structured summary:
@@ -86,7 +86,7 @@ Launch a Task agent with:
 1. **If VALIDATION is FAIL**: Display each error and abort:
 
    ```
-   Error: PR #<number> is not a valid plan (missing both erk-plan and erk-learn labels).
+   Error: PR #<number> is not a valid plan (missing both erk-pr and erk-learn labels).
    ```
 
    ```
@@ -458,7 +458,7 @@ erk exec get-plan-info <new_pr_number>
 
 Check the returned labels:
 
-- Has `erk-plan` label (required for dispatch)
+- Has `erk-pr` label (required for dispatch)
 - If CONSOLIDATION_MODE: has `erk-consolidated` label
 - If IS_LEARN_PLAN: has `erk-learn` label
 
@@ -480,13 +480,13 @@ If validation finds the plan is not OPEN, report the issue and stop.
 
 ## Error Cases
 
-| Error                    | Message                                                                                 |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| Plan not found           | `Error: PR #<number> not found.`                                                        |
-| Not a plan               | `Error: PR #<number> is not a valid plan (missing both erk-plan and erk-learn labels).` |
-| No plan content          | `Error: No plan content found in PR #<number>.`                                         |
-| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`           |
-| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                            |
+| Error                    | Message                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| Plan not found           | `Error: PR #<number> not found.`                                                      |
+| Not a plan               | `Error: PR #<number> is not a valid plan (missing both erk-pr and erk-learn labels).` |
+| No plan content          | `Error: No plan content found in PR #<number>.`                                       |
+| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`         |
+| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                          |
 
 ---
 

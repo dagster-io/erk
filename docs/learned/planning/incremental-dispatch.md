@@ -6,19 +6,19 @@ read_when:
   - "working with incremental-dispatch exec script or slash command"
 tripwires:
   - action: "dispatching implementation against an existing PR"
-    warning: "Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-plan label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md."
+    warning: "Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-pr label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md."
 ---
 
 # Incremental Dispatch Workflow
 
-Dispatch a local plan against an existing PR for remote implementation, without requiring the `erk-plan` label.
+Dispatch a local plan against an existing PR for remote implementation, without requiring the `erk-pr` label.
 
 ## What vs Regular Dispatch
 
 | Aspect         | Regular Dispatch               | Incremental Dispatch              |
 | -------------- | ------------------------------ | --------------------------------- |
 | Input          | Plan number (draft PR)         | Local plan file + PR number       |
-| Label required | `erk-plan`                     | None (just OPEN)                  |
+| Label required | `erk-pr`                       | None (just OPEN)                  |
 | Provider       | `github-draft-pr`              | `incremental-dispatch`            |
 | Use case       | New plan -> new implementation | Additional changes to existing PR |
 

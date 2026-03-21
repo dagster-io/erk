@@ -61,7 +61,7 @@ def test_plan_issue_schema_rejects_non_positive_pr_number() -> None:
 def test_plan_issue_schema_get_key() -> None:
     """Test PlanIssueSchema returns correct key."""
     schema = PlanIssueSchema()
-    assert schema.get_key() == "erk-plan"
+    assert schema.get_key() == "erk-pr"
 
 
 # === create_plan_issue_block Tests ===
@@ -75,7 +75,7 @@ def test_create_plan_issue_block_with_plan_file() -> None:
         timestamp="2025-11-22T12:00:00Z",
         plan_file="add-user-auth-plan.md",
     )
-    assert block.key == "erk-plan"
+    assert block.key == "erk-pr"
     assert block.data["pr_number"] == 123
     assert block.data["worktree_name"] == "add-user-auth"
     assert block.data["plan_file"] == "add-user-auth-plan.md"
@@ -88,7 +88,7 @@ def test_create_plan_issue_block_without_plan_file() -> None:
         worktree_name="fix-bug",
         timestamp="2025-11-22T12:00:00Z",
     )
-    assert block.key == "erk-plan"
+    assert block.key == "erk-pr"
     assert "plan_file" not in block.data
 
 
@@ -119,7 +119,7 @@ def test_render_erk_issue_event_with_plan_issue_block() -> None:
 
     # Verify structure
     assert comment.startswith("📋 Add User Authentication\n\n")
-    assert "<!-- erk:metadata-block:erk-plan -->" in comment
+    assert "<!-- erk:metadata-block:erk-pr -->" in comment
     assert "pr_number: 123" in comment
     assert "worktree_name: add-user-auth" in comment
     assert plan_content in comment

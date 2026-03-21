@@ -223,7 +223,7 @@ def test_create_with_file_ignores_stdin(tmp_path) -> None:
 
 
 def test_create_adds_labels_to_pr(tmp_path) -> None:
-    """Test that erk-pr and erk-plan labels are added to the draft PR."""
+    """Test that erk-pr label is added to the draft PR."""
     # Arrange
     plan_file = tmp_path / "plan.md"
     plan_file.write_text("# Feature\n\nDetails", encoding="utf-8")

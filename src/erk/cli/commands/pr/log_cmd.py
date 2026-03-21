@@ -189,7 +189,7 @@ def _block_to_event(key: str, data: dict) -> Event | None:
     """Convert a metadata block to an Event.
 
     Args:
-        key: Metadata block key (e.g., "erk-plan", "submission-queued")
+        key: Metadata block key (e.g., "erk-pr", "submission-queued")
         data: Metadata block data
 
     Returns:
@@ -197,7 +197,8 @@ def _block_to_event(key: str, data: dict) -> Event | None:
     """
     # Map block types to event extractors
     extractors: dict[str, EventExtractor] = {
-        BlockKeys.ERK_PLAN: _extract_plan_created_event,
+        BlockKeys.ERK_PR: _extract_plan_created_event,
+        "erk-plan": _extract_plan_created_event,  # backward-compat alias
         BlockKeys.SUBMISSION_QUEUED: _extract_submission_queued_event,
         BlockKeys.WORKFLOW_STARTED: _extract_workflow_started_event,
         BlockKeys.ERK_IMPLEMENTATION_STATUS: _extract_implementation_status_event,
@@ -213,7 +214,7 @@ def _block_to_event(key: str, data: dict) -> Event | None:
 
 
 def _extract_plan_created_event(data: dict) -> Event | None:
-    """Extract plan creation event from erk-plan block."""
+    """Extract plan creation event from erk-pr block."""
     timestamp = data.get("timestamp")
     if not timestamp:
         return None

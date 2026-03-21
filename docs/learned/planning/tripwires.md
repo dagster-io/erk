@@ -124,7 +124,7 @@ Rules triggered by matching actions in code.
 
 **detecting plan backend by checking backend type directly** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
 
-**dispatching implementation against an existing PR** → Read [Incremental Dispatch Workflow](incremental-dispatch.md) first. Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-plan label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md.
+**dispatching implementation against an existing PR** → Read [Incremental Dispatch Workflow](incremental-dispatch.md) first. Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-pr label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md.
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 

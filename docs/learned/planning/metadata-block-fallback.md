@@ -5,7 +5,7 @@ audit_result: clean
 read_when:
   - "extracting plan content from GitHub issue comments"
   - "debugging 'no plan content found' errors in replan or plan-implement"
-  - "working with older erk-plans that lack metadata blocks"
+  - "working with older erk-prs that lack metadata blocks"
 tripwires:
   - action: "assuming plan content is in the issue body"
     warning: "Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic."

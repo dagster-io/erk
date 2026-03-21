@@ -49,7 +49,7 @@ When displaying plan information to users, use backend-appropriate terminology:
 | Plan storage | "issue"         | "planned PR"       |
 | Plan ID      | Issue number    | PR number          |
 | View command | `gh issue view` | `gh pr view`       |
-| Plan label   | `erk-plan`      | `erk-plan`         |
+| Plan label   | `erk-pr`        | `erk-pr`           |
 
 ## When to Use Each Pattern
 

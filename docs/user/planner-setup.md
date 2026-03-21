@@ -17,7 +17,7 @@ Without `--run`, it prints the `gh` command for review.
 ### 2. Configure Authentication
 
 ```bash
-erk planner configure erk-planner-node
+erk planner configure erk-prner-node
 ```
 
 This opens an SSH session with a setup checklist:
@@ -53,7 +53,7 @@ For repos that will be used as planners, add this `.devcontainer/devcontainer.js
 
 ```json
 {
-  "name": "erk-planning",
+  "name": "erk-prning",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {},

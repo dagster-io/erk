@@ -55,8 +55,14 @@ _BLOCK_TYPE_REGISTRY: dict[str, BlockTypeInfo] = {
         category=BlockCategory.YAML,
         schema=ObjectiveHeaderSchema(),
     ),
-    BlockKeys.ERK_PLAN: BlockTypeInfo(
-        key=BlockKeys.ERK_PLAN,
+    BlockKeys.ERK_PR: BlockTypeInfo(
+        key=BlockKeys.ERK_PR,
+        category=BlockCategory.YAML,
+        schema=PlanSchema(),
+    ),
+    # Backward-compat alias: existing GitHub PRs may have "erk-plan" HTML comment markers
+    "erk-plan": BlockTypeInfo(
+        key="erk-plan",
         category=BlockCategory.YAML,
         schema=PlanSchema(),
     ),

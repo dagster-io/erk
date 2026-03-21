@@ -18,7 +18,7 @@ When a PR is landed with `erk land --extract`, the session context is:
 
 1. Preprocessed into XML format
 2. Uploaded to a GitHub issue as comments
-3. Labeled with `erk-raw-session` and `erk-plan`
+3. Labeled with `erk-raw-session` and `erk-pr`
 
 ## Issue Structure
 

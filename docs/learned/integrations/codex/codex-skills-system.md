@@ -142,7 +142,7 @@ Claude uses `/erk:plan-implement` to invoke commands. Codex has no slash command
 
 | Approach         | Mechanism                                      | Trade-off                                                                            |
 | ---------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `$skill-name`    | Prompt containing `$erk-plan-implement`        | Relies on Codex's description matching; requires skill installed in `.codex/skills/` |
+| `$skill-name`    | Prompt containing `$erk-pr-implement`          | Relies on Codex's description matching; requires skill installed in `.codex/skills/` |
 | Prompt injection | Read SKILL.md content and embed in prompt text | More robust but bypasses Codex's progressive disclosure and skill discovery          |
 
 **Open question:** The reliability of `$skill-name` invocation in `codex exec` (headless) mode needs testing. The TUI has a `/skills` menu for explicit invocation, but `codex exec` relies on description matching which may be brittle.

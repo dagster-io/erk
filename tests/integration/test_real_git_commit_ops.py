@@ -262,6 +262,6 @@ def test_commit_files_to_branch_cleans_up_temp_index(
         message="Test commit",
     )
 
-    # Assert: No erk-plan-*.idx files remain in our isolated temp dir
-    remaining = list(test_temp_dir.glob("erk-plan-*.idx"))
+    # Assert: No erk-pr-*.idx files remain in our isolated temp dir
+    remaining = list(test_temp_dir.glob("erk-pr-*.idx"))
     assert remaining == [], f"Temp index files not cleaned up: {remaining}"

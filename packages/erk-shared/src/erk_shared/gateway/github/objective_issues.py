@@ -121,7 +121,7 @@ def create_objective_issue(
     Objectives use the same pattern as plans:
     - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
     - First comment: objective content wrapped in objective-body metadata block
-    - Labels: erk-objective (NOT erk-plan)
+    - Labels: erk-objective (NOT erk-pr)
     - No title suffix, no commands section
 
     Args:
@@ -165,7 +165,7 @@ def create_objective_issue(
                 error=slug_result.message,
             )
 
-    # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)
+    # Step 3: Build labels - objectives only use erk-objective (NOT erk-pr)
     labels = [_LABEL_ERK_OBJECTIVE]
 
     # Add any extra labels

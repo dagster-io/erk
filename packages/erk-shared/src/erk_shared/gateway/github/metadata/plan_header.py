@@ -1,4 +1,4 @@
-"""Schema v2 plan header operations for erk-plan issues.
+"""Schema v2 plan header operations for erk-pr issues.
 
 These support the new plan issue structure where:
 - Issue body contains only compact metadata (for fast querying)

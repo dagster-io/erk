@@ -149,8 +149,8 @@ Test the workflow.
     assert ref.url == result.url
 
 
-def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
-    """Test that issue creation includes erk-plan label."""
+def test_workflow_issue_creation_tracks_erk_pr_label() -> None:
+    """Test that issue creation includes erk-pr label."""
     issues = FakeGitHubIssues()
 
     issues.create_issue(

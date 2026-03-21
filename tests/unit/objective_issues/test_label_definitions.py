@@ -16,12 +16,11 @@ def test_get_erk_label_definitions_returns_five_labels() -> None:
     assert len(labels) == 4
 
 
-def test_get_erk_label_definitions_excludes_erk_plan() -> None:
-    """Test that erk-plan label is NOT included (plans identified by title prefix)."""
+def test_get_erk_label_definitions_excludes_erk_core() -> None:
+    """Test that erk-core label is NOT included (deprecated/unused)."""
     labels = get_erk_label_definitions()
 
     label_names = [label.name for label in labels]
-    assert "erk-plan" not in label_names
     assert "erk-core" not in label_names
 
 
@@ -105,14 +104,6 @@ def test_get_required_erk_labels_contains_erk_pr() -> None:
 
     label_names = [label.name for label in labels]
     assert "erk-pr" in label_names
-
-
-def test_get_required_erk_labels_excludes_erk_plan() -> None:
-    """Test that erk-plan label is NOT included (plans identified by title prefix)."""
-    labels = get_required_erk_labels()
-
-    label_names = [label.name for label in labels]
-    assert "erk-plan" not in label_names
 
 
 def test_get_required_erk_labels_contains_erk_objective() -> None:

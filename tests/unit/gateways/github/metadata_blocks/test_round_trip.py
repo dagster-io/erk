@@ -32,7 +32,7 @@ from erk_shared.gateway.github.metadata.registry import (
     get_content_block_types,
     get_yaml_block_types,
 )
-from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema
+from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema, PlanSchema
 from erk_shared.gateway.github.metadata.session import render_session_prompts_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 
@@ -62,6 +62,12 @@ SAMPLE_DATA: dict[str, dict] = {
         "created_by": "testuser",
         "objective_comment_id": None,
     },
+    "erk-pr": {
+        "pr_number": 42,
+        "worktree_name": "test-worktree",
+        "timestamp": "2025-01-15T10:00:00Z",
+    },
+    # Backward-compat alias: test that old "erk-plan" blocks can still round-trip
     "erk-plan": {
         "pr_number": 42,
         "worktree_name": "test-worktree",
@@ -172,10 +178,20 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         branch_name="plnd/test-branch",
         timestamp="2025-01-15T10:00:00Z",
     ),
-    "erk-plan": create_plan_block(
+    "erk-pr": create_plan_block(
         pr_number=42,
         worktree_name="test-worktree",
         timestamp="2025-01-15T10:00:00Z",
+    ),
+    # Backward-compat alias entry for round-trip test
+    "erk-plan": create_metadata_block(
+        key="erk-plan",
+        data={
+            "pr_number": 42,
+            "worktree_name": "test-worktree",
+            "timestamp": "2025-01-15T10:00:00Z",
+        },
+        schema=PlanSchema(),
     ),
     "submission-queued": create_submission_queued_block(
         queued_at="2025-01-15T10:00:00Z",
@@ -326,7 +342,7 @@ class TestRegistryCompleteness:
         yaml_types = get_yaml_block_types()
         content_types = get_content_block_types()
 
-        assert len(all_types) == 16
-        assert len(yaml_types) == 13
+        assert len(all_types) == 17
+        assert len(yaml_types) == 14
         assert len(content_types) == 3
         assert len(yaml_types) + len(content_types) == len(all_types)

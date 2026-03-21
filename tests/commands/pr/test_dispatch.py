@@ -23,7 +23,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
     """Test that dispatching a planned-PR plan triggers workflow with pr_backend=planned_pr.
 
     Planned-PR plans already have a branch and PR. Dispatch should:
-    - Validate the PR has the erk-plan label and is OPEN
+    - Validate the PR has the erk-pr label and is OPEN
     - Sync local branch ref to remote and commit impl-context via git plumbing
     - Trigger workflow with plan_backend="planned_pr" in inputs
     - NOT create a new branch or PR

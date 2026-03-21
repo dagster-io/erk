@@ -241,7 +241,7 @@ def create_plan_block(
     timestamp: str,
     plan_file: str | None = None,
 ) -> MetadataBlock:
-    """Create an erk-plan block with validation.
+    """Create an erk-pr block with validation.
 
     Args:
         pr_number: GitHub PR number for this plan
@@ -250,7 +250,7 @@ def create_plan_block(
         plan_file: Optional path to the plan file
 
     Returns:
-        MetadataBlock with erk-plan schema
+        MetadataBlock with erk-pr schema
     """
     schema = PlanSchema()
     data: dict[str, Any] = {
