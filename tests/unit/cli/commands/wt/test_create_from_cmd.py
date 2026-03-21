@@ -128,7 +128,7 @@ def test_create_from_fails_branch_not_found() -> None:
 
         assert result.exit_code == 1
         assert "does not exist" in result.output
-        assert "erk br create" in result.output
+        assert "gt create" in result.output
 
 
 def test_create_from_fails_trunk_branch() -> None:
