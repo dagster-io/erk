@@ -28,6 +28,7 @@ Quick reference for all `erk exec` subcommands.
 | `ci-generate-summaries`           | Generate CI failure summaries using Haiku.                                        |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                              |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                      |
+| `classify-pr-feedback`            | Classify PR review feedback mechanically before LLM processing.                   |
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                                    |
 | `close-pr`                        | Close a plan with a comment.                                                      |
 | `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                      |
@@ -259,6 +260,19 @@ Run full CI verification after autofix push.
 | ---------------- | ---- | -------- | -------------- | ------------------------------ |
 | `--original-sha` | TEXT | Yes      | Sentinel.UNSET | SHA before autofix ran         |
 | `--repo`         | TEXT | Yes      | Sentinel.UNSET | GitHub repository (owner/repo) |
+
+### classify-pr-feedback
+
+Classify PR review feedback mechanically before LLM processing.
+
+**Usage:** `erk exec classify-pr-feedback`
+
+**Options:**
+
+| Flag                 | Type    | Required | Default | Description                                 |
+| -------------------- | ------- | -------- | ------- | ------------------------------------------- |
+| `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
+| `--include-resolved` | FLAG    | No       | -       | Include resolved review threads             |
 
 ### cleanup-impl-context
 
