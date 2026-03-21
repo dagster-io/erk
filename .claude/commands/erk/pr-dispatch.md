@@ -18,7 +18,7 @@ Find the most recent plan created in this conversation and dispatch it for remot
 
 Search the conversation from bottom to top for these patterns (in priority order):
 
-1. **Draft PR reference**: `saved as draft PR #<number>` or `draft PR #<number>`
+1. **Planned PR reference**: `saved as planned PR #<number>` or `planned PR #<number>` or `saved as draft PR #<number>` or `draft PR #<number>`
 2. **Pull request URL**: `https://github.com/<owner>/<repo>/pull/<number>`
 3. **Plan URL**: `https://github.com/.../pull/<number>` (legacy: `https://github.com/.../issues/<number>`)
 

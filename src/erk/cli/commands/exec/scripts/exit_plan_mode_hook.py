@@ -384,12 +384,12 @@ def build_blocking_message(
     option_num = 1
     lines.append(
         f'  {option_num}. "Create new branch and planned PR"'
-        " - Save plan as a draft PR on a new branch. You stay on your current branch."
+        " - Create a new branch and save plan as a planned PR. You stay on your current branch."
     )
     option_num += 1
     lines.append(
         f'  {option_num}. "Implement without saving" - Implement directly on the current branch '
-        "without saving a plan PR."
+        "without creating a planned PR."
     )
     option_num += 1
     if not branch_has_commits and current_branch not in ("master", "main"):
@@ -409,7 +409,7 @@ def build_blocking_message(
                 "",
                 f"⚠️  WARNING: Currently on '{current_branch}'. "
                 "We strongly discourage implementing directly on the trunk branch. "
-                "Consider saving the plan as a PR first.",
+                "Consider creating a planned PR instead.",
             ]
         )
 

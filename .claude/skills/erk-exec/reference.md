@@ -33,7 +33,7 @@ Quick reference for all `erk exec` subcommands.
 | `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                      |
 | `cmux-open-pr`                    | Create a cmux workspace to open a PR.                                             |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                               |
-| `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                      |
+| `create-pr-from-session`          | Extract plan from Claude session and create a planned PR.                         |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                            |
 | `detect-plan-from-branch`         | Detect PR number from the current git branch.                                     |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                          |
@@ -78,7 +78,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                       |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                              |
 | `objective-update-after-land`     | Update objective after landing a PR.                                              |
-| `plan-save`                       | Save plan as a draft PR.                                                          |
+| `plan-save`                       | Save plan as a planned PR.                                                        |
 | `plan-update`                     | Update an existing plan's content.                                                |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                              |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                            |
@@ -318,7 +318,7 @@ Create .erk/impl-context/ folder from plan content.
 
 ### create-pr-from-session
 
-Extract plan from Claude session and create GitHub draft PR.
+Extract plan from Claude session and create a planned PR.
 
 **Usage:** `erk exec create-pr-from-session`
 
@@ -948,7 +948,7 @@ Update objective after landing a PR.
 
 ### plan-save
 
-Save plan as a draft PR.
+Save plan as a planned PR.
 
 **Usage:** `erk exec plan-save`
 

@@ -484,7 +484,7 @@ class TestBuildBlockingMessage:
         assert "WARNING" in message
         assert "main" in message
         assert "trunk branch" in message
-        assert "saving the plan as a PR first" in message
+        assert "planned PR" in message
 
     def test_trunk_branch_master_shows_warning(self) -> None:
         """Warning shown when on master branch."""
