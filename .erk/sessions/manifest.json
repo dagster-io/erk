@@ -30,6 +30,25 @@
       "raw_size_kb": 1629,
       "xml_size_kb": 453,
       "git_branch": "plnd/O9318-rename-phase4-cli-fl-03-21-1602"
+    },
+    {
+      "session_id": "df1af858-ea77-4e02-90be-7ea6ebd56a9e",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T16:36:22.070419+00:00",
+      "files": [
+        "address-df1af858-ea77-4e02-90be-7ea6ebd56a9e-df1af858-ea77-4e02-90be-7ea6ebd56a9e-part1.xml",
+        "address-df1af858-ea77-4e02-90be-7ea6ebd56a9e-df1af858-ea77-4e02-90be-7ea6ebd56a9e-part2.xml",
+        "address-df1af858-ea77-4e02-90be-7ea6ebd56a9e-df1af858-ea77-4e02-90be-7ea6ebd56a9e-part3.xml",
+        "address-df1af858-ea77-4e02-90be-7ea6ebd56a9e-df1af858-ea77-4e02-90be-7ea6ebd56a9e-part4.xml",
+        "address-df1af858-ea77-4e02-90be-7ea6ebd56a9e-df1af858-ea77-4e02-90be-7ea6ebd56a9e-part5.xml",
+        "address-df1af858-ea77-4e02-90be-7ea6ebd56a9e-df1af858-ea77-4e02-90be-7ea6ebd56a9e-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 190,
+      "xml_size_kb": 130,
+      "git_branch": "plnd/O9318-rename-phase4-cli-fl-03-21-1602"
     }
   ]
 }
