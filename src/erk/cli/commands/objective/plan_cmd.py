@@ -735,7 +735,7 @@ def _handle_interactive(
     config = ia_config.with_overrides(
         permission_mode_override="plan",
         model_override=None,
-        dangerous_override=None,
+        dangerous_override=True if dangerous else None,
         allow_dangerous_override=allow_dangerous_override,
     )
 
