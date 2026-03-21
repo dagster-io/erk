@@ -5,11 +5,11 @@ from datetime import datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.core.plan_list_service import PrListData
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.console import FakeConsole
-from tests.fakes.gateway.core import FakePlanListService
+from tests.fakes.gateway.core import FakePrListService
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -38,10 +38,10 @@ def _make_plan(
     )
 
 
-def _make_plan_list_service(plans: list[Plan]) -> FakePlanListService:
-    """Create a FakePlanListService from a list of Plan objects."""
-    return FakePlanListService(
-        data=PlanListData(plans=plans, pr_linkages={}, workflow_runs={}),
+def _make_plan_list_service(plans: list[Plan]) -> FakePrListService:
+    """Create a FakePrListService from a list of Plan objects."""
+    return FakePrListService(
+        data=PrListData(plans=plans, pr_linkages={}, workflow_runs={}),
     )
 
 

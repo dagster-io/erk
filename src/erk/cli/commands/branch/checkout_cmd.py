@@ -30,7 +30,7 @@ from erk_shared.core.script_error import script_error_handler
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import Plan, PlanNotFound
+from erk_shared.plan_store.types import Plan, PrNotFound
 from erk_shared.plan_workflow import (
     PlanBranchSetup,
     PlanValidationFailed,
@@ -496,7 +496,7 @@ def _branch_checkout_impl(
     if for_pr is not None:
         pr_number = parse_issue_identifier(for_pr)
         result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
-        if isinstance(result, PlanNotFound):
+        if isinstance(result, PrNotFound):
             raise click.ClickException(f"PR #{pr_number} not found")
         plan = result
 

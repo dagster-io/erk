@@ -73,7 +73,7 @@ def test_skips_when_already_impl(tmp_path: Path) -> None:
 
 
 def test_skips_when_plan_not_found(tmp_path: Path) -> None:
-    """PlanNotFound result causes graceful return."""
+    """PrNotFound result causes graceful return."""
     ctx = context_for_test(cwd=tmp_path)
 
     # Should not raise

@@ -82,7 +82,7 @@ def test_outputs_valid_json() -> None:
         )
 
         # Use a separate FakeLocalGitHub for plan_store with no prs_by_branch,
-        # so ManagedGitHubPrBackend.get_plan_for_branch returns PlanNotFound
+        # so ManagedGitHubPrBackend.get_plan_for_branch returns PrNotFound
         # (matching original intent: no plan context for "feature" branch)
         plan_github = FakeLocalGitHub()
         ctx = build_workspace_test_context(

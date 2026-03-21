@@ -667,7 +667,7 @@ def test_pr_list_stage_filter() -> None:
 
 
 def test_pr_list_displays_enrichment_warnings() -> None:
-    """Test that enrichment warnings from PlanListData are displayed to the user."""
+    """Test that enrichment warnings from PrListData are displayed to the user."""
     plan = Plan(
         pr_identifier="1",
         title="Issue 1",

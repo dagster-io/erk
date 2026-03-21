@@ -54,7 +54,7 @@ from erk_shared.impl_folder import (
     resolve_impl_dir,
     write_local_run_state,
 )
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @dataclass(frozen=True)
@@ -404,7 +404,7 @@ def _signal_submitted(ctx: click.Context, session_id: str | None) -> None:
 
     # LBYL: Check plan exists before updating
     plan_result = backend.get_managed_pr(repo_root, plan_ref.pr_id)
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         _output_error(event, "plan-not-found", f"PR #{plan_ref.pr_id} not found")
         return
 

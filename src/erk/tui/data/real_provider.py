@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 class RealPrDataProvider(PrDataProvider):
     """Production implementation that assembles TUI display data.
 
-    Transforms PlanListData into PrRowData for TUI display.
+    Transforms PrListData into PrRowData for TUI display.
     Domain operations (close_pr, dispatch, etc.) are on PrService.
     """
 
@@ -114,7 +114,7 @@ class RealPrDataProvider(PrDataProvider):
                 http_client=self._http_client,
             )
         else:
-            plan_data = self._ctx.plan_list_service.get_plan_list_data(
+            plan_data = self._ctx.plan_list_service.get_pr_list_data(
                 location=self._location,
                 labels=list(filters.labels),
                 state=filters.state,

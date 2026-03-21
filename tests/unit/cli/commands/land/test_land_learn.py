@@ -251,7 +251,7 @@ def test_skips_for_erk_learn_plan(tmp_path: Path) -> None:
 
 
 def test_skips_when_plan_not_found(tmp_path: Path) -> None:
-    """Returns silently when get_plan returns PlanNotFound."""
+    """Returns silently when get_plan returns PrNotFound."""
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()

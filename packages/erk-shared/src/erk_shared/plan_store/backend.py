@@ -40,7 +40,7 @@ from erk_shared.learn.impl_events import (
     extract_learn_sessions,
 )
 from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanNotFound, PlanQuery
+from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PrNotFound
 from erk_shared.sessions.discovery import SessionsForPlan
 
 # ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ class ManagedPrBackend(ABC):
     # Read operations
 
     @abstractmethod
-    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PlanNotFound:
+    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PrNotFound:
         """Fetch a plan by identifier.
 
         Args:
@@ -80,7 +80,7 @@ class ManagedPrBackend(ABC):
             pr_number: Provider-specific identifier (e.g., "42", "PROJ-123")
 
         Returns:
-            Plan with all metadata, or PlanNotFound if the plan does not exist
+            Plan with all metadata, or PrNotFound if the plan does not exist
         """
         ...
 
@@ -115,7 +115,7 @@ class ManagedPrBackend(ABC):
         repo_root: Path,
         pr_number: str,
         field_name: str,
-    ) -> object | PlanNotFound:
+    ) -> object | PrNotFound:
         """Get a single metadata field from a plan.
 
         Args:
@@ -124,7 +124,7 @@ class ManagedPrBackend(ABC):
             field_name: Name of the metadata field to read
 
         Returns:
-            Field value (may be None if unset), or PlanNotFound if plan doesn't exist
+            Field value (may be None if unset), or PrNotFound if plan doesn't exist
         """
         ...
 
@@ -133,7 +133,7 @@ class ManagedPrBackend(ABC):
         self,
         repo_root: Path,
         pr_number: str,
-    ) -> dict[str, object] | PlanNotFound:
+    ) -> dict[str, object] | PrNotFound:
         """Get all metadata fields from the plan-header block.
 
         Args:
@@ -141,7 +141,7 @@ class ManagedPrBackend(ABC):
             pr_number: Provider-specific identifier
 
         Returns:
-            Dictionary of all metadata fields, or PlanNotFound if plan doesn't exist.
+            Dictionary of all metadata fields, or PrNotFound if plan doesn't exist.
             Returns empty dict if plan exists but has no metadata block.
         """
         ...
@@ -196,7 +196,7 @@ class ManagedPrBackend(ABC):
             RuntimeError: If plan not found
         """
         plan = self.get_managed_pr(repo_root, pr_number)
-        if isinstance(plan, PlanNotFound):
+        if isinstance(plan, PrNotFound):
             msg = f"Plan {pr_number} not found"
             raise RuntimeError(msg)
 
@@ -245,11 +245,11 @@ class ManagedPrBackend(ABC):
     # Branch → Plan resolution
 
     @abstractmethod
-    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
+    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PrNotFound:
         """Look up the plan associated with a branch.
 
         Resolves the branch name to a plan identifier and fetches the full plan.
-        Returns PlanNotFound if the branch is not a plan branch or the plan
+        Returns PrNotFound if the branch is not a plan branch or the plan
         doesn't exist.
 
         Args:
@@ -257,7 +257,7 @@ class ManagedPrBackend(ABC):
             branch_name: Git branch name (e.g., "plnd/fix-bug-01-15-1430")
 
         Returns:
-            Plan if found, PlanNotFound otherwise
+            Plan if found, PrNotFound otherwise
         """
         ...
 

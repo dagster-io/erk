@@ -114,7 +114,7 @@ def duplicate_check_plan(
         root=root,
         repo_id=repo_id,
     )
-    plan_data = ctx.plan_list_service.get_plan_list_data(
+    plan_data = ctx.plan_list_service.get_pr_list_data(
         location=location,
         labels=["erk-pr"],
         state="open",

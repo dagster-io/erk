@@ -57,7 +57,7 @@ from erk_shared.objective_fetch_context_result import (
     PRInfoDict,
     RoadmapContextDict,
 )
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 def _error_json(error: str) -> str:
@@ -182,7 +182,7 @@ def objective_fetch_context(
     # When --plan is provided, do direct plan lookup (skip branch-based discovery)
     if pr_number_arg is not None:
         plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))
-        if isinstance(plan_result, PlanNotFound):
+        if isinstance(plan_result, PrNotFound):
             click.echo(_error_json(f"PR #{pr_number_arg} not found"))
             raise SystemExit(1)
         pr_id = plan_result.pr_identifier
@@ -198,7 +198,7 @@ def objective_fetch_context(
 
         # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
         plan_result = plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
-        if isinstance(plan_result, PlanNotFound):
+        if isinstance(plan_result, PrNotFound):
             click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)
         pr_id = plan_result.pr_identifier

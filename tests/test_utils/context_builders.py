@@ -6,13 +6,13 @@ ErkContext with appropriate fake implementations.
 """
 
 from erk.core.context import ErkContext
-from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.core.plan_list_service import PrListData
 from erk_shared.gateway.git.dry_run import DryRunGit
 from erk_shared.gateway.github.real import RealLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo, WorkflowRun
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.types import Plan
-from tests.fakes.gateway.core import FakePlanListService
+from tests.fakes.gateway.core import FakePrListService
 from tests.fakes.gateway.git import FakeGit
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.shell import FakeShell
@@ -137,10 +137,10 @@ def build_fake_plan_list_service(
     pr_linkages: dict[int, list[PullRequestInfo]] | None = None,
     workflow_runs: dict[int, WorkflowRun | None] | None = None,
     warnings: tuple[str, ...] = (),
-) -> FakePlanListService:
-    """Build a FakePlanListService with pre-configured plan data."""
-    return FakePlanListService(
-        data=PlanListData(
+) -> FakePrListService:
+    """Build a FakePrListService with pre-configured plan data."""
+    return FakePrListService(
+        data=PrListData(
             plans=plans,
             pr_linkages=pr_linkages or {},
             workflow_runs=workflow_runs or {},

@@ -32,7 +32,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.impl_context import create_impl_context
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @click.command(name="create-impl-context-from-plan")
@@ -57,7 +57,7 @@ def create_impl_context_from_plan(
 
     # Fetch plan via ManagedPrBackend
     result = backend.get_managed_pr(repo_root, pr_id)
-    if isinstance(result, PlanNotFound):
+    if isinstance(result, PrNotFound):
         error_output = {
             "success": False,
             "error": "plan_not_found",

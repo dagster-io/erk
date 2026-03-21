@@ -34,7 +34,7 @@ from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.core import (
     FakeCodespaceRegistry,
     FakeObjectiveListService,
-    FakePlanListService,
+    FakePrListService,
     FakePromptExecutor,
     FakeScriptWriter,
 )
@@ -212,7 +212,7 @@ def context_for_test(
         agent_launcher=resolved_agent_launcher,
         script_writer=FakeScriptWriter(),
         codespace_registry=FakeCodespaceRegistry(),
-        plan_list_service=FakePlanListService(),
+        plan_list_service=FakePrListService(),
         objective_list_service=FakeObjectiveListService(data=None),
         cwd=resolved_cwd,
         repo=repo,

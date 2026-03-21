@@ -13,7 +13,7 @@ import click
 
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
@@ -42,7 +42,7 @@ def write_dispatch_metadata(
     # LBYL: Check plan exists before updating metadata
     pr_id = str(pr_number)
     plan_result = plan_backend.get_managed_pr(repo_root, pr_id)
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         raise RuntimeError(f"Plan #{pr_number} not found")
 
     plan_backend.ensure_plan_header(repo_root, pr_id)

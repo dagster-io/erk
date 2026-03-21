@@ -1,7 +1,7 @@
-"""Service for efficiently fetching plan list data via batched API calls.
+"""Service for efficiently fetching PR list data via batched API calls.
 
 Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
-All plans store last_dispatched_node_id in the plan-header metadata block.
+All PRs store last_dispatched_node_id in the plan-header metadata block.
 
 Performance optimization: When PR linkages are needed, uses unified GraphQL query via
 get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
@@ -13,8 +13,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from erk_shared.core.plan_list_service import PlanListData as PlanListData
-from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.plan_list_service import PrListData as PrListData
+from erk_shared.core.plan_list_service import PrListService
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -39,12 +39,12 @@ if TYPE_CHECKING:
     from erk_shared.gateway.http.abc import HttpClient
 
 
-class PlannedPRPlanListService(PlanListService):
-    """Plan list service for planned-PR-backed plans.
+class ManagedPrListService(PrListService):
+    """PR list service for managed-PR-backed plans.
 
     Uses a single GraphQL query to fetch draft PRs with the erk-pr label
     along with rich data (checks, review threads, merge status). Converts
-    results to PlanListData with fully populated PullRequestInfo for display.
+    results to PrListData with fully populated PullRequestInfo for display.
     """
 
     def __init__(self, github: LocalGitHub, *, time: Time) -> None:
@@ -57,7 +57,7 @@ class PlannedPRPlanListService(PlanListService):
         self._github = github
         self._time = time
 
-    def get_plan_list_data(
+    def get_pr_list_data(
         self,
         *,
         location: GitHubRepoLocation,
@@ -68,8 +68,8 @@ class PlannedPRPlanListService(PlanListService):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
-        """Fetch plan list data from draft PRs via direct HTTP calls.
+    ) -> PrListData:
+        """Fetch PR list data from draft PRs via direct HTTP calls.
 
         Args:
             location: GitHub repository location
@@ -82,9 +82,9 @@ class PlannedPRPlanListService(PlanListService):
             http_client: HTTP client for direct API calls
 
         Returns:
-            PlanListData with plans from draft PRs
+            PrListData with plans from draft PRs
         """
-        return self._get_plan_list_data_http(
+        return self._get_pr_list_data_http(
             http_client,
             location=location,
             labels=labels,
@@ -95,7 +95,7 @@ class PlannedPRPlanListService(PlanListService):
             exclude_labels=exclude_labels,
         )
 
-    def _get_plan_list_data_http(
+    def _get_pr_list_data_http(
         self,
         http_client: HttpClient,
         *,
@@ -106,8 +106,8 @@ class PlannedPRPlanListService(PlanListService):
         skip_workflow_runs: bool,
         creator: str | None,
         exclude_labels: list[str] | None,
-    ) -> PlanListData:
-        """Fetch plan list data via direct HTTP calls (no subprocess overhead).
+    ) -> PrListData:
+        """Fetch PR list data via direct HTTP calls (no subprocess overhead).
 
         Replicates the logic of list_plan_prs_with_details() but uses
         HttpClient.get_list() and HttpClient.graphql() directly.
@@ -147,7 +147,7 @@ class PlannedPRPlanListService(PlanListService):
 
         if not pr_items:
             t1 = self._time.monotonic()
-            return PlanListData(
+            return PrListData(
                 plans=[],
                 pr_linkages={},
                 workflow_runs={},
@@ -176,7 +176,7 @@ class PlannedPRPlanListService(PlanListService):
 
         warnings = _build_enrichment_warnings(unenriched_count, len(pr_details_list))
 
-        return PlanListData(
+        return PrListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,
@@ -328,16 +328,16 @@ def _build_enrichment_warnings(unenriched_count: int, total_count: int) -> tuple
     )
 
 
-class RealPlanListService(PlanListService):
-    """Service for efficiently fetching plan list data.
+class RealPrListService(PrListService):
+    """Service for efficiently fetching PR list data.
 
     Composes GitHub and GitHubIssues integrations to batch fetch all data
-    needed for plan listing. Uses GraphQL nodes(ids: [...]) for efficient
+    needed for PR listing. Uses GraphQL nodes(ids: [...]) for efficient
     batch lookup of workflow runs by node_id.
     """
 
     def __init__(self, github: LocalGitHub, github_issues: GitHubIssues, *, time: Time) -> None:
-        """Initialize PlanListService with required integrations.
+        """Initialize PrListService with required integrations.
 
         Args:
             github: GitHub integration for PR and workflow operations
@@ -348,7 +348,7 @@ class RealPlanListService(PlanListService):
         self._github_issues = github_issues
         self._time = time
 
-    def get_plan_list_data(
+    def get_pr_list_data(
         self,
         *,
         location: GitHubRepoLocation,
@@ -359,8 +359,8 @@ class RealPlanListService(PlanListService):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
-        """Batch fetch all data needed for plan listing.
+    ) -> PrListData:
+        """Batch fetch all data needed for PR listing.
 
         Args:
             location: GitHub repository location (local root + repo identity)
@@ -375,7 +375,7 @@ class RealPlanListService(PlanListService):
             http_client: HTTP client (accepted for interface consistency)
 
         Returns:
-            PlanListData containing plans, PR linkages, and workflow runs
+            PrListData containing plans, PR linkages, and workflow runs
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
         t0 = self._time.monotonic()
@@ -422,7 +422,7 @@ class RealPlanListService(PlanListService):
         plan_parsing_ms = (t2 - t1) * 1000
         workflow_runs_ms = (t3 - t2) * 1000
 
-        return PlanListData(
+        return PrListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,

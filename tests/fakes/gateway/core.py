@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from erk_shared.context.types import PermissionMode
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PlanListData, PlanListService
+from erk_shared.core.plan_list_service import PrListData, PrListService
 from erk_shared.core.prompt_executor import (
     ExecutorEvent,
     PromptExecutor,
@@ -262,16 +262,16 @@ class FakeCodespaceRegistry(CodespaceRegistry):
             self.default_name = None
 
 
-class FakePlanListService(PlanListService):
-    """Fake PlanListService for testing.
+class FakePrListService(PrListService):
+    """Fake PrListService for testing.
 
     Returns pre-configured data.
     """
 
-    def __init__(self, data: PlanListData | None = None) -> None:
-        self._data = data or PlanListData(plans=[], pr_linkages={}, workflow_runs={})
+    def __init__(self, data: PrListData | None = None) -> None:
+        self._data = data or PrListData(plans=[], pr_linkages={}, workflow_runs={})
 
-    def get_plan_list_data(
+    def get_pr_list_data(
         self,
         *,
         location: GitHubRepoLocation,
@@ -282,7 +282,7 @@ class FakePlanListService(PlanListService):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
+    ) -> PrListData:
         plans = list(self._data.plans)
 
         # State filtering
@@ -304,7 +304,7 @@ class FakePlanListService(PlanListService):
         if limit is not None:
             plans = plans[:limit]
 
-        return PlanListData(
+        return PrListData(
             plans=plans,
             pr_linkages=self._data.pr_linkages,
             workflow_runs=self._data.workflow_runs,
@@ -318,8 +318,8 @@ class FakeObjectiveListService(ObjectiveListService):
     Returns pre-configured data.
     """
 
-    def __init__(self, *, data: PlanListData | None) -> None:
-        self._data = data or PlanListData(plans=[], pr_linkages={}, workflow_runs={})
+    def __init__(self, *, data: PrListData | None) -> None:
+        self._data = data or PrListData(plans=[], pr_linkages={}, workflow_runs={})
 
     def get_objective_list_data(
         self,
@@ -331,5 +331,5 @@ class FakeObjectiveListService(ObjectiveListService):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
+    ) -> PrListData:
         return self._data

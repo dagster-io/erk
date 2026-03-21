@@ -16,7 +16,7 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_confirm, user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 from erk_shared.sessions.discovery import (
     find_local_sessions_for_project,
     get_readable_sessions,
@@ -250,7 +250,7 @@ def _get_learn_materials_branch(
         Branch name if found on the plan header, None otherwise
     """
     result = ctx.plan_backend.get_metadata_field(repo_root, pr_id, "learn_materials_branch")
-    if isinstance(result, PlanNotFound):
+    if isinstance(result, PrNotFound):
         return None
     if not isinstance(result, str):
         return None
