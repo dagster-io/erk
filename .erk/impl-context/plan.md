@@ -39,7 +39,7 @@
 
 ### Stale Documentation (Must Fix)
 1. **`docs/learned/planning/next-steps-output.md`** — References `PlanNextSteps` (now `PrNextSteps`), `format_plan_next_steps_plain` (now `format_pr_next_steps_plain`), and `erk br co --for-plan` (now `erk slot co`)
-2. **`docs/learned/erk/slot-pool-architecture.md`** — References `src/erk/cli/commands/slot/common.py` (moved to `src/erk/core/slot_allocation.py`), mentions removed `--new-slot` flag
+2. **`docs/learned/erk/slot-pool-architecture.md`** — References `src/erk/cli/commands/slot/common.py` (moved to `packages/erk-slots/src/erk_slots/common.py`), mentions removed `--new-slot` flag
 3. **`docs/learned/cli/erk-exec-commands.md`** — Line 14 tripwire says "use 'plan' terminology" but should say "use 'PR' terminology"
 
 ### New Documentation Needed
@@ -70,14 +70,14 @@
 **File:** `docs/learned/erk/slot-pool-architecture.md`
 
 **Changes:**
-- Update all references from `src/erk/cli/commands/slot/common.py` → `src/erk/core/slot_allocation.py`
+- Update all references from `src/erk/cli/commands/slot/common.py` → `packages/erk-slots/src/erk_slots/common.py`
 - Remove `--new-slot` flag documentation (lines ~178-183)
 - Add note about slot commands living in `packages/erk-slots/` package
 - Add note about naming utilities in `packages/erk-shared/src/erk_shared/slots/naming.py`
 - Document conditional loading pattern (`importlib.util.find_spec()` in `src/erk/cli/cli.py`)
 
 **Source files:**
-- `src/erk/core/slot_allocation.py` (moved allocation logic)
+- `packages/erk-slots/src/erk_slots/common.py` (moved allocation logic)
 - `packages/erk-slots/` (package structure)
 - `packages/erk-shared/src/erk_shared/slots/naming.py` (pure naming utilities)
 - `packages/erk-shared/src/erk_shared/cli_alias.py` (extracted from erk)
@@ -106,10 +106,12 @@
 1. Problem: Pipe characters (`|`) in objective roadmap cell content break markdown table rendering
 2. Solution: `escape_md_table_cell()` utility in `erk_shared.gateway.github.metadata.roadmap`
 3. What it escapes: pipes (`|` → `\|`) and newlines (→ space)
-4. Where applied: `roadmap.py` rendering and `objective_render_roadmap.py` exec script
+4. Where applied: `render_roadmap_tables()` applies `escape_md_table_cell()` to every cell when building roadmap table rows
 5. Tripwire: Always use `escape_md_table_cell()` when rendering user-provided text in markdown tables
 
 **Source:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+
+**IMPORTANT:** Use source pointer format (per `docs/learned/documentation/source-pointers.md`) instead of copying verbatim code blocks from `roadmap.py`. Reference the function location rather than inlining its implementation.
 
 **Verification:** Function exists and tests pass in `test_roadmap.py`
 
