@@ -190,7 +190,7 @@ def test_slot_assign_uses_config_pool_size() -> None:
         )
 
         # Configure pool size of 2
-        local_config = LoadedConfig.test(pool_size=2)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
 
         # Fill the pool with 2 branches
@@ -249,7 +249,7 @@ def test_slot_assign_force_unassigns_oldest() -> None:
         )
         save_pool_state(repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
 
         # Try to assign with --force
@@ -313,7 +313,7 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
         )
         save_pool_state(repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         # Console must be non-interactive to test the non-TTY failure path
         console = FakeConsole(
             is_interactive=False, is_stdout_tty=None, is_stderr_tty=None, confirm_responses=None
@@ -412,7 +412,7 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
         )
         save_pool_state(repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
 
         # Assign with --force to reuse the worktree

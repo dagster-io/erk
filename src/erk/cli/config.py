@@ -65,18 +65,6 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         github_repo = plans_section.get("repo")
     if github_repo is not None:
         github_repo = str(github_repo)
-    # Parse [pool] section
-    pool = data.get("pool", {})
-    pool_size = pool.get("max_slots")
-    if pool_size is not None:
-        pool_size = int(pool_size)
-
-    # Parse [pool.checkout] section
-    pool_checkout = pool.get("checkout", {})
-    pool_checkout_commands = [str(x) for x in pool_checkout.get("commands", [])]
-    pool_checkout_shell = pool_checkout.get("shell")
-    if pool_checkout_shell is not None:
-        pool_checkout_shell = str(pool_checkout_shell)
 
     # Parse overridable global keys
     prompt_learn_on_land: bool | None = None
@@ -109,9 +97,6 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         post_create_commands=commands,
         post_create_shell=shell,
         github_repo=github_repo,
-        pool_size=pool_size,
-        pool_checkout_commands=pool_checkout_commands,
-        pool_checkout_shell=pool_checkout_shell,
         prompt_learn_on_land=prompt_learn_on_land,
         dispatch_ref=dispatch_ref,
         docs_path=docs_path,
@@ -197,9 +182,6 @@ def load_config(repo_root: Path) -> LoadedConfig:
         post_create_commands=[],
         post_create_shell=None,
         github_repo=None,
-        pool_size=None,
-        pool_checkout_commands=[],
-        pool_checkout_shell=None,
         prompt_learn_on_land=None,
         dispatch_ref=None,
         docs_path=None,
@@ -231,9 +213,6 @@ def load_local_config(repo_root: Path) -> LoadedConfig:
         post_create_commands=[],
         post_create_shell=None,
         github_repo=None,
-        pool_size=None,
-        pool_checkout_commands=[],
-        pool_checkout_shell=None,
         prompt_learn_on_land=None,
         dispatch_ref=None,
         docs_path=None,
@@ -308,9 +287,6 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         post_create_commands=merged_commands,
         post_create_shell=merged_shell,
         github_repo=repo_config.github_repo,
-        pool_size=repo_config.pool_size,  # Pool is repo-level only, no project override
-        pool_checkout_commands=repo_config.pool_checkout_commands,
-        pool_checkout_shell=repo_config.pool_checkout_shell,
         # Repo-level only, no project override
         prompt_learn_on_land=repo_config.prompt_learn_on_land,
         dispatch_ref=repo_config.dispatch_ref,
@@ -356,17 +332,6 @@ def merge_configs_with_local(
             local_config.github_repo
             if local_config.github_repo is not None
             else base_config.github_repo
-        ),
-        pool_size=(
-            local_config.pool_size if local_config.pool_size is not None else base_config.pool_size
-        ),
-        pool_checkout_commands=(
-            base_config.pool_checkout_commands + local_config.pool_checkout_commands
-        ),
-        pool_checkout_shell=(
-            local_config.pool_checkout_shell
-            if local_config.pool_checkout_shell is not None
-            else base_config.pool_checkout_shell
         ),
         prompt_learn_on_land=(
             local_config.prompt_learn_on_land

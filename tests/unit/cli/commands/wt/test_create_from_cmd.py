@@ -260,7 +260,7 @@ def test_create_from_force_unassigns_oldest(tmp_path) -> None:
         )
         save_pool_state(repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
 
         result = runner.invoke(
@@ -326,7 +326,7 @@ def test_create_from_pool_full_non_tty_fails() -> None:
         )
         save_pool_state(repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         console = FakeConsole(
             is_interactive=False, is_stdout_tty=None, is_stderr_tty=None, confirm_responses=None
         )

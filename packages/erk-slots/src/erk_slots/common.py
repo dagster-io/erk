@@ -15,11 +15,11 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import IMPL_DIR_RELATIVE
 from erk_shared.output.output import user_output
 from erk_shared.slots.naming import (
-    DEFAULT_POOL_SIZE,
     extract_slot_number,
     generate_slot_name,
     is_placeholder_branch,
 )
+from erk_slots.config import load_pool_config
 
 
 @dataclass(frozen=True)
@@ -35,14 +35,13 @@ def get_pool_size(ctx: ErkContext) -> int:
     """Get effective pool size from config or default.
 
     Args:
-        ctx: Current erk context with local_config
+        ctx: Current erk context
 
     Returns:
-        Configured pool size or DEFAULT_POOL_SIZE if not set
+        Configured pool size from .erk/config.toml or DEFAULT_POOL_SIZE if not set
     """
-    if ctx.local_config is not None and ctx.local_config.pool_size is not None:
-        return ctx.local_config.pool_size
-    return DEFAULT_POOL_SIZE
+    pool_cfg = load_pool_config(ctx.repo_root)
+    return pool_cfg.pool_size
 
 
 def find_next_available_slot(state: PoolState, worktrees_dir: Path | None) -> int | None:

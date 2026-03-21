@@ -12,7 +12,6 @@ from erk.core.worktree_pool import (
 )
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_slots.common import (
-    DEFAULT_POOL_SIZE,
     find_assignment_by_worktree,
     find_current_slot_assignment,
     find_inactive_slot,
@@ -22,6 +21,7 @@ from erk_slots.common import (
     is_slot_initialized,
     sync_pool_assignments,
 )
+from erk_slots.config import DEFAULT_POOL_SIZE
 from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.test_context import context_for_test
 
@@ -45,17 +45,31 @@ class TestGetPoolSize:
 
         assert result == DEFAULT_POOL_SIZE
 
-    def test_returns_configured_pool_size(self) -> None:
+    def test_returns_configured_pool_size(self, tmp_path: Path) -> None:
         """Returns configured pool_size when set."""
-        ctx = context_for_test(local_config=LoadedConfig.test(pool_size=8))
+        # Create config file with pool size
+        config_dir = tmp_path / ".erk"
+        config_dir.mkdir(parents=True)
+        config_file = config_dir / "config.toml"
+        config_file.write_text("[pool]\nmax_slots = 8\n", encoding="utf-8")
+
+        ctx = context_for_test()
+        ctx = ctx.with_overrides(repo_root=tmp_path)
 
         result = get_pool_size(ctx)
 
         assert result == 8
 
-    def test_returns_small_pool_size(self) -> None:
+    def test_returns_small_pool_size(self, tmp_path: Path) -> None:
         """Returns small configured pool_size."""
-        ctx = context_for_test(local_config=LoadedConfig.test(pool_size=2))
+        # Create config file with pool size
+        config_dir = tmp_path / ".erk"
+        config_dir.mkdir(parents=True)
+        config_file = config_dir / "config.toml"
+        config_file.write_text("[pool]\nmax_slots = 2\n", encoding="utf-8")
+
+        ctx = context_for_test()
+        ctx = ctx.with_overrides(repo_root=tmp_path)
 
         result = get_pool_size(ctx)
 

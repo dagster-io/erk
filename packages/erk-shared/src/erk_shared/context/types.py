@@ -281,9 +281,6 @@ class LoadedConfig:
     post_create_commands: list[str]
     post_create_shell: str | None
     github_repo: str | None
-    pool_size: int | None  # None = use default
-    pool_checkout_commands: list[str]  # Commands to run after pooled checkout
-    pool_checkout_shell: str | None  # Shell to use for checkout commands
     # Overridable global keys (can be set at repo or local level to override global config)
     prompt_learn_on_land: bool | None  # None = not set at this level, use global
     dispatch_ref: str | None  # None = use default branch for workflow dispatch
@@ -299,9 +296,6 @@ class LoadedConfig:
         post_create_commands: list[str] | None = None,
         post_create_shell: str | None = None,
         github_repo: str | None = None,
-        pool_size: int | None = None,
-        pool_checkout_commands: list[str] | None = None,
-        pool_checkout_shell: str | None = None,
         prompt_learn_on_land: bool | None = None,
         dispatch_ref: str | None = None,
         docs_path: str | None = None,
@@ -314,11 +308,6 @@ class LoadedConfig:
             post_create_commands=post_create_commands if post_create_commands is not None else [],
             post_create_shell=post_create_shell,
             github_repo=github_repo,
-            pool_size=pool_size,
-            pool_checkout_commands=(
-                pool_checkout_commands if pool_checkout_commands is not None else []
-            ),
-            pool_checkout_shell=pool_checkout_shell,
             prompt_learn_on_land=prompt_learn_on_land,
             dispatch_ref=dispatch_ref,
             docs_path=docs_path,

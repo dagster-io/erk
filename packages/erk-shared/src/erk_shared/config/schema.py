@@ -131,23 +131,6 @@ class RepoConfigSchema(BaseModel):
             "special": "pyproject",  # Lives in pyproject.toml
         },
     )
-    pool_max_slots: int | None = Field(
-        description="Maximum number of pool slots for worktree pool",
-        json_schema_extra={
-            "level": ConfigLevel.REPO_ONLY,
-            "cli_key": "pool.max_slots",
-            "dataclass_attr": "pool_size",
-            "default_display": 4,
-        },
-    )
-    pool_checkout_shell: str | None = Field(
-        description="Shell to use for pool checkout commands",
-        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "pool.checkout.shell"},
-    )
-    pool_checkout_commands: list[str] = Field(
-        description="Commands to run after checking out a worktree from pool",
-        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "pool.checkout.commands"},
-    )
     env: dict[str, str] = Field(
         description="Environment variables to set in worktrees",
         json_schema_extra={
