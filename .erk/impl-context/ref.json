@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Delete dead and test-only functions from plan_header.py; refactor update functions with _update_plan_header helper"
+}
