@@ -1,0 +1,182 @@
+<session>
+  <meta source="agent-a0452a8" />
+  <meta branch="plnd/O9318-rename-plan-context-03-21-1236" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py`:
+
+Rename all occurrences of `PlanContext` to `PrContext`.
+
+This includes:
+- Class definition: `class PlanContext:` → `class PrContext:`
+- All references to the class by name
+- The class docstring: change "Context from an erk plan" to "Context from an erk PR"
+
+DO NOT rename:
+- `PlanContextProvider` (that class is NOT being renamed in this node)
+- Any method/variable names that don't contain "PlanContext" exactly
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename `PlanContext` to `PrContext` in that file. Let me start by reading the file to see all occurrences.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16137, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q41MTnV6zyXyi7yyHA8Xa2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16137, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q41MTnV6zyXyi7yyHA8Xa2">
+     1→"""Plan context provider for PR description generation.
+     2→
+     3→This module provides plan context for branches linked to plans,
+     4→enabling more accurate PR descriptions that understand the "why" behind changes.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueNotFound
+    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    12→from erk_shared.plan_store.backend import ManagedPrBackend
+    13→from erk_shared.plan_store.types import PrNotFound
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class PlanContext:
+    18→    """Context from an erk plan for PR generation.
+    19→
+    20→    Attributes:
+    21→        pr_id: The PR identifier (e.g., "123" for PR numbers)
+    22→        plan_content: The full plan markdown content
+    23→        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
+    24→    """
+    25→
+    26→    pr_id: str
+    27→    plan_content: str
+    28→    objective_summary: str | None
+    29→
+    30→
+
+... [68 lines omitted] ...
+
+    59→        Returns None on any failure, allowing graceful degradation for
+  </tool_result>
+  <assistant>Now I'll rename all occurrences of `PlanContext` to `PrContext`. I can see the following changes needed:
+
+1. Line 17: Class definition `class PlanContext:` → `class PrContext:`
+2. Line 18: Docstring change from "Context from an erk plan" → "Context from an erk PR"
+3. Line 52: Return type `PlanContext | None` → `PrContext | None`
+4. Line 72: Instance creation `PlanContext(` → `PrContext(`
+
+Let me apply these edits:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="7352" cache_read_input_tokens="10103" cache_creation="{'ephemeral_5m_input_tokens': 7352, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V3zTKA8yDbR2KqXNBWatEb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py</param>
+    <param name="old_string">@dataclass(frozen=True)
+class PlanContext:
+    """Context from an erk plan for PR generation.</param>
+    <param name="new_string">@dataclass(frozen=True)
+class PrContext:
+    """Context from an erk PR for PR generation.</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="7352" cache_read_input_tokens="10103" cache_creation="{'ephemeral_5m_input_tokens': 7352, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V3zTKA8yDbR2KqXNBWatEb">
+The file /home/runner/work/erk/erk/src/erk/core/plan_context_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013pRzYu9G77E1ivd7GeVnJb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py</param>
+    <param name="old_string">    def get_plan_context(
+        self,
+        *,
+        repo_root: Path,
+        branch_name: str,
+        owner: str,
+        repo: str,
+    ) -&gt; PlanContext | None:</param>
+    <param name="new_string">    def get_plan_context(
+        self,
+        *,
+        repo_root: Path,
+        branch_name: str,
+        owner: str,
+        repo: str,
+    ) -&gt; PrContext | None:</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="347" cache_read_input_tokens="17455" cache_creation="{'ephemeral_5m_input_tokens': 347, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013pRzYu9G77E1ivd7GeVnJb">
+The file /home/runner/work/erk/erk/src/erk/core/plan_context_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016LARB6EA2aNuvBoNmgSeFn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py</param>
+    <param name="old_string">        return PlanContext(
+            pr_id=result.pr_identifier,
+            plan_content=result.body,
+            objective_summary=objective_summary,
+        )</param>
+    <param name="new_string">        return PrContext(
+            pr_id=result.pr_identifier,
+            plan_content=result.body,
+            objective_summary=objective_summary,
+        )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="267" cache_read_input_tokens="17802" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016LARB6EA2aNuvBoNmgSeFn">
+The file /home/runner/work/erk/erk/src/erk/core/plan_context_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes were applied correctly:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="243" cache_read_input_tokens="18069" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018fPLqUmrJMT3zyUpP3yGfv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="243" cache_read_input_tokens="18069" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018fPLqUmrJMT3zyUpP3yGfv">
+     1→"""Plan context provider for PR description generation.
+     2→
+     3→This module provides plan context for branches linked to plans,
+     4→enabling more accurate PR descriptions that understand the "why" behind changes.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.github.issues.types import IssueNotFound
+    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    12→from erk_shared.plan_store.backend import ManagedPrBackend
+    13→from erk_shared.plan_store.types import PrNotFound
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class PrContext:
+    18→    """Context from an erk PR for PR generation.
+    19→
+    20→    Attributes:
+    21→        pr_id: The PR identifier (e.g., "123" for PR numbers)
+    22→        plan_content: The full plan markdown content
+    23→        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
+    24→    """
+    25→
+    26→    pr_id: str
+    27→    plan_content: str
+    28→    objective_summary: str | None
+    29→
+    30→
+
+... [68 lines omitted] ...
+
+    59→        Returns None on any failure, allowing graceful degradation for
+  </tool_result>
+  <assistant>Excellent! All renaming has been completed successfully. Here's a summary of the changes made to `/home/runner/work/erk/erk/src/erk/core/plan_context_provider.py`:
+
+**Changes Applied:**
+
+1. **Line 17**: Class definition renamed from `class PlanContext:` to `class PrContext:`
+2. **Line 18**: Docstring updated from "Context from an erk plan" to "Context from an erk PR"
+3. **Line 52**: Return type annotation updated from `PlanContext | None` to `PrContext | None`
+4. **Line 72**: Instance creation updated from `PlanContext(` to `PrContext(`
+
+**Preserved:**
+
+- `PlanContextProvider` class name remains unchanged (line 31)
+- All method and variable names remain unchanged
+- All other references to "plan" in docstrings and comments remain intact
+
+The file has been successfully refactored with all `PlanContext` occurrences renamed to `PrContext` as requested.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1400" cache_read_input_tokens="18312" cache_creation="{'ephemeral_5m_input_tokens': 1400, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

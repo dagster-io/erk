@@ -1,0 +1,117 @@
+<session>
+  <meta source="agent-a1c8989" />
+  <meta branch="plnd/O9318-rename-plan-context-03-21-1236" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In the file `/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py`:
+
+Rename all occurrences of `PlanContext` to `PrContext`.
+
+This includes:
+- The import: `from erk.core.plan_context_provider import PlanContext, PlanContextProvider` → change `PlanContext` to `PrContext`
+- All uses of `PlanContext(` as a constructor call → `PrContext(`
+- All type annotations referencing `PlanContext`
+- The test function `test_plan_context_dataclass_frozen` references `PlanContext` — update the constructor call inside
+
+DO NOT rename:
+- `PlanContextProvider` (that class is NOT being renamed)
+- The module path `plan_context_provider`
+- Variable names like `plan_context` (lowercase)
+- Test function names (they don't contain "PlanContext" in uppercase)
+
+Read the file first, then apply all renames using the Edit tool.</user>
+  <assistant>I'll help you rename `PlanContext` to `PrContext` in that file. Let me start by reading the file to see all occurrences.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6105" cache_read_input_tokens="10103" cache_creation="{'ephemeral_5m_input_tokens': 6105, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AxZYystJywmZzRPnysw68C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6105" cache_read_input_tokens="10103" cache_creation="{'ephemeral_5m_input_tokens': 6105, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AxZYystJywmZzRPnysw68C">
+     1→"""Tests for PlanContextProvider."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+     7→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+     8→from erk_shared.gateway.github.metadata.plan_header import (
+     9→    format_plan_content_comment,
+    10→    format_plan_header_body,
+    11→)
+    12→from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
+    13→from tests.fakes.gateway.github import FakeLocalGitHub
+    14→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    15→from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+    16→from tests.fakes.gateway.time import FakeTime
+    17→
+    18→
+    19→def _make_issue_info(
+    20→    *,
+    21→    number: int,
+    22→    title: str,
+    23→    body: str,
+    24→) -&gt; IssueInfo:
+    25→    """Create an IssueInfo for testing."""
+    26→    now = datetime.now(UTC)
+    27→    return IssueInfo(
+    28→        number=number,
+    29→        title=title,
+    30→        body=body,
+
+... [419 lines omitted] ...
+
+   441→        raise AssertionError("Expected FrozenInstanceError")
+   442→    except AttributeError:
+  </tool_result>
+  <assistant>Now I'll apply the renames. I can see that `PlanContext` appears in:
+1. Line 6: import statement
+2. Line 429: constructor call in test function
+
+Let me make these edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="10552" cache_read_input_tokens="16208" cache_creation="{'ephemeral_5m_input_tokens': 10552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012e7sPh3hHRg9S7xbuBwBXP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py</param>
+    <param name="old_string">from erk.core.plan_context_provider import PlanContext, PlanContextProvider</param>
+    <param name="new_string">from erk.core.plan_context_provider import PrContext, PlanContextProvider</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10552" cache_read_input_tokens="16208" cache_creation="{'ephemeral_5m_input_tokens': 10552, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012e7sPh3hHRg9S7xbuBwBXP">
+The file /home/runner/work/erk/erk/tests/core/test_plan_context_provider.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015nGPxuztQacj8wYTtXbdrn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py</param>
+    <param name="old_string">def test_plan_context_dataclass_frozen() -&gt; None:
+    """Test that PlanContext is immutabl...[truncated 53 chars]...        plan_content="Plan content",
+        objective_summary="Objective #1: Test",
+    )</param>
+    <param name="new_string">def test_plan_context_dataclass_frozen() -&gt; None:
+    """Test that PrContext is immutable ...[truncated 49 chars]...        plan_content="Plan content",
+        objective_summary="Objective #1: Test",
+    )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="249" cache_read_input_tokens="26760" cache_creation="{'ephemeral_5m_input_tokens': 249, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015nGPxuztQacj8wYTtXbdrn">
+The file /home/runner/work/erk/erk/tests/core/test_plan_context_provider.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully renamed all occurrences of `PlanContext` to `PrContext` in the file. Here's a summary of the changes:
+
+## Changes Made
+
+I updated `/home/runner/work/erk/erk/tests/core/test_plan_context_provider.py` with the following renames:
+
+1. **Line 6 - Import statement:**
+   - Changed: `from erk.core.plan_context_provider import PlanContext, PlanContextProvider`
+   - To: `from erk.core.plan_context_provider import PrContext, PlanContextProvider`
+
+2. **Line 428-429 - Docstring and constructor call in `test_plan_context_dataclass_frozen()`:**
+   - Changed docstring: `"""Test that PlanContext is immutable (frozen dataclass)."""`
+   - To: `"""Test that PrContext is immutable (frozen dataclass)."""`
+   - Changed constructor: `context = PlanContext(`
+   - To: `context = PrContext(`
+
+All other references were left unchanged as requested:
+- `PlanContextProvider` class name remains unchanged
+- The module path `plan_context_provider` remains unchanged
+- Variable names like `plan_context` (lowercase) remain unchanged
+- Test function names remain unchanged</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="305" cache_read_input_tokens="27009" cache_creation="{'ephemeral_5m_input_tokens': 305, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
