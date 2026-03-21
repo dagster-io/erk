@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9327,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T11:22:04.705454+00:00",
+      "files": [
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part1.xml",
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part2.xml",
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part3.xml",
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part4.xml",
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part5.xml",
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part6.xml",
+        "impl--727ad7b2-3c6f-45c7-990c-900a3c784f1b-part7.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 5,
+      "raw_size_kb": 251,
+      "xml_size_kb": 85,
+      "git_branch": "plnd/add-slot-goto-03-21-1114"
+    }
+  ]
+}
