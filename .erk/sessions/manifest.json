@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9385,
+  "sessions": [
+    {
+      "session_id": "9bfdaeba-5e2f-4c19-9c87-89f32b0b8046",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T15:41:22.412866+00:00",
+      "files": [
+        "impl-9bfdaeba-5e2f-4c19-9c87-89f32b0b8046-9bfdaeba-5e2f-4c19-9c87-89f32b0b8046.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 2,
+      "raw_size_kb": 372,
+      "xml_size_kb": 41,
+      "git_branch": "plnd/fix-dispatch-pr-backend-in-03-21-1536"
+    }
+  ]
+}
