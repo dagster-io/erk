@@ -25,7 +25,7 @@ class PrNextSteps:
 
     @property
     def checkout_new_wt(self) -> str:
-        return f"erk slot co {self.branch_name}"
+        return f"source <(erk slot co {self.branch_name} --script)"
 
     @property
     def dispatch_slash_command(self) -> str:
@@ -41,11 +41,11 @@ class PrNextSteps:
 
     @property
     def implement_new_wt(self) -> str:
-        return f"erk slot co {self.branch_name} && erk implement"
+        return f"source <(erk slot co {self.branch_name} --script) && erk implement"
 
     @property
     def implement_new_wt_dangerous(self) -> str:
-        return f"erk slot co {self.branch_name} && erk implement -d"
+        return f"source <(erk slot co {self.branch_name} --script) && erk implement -d"
 
 
 # Slash commands (static, don't need plan number)

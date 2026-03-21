@@ -32,7 +32,7 @@ class TestPrNextSteps:
 
     def test_checkout_new_wt(self) -> None:
         steps = _steps()
-        assert steps.checkout_new_wt == "erk slot co plnd/my-feature"
+        assert steps.checkout_new_wt == "source <(erk slot co plnd/my-feature --script)"
 
     def test_implement_current_wt(self) -> None:
         steps = _steps()
@@ -47,11 +47,17 @@ class TestPrNextSteps:
 
     def test_implement_new_wt(self) -> None:
         steps = _steps()
-        assert steps.implement_new_wt == "erk slot co plnd/my-feature && erk implement"
+        assert (
+            steps.implement_new_wt
+            == "source <(erk slot co plnd/my-feature --script) && erk implement"
+        )
 
     def test_implement_new_wt_dangerous(self) -> None:
         steps = _steps()
-        assert steps.implement_new_wt_dangerous == "erk slot co plnd/my-feature && erk implement -d"
+        assert (
+            steps.implement_new_wt_dangerous
+            == "source <(erk slot co plnd/my-feature --script) && erk implement -d"
+        )
 
     def test_dispatch_slash_command(self) -> None:
         steps = _steps()
@@ -61,7 +67,7 @@ class TestPrNextSteps:
 class TestFormatPrNextStepsPlain:
     def test_contains_slot_co_command(self) -> None:
         output = format_pr_next_steps_plain(42, url=_URL, branch_name=_BRANCH)
-        assert "erk slot co plnd/my-feature" in output
+        assert "source <(erk slot co plnd/my-feature --script)" in output
 
     def test_hierarchical_format(self) -> None:
         output = format_pr_next_steps_plain(42, url=_URL, branch_name=_BRANCH)
