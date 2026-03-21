@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix inaccurate \"dedicated worktree\" copy in exit plan mode hook"
+  "pr_id": "9311",
+  "url": "https://github.com/dagster-io/erk/pull/9311",
+  "created_at": "2026-03-20T20:00:30.687842",
+  "synced_at": "2026-03-20T20:00:30.687842",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
