@@ -165,13 +165,9 @@ def pr_teleport(
             raise SystemExit(0)
 
         if new_slot:
-            _execute_new_slot_teleport(
-                ctx, repo, plan=teleport_plan, force=force, script=script
-            )
+            _execute_new_slot_teleport(ctx, repo, plan=teleport_plan, force=force, script=script)
         else:
-            _execute_in_place_teleport(
-                ctx, repo, plan=teleport_plan, force=force, script=script
-            )
+            _execute_in_place_teleport(ctx, repo, plan=teleport_plan, force=force, script=script)
 
 
 def _navigate_to_existing_worktree(
@@ -415,9 +411,7 @@ def _execute_new_slot_teleport(
 ) -> None:
     """Execute the mutations for a new-slot teleport."""
     # Fetch and force-update local branch to match remote
-    _fetch_and_update_branch(
-        ctx, repo, branch_name=plan.branch_name, pr_number=plan.pr_number
-    )
+    _fetch_and_update_branch(ctx, repo, branch_name=plan.branch_name, pr_number=plan.pr_number)
 
     # Register with Graphite (track/retrack for all PRs, fetch base for stacked)
     _register_with_graphite(
@@ -473,12 +467,7 @@ def _display_dry_run_report(plan: TeleportPlan) -> None:
     click.echo(f"\nDry run: erk pr teleport {plan.pr_number}")
 
     # Local state section (only for in-place when there's something to report)
-    has_local_state = (
-        plan.ahead > 0
-        or plan.staged
-        or plan.modified
-        or plan.untracked
-    )
+    has_local_state = plan.ahead > 0 or plan.staged or plan.modified or plan.untracked
     if has_local_state:
         click.echo(click.style("\n  Local state that would be discarded:", bold=True))
         if plan.ahead > 0:
