@@ -19,7 +19,7 @@ from erk.cli.commands.navigation_helpers import (
     find_assignment_by_worktree_path,
     validate_for_deletion,
 )
-from erk.cli.core import worktree_path_for
+from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.display_utils import copy_to_clipboard_osc52
@@ -420,8 +420,6 @@ def execute_stack_navigation(
     Raises:
         SystemExit: Always exits with 0 on success or 1 on error
     """
-    from erk.cli.core import discover_repo_context
-
     # Validate preconditions upfront (LBYL)
     Ensure.invariant(count >= 1, "Count must be at least 1")
     Ensure.invariant(
