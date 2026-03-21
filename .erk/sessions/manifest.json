@@ -21,6 +21,25 @@
       "raw_size_kb": 961,
       "xml_size_kb": 188,
       "git_branch": "plnd/merge-create-from-into-cre-03-21-1623"
+    },
+    {
+      "session_id": "f68fbdb1-1961-4050-adcc-d0175bea0035",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T22:16:18.221747+00:00",
+      "files": [
+        "address-f68fbdb1-1961-4050-adcc-d0175bea0035-f68fbdb1-1961-4050-adcc-d0175bea0035-part1.xml",
+        "address-f68fbdb1-1961-4050-adcc-d0175bea0035-f68fbdb1-1961-4050-adcc-d0175bea0035-part2.xml",
+        "address-f68fbdb1-1961-4050-adcc-d0175bea0035-f68fbdb1-1961-4050-adcc-d0175bea0035-part3.xml",
+        "address-f68fbdb1-1961-4050-adcc-d0175bea0035-f68fbdb1-1961-4050-adcc-d0175bea0035-part4.xml",
+        "address-f68fbdb1-1961-4050-adcc-d0175bea0035-f68fbdb1-1961-4050-adcc-d0175bea0035-part5.xml",
+        "address-f68fbdb1-1961-4050-adcc-d0175bea0035-f68fbdb1-1961-4050-adcc-d0175bea0035-part6.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 7,
+      "raw_size_kb": 205,
+      "xml_size_kb": 137,
+      "git_branch": "plnd/merge-create-from-into-cre-03-21-1623"
     }
   ]
 }
