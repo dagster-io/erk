@@ -1,0 +1,1056 @@
+<session>
+  <meta branch="plnd/O9109-rename-cli-flags-pla-03-20-2007" />
+  <meta model="claude-sonnet-4-6" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me analyze this conversation thoroughly to create a comprehensive summary.
+
+## Overview
+This is an implementation task (plan-implement) for GitHub plan #9313 titled "Rename CLI flags from plan to PR terminology (Objective #9109, Node 8.2)". The task involves renaming CLI flags across a large codebase from "plan" terminology to "pr" terminology.
+
+## Plan Structure
+The plan has 6 phases:
+1. Rename `--for-plan` to `--for-pr` (branch checkout/create + TUI)
+2. Rename `--from-plan` to `--from-pr` (wt create)
+3. Rename `--plan` to `--pr` in exec scripts
+4. Rename `--learn-plan` to `--learn-pr` (track_learn_result)
+5. Rename `get-plans-for-objective` to `get-prs-for-objective`
+6. Update callers (skills, commands, docs)
+
+## Implementation Approach
+The assistant used the rename-swarm skill pattern:
+- Wave 1: Source files in parallel
+- Wave 2: Test files in parallel
+- All docs/skills/commands in parallel
+
+## Agent Tracking
+Many background agents were launched. Let me track their status:
+
+**Completed source file agents:**
+- `a6187c4` - create_cmd.py ✅
+- `a98c58a` - plan_detail_screen.py ✅
+- `a832123` - types.py + metadata/core.py ✅
+- `ab706c2` - checkout_cmd.py ✅
+- `a4d22d9` - wt/create_cmd.py ✅
+- `a0f910c` - duplicate_check_cmd.py + objective_fetch_context.py ✅
+- `a00d93f` - track_learn_result.py ✅
+- `aea4f45` - get_plans_for_objective.py → get_prs_for_objective.py + group.py ✅
+
+**Completed test file agents:**
+- `a520139` - test_checkout_cmd.py ✅
+- `a0c94d5` - test_create_cmd.py ✅
+- `a18ad3d` - test_execute_command.py, test_plan_detail_screen.py, test_objective_issues.py ✅
+- `a9cfbd9` - test_track_learn_result.py + test_get_prs_for_objective.py (new) ✅
+
+**Completed docs/skills agents:**
+- `a4ef8b0` - skills/erk-exec/reference.md, commands/erk/learn.md, objective-view.md, plan_workflow.py ✅
+- `aa57c16` - all docs/learned files ✅
+
+## Issues Found
+1. The `learn.md` agent incorrectly added `--learn-pr` to `erk exec get-learn-sessions &lt;pr-number&gt;` command (line 105). The `get-learn-sessions` command doesn't take `--learn-pr`. Also there's still a `--learn-plan` reference in learn.md at line 752.
+2. The glossary.md only has `--from-plan-file` references (not `--from-plan`), so no changes needed there.
+
+## Current State
+- All source files are done ✅
+- All test files are done ✅
+- Docs mostly done, but there's an incorrect edit in learn.md that needs to be fixed
+- The `learn.md` at line 752 has `--learn-plan &lt;learn-pr-number&gt;` which seems to be the correct place to rename, but line 105 has `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr` which was incorrectly added
+
+## Pending
+- Fix the incorrect edit in learn.md (line 105 - `erk exec get-learn-sessions` doesn't take `--learn-pr`)
+- Also need to check if there's a `--learn-plan` ref at line 752 in learn.md
+- Run CI
+- Submit PR
+
+Wait, looking more carefully at the `learn.md` output:
+- Line 105 now has: `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr` (this was incorrectly modified - the `--learn-pr` was added to a command that doesn't use it)
+- Line 752 still has: `--learn-plan &lt;learn-pr-number&gt;` (this needs to be changed to `--learn-pr`)
+
+Actually looking at the aa57c16 agent output, it shows this edit was applied in `learn-workflow.md`, not `learn.md`. The learn.md issue is from the a4ef8b0 agent.
+
+So in `learn.md`:
+- The incorrect addition of `--learn-pr` to `get-learn-sessions` command needs to be reverted
+- The `--learn-plan` at line 752 may need to be renamed
+
+Let me re-read: The grep showed `--learn-plan` in learn.md at line 752: `--learn-plan &lt;learn-pr-number&gt;`. This looks like it should be `--learn-pr &lt;learn-pr-number&gt;`. But the a4ef8b0 agent incorrectly added `--learn-pr` to the `get-learn-sessions` command at line 105.
+
+So:
+1. Fix line 105 in learn.md: revert `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr` back to `erk exec get-learn-sessions &lt;pr-number&gt;`
+2. Check if the `--learn-plan` at line 752 was already changed by the aa57c16 agent (which did learn-workflow.md) or if it's in learn.md
+
+Actually `learn.md` is `.claude/commands/erk/learn.md` while `learn-workflow.md` is `docs/learned/planning/learn-workflow.md`. These are different files. The aa57c16 agent edited `docs/learned/planning/learn-workflow.md`. The a4ef8b0 agent edited `.claude/commands/erk/learn.md`.
+
+So the remaining issue is the incorrect edit in `.claude/commands/erk/learn.md` at line 105 where `--learn-pr` was wrongly appended to `get-learn-sessions`.
+
+Also need to check whether `.claude/commands/erk/learn.md` has any genuine `--learn-plan` references that should be renamed (aside from the one at line 752 which was shown by grep).
+
+Let me compile the current state and what's left.
+
+Summary:
+1. Primary Request and Intent:
+   The user ran `/erk:plan-implement 9313` to implement GitHub plan #9313: "Rename CLI flags from plan to PR terminology (Objective #9109, Node 8.2)". This is the final node of Objective #9109 renaming "plan" terminology to "pr" across all APIs. The scope covers renaming CLI flags where "plan" is used as a PR identifier (NOT local plan file references like `--from-plan-file`, `--keep-plan-file`, `--copy-plan`).
+
+2. Key Technical Concepts:
+   - **rename-swarm pattern**: Parallel mechanical renames using background haiku agents, launched in waves (source first, then tests)
+   - **Click CLI framework**: Python Click options use `"--flag-name"` and `"dest_param_name"` - both need renaming
+   - **Wave-based parallelism**: All source file agents launched simultaneously, then all test file agents, then all docs agents
+   - **git rm**: Used to delete renamed files (get_plans_for_objective.py → get_prs_for_objective.py, test_get_plans_for_objective.py → test_get_prs_for_objective.py)
+   - **JSON output key rename**: `get-prs-for-objective` changes `"plans"` key to `"prs"` in JSON output
+   - **Out-of-scope flags**: `--from-plan-file`, `--keep-plan-file`, `--copy-plan` are NOT renamed (refer to local files, not PR identifiers)
+
+3. Files and Code Sections:
+
+   **Phase 1 - Source Files (--for-plan → --for-pr):**
+   
+   - `src/erk/cli/commands/branch/checkout_cmd.py` (agent ab706c2 ✅)
+     - Click option: `"--for-plan"` → `"--for-pr"`, `"for_plan"` → `"for_pr"`
+     - Function params: `for_plan: str | None` → `for_pr: str | None`
+     - All variable uses, error messages, comments, activation script strings
+     - Internal functions `_setup_impl_for_plan` and `_rebase_and_track_for_plan` kept as-is
+   
+   - `src/erk/cli/commands/branch/create_cmd.py` (agent a6187c4 ✅)
+     - Click option: `"--for-plan"` → `"--for-pr"`, `"for_plan"` → `"for_pr"`
+     - Comment string: `f"branch create --for-plan {setup.pr_number}"` → `f"branch create --for-pr {setup.pr_number}"`
+   
+   - `src/erk/tui/screens/plan_detail_screen.py` (agent a98c58a ✅)
+     - 5 occurrences of `--for-plan` in f-strings → `--for-pr`
+     - Lines 362, 368, 680, 686, 993
+   
+   - `src/erk/tui/commands/types.py` (agent a832123 ✅)
+     - Docstring example: `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"`
+   
+   - `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` (agent a832123 ✅)
+     - Line 432: `erk br co --for-plan {pr_number}` → `erk br co --for-pr {pr_number}`
+
+   **Phase 2 - Source Files (--from-plan → --from-pr):**
+   
+   - `src/erk/cli/commands/wt/create_cmd.py` (agent a4d22d9 ✅)
+     - Click option: `"--from-plan"` → `"--from-pr"`, `"from_plan"` → `"from_pr"`
+     - Function param: `from_pr: str | None`
+     - Error messages: `"--from-plan-file, --from-plan"` → `"--from-plan-file, --from-pr"`
+     - Mutually exclusive validation strings updated
+     - `--from-plan-file`, `copy_plan`, `from_plan_file` all preserved unchanged
+
+   **Phase 3 - Source Files (--plan → --pr):**
+   
+   - `src/erk/cli/commands/pr/duplicate_check_cmd.py` (agent a0f910c ✅)
+     - Click option: `"--plan"` → `"--pr"` (keeps `-p` shorthand)
+     - Function param: `plan: str | None` → `pr: str | None`
+     - `plan_data`, `existing_plans` variables preserved
+   
+   - `src/erk/cli/commands/exec/scripts/objective_fetch_context.py` (agent a0f910c ✅)
+     - Line 153: `"--plan"` → `"--pr"`, dest `"pr_number_arg"` preserved
+
+   **Phase 4 - Source Files (--learn-plan → --learn-pr):**
+   
+   - `src/erk/cli/commands/exec/scripts/track_learn_result.py` (agent a00d93f ✅)
+     - Click option: `"--learn-plan"` → `"--learn-pr"`
+     - Function param: `learn_plan: int | None` → `learn_pr: int | None`
+     - Error codes: `"missing-learn-plan"` → `"missing-learn-pr"`, `"unexpected-learn-plan"` → `"unexpected-learn-pr"`
+     - Metadata field `learn_plan_issue` preserved (it's a metadata field name, not CLI flag)
+
+   **Phase 5 - File Rename:**
+   
+   - NEW: `src/erk/cli/commands/exec/scripts/get_prs_for_objective.py` (agent aea4f45 ✅)
+     - Created from `get_plans_for_objective.py` with:
+       - Command name: `"get-prs-for-objective"`
+       - Function name: `get_prs_for_objective`
+       - JSON output key: `"prs"` (was `"plans"`)
+       - Variable names: `all_prs`, `linked_prs`
+   
+   - DELETED: `src/erk/cli/commands/exec/scripts/get_plans_for_objective.py` (via `git rm`)
+   
+   - `src/erk/cli/commands/exec/group.py` (agent aea4f45 ✅)
+     - Import updated: `get_prs_for_objective` from `get_prs_for_objective`
+     - `exec_group.add_command(get_prs_for_objective, name="get-prs-for-objective")`
+
+   **Test Files (all ✅):**
+   
+   - `tests/commands/branch/test_checkout_cmd.py` (agent a520139 ✅)
+     - All `--for-plan` → `--for-pr` in CLI invocations
+     - Test function names renamed: `test_checkout_for_plan_*` → `test_checkout_for_pr_*`
+     - Error message assertions updated
+   
+   - `tests/unit/cli/commands/branch/test_create_cmd.py` (agent a0c94d5 ✅)
+     - All `--for-plan` → `--for-pr` in CLI invocations
+     - Test function names renamed: `test_branch_create_for_plan_*` → `test_branch_create_for_pr_*`
+   
+   - `tests/tui/commands/test_execute_command.py` (agent a18ad3d ✅)
+     - Lines 146-147: `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"`
+   
+   - `tests/tui/app/test_plan_detail_screen.py` (agent a18ad3d ✅)
+     - Line 207: `"erk br co --for-plan 123"` → `"erk br co --for-pr 123"`
+   
+   - `packages/erk-shared/tests/unit/github/test_objective_issues.py` (agent a18ad3d ✅)
+     - Line 311: `"erk br co --for-plan"` → `"erk br co --for-pr"`
+   
+   - `tests/unit/cli/commands/exec/scripts/test_track_learn_result.py` (agent a9cfbd9 ✅)
+     - All `"--learn-plan"` → `"--learn-pr"` in CLI invocations
+     - Assertion messages updated
+     - `learn_plan_issue` metadata references preserved
+   
+   - NEW: `tests/unit/cli/commands/exec/scripts/test_get_prs_for_objective.py` (agent a9cfbd9 ✅)
+     - Full rewrite of test file with `get_prs_for_objective` import
+     - `output["prs"]` key (was `output["plans"]`)
+     - All test function names: `test_get_prs_for_objective_*`
+   
+   - DELETED: `tests/unit/cli/commands/exec/scripts/test_get_plans_for_objective.py` (via `git rm`)
+
+   **Phase 6 - Docs/Skills/Commands (all ✅):**
+   
+   - `.claude/skills/erk-exec/reference.md` (agent a4ef8b0 ✅)
+     - `get-plans-for-objective` → `get-prs-for-objective` in table and section header
+   
+   - `.claude/commands/local/objective-view.md` (agent a4ef8b0 ✅)
+     - `get-plans-for-objective` → `get-prs-for-objective`
+   
+   - `packages/erk-shared/src/erk_shared/plan_workflow.py` (agent a4ef8b0 ✅)
+     - Module docstring: `--from-plan` → `--from-pr`
+   
+   - `.claude/commands/erk/learn.md` (agent a4ef8b0) ⚠️ **INCORRECT EDIT**
+     - Correctly renamed `--learn-plan` at line 752 to `--learn-pr` (within `track-learn-result` context)
+     - **INCORRECTLY** added `--learn-pr` to `erk exec get-learn-sessions &lt;pr-number&gt;` command at line 105 (needs to be reverted - that command doesn't take `--learn-pr`)
+   
+   - `docs/learned/cli/checkout-three-path-logic.md` (agent aa57c16 ✅) - 3 `--for-plan` → `--for-pr`
+   - `docs/learned/cli/index.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/cli/learn-plan-land-flow.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/planning/branch-name-inference.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/planning/next-steps-output.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/planning/plan-execution-patterns.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/planning/stacked-plan-branch-rebase.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/architecture/command-boundaries.md` (agent aa57c16 ✅) - 1 `--for-plan` → `--for-pr`
+   - `docs/learned/cli/erk-exec-commands.md` (agent aa57c16 ✅) - `--learn-plan` → `--learn-pr` in Phase 5 table
+   - `docs/learned/planning/learn-workflow.md` (agent aa57c16 ✅) - `--learn-plan` → `--learn-pr` in bash example
+   - `docs/learned/glossary.md` - skipped (only has `--from-plan-file` which is out of scope)
+
+4. Errors and Fixes:
+   - **Incorrect edit in `.claude/commands/erk/learn.md`**: Agent a4ef8b0 added `--learn-pr` to the `erk exec get-learn-sessions &lt;pr-number&gt;` command (line 105), making it `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr`. This is incorrect - `get-learn-sessions` doesn't take a `--learn-pr` flag. This needs to be reverted to just `erk exec get-learn-sessions &lt;pr-number&gt;`.
+   - **Grep tool parameter error**: Initially tried to use `"- n": true` as a parameter which was invalid; corrected to `"-n": true`.
+
+5. Problem Solving:
+   - Used rename-swarm skill to orchestrate 14+ parallel background agents across all phases
+   - Carefully tracked boundary constraints (--from-plan-file, --keep-plan-file, --copy-plan must NOT be renamed)
+   - The `learn_plan_issue` metadata field name was preserved in track_learn_result.py even though the CLI flag changed
+   - File renaming (get_plans_for_objective.py → get_prs_for_objective.py) handled by creating new file + git rm old file
+   - JSON output key changed from `"plans"` to `"prs"` in get_prs_for_objective.py and corresponding test
+
+6. All User Messages:
+   - Initial command: `/erk:plan-implement 9313` with the full plan-implement instructions embedded in the command message
+   - System reminder messages about TodoWrite tool usage (not user messages per se)
+   - Summary request: "Your task is to create a detailed summary of the conversation so far..."
+
+7. Pending Tasks:
+   - **Fix incorrect edit in `.claude/commands/erk/learn.md`**: Revert line 105 from `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr` back to `erk exec get-learn-sessions &lt;pr-number&gt;`
+   - **Check for remaining `--learn-plan` in `.claude/commands/erk/learn.md`** at line 752 (grep showed `--learn-plan &lt;learn-pr-number&gt;` — needs to be verified if already renamed or still needs renaming)
+   - **Run CI verification** (ruff check, ruff format, ty, pytest on affected test files, make fast-ci)
+   - **Signal GitHub ended**: `erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}"`
+   - **Upload impl session**: `erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}"`
+   - **Cleanup impl context**: `erk exec cleanup-impl-context`
+   - **Submit PR**: `erk pr submit`
+
+8. Current Work:
+   All 6 phases of the implementation are substantially complete. The last action taken was collecting results from all background agents and discovering an incorrect edit in `.claude/commands/erk/learn.md`. The grep result showed:
+   - Line 105 (incorrect): `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr` (the `--learn-pr` was wrongly appended)
+   - Line 752 (from grep): `--learn-plan &lt;learn-pr-number&gt;` in a `track-learn-result` command context (this may need renaming to `--learn-pr`)
+   
+   The current file state at `.claude/commands/erk/learn.md` line 105 reads:
+   ```bash
+   erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr
+   ```
+   This is wrong; it should be:
+   ```bash
+   erk exec get-learn-sessions &lt;pr-number&gt;
+   ```
+
+9. Optional Next Step:
+   Fix the incorrect edit in `.claude/commands/erk/learn.md` (revert line 105), verify the `--learn-plan` at line 752 was properly renamed, then run CI. 
+   
+   From the current conversation, the detected issue is: `erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr` at line 105 is incorrect — the `--learn-pr` was incorrectly added to `get-learn-sessions` which doesn't take that flag. Need to revert to `erk exec get-learn-sessions &lt;pr-number&gt;`. Also need to check and fix line 752 which showed `--learn-plan &lt;learn-pr-number&gt;` in the grep output, to confirm whether it was already renamed to `--learn-pr` by the aa57c16 agent or still needs attention..
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>I'll pick up where we left off. Let me check the current state of `learn.md` and fix the incorrect edit, then run CI verification.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17717" cache_read_input_tokens="20615" cache_creation="{'ephemeral_5m_input_tokens': 17717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KSircNE3Nufvg5Dyx2ywbU">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">95</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17717" cache_read_input_tokens="20615" cache_creation="{'ephemeral_5m_input_tokens': 17717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S7DNZjqBFmA24vNDq4zkjk">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="offset">745</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17717" cache_read_input_tokens="20615" cache_creation="{'ephemeral_5m_input_tokens': 17717, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KSircNE3Nufvg5Dyx2ywbU">
+    95→
+    96→**If `.erk/impl-context/` does not exist or is empty:**
+    97→
+    98→Proceed to Step 3 for standard session discovery and preprocessing.
+    99→
+   100→### Step 3: Get Session Information
+   101→
+   102→Run the exec script to get session details:
+   103→
+   104→```bash
+   105→erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr
+   106→```
+   107→
+   108→Parse the JSON output to get:
+   109→
+   110→- `session_sources`: List of session source objects, each containing:
+   111→  - `source_type`: Either "local" (from ~/.claude) or "remote" (from GitHub Actions)
+   112→  - `session_id`: The Claude Code session ID
+   113→  - `run_id`: GitHub Actions run ID (legacy, may be null)
+   114→  - `path`: File path to the session (for local sessions only)
+   115→  - `gist_url`: Raw gist URL for downloading session (for remote sessions)
+   116→- `planning_session_id`: Session ID that created the plan
+   117→- `implementation_session_ids`: Session IDs that executed the plan
+   118→- `local_session_ids`: Fallback sessions found locally (when no tracked sessions exist)
+   119→- `last_remote_impl_at`: Timestamp if implemented via GitHub Actions (remote)
+   120→- `last_remote_impl_run_id`: GitHub Actions run ID for remote implementation
+   121→- `last_remote_impl_session_id`: Claude Code session ID from remote implementation
+   122→
+   123→If no sessions are found, inform the user and stop.
+   124→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01S7DNZjqBFmA24vNDq4zkjk">
+   745→
+   746→**If plan was valid and saved**, update the parent plan's status to link the two issues:
+   747→
+   748→```bash
+   749→erk exec track-learn-result \
+   750→    --issue &lt;parent-issue-number&gt; \
+   751→    --status completed_with_plan \
+   752→    --learn-plan &lt;learn-pr-number&gt;
+   753→```
+   754→
+   755→This sets `learn_status: completed_with_plan` and `learn_plan_issue: &lt;N&gt;` on the parent plan,
+   756→enabling the TUI to show the linked learn plan.
+   757→
+   758→**If plan validation failed (no actionable documentation):**
+   759→
+   760→```bash
+   761→erk exec track-learn-result \
+   762→    --issue &lt;parent-issue-number&gt; \
+   763→    --status completed_no_plan
+   764→```
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I can see both issues. Line 105 has the incorrect `--learn-pr` added to `get-learn-sessions`, and line 752 still has `--learn-plan` that needs to be renamed to `--learn-pr`. Let me fix both:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1103" cache_read_input_tokens="38332" cache_creation="{'ephemeral_5m_input_tokens': 1103, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014oQMwLGaFqTC4cit41Qu12">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="old_string">erk exec get-learn-sessions &lt;pr-number&gt; --learn-pr</param>
+    <param name="new_string">erk exec get-learn-sessions &lt;pr-number&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1103" cache_read_input_tokens="38332" cache_creation="{'ephemeral_5m_input_tokens': 1103, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014oQMwLGaFqTC4cit41Qu12">
+The file /home/runner/work/erk/erk/.claude/commands/erk/learn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FVf6WWpvQErhQprMJFzBfu">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/commands/erk/learn.md</param>
+    <param name="old_string">    --learn-plan &lt;learn-pr-number&gt;</param>
+    <param name="new_string">    --learn-pr &lt;learn-pr-number&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 240, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FVf6WWpvQErhQprMJFzBfu">
+The file /home/runner/work/erk/erk/.claude/commands/erk/learn.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me do a final check to make sure there are no remaining `--for-plan`, `--from-plan` (non-file), `--learn-plan`, or `get-plans-for-objective` references that shouldn't be there:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="39675" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Vjf6UTet9zvksSY2KuzXYR">
+    <param name="pattern">--for-plan|--learn-plan|get-plans-for-objective</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="39675" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LzxKfRQLnBJjr95bSdv7YZ">
+    <param name="pattern">--from-plan[^-]|\"--plan\"</param>
+    <param name="output_mode">content</param>
+    <param name="glob">**/*.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="39675" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vjf6UTet9zvksSY2KuzXYR">
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:117:    """Test error when completed_with_plan is missing --learn-plan."""
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:147:    """Test error when completed_no_plan has --learn-plan."""
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:253:    """Test error when pending_review has --learn-plan."""
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py:311:                "--learn-plan",
+  </tool_result>
+  <tool_result tool="toolu_01LzxKfRQLnBJjr95bSdv7YZ">
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:942:            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:967:            ["--pr", "6517", "--objective", "6423", "--plan", "9999"],
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py:998:            ["--objective", "6423", "--plan", "6513"],
+tests/commands/pr/test_remote_paths.py:329:        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+tests/commands/pr/test_remote_paths.py:361:        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+tests/commands/pr/test_duplicate_check.py:240:            ["pr", "duplicate-check", "--plan", "200"],
+tests/commands/pr/test_duplicate_check.py:315:            ["pr", "duplicate-check", "--plan", "999"],
+tests/commands/pr/test_duplicate_check.py:338:            ["pr", "duplicate-check", "--plan", "100", "--file", temp_path],
+tests/core/test_impl_issue_wt_workflow.py:117:    # Step 1: Create plan folder (simulates erk create --from-plan)
+src/erk/cli/commands/wt/create_cmd.py:474:        "Mutually exclusive with --from-plan."
+src/erk/cli/commands/wt/create_cmd.py:886:    # --from-plan-file or --from-plan was provided
+  </tool_result>
+  <assistant>I see several remaining issues:
+
+1. `test_track_learn_result.py` still has `--learn-plan` in docstrings/comments and an actual CLI arg at line 311
+2. `test_objective_fetch_context.py` and `test_duplicate_check.py` still have `--plan` (need renaming to `--pr`)
+3. `test_remote_paths.py` still has `--plan` (need renaming to `--pr`)
+4. `src/erk/cli/commands/wt/create_cmd.py` line 474 mentions `--from-plan` in help text (needs to be `--from-pr`)
+
+Let me read these files to understand what needs fixing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1270" cache_read_input_tokens="39849" cache_creation="{'ephemeral_5m_input_tokens': 1270, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017S27BFxNu3isG48KYe8V46">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">110</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1270" cache_read_input_tokens="39849" cache_creation="{'ephemeral_5m_input_tokens': 1270, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EuxQ9jjqe4atqn5cWZoz3g">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py</param>
+    <param name="offset">468</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1270" cache_read_input_tokens="39849" cache_creation="{'ephemeral_5m_input_tokens': 1270, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MHZad9Ucundp5MUsMjqZyA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="offset">235</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1270" cache_read_input_tokens="39849" cache_creation="{'ephemeral_5m_input_tokens': 1270, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017S27BFxNu3isG48KYe8V46">
+   110→
+   111→# ============================================================================
+   112→# Validation Error Cases
+   113→# ============================================================================
+   114→
+   115→
+   116→def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path: Path) -&gt; None:
+   117→    """Test error when completed_with_plan is missing --learn-plan."""
+   118→    plan_body = format_plan_header_body_for_test(learn_status="pending")
+   119→    issue = create_test_issue(42, "Test Plan #42", plan_body)
+   120→    fake_issues = FakeGitHubIssues(issues={42: issue})
+   121→    fake_github = FakeLocalGitHub(
+   122→        pr_details={42: issue_info_to_pr_details(issue)},
+   123→        issues_gateway=fake_issues,
+   124→    )
+   125→
+   126→    runner = CliRunner()
+   127→    with runner.isolated_filesystem(temp_dir=tmp_path):
+   128→        cwd = Path.cwd()
+   129→        result = runner.invoke(
+   130→            track_learn_result,
+   131→            ["--pr-id", "42", "--status", "completed_with_plan"],
+   132→            obj=ErkContext.for_test(
+   133→                github=fake_github,
+   134→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   135→                cwd=cwd,
+   136→                repo_root=cwd,
+   137→            ),
+   138→        )
+   139→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EuxQ9jjqe4atqn5cWZoz3g">
+   468→    "--copy-plan",
+   469→    is_flag=True,
+   470→    default=False,
+   471→    help=(
+   472→        "Copy .erk/impl-context/ directory from current worktree to new worktree. "
+   473→        "Useful for multi-phase workflows where each phase builds on the previous plan. "
+   474→        "Mutually exclusive with --from-plan."
+   475→    ),
+   476→)
+   477→@click.option(
+   478→    "--from-current-branch",
+   479→    is_flag=True,
+   480→    help=(
+   481→        "Move the current branch to the new worktree, then switch current worktree to --ref "
+   482→        "(defaults to main/master). NAME defaults to current branch name."
+   483→    ),
+   484→)
+   485→@click.option(
+   486→    "--from-branch",
+   487→    "from_branch",
+   488→    type=str,
+   489→    default=None,
+   490→    help=("Create worktree from an existing branch. NAME defaults to the branch name."),
+   491→)
+   492→@script_option
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01MHZad9Ucundp5MUsMjqZyA">
+   235→            remote_github=fake_remote,
+   236→        )
+   237→
+   238→        result = runner.invoke(
+   239→            cli,
+   240→            ["pr", "duplicate-check", "--plan", "200"],
+   241→            obj=ctx,
+   242→        )
+   243→
+   244→        assert result.exit_code == 0
+   245→        assert "No duplicates found" in result.output
+   246→        # Verify the LLM was called (plan 100 exists as comparison)
+   247→        assert len(executor.prompt_calls) == 1
+   248→        prompt_text = executor.prompt_calls[0][0]
+   249→        # Plan 200's body should be in the NEW PLAN section
+   250→        assert "body B for checking" in prompt_text
+   251→        # Plan 200 should NOT appear in EXISTING PLANS (excluded self)
+   252→        assert "#200" not in prompt_text
+   253→        # Plan 100 should appear in EXISTING PLANS
+   254→        assert "#100" in prompt_text
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_016Dcz5jq1MecKhNGSe2fkQL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">140</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2115" cache_read_input_tokens="41119" cache_creation="{'ephemeral_5m_input_tokens': 2115, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SgDkNCufhXvG3awSNX2KST">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">248</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2115" cache_read_input_tokens="41119" cache_creation="{'ephemeral_5m_input_tokens': 2115, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Vv2woZxWYWYXsvp47ScvXk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="offset">305</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2115" cache_read_input_tokens="41119" cache_creation="{'ephemeral_5m_input_tokens': 2115, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Dcz5jq1MecKhNGSe2fkQL">
+   140→    assert result.exit_code == 1
+   141→    output = json.loads(result.output)
+   142→    assert output["success"] is False
+   143→    assert "learn-pr is required" in output["message"]
+   144→
+   145→
+   146→def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: Path) -&gt; None:
+   147→    """Test error when completed_no_plan has --learn-plan."""
+   148→    plan_body = format_plan_header_body_for_test(learn_status="pending")
+   149→    issue = create_test_issue(42, "Test Plan #42", plan_body)
+   150→    fake_issues = FakeGitHubIssues(issues={42: issue})
+   151→    fake_github = FakeLocalGitHub(
+   152→        pr_details={42: issue_info_to_pr_details(issue)},
+   153→        issues_gateway=fake_issues,
+   154→    )
+   155→
+   156→    runner = CliRunner()
+   157→    with runner.isolated_filesystem(temp_dir=tmp_path):
+   158→        cwd = Path.cwd()
+   159→        result = runner.invoke(
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01SgDkNCufhXvG3awSNX2KST">
+   248→    assert output["success"] is False
+   249→    assert "plan-pr is required" in output["message"]
+   250→
+   251→
+   252→def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) -&gt; None:
+   253→    """Test error when pending_review has --learn-plan."""
+   254→    plan_body = format_plan_header_body_for_test(learn_status="pending")
+   255→    issue = create_test_issue(42, "Test Plan #42", plan_body)
+   256→    fake_issues = FakeGitHubIssues(issues={42: issue})
+   257→    fake_github = FakeLocalGitHub(
+   258→        pr_details={42: issue_info_to_pr_details(issue)},
+   259→        issues_gateway=fake_issues,
+   260→    )
+   261→
+   262→    runner = CliRunner()
+   263→    with runner.isolated_filesystem(temp_dir=tmp_path):
+   264→        cwd = Path.cwd()
+   265→        result = runner.invoke(
+   266→            track_learn_result,
+   267→            [
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Vv2woZxWYWYXsvp47ScvXk">
+   305→            track_learn_result,
+   306→            [
+   307→                "--pr-id",
+   308→                "42",
+   309→                "--status",
+   310→                "completed_with_plan",
+   311→                "--learn-plan",
+   312→                "456",
+   313→                "--plan-pr",
+   314→                "789",
+   315→            ],
+   316→            obj=ErkContext.for_test(
+   317→                github=fake_github,
+   318→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   319→                cwd=cwd,
+   320→                repo_root=cwd,
+   321→            ),
+   322→        )
+   323→
+   324→    assert result.exit_code == 1
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I understand what needs to be fixed. Let me also check the test_objective_fetch_context.py and test_remote_paths.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1801" cache_read_input_tokens="43234" cache_creation="{'ephemeral_5m_input_tokens': 1801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Pq8etaihWb4YyVBgzAvnBp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="offset">935</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1801" cache_read_input_tokens="43234" cache_creation="{'ephemeral_5m_input_tokens': 1801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sb3Cc4ewapm8htcp7xoeqC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="offset">323</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1801" cache_read_input_tokens="43234" cache_creation="{'ephemeral_5m_input_tokens': 1801, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pq8etaihWb4YyVBgzAvnBp">
+   935→            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+   936→            issues_gateway=fake_issues,
+   937→        )
+   938→
+   939→        runner = CliRunner()
+   940→        result = runner.invoke(
+   941→            objective_fetch_context,
+   942→            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
+   943→            obj=context_for_test(
+   944→                github=fake_github,
+   945→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   946→                remote_github=_make_remote({6423: objective, 6513: plan}),
+   947→                repo_root=tmp_path,
+   948→                cwd=tmp_path,
+   949→                repo_info=_TEST_REPO_INFO,
+   950→            ),
+   951→        )
+   952→
+   953→        assert result.exit_code == 0, result.output
+   954→        data = json.loads(result.output)
+   955→        assert data["success"] is True
+   956→        assert data["plan"]["number"] == "6513"
+   957→        assert data["objective"]["number"] == 6423
+   958→
+   959→    def test_plan_flag_not_found(self, tmp_path: Path) -&gt; None:
+   960→        """Returns error when --plan references a non-existent plan."""
+   961→        fake_issues = FakeGitHubIssues()
+   962→        fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+   963→
+   964→        runner = CliRunner()
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Sb3Cc4ewapm8htcp7xoeqC">
+   323→        plan_list_service=_make_plan_list_service([existing]),
+   324→    )
+   325→
+   326→    runner = CliRunner()
+   327→    result = runner.invoke(
+   328→        cli,
+   329→        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+   330→        obj=ctx,
+   331→    )
+   332→
+   333→    assert result.exit_code == 0
+   334→    assert "No duplicates found" in result.output
+   335→
+   336→
+   337→def test_duplicate_check_remote_finds_duplicate() -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me fix all remaining issues in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1398" cache_read_input_tokens="45035" cache_creation="{'ephemeral_5m_input_tokens': 1398, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_013TsmGw54PzwGtZ61ig8P4K">
+    <param name="todos">[{'content': 'Fix remaining --learn-plan, --plan, --from-plan refs in test files and wt/cr...[truncated 189 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1398" cache_read_input_tokens="45035" cache_creation="{'ephemeral_5m_input_tokens': 1398, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013TsmGw54PzwGtZ61ig8P4K">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018WUwqy5Z8X9uQ1aYXR1cDp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    """Test error when completed_with_plan is missing --learn-plan."""</param>
+    <param name="new_string">    """Test error when completed_with_plan is missing --learn-pr."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="218" cache_read_input_tokens="46433" cache_creation="{'ephemeral_5m_input_tokens': 218, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018WUwqy5Z8X9uQ1aYXR1cDp">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BkoYESJWm1T8fUthFjuqNz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    """Test error when completed_no_plan has --learn-plan."""</param>
+    <param name="new_string">    """Test error when completed_no_plan has --learn-pr."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="46651" cache_creation="{'ephemeral_5m_input_tokens': 208, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BkoYESJWm1T8fUthFjuqNz">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JiEahPpHoaVTcpeUXktw6R">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">    """Test error when pending_review has --learn-plan."""</param>
+    <param name="new_string">    """Test error when pending_review has --learn-pr."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="46859" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JiEahPpHoaVTcpeUXktw6R">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VqZ69vEekhvhTqy64nhqKW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py</param>
+    <param name="old_string">                "--learn-plan",
+                "456",</param>
+    <param name="new_string">                "--learn-pr",
+                "456",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="47065" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VqZ69vEekhvhTqy64nhqKW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_track_learn_result.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the `--plan` → `--pr` in test files and source file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="47267" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016bSEsCTEfi7gs3Rbwbzdrm">
+    <param name="pattern">\"--plan\"</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="47267" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Gz6k4JLeafHwfQsyNG4S5d">
+    <param name="pattern">\"--plan\"</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="47267" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SLRr5HWsip2zR5CFYHEZvt">
+    <param name="pattern">\"--plan\"</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_remote_paths.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="196" cache_read_input_tokens="47267" cache_creation="{'ephemeral_5m_input_tokens': 196, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SLRr5HWsip2zR5CFYHEZvt">
+329:        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+361:        ["pr", "duplicate-check", "--plan", "200", "--repo", "owner/repo"],
+  </tool_result>
+  <tool_result tool="toolu_016bSEsCTEfi7gs3Rbwbzdrm">
+942:            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],
+967:            ["--pr", "6517", "--objective", "6423", "--plan", "9999"],
+998:            ["--objective", "6423", "--plan", "6513"],
+  </tool_result>
+  <tool_result tool="toolu_01Gz6k4JLeafHwfQsyNG4S5d">
+240:            ["pr", "duplicate-check", "--plan", "200"],
+315:            ["pr", "duplicate-check", "--plan", "999"],
+338:            ["pr", "duplicate-check", "--plan", "100", "--file", temp_path],
+  </tool_result>
+  <assistant>Wait - I need to check if `objective_fetch_context.py` has `--plan` as a flag we renamed. Let me re-check what happened to that command's `--plan` flag:</assistant>
+  <usage input_tokens="82" cache_creation_input_tokens="750" cache_read_input_tokens="47463" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0137M2fhxRgvkPiqs2dokqeW">
+    <param name="pattern">\"--plan\"|\"--pr\"</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="82" cache_creation_input_tokens="750" cache_read_input_tokens="47463" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BT1thuzhf5bXHoK6gV2KHh">
+    <param name="pattern">\"--plan\"|\"--pr\"</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="82" cache_creation_input_tokens="750" cache_read_input_tokens="47463" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BT1thuzhf5bXHoK6gV2KHh">
+29:    "--pr",
+  </tool_result>
+  <tool_result tool="toolu_0137M2fhxRgvkPiqs2dokqeW">
+136:    "--pr", "pr_number", type=int, default=None, help="PR number (auto-discovered if omitted)"
+153:    "--pr",
+  </tool_result>
+  <assistant>Good - both source files already have `"--pr"`. So the test files need to be updated to use `"--pr"` instead of `"--plan"`. Also the `objective_fetch_context.py` now has `--pr` at line 153, but the test still passes `"--plan"`. Let me fix all these test files:</assistant>
+  <usage input_tokens="37" cache_creation_input_tokens="637" cache_read_input_tokens="48213" cache_creation="{'ephemeral_5m_input_tokens': 637, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015T17QWKirhMrt6VezgsQFZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="old_string">            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],</param>
+    <param name="new_string">            ["--pr", "6517", "--objective", "6423", "--pr", "6513"],</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="637" cache_read_input_tokens="48213" cache_creation="{'ephemeral_5m_input_tokens': 637, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015T17QWKirhMrt6VezgsQFZ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, that's wrong - there are two different `--pr` flags in that command. Let me read the context more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="48850" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Bx7dXL5opopGAX2p9exVAB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="offset">125</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="48850" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bx7dXL5opopGAX2p9exVAB">
+   125→    if comment_id is None:
+   126→        return None
+   127→
+   128→    comment_body = remote.get_comment_by_id(owner=owner, repo=repo, comment_id=comment_id)
+   129→    if not comment_body:
+   130→        return None
+   131→    return extract_objective_from_comment(comment_body)
+   132→
+   133→
+   134→@click.command(name="objective-fetch-context")
+   135→@click.option(
+   136→    "--pr", "pr_number", type=int, default=None, help="PR number (auto-discovered if omitted)"
+   137→)
+   138→@click.option(
+   139→    "--objective",
+   140→    "objective_number",
+   141→    type=int,
+   142→    default=None,
+   143→    help="Objective issue (auto-discovered if omitted)",
+   144→)
+   145→@click.option(
+   146→    "--branch",
+   147→    "branch_name",
+   148→    type=str,
+   149→    default=None,
+   150→    help="Branch name (auto-discovered if omitted)",
+   151→)
+   152→@click.option(
+   153→    "--pr",
+   154→    "pr_number_arg",
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>I see - the `objective_fetch_context` command now has TWO `--pr` options (line 136 and 153 - `pr_number` and `pr_number_arg`). That's a problem - I made an error. The second `--pr` at line 153 (formerly `--plan`, dest `pr_number_arg`) now conflicts with the first `--pr` at line 136 (dest `pr_number`). Let me revert my incorrect test edit and look at the test context again more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="49185" cache_creation="{'ephemeral_5m_input_tokens': 982, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W2zTDGbcrStFdvL1nkvNEL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="offset">920</param>
+    <param name="limit">85</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="49185" cache_creation="{'ephemeral_5m_input_tokens': 982, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W2zTDGbcrStFdvL1nkvNEL">
+   920→        assert result.exit_code == 1
+   921→        data = json.loads(result.output)
+   922→        assert data["success"] is False
+   923→        assert "No PR found for branch" in data["error"]
+   924→
+   925→
+   926→class TestDirectPlanLookup:
+   927→    def test_plan_flag_skips_branch_discovery(self, tmp_path: Path) -&gt; None:
+   928→        """--plan flag does direct plan lookup, skipping branch-based discovery."""
+   929→        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+   930→        plan = _make_issue(number=6513, title="My Plan", body="plan body")
+   931→        pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
+   932→
+   933→        fake_issues = FakeGitHubIssues(issues={6423: objective, 6513: plan})
+   934→        fake_github = FakeLocalGitHub(
+   935→            pr_details={6517: pr, 6513: issue_info_to_pr_details(plan)},
+   936→            issues_gateway=fake_issues,
+   937→        )
+   938→
+   939→        runner = CliRunner()
+   940→        result = runner.invoke(
+   941→            objective_fetch_context,
+   942→            ["--pr", "6517", "--objective", "6423", "--pr", "6513"],
+   943→            obj=context_for_test(
+   944→                github=fake_github,
+   945→                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+   946→                remote_github=_make_remote({6423: objective, 6513: plan}),
+   947→                repo_root=tmp_path,
+   948→                cwd=tmp_path,
+   949→                repo_info=_TEST_REPO_INFO,
+
+... [60 lines omitted] ...
+
+   960→        """Returns error when --plan references a non-existent plan."""
+   980→        assert "9999" in data["error"]
+   982→    def test_plan_flag_without_pr_and_branch_errors(self, tmp_path: Path) -&gt; None:
+   983→        """Returns error when --plan used without --pr and --branch (can't auto-discover PR)."""
+   992→        # No branch set, no PR provided - should error
+  </tool_result>
+  <assistant>I see that the `objective_fetch_context` command has a problem - both the original `--pr` at line 136 and the renamed `--plan` → `--pr` at line 153 are now named `--pr`. This creates a Click conflict. The plan says to rename `"--plan"` → `"--pr"` at line 153, but line 136 already has `"--pr"`. 
+
+Let me re-read the original source file to understand what the plan intended:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1694" cache_read_input_tokens="50167" cache_creation="{'ephemeral_5m_input_tokens': 1694, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01URtmXU1H7nRWf6SJZDj45D">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="offset">134</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1694" cache_read_input_tokens="50167" cache_creation="{'ephemeral_5m_input_tokens': 1694, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01URtmXU1H7nRWf6SJZDj45D">
+   134→@click.command(name="objective-fetch-context")
+   135→@click.option(
+   136→    "--pr", "pr_number", type=int, default=None, help="PR number (auto-discovered if omitted)"
+   137→)
+   138→@click.option(
+   139→    "--objective",
+   140→    "objective_number",
+   141→    type=int,
+   142→    default=None,
+   143→    help="Objective issue (auto-discovered if omitted)",
+   144→)
+   145→@click.option(
+   146→    "--branch",
+   147→    "branch_name",
+   148→    type=str,
+   149→    default=None,
+   150→    help="Branch name (auto-discovered if omitted)",
+   151→)
+   152→@click.option(
+   153→    "--pr",
+   154→    "pr_number_arg",
+   155→    type=int,
+   156→    default=None,
+   157→    help="PR number (direct lookup, skips branch-based discovery)",
+   158→)
+   159→@click.pass_context
+   160→def objective_fetch_context(
+   161→    ctx: click.Context,
+   162→    *,
+   163→    pr_number: int | None,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>There's a real problem here - the second option has been renamed to `--pr` but there's already a `--pr` option. Looking at the test, it passed `["--pr", "6517", "--objective", "6423", "--plan", "6513"]` - the `--plan` was a distinct option from `--pr`. The plan said to rename `--plan` to `--pr`, but the command already has a `--pr` option - that creates a duplicate flag.
+
+Looking at the context: The first `--pr` at line 136 is for the PR number (auto-discovered from branch). The second option at line 153 (originally `--plan`) is for direct plan lookup (`pr_number_arg`). These serve different purposes, and they now have the same flag name, which is a bug.
+
+The plan notes: "Line 153: `"--plan"` → `"--pr"`, dest `"pr_number_arg"` stays (already uses pr naming internally)". But this creates a conflict since line 136 already has `--pr`. We need a different name. Looking at the context - this was a `--plan` flag that pointed to the plan issue number directly. It should perhaps be `--plan-pr` or we need to look at what the original intent was.
+
+Let me check git log to see what the original file looked like:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="51861" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012WdyoXAkiJqKg33mdiJM42">
+    <param name="command">git show HEAD:src/erk/cli/commands/exec/scripts/objective_fetch_context.py 2&gt;/dev/null | grep -n '"--plan"\|"--pr"\|pr_number' | head -20</param>
+    <param name="description">Check original objective_fetch_context.py CLI options</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="961" cache_read_input_tokens="51861" cache_creation="{'ephemeral_5m_input_tokens': 961, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012WdyoXAkiJqKg33mdiJM42">
+136:    "--pr", "pr_number", type=int, default=None, help="PR number (auto-discovered if omitted)"
+153:    "--plan",
+154:    "pr_number_arg",
+163:    pr_number: int | None,
+166:    pr_number_arg: int | None,
+183:    if pr_number_arg is not None:
+184:        plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number_arg))
+186:            click.echo(_error_json(f"PR #{pr_number_arg} not found"))
+215:    if pr_number is None:
+223:        pr_number = pr_result.number
+232:    pr = github.get_pr(repo_root, pr_number)
+234:        click.echo(_error_json(f"PR #{pr_number} not found"))
+  </tool_result>
+  <assistant>I see - the original file had `--pr` at line 136 and `--plan` at line 153 (`pr_number_arg`). The `--plan` was a separate flag for specifying which plan (issue) to use directly. The plan document says to rename it to `--pr`, but that conflicts with the existing `--pr` flag.
+
+Looking at the plan description: "Line 153: `"--plan"` → `"--pr"`, dest `"pr_number_arg"` stays (already uses pr naming internally)". This is a problem with the plan itself - it creates a duplicate flag.
+
+However, looking at what the flag actually does - `pr_number_arg` is the "direct plan lookup" option that skips branch-based discovery. In the new PR terminology, this should likely be named `--plan-pr` to distinguish it from the regular `--pr` flag. But wait - in the new terminology, "plan" and "pr" both refer to the same thing. 
+
+Actually, looking more carefully at what this command does: the first `--pr` is the _implementation PR_ number, and `--plan` (now `pr_number_arg`) is the _plan/issue_ number. Since a PR in the erk system IS the plan, these need different names. The test class is called `TestDirectPlanLookup` and the test methods mention "plan flag". 
+
+Given the conflict, the safest rename is NOT `--pr` but something like `--plan-number` or keeping a distinct identifier. But wait - the plan says this was the rename requested by the objective. Let me check if maybe the first `--pr` was previously `--pr-number` or something:
+
+Actually, looking at this differently: both flags serve the same "PR number" purpose - one auto-discovers from branch, the other accepts direct input. They shouldn't both be `--pr`. The correct fix is probably to revert the `--plan` → `--pr` rename in `objective_fetch_context.py` and instead pick a better name. But the plan explicitly calls for this rename.
+
+Let me check if Click would even accept two options with the same name:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="52822" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Dn9FRVJPzzG2Qnuwn6fawT">
+    <param name="command">python -c "from src.erk.cli.commands.exec.scripts.objective_fetch_context import objective_fetch_context; print('ok')" 2&gt;&amp;1 | head -20</param>
+    <param name="description">Test if duplicate --pr option causes error</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="52822" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dn9FRVJPzzG2Qnuwn6fawT">
+Traceback (most recent call last):
+  File "&lt;string&gt;", line 1, in &lt;module&gt;
+  File "/home/runner/work/erk/erk/src/erk/__init__.py", line 7, in &lt;module&gt;
+    from erk.cli.cli import cli
+ModuleNotFoundError: No module named 'erk'
+  </tool_result>
+  <assistant>The problem is clear - two `--pr` options is a conflict. The original `--plan` flag in `objective_fetch_context.py` represented a "plan issue number" which is now the same concept as a PR. Looking at the test class name `TestDirectPlanLookup` - this flag is for "direct lookup by plan/PR number" as opposed to branch-based discovery.
+
+The right fix here is to keep the old `--plan` as `--plan-pr` or `--plan-number`. But actually, since both options would take a PR number in new terminology, perhaps the better approach is to recognize that the context matters: this is a special subcommand where `--pr` means "the implementation PR" and the "plan" was the associated plan issue. Since these are now unified, the second flag should be something like `--pr-number` to distinguish.
+
+Actually, I think the simplest correct fix is that in `objective_fetch_context.py`, the second option (originally `--plan`) refers to the plan/PR number for direct lookup. The correct name would be... looking at the function: it uses `pr_number_arg` to do a direct plan lookup. In the new PR world, a "plan" is a "PR". So the flag logically should be something like `--plan-pr` to mean "the plan PR number". But looking again at the objective_fetch_context command: it already has a `--pr` for the implementation PR. Adding another `--pr` for the plan PR is ambiguous.
+
+The cleanest solution is to NOT rename this particular `--plan` to `--pr` since it would conflict. Instead, the second flag should remain `--plan` (as it refers to a different entity than the existing `--pr` in this command context) or be renamed to something unique. Let me revert the change and keep it as `--plan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="867" cache_read_input_tokens="53481" cache_creation="{'ephemeral_5m_input_tokens': 867, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018AQsG6N8tVjDBai3emMziK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="old_string">@click.option(
+    "--pr",
+    "pr_number_arg",
+    type=int,
+    default=None,
+    help="PR number (direct lookup, skips branch-based discovery)",
+)</param>
+    <param name="new_string">@click.option(
+    "--plan",
+    "pr_number_arg",
+    type=int,
+    default=None,
+    help="PR number (direct lookup, skips branch-based discovery)",
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="867" cache_read_input_tokens="53481" cache_creation="{'ephemeral_5m_input_tokens': 867, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018AQsG6N8tVjDBai3emMziK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Now revert the bad test edit I made earlier:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="54348" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JhJqUTo3ZLrdwCTVP9KxcF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py</param>
+    <param name="old_string">            ["--pr", "6517", "--objective", "6423", "--pr", "6513"],</param>
+    <param name="new_string">            ["--pr", "6517", "--objective", "6423", "--plan", "6513"],</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="54348" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JhJqUTo3ZLrdwCTVP9KxcF">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now the `--plan` in `objective_fetch_context.py` stays as `--plan` since it would otherwise conflict with the existing `--pr` flag. The `--plan` in this command refers to a different entity (plan issue) vs `--pr` (implementation PR), so this is actually correct behavior to keep it.
+
+Now fix `test_duplicate_check.py` and `test_remote_paths.py` - the `duplicate_check_cmd.py` already uses `--pr`, so these tests need to use `--pr`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="55034" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VCwMvArbVD4QiSKEZfAgM9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="offset">233</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="55034" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YHWppEio4Jgonjee2SCHwq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="offset">310</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="55034" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018HaApZEbuQqdSPrBYvtqRZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py</param>
+    <param name="offset">333</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="55034" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

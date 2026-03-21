@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "pr_number": 9313,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T00:29:20.416332+00:00",
+      "files": [
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part1.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part10.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part11.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part12.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part13.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part14.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part15.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part16.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part17.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part18.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part19.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part2.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part20.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part21.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part22.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part23.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part24.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part25.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part3.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part4.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part5.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part6.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part7.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part8.xml",
+        "impl--3a534015-f139-4342-8328-2e6967ed1b0b-part9.xml"
+      ],
+      "user_turns": 7,
+      "duration_minutes": 19,
+      "raw_size_kb": 1960,
+      "xml_size_kb": 813,
+      "git_branch": "plnd/O9109-rename-cli-flags-pla-03-20-2007"
+    }
+  ]
+}
