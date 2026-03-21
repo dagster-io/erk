@@ -92,6 +92,7 @@ Quick reference for all `erk exec` subcommands.
 | `quick-submit`                    | Quick commit all changes and submit.                                              |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                      |
 | `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                         |
+| `reopen-contested-threads`        | Detect and reopen contested resolved PR review threads.                           |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.                   |
 | `resolve-objective-ref`           | Resolve an objective reference to an objective number.                            |
 | `resolve-review-thread`           | Resolve a PR review thread.                                                       |
@@ -1152,6 +1153,18 @@ Register a one-shot plan with issue metadata and comment.
 | `--impl-pr-number` | INTEGER | Yes      | Sentinel.UNSET | -           |
 | `--submitted-by`   | TEXT    | Yes      | Sentinel.UNSET | -           |
 | `--run-url`        | TEXT    | Yes      | Sentinel.UNSET | -           |
+
+### reopen-contested-threads
+
+Detect and reopen contested resolved PR review threads.
+
+**Usage:** `erk exec reopen-contested-threads`
+
+**Options:**
+
+| Flag   | Type    | Required | Default | Description                                 |
+| ------ | ------- | -------- | ------- | ------------------------------------------- |
+| `--pr` | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
 
 ### reply-to-discussion-comment
 

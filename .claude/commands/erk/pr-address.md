@@ -43,7 +43,18 @@ Determine the execution mode before any work begins:
 
    If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
 
-2. **Otherwise** → **Code Review Mode** (continue to Phase 1)
+2. **Otherwise** → **Code Review Mode** (continue to Phase 0.5)
+
+---
+
+### Phase 0.5: Reopen Contested Threads
+
+```bash
+erk exec reopen-contested-threads [--pr <number> if specified]
+```
+
+If `total_contested > 0`, report: "Reopened N contested threads — these will be included in classification below."
+If `success` is false, warn but continue (non-blocking).
 
 ---
 
