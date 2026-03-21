@@ -123,7 +123,7 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_teleport")
-        expected_cmd = "erk pr teleport 123"
+        expected_cmd = "erk slot teleport 123"
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
@@ -133,7 +133,7 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
         screen.execute_command("copy_teleport_new_slot")
-        expected_cmd = "erk pr teleport 123 --new-slot"
+        expected_cmd = "erk slot teleport 123 --new-slot"
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 

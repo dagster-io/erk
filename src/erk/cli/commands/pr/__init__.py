@@ -17,7 +17,6 @@ from erk.cli.commands.pr.replan_cmd import pr_replan
 from erk.cli.commands.pr.resolve_conflicts_cmd import resolve_conflicts
 from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
 from erk.cli.commands.pr.submit_cmd import pr_submit
-from erk.cli.commands.pr.teleport_cmd import pr_teleport
 from erk.cli.commands.pr.view.cli import pr_view
 from erk_shared.cli_alias import register_with_aliases
 
@@ -42,6 +41,5 @@ pr_group.add_command(pr_prepare, name="prepare")
 pr_group.add_command(pr_replan, name="replan")
 pr_group.add_command(pr_rewrite, name="rewrite")
 pr_group.add_command(pr_submit, name="submit")
-pr_group.add_command(pr_teleport, name="teleport")
 pr_group.add_command(pr_diverge_fix, name="diverge-fix")
 pr_group.add_command(pr_view, name="view")

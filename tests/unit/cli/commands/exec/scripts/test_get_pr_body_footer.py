@@ -17,7 +17,7 @@ def test_get_pr_body_footer_outputs_teleport_command() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "1895"])
 
     assert result.exit_code == 0
-    assert "erk pr teleport 1895" in result.output
+    assert "erk slot teleport 1895" in result.output
     assert "---" in result.output
     assert "To replicate this PR" in result.output
 
@@ -39,7 +39,7 @@ def test_get_pr_body_footer_different_pr_numbers() -> None:
     result = runner.invoke(get_pr_body_footer, ["--pr-number", "42"])
 
     assert result.exit_code == 0
-    assert "erk pr teleport 42" in result.output
+    assert "erk slot teleport 42" in result.output
     assert "1895" not in result.output
 
 
@@ -51,4 +51,4 @@ def test_get_pr_body_footer_never_includes_closes() -> None:
 
     assert result.exit_code == 0
     assert "Closes #" not in result.output
-    assert "erk pr teleport 1895" in result.output
+    assert "erk slot teleport 1895" in result.output

@@ -10,6 +10,7 @@ from erk_slots.goto_cmd import slot_goto
 from erk_slots.init_pool_cmd import slot_init_pool
 from erk_slots.list_cmd import slot_list
 from erk_slots.repair_cmd import slot_repair
+from erk_slots.teleport_cmd import slot_teleport
 from erk_slots.unassign_cmd import slot_unassign
 
 
@@ -24,5 +25,6 @@ register_with_aliases(slot_group, slot_checkout)
 slot_group.add_command(slot_goto)
 slot_group.add_command(slot_init_pool)
 slot_group.add_command(slot_repair)
+slot_group.add_command(slot_teleport)
 slot_group.add_command(slot_unassign)
 register_with_aliases(slot_group, slot_list)
