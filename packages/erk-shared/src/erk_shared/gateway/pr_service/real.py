@@ -72,15 +72,13 @@ class RealPrService(PrService):
 
         Args:
             pr_number: The PR number to close
-            pr_url: The PR URL for owner/repo extraction
+            pr_url: The PR URL (unused, kept for interface consistency)
 
         Returns:
             Empty list (no linked PRs to close)
         """
-        owner_repo = _parse_owner_repo_from_url(pr_url)
-        if owner_repo is None:
-            return []
-        owner, repo = owner_repo
+        owner = self._location.repo_id.owner
+        repo = self._location.repo_id.repo
 
         self._http_client.patch(
             f"repos/{owner}/{repo}/issues/{pr_number}",
@@ -213,20 +211,3 @@ class RealPrService(PrService):
             return {}
 
         return parse_ci_summaries(log_text)
-
-
-def _parse_owner_repo_from_url(url: str) -> tuple[str, str] | None:
-    """Parse owner and repo from a GitHub URL.
-
-    Args:
-        url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
-
-    Returns:
-        Tuple of (owner, repo) or None if parsing fails
-    """
-    if not url.startswith("https://github.com/"):
-        return None
-    parts = url.split("/")
-    if len(parts) < 5:
-        return None
-    return (parts[3], parts[4])
