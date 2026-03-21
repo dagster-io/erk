@@ -1,8 +1,8 @@
 <session>
-  <meta source="agent-a60482b" />
+  <meta source="agent-a5c9b4e" />
   <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py`:
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`:
 
 Rename all occurrences of `plan_backend` to `pr_backend`.
 Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
@@ -19,214 +19,105 @@ DO NOT rename:
 - User-facing string messages
 
 Read the file first, then apply all renames using the Edit tool.</user>
-  <assistant>I'll start by reading the file to understand its structure and then apply the necessary renames.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="16123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16123, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01T9Dmk2GfJTNWZVX5PCcaEH">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  <assistant>I'll start by reading the file to understand its structure and identify all occurrences that need to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16125" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16125, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LxjSAMcxPGhWndQ5dFPiHZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16123" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16123, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01T9Dmk2GfJTNWZVX5PCcaEH">
-     1→"""Linear pipeline for PR submission.
+  <usage input_tokens="3" cache_creation_input_tokens="16125" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16125, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LxjSAMcxPGhWndQ5dFPiHZ">
+     1→"""Dispatch logic for one-shot execution via RemoteGitHub REST API.
      2→
-     3→Replaces the dual-path branching orchestration with a sequence of plain
-     4→functions transforming a frozen SubmitState dataclass.
-     5→
-     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
-     7→"""
-     8→
-     9→import concurrent.futures
-    10→import dataclasses
-    11→import sys
-    12→import uuid
-    13→from collections.abc import Callable
-    14→from dataclasses import dataclass
-    15→from functools import cache
-    16→from pathlib import Path
-    17→
-    18→import click
-    19→
-    20→from erk.cli.commands.pr.shared import (
-    21→    assemble_pr_body,
-    22→    echo_plan_context_status,
-    23→    maybe_advance_lifecycle_to_impl,
-    24→    recover_plan_header,
-    25→    run_commit_message_generation,
-    26→)
-    27→from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
-    28→from erk.cli.ensure import UserFacingCliError
-    29→from erk.cli.repo_resolution import get_remote_github
-    30→from erk.core.commit_message_generator import CommitMessageGenerator
+     3→Uses RemoteGitHub gateway to create branches, commit files, create PRs,
+     4→and dispatch workflows entirely via the GitHub REST API. This is the
+     5→canonical dispatch path for all one-shot commands.
+     6→"""
+     7→
+     8→import time
+     9→from dataclasses import dataclass
+    10→from datetime import UTC
+    11→from typing import Any
+    12→
+    13→import click
+    14→
+    15→from erk.core.branch_slug_generator import generate_branch_slug
+    16→from erk_shared.core.prompt_executor import PromptExecutor
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_submission_queued_block,
+    19→    render_erk_issue_event,
+    20→)
+    21→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    22→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    23→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    24→from erk_shared.gateway.http.abc import HttpError
+    25→from erk_shared.gateway.remote_github.abc import RemoteGitHub
+    26→from erk_shared.gateway.time.abc import Time
+    27→from erk_shared.naming import (
+    28→    format_branch_timestamp_suffix,
+    29→    generate_planned_pr_branch_name,
+    30→    sanitize_worktree_name,
 
-... [1101 lines omitted] ...
+... [461 lines omitted] ...
 
-    34→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
-   120→class SubmitError:
-   121→    """Error result from a pipeline step."""
-   124→    error_type: str
-   133→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
-   136→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   149→        return SubmitError(
-   151→            error_type="no_branch",
-   165→        except ValueError as e:
-   166→            return SubmitError(
-   168→                error_type="issue_linkage_mismatch",
-   211→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   231→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   241→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   253→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   270→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   277→    # but the first submit attempt failed before pushing.
-   299→            return SubmitError(
-   301→                error_type="remote_diverged",
-   331→    except RuntimeError as e:
-   332→        error_str = str(e)
-   333→        if "restack" in error_str.lower():
-   334→            return SubmitError(
-   336→                error_type="graphite_restack_required",
-   345→        return SubmitError(
-   347→            error_type="graphite_submit_failed",
-   348→            message=f"Graphite submit failed: {e}",
-   360→        return SubmitError(
-   362→            error_type="pr_not_found",
-   391→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   399→        return SubmitError(
-   401→            error_type="github_auth_failed",
-   411→        return SubmitError(
-   413→            error_type="no_commits",
-   431→        if isinstance(pull_result, PullRebaseError):
-   432→            return SubmitError(
-   434→                error_type="rebase_failed",
-   436→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
-   437→                    f"Error: {pull_result.message}\n\n"
-   447→        return SubmitError(
-   449→            error_type="branch_diverged",
-   468→    if isinstance(push_result, PushError):
-   470→            return SubmitError(
-   472→                error_type="branch_diverged",
-   481→        raise UserFacingCliError(push_result.message, error_type="cli_error")
-   491→                return SubmitError(
-   493→                    error_type="parent_branch_no_pr",
-   569→def label_code_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   585→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   591→        return SubmitError(
-   593→            error_type="no_base_branch",
-   621→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   631→        return SubmitError(
-   633→            error_type="no_repo",
-   652→) -&gt; SubmitState | SubmitError:
-   665→    if isinstance(diff_result, SubmitError):
-   667→    if isinstance(plan_result, SubmitError):
-   679→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   686→        return SubmitError(
-   688→            error_type="no_diff_file",
-   689→            message="Failed to extract diff for AI analysis",
-   710→        return SubmitError(
-   712→            error_type="ai_generation_failed",
-   713→            message=f"Failed to generate message: {msg_result.error_message}",
-   726→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   768→    except RuntimeError as e:
-   769→        error_msg = str(e).lower()
-   770→        if "nothing to submit" in error_msg or "no changes" in error_msg:
-   774→        return SubmitError(
-   776→            error_type="graphite_enhance_failed",
-   777→            message=f"Graphite enhancement failed: {e}",
-   794→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   801→        return SubmitError(
-   803→            error_type="no_pr_number",
-   876→        except OSError as e:
-   878→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
-   906→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   932→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
-   973→            except ValueError:
-  1028→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-  1033→        except Exception as e:
-  1035→            return SubmitError(
-  1037→                error_type="unhandled_exception",
-  1038→                message=f"Unexpected error in {step_name}: {e}",
-  1042→        if isinstance(result, SubmitError):
-  1065→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-  1066→    """Run the submit pipeline, returning final state or first error."""
-  1070→        except Exception as e:
-  1072→            return SubmitError(
-  1074→                error_type="unhandled_exception",
-  1075→                message=f"Unexpected error in {step_name}: {e}",
-  1079→        if isinstance(result, SubmitError):
+   459→        except HttpError as e:
+   461→                click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   466→    except Exception as exc:
+   467→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
   </tool_result>
-  <assistant>Now I'll search for all occurrences of `plan_backend` and `require_plan_backend` in the file to ensure I capture them all:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="15389" cache_read_input_tokens="16123" cache_creation="{'ephemeral_5m_input_tokens': 15389, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_017dQQ8U2gVxob62yfUehbuE">
-    <param name="pattern">plan_backend|require_plan_backend</param>
-    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  <assistant>Now I'll analyze the occurrences that need to be renamed. I can see:
+
+1. Line 410: `"plan_backend": "planned_pr",` - This is in a dictionary that will be passed as workflow inputs. Based on the instruction to NOT rename external API field names, this should NOT be changed since it's a workflow input that the external system expects.
+
+2. Line 414: `inputs["plan_issue_number"] = str(pr_number)` - This is also an external API field name (workflow input), so this should NOT be changed.
+
+However, let me search for any imports or function calls to `require_plan_backend` and `plan_backend` variable/parameter usage:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="6527" cache_read_input_tokens="16125" cache_creation="{'ephemeral_5m_input_tokens': 6527, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RenxGUBrMjpLgxqiJCHDkL">
+    <param name="pattern">require_plan_backend|plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
     <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="15389" cache_read_input_tokens="16123" cache_creation="{'ephemeral_5m_input_tokens': 15389, 'ephemeral_1h_input_tokens': 0}" output_tokens="158" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_017dQQ8U2gVxob62yfUehbuE">
-627:        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
+  <usage input_tokens="6" cache_creation_input_tokens="6527" cache_read_input_tokens="16125" cache_creation="{'ephemeral_5m_input_tokens': 6527, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RenxGUBrMjpLgxqiJCHDkL">
+410:            "plan_backend": "planned_pr",
   </tool_result>
-  <assistant>Perfect! I found one occurrence of `plan_backend` on line 627. Now I'll apply the rename:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="31512" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_015zbDYuiKDS3GEm9ZFhTe2Z">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
-    <param name="old_string">    plan_provider = PrContextProvider(
-        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
-    )</param>
-    <param name="new_string">    plan_provider = PrContextProvider(
-        pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
-    )</param>
-  </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="195" cache_read_input_tokens="31512" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_015zbDYuiKDS3GEm9ZFhTe2Z">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
-  </tool_result>
-  <assistant>Now let me verify the change was applied correctly:</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="264" cache_read_input_tokens="31707" cache_creation="{'ephemeral_5m_input_tokens': 264, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01CUx42L36qXjAa2VkqkEt4S">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
-    <param name="offset">620</param>
-    <param name="limit">10</param>
-  </tool_use>
-  <usage input_tokens="4" cache_creation_input_tokens="264" cache_read_input_tokens="31707" cache_creation="{'ephemeral_5m_input_tokens': 264, 'ephemeral_1h_input_tokens': 0}" output_tokens="126" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01CUx42L36qXjAa2VkqkEt4S">
-   620→
-   621→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   622→    """Fetch plan context from linked erk-pr issue."""
-   623→    if state.skip_description:
-   624→        return state
-   625→
-   626→    plan_provider = PrContextProvider(
-   627→        pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
-   628→    )
-   629→    github_info = ctx.repo.github if not isinstance(ctx.repo, NoRepoSentinel) else None
+  <assistant>Looking at the file, I can see that:
 
-&lt;system-reminder&gt;
-Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
-&lt;/system-reminder&gt;
+1. Line 410 contains `"plan_backend": "planned_pr",` which is a dictionary key being passed as a workflow input
+2. There are no `require_plan_backend` function calls or imports in this file
+3. There are no other `plan_backend` variable names or parameters in the file
 
-  </tool_result>
-  <assistant>Perfect! The rename has been successfully applied. Let me verify there are no other occurrences that were missed:</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="477" cache_read_input_tokens="31971" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01NtF4CiSBESX9CnSrur34A9">
-    <param name="command">grep -n "plan_backend\|require_plan_backend" /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py || echo "No matches found"</param>
-    <param name="description">Verify no remaining occurrences of old naming</param>
+According to the instructions, I should NOT rename external API field names. The `"plan_backend"` at line 410 is a workflow input field name that the external workflow system expects, so it should remain as is.
+
+Let me verify there are no other occurrences I might have missed:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="307" cache_read_input_tokens="22652" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ksc8BsNYgYYzT5wRF11pJx">
+    <param name="pattern">plan_backend|pr_backend|require_plan_backend|require_pr_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="477" cache_read_input_tokens="31971" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="152" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01NtF4CiSBESX9CnSrur34A9">
-No matches found
+  <usage input_tokens="6" cache_creation_input_tokens="307" cache_read_input_tokens="22652" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ksc8BsNYgYYzT5wRF11pJx">
+410:            "plan_backend": "planned_pr",
   </tool_result>
-  <assistant>Excellent! I have successfully completed the renaming task.
+  <assistant>Perfect. The analysis shows that in the file `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py`:
+
+1. There is only **one occurrence** of `plan_backend` (line 410)
+2. This occurrence is a **dictionary key** that represents an **external API field name** being passed as a workflow input
+3. According to the instructions: "DO NOT rename: External API field names"
+4. There are **no occurrences** of `require_plan_backend` in this file
+5. There are **no other variable names, parameters, imports, or comments** using these terms
 
 ## Summary
 
-I have renamed all occurrences of `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py`.
+The file `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_remote_dispatch.py` contains only one occurrence of the terms to be renamed:
 
-**Changes made:**
-- **Line 627**: Renamed parameter `plan_backend=ctx.plan_backend` to `pr_backend=ctx.pr_backend` in the `PrContextProvider` instantiation within the `fetch_plan_context()` function
+- **Line 410**: `"plan_backend": "planned_pr",` 
 
-**Verification:**
-- The file contained one occurrence of `plan_backend` which has been successfully renamed
-- No occurrences of `require_plan_backend` were found in this file
-- A final grep confirms no old naming remains in the file
+This is an **external API field name** (a workflow input that will be passed to the GitHub workflow system). According to the explicit instruction "DO NOT rename: External API field names", this should **not be changed**.
 
-The changes preserve all user-facing string messages and comments, as requested.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="167" cache_read_input_tokens="32448" cache_creation="{'ephemeral_5m_input_tokens': 167, 'ephemeral_1h_input_tokens': 0}" output_tokens="215" service_tier="standard" inference_geo="not_available" />
+There are no other occurrences of `plan_backend`, `pr_backend`, `require_plan_backend`, or `require_pr_backend` in this file - neither as imports, parameters, variables, type annotations, nor comments.
+
+**No edits are needed** in this file since the only occurrence is an external API field name that must remain unchanged.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="306" cache_read_input_tokens="22959" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="345" service_tier="standard" inference_geo="not_available" />
 </session>

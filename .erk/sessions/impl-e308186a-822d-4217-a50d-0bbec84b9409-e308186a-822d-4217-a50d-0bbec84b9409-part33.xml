@@ -1,16 +1,17 @@
 <session>
-  <meta source="agent-aa75087" />
+  <meta source="agent-aa4c747" />
   <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py`:
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py`:
 
 Rename all occurrences of `plan_backend` to `pr_backend`.
 Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
 
 This includes:
-- Imports
-- Parameter names (e.g., `plan_backend` parameter in function signatures)
-- Variable names and attribute accesses
+- Imports of `require_plan_backend` → `require_pr_backend`
+- Call sites of `require_plan_backend(...)` → `require_pr_backend(...)`
+- Parameter names `plan_backend=` → `pr_backend=`
+- Variable names and attribute accesses `ctx.plan_backend` → `ctx.pr_backend`
 - Type annotations
 - Comments
 
@@ -19,219 +20,251 @@ DO NOT rename:
 - User-facing string messages
 
 Read the file first, then apply all renames using the Edit tool.</user>
-  <assistant>I'll start by reading the file to understand its structure and identify all occurrences that need to be renamed.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="16138" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16138, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01C5GCniMHN2PbuujNCLGnTv">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  <assistant>I'll start by reading the file to understand its current structure and identify all occurrences that need to be renamed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16188" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16188, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H4vEbgE1TxXbcEdSPpyaoV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16138" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16138, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01C5GCniMHN2PbuujNCLGnTv">
-     1→"""Helpers for plan dispatch metadata updates.
+  <usage input_tokens="3" cache_creation_input_tokens="16188" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16188, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H4vEbgE1TxXbcEdSPpyaoV">
+     1→"""Shared utilities for PR commands.
      2→
-     3→This module extracts shared logic for updating plan dispatch metadata
-     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
      5→"""
      6→
      7→from __future__ import annotations
      8→
-     9→from pathlib import Path
-    10→from typing import TYPE_CHECKING
-    11→
-    12→import click
-    13→
-    14→from erk_shared.output.output import user_output
-    15→from erk_shared.pr_store.backend import ManagedPrBackend
-    16→from erk_shared.pr_store.types import PrNotFound
-    17→
-    18→if TYPE_CHECKING:
-    19→    from erk.core.context import ErkContext
-    20→    from erk.core.repo_discovery import RepoContext
-    21→    from erk_shared.gateway.github.abc import LocalGitHub
-    22→
-    23→
-    24→def write_dispatch_metadata(
-    25→    *,
-    26→    plan_backend: ManagedPrBackend,
-    27→    github: LocalGitHub,
-    28→    repo_root: Path,
-    29→    pr_number: int,
-    30→    run_id: str,
+     9→import queue
+    10→import re
+    11→import threading
+    12→from dataclasses import dataclass
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.core.commit_message_generator import (
+    18→    CommitMessageGenerator,
+    19→    CommitMessageRequest,
+    20→    CommitMessageResult,
+    21→)
+    22→from erk.core.context import ErkContext
+    23→from erk.core.pr_context_provider import PrContext
+    24→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    CREATED_AT,
+    27→    CREATED_BY,
+    28→    LIFECYCLE_STAGE,
+    29→    SCHEMA_VERSION,
+    30→)
 
-... [79 lines omitted] ...
+... [418 lines omitted] ...
 
-    36→        RuntimeError: If plan not found or node_id unavailable.
-    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
-    46→        raise RuntimeError(f"Plan #{pr_number} not found")
+    59→        click.ClickException: If in detached HEAD state
+    63→        raise click.ClickException("Not on a branch (detached HEAD state)")
+   102→        Path to diff file, or None if extraction failed
+   159→    Silently returns on any failure — lifecycle updates must never block submission.
+   171→    except RuntimeError as e:
+   173→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   237→        except OSError:
+   338→    elif event.style == "warning":
+   340→    elif event.style == "error":
+   347→    """Verify Claude CLI is available, raising ClickException if not.
+   353→        click.ClickException: If Claude CLI is not available
+   356→        raise click.ClickException(
+   393→        CommitMessageResult with the generated title/body or error info
+   439→            error_message="Commit message generation did not complete",
   </tool_result>
-  <assistant>Now I'll apply the renames. I need to rename:
-1. `plan_backend` → `pr_backend` (parameter name in function signature and variable usages)
-2. `require_plan_backend` → `require_pr_backend` (if present - but I don't see this in the file)
-
-Let me look for `require_plan_backend` in imports or elsewhere:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="1495" cache_read_input_tokens="16138" cache_creation="{'ephemeral_5m_input_tokens': 1495, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_016Wwvt1iD5rGwJHdGqUQskS">
-    <param name="pattern">require_plan_backend</param>
-    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  <assistant>Now I'll search for all occurrences of `plan_backend` and `require_plan_backend` in the file to ensure I identify all the necessary changes:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="5444" cache_read_input_tokens="16188" cache_creation="{'ephemeral_5m_input_tokens': 5444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LpiuxidbQDFJ49Q8MuDkXY">
+    <param name="pattern">plan_backend|require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1495" cache_read_input_tokens="16138" cache_creation="{'ephemeral_5m_input_tokens': 1495, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_016Wwvt1iD5rGwJHdGqUQskS">
-No files found
+  <usage input_tokens="6" cache_creation_input_tokens="5444" cache_read_input_tokens="16188" cache_creation="{'ephemeral_5m_input_tokens': 5444, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LpiuxidbQDFJ49Q8MuDkXY">
+161:    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+170:        ctx.plan_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})
+201:    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
   </tool_result>
-  <assistant>Good, `require_plan_backend` doesn't appear in this file. Now I'll rename all occurrences of `plan_backend` to `pr_backend`. Let me do this systematically:
-
-1. First, rename the parameter in the `write_dispatch_metadata` function signature:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="204" cache_read_input_tokens="17633" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01VdKdujsjBDvcjbWag4QmUc">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
-    <param name="old_string">def write_dispatch_metadata(
-    *,
-    plan_backend: ManagedPrBackend,
-    github: LocalGitHub,
-    repo_root: Path,
-    pr_number: int,
-    run_id: str,
-    dispatched_at: str,
-) -&gt; None:</param>
-    <param name="new_string">def write_dispatch_metadata(
-    *,
-    pr_backend: ManagedPrBackend,
-    github: LocalGitHub,
-    repo_root: Path,
-    pr_number: int,
-    run_id: str,
-    dispatched_at: str,
-) -&gt; None:</param>
+  <assistant>Good. I found 3 occurrences of `ctx.plan_backend` in the file. Now let me check if there are any imports that need to be updated:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="256" cache_read_input_tokens="21632" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VfSg6WGhmYtE2nRpP7z42V">
+    <param name="pattern">from|import.*require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="204" cache_read_input_tokens="17633" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="323" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01VdKdujsjBDvcjbWag4QmUc">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  <usage input_tokens="5" cache_creation_input_tokens="256" cache_read_input_tokens="21632" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="160" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VfSg6WGhmYtE2nRpP7z42V">
+7:from __future__ import annotations
+12:from dataclasses import dataclass
+13:from pathlib import Path
+17:from erk.core.commit_message_generator import (
+22:from erk.core.context import ErkContext
+23:from erk.core.pr_context_provider import PrContext
+24:from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+25:from erk_shared.gateway.github.metadata.schemas import (
+31:from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+32:from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+33:from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+34:from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
+35:from erk_shared.gateway.time.abc import Time
+36:from erk_shared.pr_store.conversion import header_str
+37:from erk_shared.pr_store.planned_pr_lifecycle import build_original_pr_section
+38:from erk_shared.pr_store.types import PrNotFound
+192:    """Attempt to recover a plan-header metadata block from the plan backend.
+195:    this function reconstructs it from the plan's stored metadata so that
+209:    # Otherwise, construct a minimal plan-header from PR metadata
+296:        recovered_plan_header: Fallback plan-header block recovered from the plan
+297:            backend, used when the plan-header is missing from existing_pr_body.
+311:            # Draft PR: use original-plan format (from lifecycle module)
+357:            "Claude CLI not found\n\nInstall from: https://claude.com/download"
+389:        plan_context: Optional plan context from linked erk-pr issue
   </tool_result>
-  <assistant>2. Now rename the first usage of `plan_backend` in the function body:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="371" cache_read_input_tokens="17837" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01Rftopuyi3qpVs4S4qXSWRL">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
-    <param name="old_string">    # LBYL: Check plan exists before updating metadata
-    pr_id = str(pr_number)
-    plan_result = plan_backend.get_managed_pr(repo_root, pr_id)</param>
-    <param name="new_string">    # LBYL: Check plan exists before updating metadata
-    pr_id = str(pr_number)
-    plan_result = pr_backend.get_managed_pr(repo_root, pr_id)</param>
+  <assistant>The grep shows there's no explicit import of `require_plan_backend` in this file. The file only uses `ctx.plan_backend` directly. Now I'll apply the renames. I need to replace:
+
+1. Line 161: `ctx.plan_backend` → `ctx.pr_backend`
+2. Line 170: `ctx.plan_backend` → `ctx.pr_backend`
+3. Line 201: `ctx.plan_backend` → `ctx.pr_backend`
+
+Let me make these edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="620" cache_read_input_tokens="21888" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019aYd8qRzynLAUau4bkBPAu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+    if isinstance(plan...[truncated 164 chars]...y:
+        ctx.plan_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})</param>
+    <param name="new_string">    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
+    if isinstance(plan_r...[truncated 160 chars]...try:
+        ctx.pr_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})</param>
   </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="371" cache_read_input_tokens="17837" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="232" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Rftopuyi3qpVs4S4qXSWRL">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  <usage input_tokens="5" cache_creation_input_tokens="620" cache_read_input_tokens="21888" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="474" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019aYd8qRzynLAUau4bkBPAu">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
   </tool_result>
-  <assistant>3. Now rename the second usage in `ensure_plan_header`:</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="384" cache_read_input_tokens="18208" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01KDkxNQ2egCLpJQsSvm6SQL">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
-    <param name="old_string">    plan_backend.ensure_plan_header(repo_root, pr_id)
-    plan_backend.update_metadata(</param>
-    <param name="new_string">    pr_backend.ensure_plan_header(repo_root, pr_id)
-    pr_backend.update_metadata(</param>
+  <assistant>Now let me update the third occurrence:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="624" cache_read_input_tokens="22508" cache_creation="{'ephemeral_5m_input_tokens': 624, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019NWzFdDGmDfiVZHJEFpGaa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="old_string">    plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
+    if isinstance(plan_result, PrNotFound):
+        return None</param>
+    <param name="new_string">    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
+    if isinstance(plan_result, PrNotFound):
+        return None</param>
   </tool_use>
-  <usage input_tokens="4" cache_creation_input_tokens="384" cache_read_input_tokens="18208" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01KDkxNQ2egCLpJQsSvm6SQL">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  <usage input_tokens="4" cache_creation_input_tokens="624" cache_read_input_tokens="22508" cache_creation="{'ephemeral_5m_input_tokens': 624, 'ephemeral_1h_input_tokens': 0}" output_tokens="210" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019NWzFdDGmDfiVZHJEFpGaa">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py has been updated successfully.
   </tool_result>
-  <assistant>4. Now rename the context attribute accesses in `maybe_update_plan_dispatch_metadata` function. First, the `resolve_pr_number_for_branch` call:</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="239" cache_read_input_tokens="18592" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_011eLP8qsMQDBZsM2gyLubcX">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
-    <param name="old_string">    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo.root, branch_name)</param>
-    <param name="new_string">    pr_id = ctx.pr_backend.resolve_pr_number_for_branch(repo.root, branch_name)</param>
+  <assistant>Now let me verify the changes were applied correctly by reading the relevant sections:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="256" cache_read_input_tokens="23132" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WgG2RsWdZqpjh7SYEgRtaL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="offset">155</param>
+    <param name="limit">25</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="239" cache_read_input_tokens="18592" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="213" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_011eLP8qsMQDBZsM2gyLubcX">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  <usage input_tokens="3" cache_creation_input_tokens="256" cache_read_input_tokens="23132" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="129" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WgG2RsWdZqpjh7SYEgRtaL">
+   155→    Intended for use after PR submission or rewrite so that plans are correctly
+   156→    marked as being implemented even when the user bypasses the /erk:plan-implement
+   157→    pipeline.
+   158→
+   159→    Silently returns on any failure — lifecycle updates must never block submission.
+   160→    """
+   161→    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
+   162→    if isinstance(plan_result, PrNotFound):
+   163→        return
+   164→
+   165→    current_stage = header_str(plan_result.header_fields, LIFECYCLE_STAGE)
+   166→    if current_stage not in _STAGES_BEFORE_IMPL:
+   167→        return
+   168→
+   169→    try:
+   170→        ctx.pr_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})
+   171→    except RuntimeError as e:
+   172→        if not quiet:
+   173→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   174→            click.echo(click.style(msg, fg="yellow"))
+   175→        return
+   176→
+   177→    if not quiet:
+   178→        click.echo(click.style("   Plan lifecycle stage updated to impl", dim=True))
+   179→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
   </tool_result>
-  <assistant>5. Now rename the `ensure_plan_header` and `update_metadata` calls in the second function:</assistant>
-  <usage input_tokens="2" cache_creation_input_tokens="365" cache_read_input_tokens="18831" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_012cDWSzMDyrseoYCECbAEhm">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
-    <param name="old_string">    ctx.plan_backend.ensure_plan_header(repo.root, pr_id)
-    ctx.plan_backend.update_metadata(</param>
-    <param name="new_string">    ctx.pr_backend.ensure_plan_header(repo.root, pr_id)
-    ctx.pr_backend.update_metadata(</param>
+  <tool_use name="Read" id="toolu_01WAUvbR5U3Hk2Tzd1fomUAK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="offset">195</param>
+    <param name="limit">15</param>
   </tool_use>
-  <usage input_tokens="2" cache_creation_input_tokens="365" cache_read_input_tokens="18831" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_012cDWSzMDyrseoYCECbAEhm">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  <usage input_tokens="2" cache_creation_input_tokens="663" cache_read_input_tokens="23388" cache_creation="{'ephemeral_5m_input_tokens': 663, 'ephemeral_1h_input_tokens': 0}" output_tokens="113" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WAUvbR5U3Hk2Tzd1fomUAK">
+   195→    this function reconstructs it from the plan's stored metadata so that
+   196→    ``assemble_pr_body`` can re-embed it in the PR body.
+   197→
+   198→    Returns None if the plan cannot be found, allowing callers to proceed
+   199→    without a plan-header (current behavior).
+   200→    """
+   201→    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
+   202→    if isinstance(plan_result, PrNotFound):
+   203→        return None
+   204→
+   205→    # If the plan still has header_fields, use them directly
+   206→    if plan_result.header_fields:
+   207→        return MetadataBlock(key=BlockKeys.PLAN_HEADER, data=dict(plan_result.header_fields))
+   208→
+   209→    # Otherwise, construct a minimal plan-header from PR metadata
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
   </tool_result>
-  <assistant>Now let me verify the changes by reading the file again:</assistant>
-  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="19196" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01LZPhbqWcEEA1LvsR8iqbyy">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  <assistant>Perfect! Let me verify once more that all occurrences have been renamed by searching the file:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="968" cache_read_input_tokens="23514" cache_creation="{'ephemeral_5m_input_tokens': 968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017pq8nSU3Zioe2V6SRNwdaX">
+    <param name="pattern">plan_backend|require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="19196" cache_creation="{'ephemeral_5m_input_tokens': 256, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01LZPhbqWcEEA1LvsR8iqbyy">
-     1→"""Helpers for plan dispatch metadata updates.
-     2→
-     3→This module extracts shared logic for updating plan dispatch metadata
-     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
-     5→"""
-     6→
-     7→from __future__ import annotations
-     8→
-     9→from pathlib import Path
-    10→from typing import TYPE_CHECKING
-    11→
-    12→import click
-    13→
-    14→from erk_shared.output.output import user_output
-    15→from erk_shared.pr_store.backend import ManagedPrBackend
-    16→from erk_shared.pr_store.types import PrNotFound
-    17→
-    18→if TYPE_CHECKING:
-    19→    from erk.core.context import ErkContext
-    20→    from erk.core.repo_discovery import RepoContext
-    21→    from erk_shared.gateway.github.abc import LocalGitHub
-    22→
-    23→
-    24→def write_dispatch_metadata(
-    25→    *,
-    26→    pr_backend: ManagedPrBackend,
-    27→    github: LocalGitHub,
-    28→    repo_root: Path,
-    29→    pr_number: int,
-    30→    run_id: str,
-
-... [79 lines omitted] ...
-
-    36→        RuntimeError: If plan not found or node_id unavailable.
-    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
-    46→        raise RuntimeError(f"Plan #{pr_number} not found")
+  <usage input_tokens="3" cache_creation_input_tokens="968" cache_read_input_tokens="23514" cache_creation="{'ephemeral_5m_input_tokens': 968, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017pq8nSU3Zioe2V6SRNwdaX">
+No matches found
   </tool_result>
-  <assistant>Perfect! All renames have been successfully applied. Let me verify that all occurrences have been changed by doing a final search:</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="1589" cache_read_input_tokens="19452" cache_creation="{'ephemeral_5m_input_tokens': 1589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_016iHa7X998TMFt3H86G7j7d">
-    <param name="pattern">plan_backend</param>
-    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  <assistant>Excellent! Now let me verify that the new names are in place:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="262" cache_read_input_tokens="24482" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UMY3oionjF1Tb13VPoPeP1">
+    <param name="pattern">pr_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="0" cache_creation_input_tokens="1589" cache_read_input_tokens="19452" cache_creation="{'ephemeral_5m_input_tokens': 1589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_016iHa7X998TMFt3H86G7j7d">
-No files found
+  <usage input_tokens="2" cache_creation_input_tokens="262" cache_read_input_tokens="24482" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UMY3oionjF1Tb13VPoPeP1">
+161:    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
+170:        ctx.pr_backend.update_metadata(repo_root, pr_id, {"lifecycle_stage": "impl"})
+201:    plan_result = ctx.pr_backend.get_managed_pr(repo_root, pr_id)
   </tool_result>
-  <assistant>Excellent! The renaming is complete. Here's a summary of all changes made to `/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py`:
+  <assistant>Perfect! All renames have been completed successfully. Here's a summary of the changes made:
 
-## Changes Applied
+## Summary
 
-Successfully renamed all occurrences of `plan_backend` to `pr_backend`:
+I've successfully renamed all occurrences in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py`:
 
-1. **Function parameter** (line 26): `plan_backend: ManagedPrBackend` → `pr_backend: ManagedPrBackend`
+**Changes made:**
+- **Line 161**: `ctx.plan_backend.get_managed_pr(...)` → `ctx.pr_backend.get_managed_pr(...)`
+- **Line 170**: `ctx.plan_backend.update_metadata(...)` → `ctx.pr_backend.update_metadata(...)`
+- **Line 201**: `ctx.plan_backend.get_managed_pr(...)` → `ctx.pr_backend.get_managed_pr(...)`
 
-2. **Variable usage in `write_dispatch_metadata`** (line 44): `plan_backend.get_managed_pr(...)` → `pr_backend.get_managed_pr(...)`
-
-3. **Method calls in `write_dispatch_metadata`** (lines 48-49):
-   - `plan_backend.ensure_plan_header(...)` → `pr_backend.ensure_plan_header(...)`
-   - `plan_backend.update_metadata(...)` → `pr_backend.update_metadata(...)`
-
-4. **Context attribute access in `maybe_update_plan_dispatch_metadata`** (line 85): `ctx.plan_backend.resolve_pr_number_for_branch(...)` → `ctx.pr_backend.resolve_pr_number_for_branch(...)`
-
-5. **Method calls in `maybe_update_plan_dispatch_metadata`** (lines 93-94):
-   - `ctx.plan_backend.ensure_plan_header(...)` → `ctx.pr_backend.ensure_plan_header(...)`
-   - `ctx.plan_backend.update_metadata(...)` → `ctx.pr_backend.update_metadata(...)`
-
-No occurrences of `require_plan_backend` were found in this file. All external API field names and user-facing string messages were preserved as requested.</assistant>
-  <usage input_tokens="0" cache_creation_input_tokens="142" cache_read_input_tokens="21041" cache_creation="{'ephemeral_5m_input_tokens': 142, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+**Details:**
+- There were no explicit imports of `require_plan_backend` in this file, so no import statements needed updating
+- All 3 occurrences of `ctx.plan_backend` attribute access were updated to `ctx.pr_backend`
+- User-facing string messages and external API field names were preserved as instructed (e.g., "plan-header", "Plan lifecycle stage updated to impl", etc.)
+- Comments referencing the "plan backend" functionality were kept as-is since they describe behavior rather than being direct API references</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="24744" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="296" service_tier="standard" inference_geo="not_available" />
 </session>

@@ -1,16 +1,16 @@
 <session>
-  <meta source="agent-aef323a" />
+  <meta source="agent-ae923fb" />
   <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>In the file `/home/runner/work/erk/erk/src/erk/core/pr_context_provider.py`:
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py`:
 
 Rename all occurrences of `plan_backend` to `pr_backend`.
-Also rename `self._plan_backend` to `self._pr_backend`.
+Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
 
 This includes:
+- Imports
 - Parameter names
-- Instance variable names (self._plan_backend → self._pr_backend)
-- Variable assignments
+- Variable names and attribute accesses
 - Type annotations
 - Comments
 
@@ -19,136 +19,147 @@ DO NOT rename:
 - User-facing string messages
 
 Read the file first, then apply all renames using the Edit tool.</user>
-  <assistant>I'll help you rename `plan_backend` to `pr_backend` in that file. Let me start by reading the file to see its current content.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="16122" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16122, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01KU8UK2YgPDXbjPdfXufJJD">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/pr_context_provider.py</param>
+  <assistant>I'll start by reading the file to understand its structure, then apply all the renames.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16121" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16121, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012LiVFGW6UTzJSRjEjA6FGQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16122" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16122, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01KU8UK2YgPDXbjPdfXufJJD">
-     1→"""Plan context provider for PR description generation.
+  <usage input_tokens="3" cache_creation_input_tokens="16121" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16121, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012LiVFGW6UTzJSRjEjA6FGQ">
+     1→"""Shared helpers for objective tracking in land commands.
      2→
-     3→This module provides plan context for branches linked to plans,
-     4→enabling more accurate PR descriptions that understand the "why" behind changes.
+     3→These helpers are used by `erk land` to check for linked objectives
+     4→and prompt users to update them after landing.
      5→"""
      6→
-     7→from dataclasses import dataclass
+     7→import logging
      8→from pathlib import Path
      9→
-    10→from erk_shared.gateway.github.issues.types import IssueNotFound
-    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
-    12→from erk_shared.pr_store.backend import ManagedPrBackend
-    13→from erk_shared.pr_store.types import PrNotFound
-    14→
-    15→
-    16→@dataclass(frozen=True)
-    17→class PrContext:
-    18→    """Context from an erk PR for PR generation.
+    10→import click
+    11→
+    12→from erk.cli.output import stream_command_with_feedback
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.naming import extract_objective_number
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.pr_store.types import PlanState, PrNotFound
+    17→
+    18→logger = logging.getLogger(__name__)
     19→
-    20→    Attributes:
-    21→        pr_id: The PR identifier (e.g., "123" for PR numbers)
-    22→        plan_content: The full plan markdown content
-    23→        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
-    24→    """
-    25→
-    26→    pr_id: str
-    27→    plan_content: str
-    28→    objective_summary: str | None
-    29→
+    20→
+    21→def check_and_display_plan_issue_closure(
+    22→    ctx: ErkContext,
+    23→    repo_root: Path,
+    24→    branch: str,
+    25→) -&gt; int | None:
+    26→    """Check and display plan issue closure status after landing.
+    27→
+    28→    Since PRs no longer contain "Closes #N", this always closes the plan
+    29→    issue directly via the API.
     30→
 
-... [68 lines omitted] ...
+... [126 lines omitted] ...
 
-    59→        Returns None on any failure, allowing graceful degradation for
+    67→    except RuntimeError:
+    84→    This is fail-open: catches all errors and never raises, because the
+   107→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+   122→    This is fail-open: catches all errors and never raises, because the
+   148→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
   </tool_result>
-  <assistant>Now I'll apply the renames. I can see the following occurrences that need to be changed:
-
-1. Parameter `plan_backend` in `__init__` method (line 41)
-2. Instance variable `self._plan_backend` (lines 42 and 62)
-
-Let me make these changes:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="1317" cache_read_input_tokens="16122" cache_creation="{'ephemeral_5m_input_tokens': 1317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_015XdcJ35cae1HcRqbppYWVX">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/pr_context_provider.py</param>
-    <param name="old_string">    def __init__(self, *, plan_backend: ManagedPrBackend, remote_github: RemoteGitHub) -&gt; None:
-        self._plan_backend = plan_backend
-        self._remote_github = remote_github</param>
-    <param name="new_string">    def __init__(self, *, pr_backend: ManagedPrBackend, remote_github: RemoteGitHub) -&gt; None:
-        self._pr_backend = pr_backend
-        self._remote_github = remote_github</param>
+  <assistant>Now I'll search for all occurrences of `plan_backend` and `require_plan_backend` in the file to understand what needs to be renamed:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2057" cache_read_input_tokens="16121" cache_creation="{'ephemeral_5m_input_tokens': 2057, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014ojnxssqLFGHDa6q3QJqnn">
+    <param name="pattern">plan_backend|require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="1317" cache_read_input_tokens="16122" cache_creation="{'ephemeral_5m_input_tokens': 1317, 'ephemeral_1h_input_tokens': 0}" output_tokens="299" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_015XdcJ35cae1HcRqbppYWVX">
-The file /home/runner/work/erk/erk/src/erk/core/pr_context_provider.py has been updated successfully.
+  <usage input_tokens="6" cache_creation_input_tokens="2057" cache_read_input_tokens="16121" cache_creation="{'ephemeral_5m_input_tokens': 2057, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014ojnxssqLFGHDa6q3QJqnn">
+34:    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo_root, branch)
+66:        result = ctx.plan_backend.get_managed_pr_for_branch(repo_root, branch)
   </tool_result>
-  <tool_use name="Edit" id="toolu_01HwEXVzEVoVKkuU4YQdwefg">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/pr_context_provider.py</param>
-    <param name="old_string">        result = self._plan_backend.get_managed_pr_for_branch(repo_root, branch_name)</param>
-    <param name="new_string">        result = self._pr_backend.get_managed_pr_for_branch(repo_root, branch_name)</param>
+  <assistant>Perfect! I found two occurrences of `plan_backend` on lines 34 and 66. Now I'll apply the renames:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="226" cache_read_input_tokens="18178" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016BSj24YVFtST1zkaAiWVBH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+    <param name="old_string">    pr_id = ctx.plan_backend.resolve_pr_number_for_branch(repo_root, branch)</param>
+    <param name="new_string">    pr_id = ctx.pr_backend.resolve_pr_number_for_branch(repo_root, branch)</param>
   </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="345" cache_read_input_tokens="17439" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="167" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01HwEXVzEVoVKkuU4YQdwefg">
-The file /home/runner/work/erk/erk/src/erk/core/pr_context_provider.py has been updated successfully.
+  <usage input_tokens="5" cache_creation_input_tokens="226" cache_read_input_tokens="18178" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="199" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016BSj24YVFtST1zkaAiWVBH">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py has been updated successfully.
   </tool_result>
-  <assistant>Now let me verify the changes by reading the file again:</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="213" cache_read_input_tokens="17784" cache_creation="{'ephemeral_5m_input_tokens': 213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_017jZwT2ap9hTKaxPyR7FC6h">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/pr_context_provider.py</param>
+  <tool_use name="Edit" id="toolu_01C9APGpmc8ACpC8vCJ74e36">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+    <param name="old_string">        result = ctx.plan_backend.get_managed_pr_for_branch(repo_root, branch)</param>
+    <param name="new_string">        result = ctx.pr_backend.get_managed_pr_for_branch(repo_root, branch)</param>
   </tool_use>
-  <usage input_tokens="4" cache_creation_input_tokens="213" cache_read_input_tokens="17784" cache_creation="{'ephemeral_5m_input_tokens': 213, 'ephemeral_1h_input_tokens': 0}" output_tokens="92" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_017jZwT2ap9hTKaxPyR7FC6h">
-     1→"""Plan context provider for PR description generation.
+  <usage input_tokens="4" cache_creation_input_tokens="245" cache_read_input_tokens="18404" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C9APGpmc8ACpC8vCJ74e36">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes were applied correctly by reading the file again:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="313" cache_read_input_tokens="18649" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011wEyyq8wg7yhB2SVFSS6hG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="313" cache_read_input_tokens="18649" cache_creation="{'ephemeral_5m_input_tokens': 313, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011wEyyq8wg7yhB2SVFSS6hG">
+     1→"""Shared helpers for objective tracking in land commands.
      2→
-     3→This module provides plan context for branches linked to plans,
-     4→enabling more accurate PR descriptions that understand the "why" behind changes.
+     3→These helpers are used by `erk land` to check for linked objectives
+     4→and prompt users to update them after landing.
      5→"""
      6→
-     7→from dataclasses import dataclass
+     7→import logging
      8→from pathlib import Path
      9→
-    10→from erk_shared.gateway.github.issues.types import IssueNotFound
-    11→from erk_shared.gateway.remote_github.abc import RemoteGitHub
-    12→from erk_shared.pr_store.backend import ManagedPrBackend
-    13→from erk_shared.pr_store.types import PrNotFound
-    14→
-    15→
-    16→@dataclass(frozen=True)
-    17→class PrContext:
-    18→    """Context from an erk PR for PR generation.
+    10→import click
+    11→
+    12→from erk.cli.output import stream_command_with_feedback
+    13→from erk.core.context import ErkContext
+    14→from erk_shared.naming import extract_objective_number
+    15→from erk_shared.output.output import user_output
+    16→from erk_shared.pr_store.types import PlanState, PrNotFound
+    17→
+    18→logger = logging.getLogger(__name__)
     19→
-    20→    Attributes:
-    21→        pr_id: The PR identifier (e.g., "123" for PR numbers)
-    22→        plan_content: The full plan markdown content
-    23→        objective_summary: Optional summary of the parent objective (e.g., "Objective #123: Title")
-    24→    """
-    25→
-    26→    pr_id: str
-    27→    plan_content: str
-    28→    objective_summary: str | None
-    29→
+    20→
+    21→def check_and_display_plan_issue_closure(
+    22→    ctx: ErkContext,
+    23→    repo_root: Path,
+    24→    branch: str,
+    25→) -&gt; int | None:
+    26→    """Check and display plan issue closure status after landing.
+    27→
+    28→    Since PRs no longer contain "Closes #N", this always closes the plan
+    29→    issue directly via the API.
     30→
 
-... [68 lines omitted] ...
+... [126 lines omitted] ...
 
-    59→        Returns None on any failure, allowing graceful degradation for
+    67→    except RuntimeError:
+    84→    This is fail-open: catches all errors and never raises, because the
+   107→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+   122→    This is fail-open: catches all errors and never raises, because the
+   148→            click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
   </tool_result>
-  <assistant>Perfect! I have successfully completed the renaming task. Here's a summary of the changes made:
+  <assistant>Perfect! The renaming has been completed successfully. Here's a summary of what was done:
 
 ## Summary
 
-I've renamed all occurrences of `plan_backend` to `pr_backend` in `/home/runner/work/erk/erk/src/erk/core/pr_context_provider.py`:
+I've successfully renamed all occurrences of `plan_backend` to `pr_backend` in the file `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py`.
 
-### Changes Made:
+### Changes Applied:
 
-1. **Line 41**: Parameter name in `__init__` method
-   - `plan_backend: ManagedPrBackend` → `pr_backend: ManagedPrBackend`
+1. **Line 34**: `ctx.plan_backend.resolve_pr_number_for_branch(...)` → `ctx.pr_backend.resolve_pr_number_for_branch(...)`
 
-2. **Line 42**: Instance variable assignment
-   - `self._plan_backend = plan_backend` → `self._pr_backend = pr_backend`
+2. **Line 66**: `ctx.plan_backend.get_managed_pr_for_branch(...)` → `ctx.pr_backend.get_managed_pr_for_branch(...)`
 
-3. **Line 62**: Instance variable usage in method
-   - `self._plan_backend.get_managed_pr_for_branch(...)` → `self._pr_backend.get_managed_pr_for_branch(...)`
+### Notes:
 
-The file has been verified and all changes are complete. External API field names (like `plan_content` in the `PrContext` dataclass and docstrings referencing "plan") were intentionally left unchanged as requested.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="1401" cache_read_input_tokens="17997" cache_creation="{'ephemeral_5m_input_tokens': 1401, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+- No occurrences of `require_plan_backend` were found in this file
+- All changes are attribute accesses on the context object (`ctx.plan_backend` → `ctx.pr_backend`)
+- User-facing strings and comments mentioning "plan" were intentionally left unchanged (as per your instructions)
+- The file has no imports of `plan_backend` or `require_plan_backend` to rename</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2209" cache_read_input_tokens="18809" cache_creation="{'ephemeral_5m_input_tokens': 2209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

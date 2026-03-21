@@ -1,8 +1,8 @@
 <session>
-  <meta source="agent-a7f50dd" />
+  <meta source="agent-a7d1ccb" />
   <meta branch="plnd/O9318-rename-phase3-plan-t-03-21-1623" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py`:
+  <user>In the file `/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py`:
 
 Rename all occurrences of `plan_backend` to `pr_backend`.
 Also rename `require_plan_backend` to `require_pr_backend` wherever it appears (import and call sites).
@@ -19,155 +19,124 @@ DO NOT rename:
 - User-facing string messages
 
 Read the file first, then apply all renames using the Edit tool.</user>
-  <assistant>I'll start by reading the file to understand its structure and identify all occurrences of `plan_backend` and `require_plan_backend`.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="16124" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16124, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01ARmXXAcwUp14cyrXwLRJ4Z">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+  <assistant>I'll help you rename `plan_backend` to `pr_backend` and `require_plan_backend` to `require_pr_backend` in the file. Let me start by reading the file to understand its structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16121" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16121, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VBdHePPfpEdV7o2dr7g4Tu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="16124" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16124, 'ephemeral_1h_input_tokens': 0}" output_tokens="114" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01ARmXXAcwUp14cyrXwLRJ4Z">
-     1→"""Squash, regenerate AI commit message, push, and update remote PR.
+  <usage input_tokens="3" cache_creation_input_tokens="16121" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16121, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VBdHePPfpEdV7o2dr7g4Tu">
+     1→"""Stack landing for `erk land --stack`.
      2→
-     3→Replaces the old multi-step workflow (gt squash → erk pr summarize → push)
-     4→with a single command that handles the full cycle: squash commits, generate
-     5→an AI-powered commit message, amend the local commit, force-push, and update
-     6→the remote PR title/body.
-     7→"""
-     8→
-     9→from pathlib import Path
-    10→
-    11→import click
+     3→Lands an entire Graphite stack bottom-up while preserving the existing land
+     4→command's validation and cleanup guarantees:
+     5→- all confirmations happen before mutations
+     6→- child PR base updates are verified before landing a parent branch
+     7→- local cleanup reuses the same branch/worktree cleanup paths as `erk land`
+     8→"""
+     9→
+    10→from dataclasses import dataclass
+    11→from pathlib import Path
     12→
-    13→from erk.cli.commands.pr.shared import (
-    14→    assemble_pr_body,
-    15→    cleanup_diff_file,
-    16→    discover_branch_context,
-    17→    echo_plan_context_status,
-    18→    maybe_advance_lifecycle_to_impl,
-    19→    render_progress,
-    20→    require_claude_available,
-    21→    run_commit_message_generation,
-    22→    run_diff_extraction,
-    23→)
-    24→from erk.cli.repo_resolution import get_remote_github
-    25→from erk.core.command_log import get_or_generate_session_id
-    26→from erk.core.commit_message_generator import CommitMessageGenerator
-    27→from erk.core.context import ErkContext, NoRepoSentinel
-    28→from erk.core.pr_context_provider import PrContextProvider
-    29→from erk_shared.gateway.branch_manager.types import SubmitBranchError
-    30→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.commands.land_cmd import (
+    17→    CleanupContext,
+    18→    _cleanup_landed_branch,
+    19→    check_unresolved_comments,
+    20→)
+    21→from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
+    22→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    23→from erk.cli.commands.objective_helpers import (
+    24→    get_objective_for_branch,
+    25→    run_objective_update_after_land,
+    26→)
+    27→from erk.cli.ensure import Ensure
+    28→from erk.core.context import ErkContext
+    29→from erk.core.repo_discovery import RepoContext
+    30→from erk_shared.gateway.git.remote_ops.types import PushError
 
-... [207 lines omitted] ...
+... [665 lines omitted] ...
 
-    35→from erk_shared.gateway.gt.types import SquashError
-    83→        raise click.ClickException(
-    96→    if isinstance(squash_result, SquashError):
-    97→        raise click.ClickException(f"Squash failed: {squash_result.message}")
-   110→        raise click.ClickException("Failed to extract diff for AI analysis")
-   120→        raise click.ClickException("Repository has no GitHub remote configured")
-   144→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
-   166→    if isinstance(submit_result, SubmitBranchError):
-   167→        raise click.ClickException(f"Push failed: {submit_result.message}")
-   221→) -&gt; SquashError | None:
-   222→    """Run squash phase. Returns SquashError on failure, None on success."""
-   229→            if isinstance(result, SquashError):
+    31→from erk_shared.gateway.github.types import MergeError, PRDetails, PRNotFound
+   333→    except RuntimeError as exc:
+   336→            _format_partial_failure(
+   339→                    f"Failed to fetch origin/{trunk_branch} before rebasing '{branch}'.\n\n"
+   351→        except RuntimeError as exc:
+   353→                click.style("Warning: ", fg="yellow")
+   354→                + f"Automatic rebase abort failed in {rebase_cwd}: {exc}"
+   364→            _format_partial_failure(
+   378→    except Exception as exc:
+   381→            _format_partial_failure(
+   384→                    f"Failed to re-track rebased branch '{branch}' in Graphite.\n\n"
+   398→    if isinstance(push_result, PushError):
+   401→            _format_partial_failure(
+   404→                    f"Failed to push rebased branch '{branch}' to origin.\n\n"
+   437→    error_message = reparent_child_pr_bases_for_land(
+   443→    if error_message is not None:
+   446→            _format_partial_failure(merged_entries=merged_entries, message=error_message),
+   455→        except Exception as exc:
+   458→                _format_partial_failure(
+   461→                        f"Failed to update local Graphite tracking for child branch "
+   495→    if isinstance(merge_result, MergeError):
+   498→            _format_partial_failure(
+   501→                    f"Failed to merge PR #{entry.pr_number} [{entry.branch}].\n\n"
+   511→            click.style("Warning: ", fg="yellow")
+   537→        except Exception as exc:
+   539→                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {entry.branch}: {exc}"
+   551→        except Exception as exc:
+   553→                click.style("Warning: ", fg="yellow")
+   554→                + f"Objective update failed for {entry.branch}: {exc}"
+   568→    cleanup_warnings: list[str] = []
+   590→        except Exception as exc:
+   591→            cleanup_warnings.append(f"{entry.branch}: {exc}")
+   593→    if cleanup_warnings:
+   594→        user_output(click.style("Warning: ", fg="yellow") + "Stack merged, but cleanup had issues:")
+   595→        for warning in cleanup_warnings:
+   596→            user_output(f"  - {warning}")
+   608→            click.style("Warning: ", fg="yellow")
+   616→    except RuntimeError:
+   618→            click.style("Warning: ", fg="yellow")
+   630→            click.style("Warning: ", fg="yellow")
+   642→    except RuntimeError:
+   644→            click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
+   680→def _format_partial_failure(
   </tool_result>
-  <assistant>Now I'll identify all the occurrences that need to be renamed:
-
-1. Line 117: `plan_backend=ctx.plan_backend` - both parameter name and attribute access
-2. Line 116: `plan_provider = PrContextProvider(` - variable name is fine (stays as is), but the parameter being passed needs checking
-3. I need to check for `require_plan_backend` imports and calls
-
-Let me check the imports at the top more carefully. I see the imports from `erk.cli.commands.pr.shared` but I don't see `require_plan_backend` imported here. Let me search for it in the file to be thorough:</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="3335" cache_read_input_tokens="16124" cache_creation="{'ephemeral_5m_input_tokens': 3335, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_019AFcXQxeckP4wEVRaR6cbN">
-    <param name="command">grep -n "require_plan_backend\|plan_backend" /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+  <assistant>Now I'll apply the renames. I found one occurrence of `plan_backend` on line 286. Let me search for all occurrences of both `plan_backend` and `require_plan_backend` to ensure I find everything.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="9072" cache_read_input_tokens="16121" cache_creation="{'ephemeral_5m_input_tokens': 9072, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01DjkyCHkxtVVnrGHgAYiwe7">
+    <param name="pattern">plan_backend|require_plan_backend</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py</param>
+    <param name="output_mode">content</param>
   </tool_use>
-  <usage input_tokens="6" cache_creation_input_tokens="3335" cache_read_input_tokens="16124" cache_creation="{'ephemeral_5m_input_tokens': 3335, 'ephemeral_1h_input_tokens': 0}" output_tokens="247" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_019AFcXQxeckP4wEVRaR6cbN">
-117:        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
+  <usage input_tokens="6" cache_creation_input_tokens="9072" cache_read_input_tokens="16121" cache_creation="{'ephemeral_5m_input_tokens': 9072, 'ephemeral_1h_input_tokens': 0}" output_tokens="175" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DjkyCHkxtVVnrGHgAYiwe7">
+286:                pr_id=ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch),
   </tool_result>
-  <assistant>Good, I can see there are occurrences on line 117. Now let me apply the renames:
-
-1. Line 117: `plan_backend=ctx.plan_backend` → `pr_backend=ctx.pr_backend`
-
-Let me make this edit:</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="284" cache_read_input_tokens="19459" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Edit" id="toolu_01HeetXWLt8Kn6cQxmBFKFYK">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
-    <param name="old_string">    plan_provider = PrContextProvider(
-        plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
-    )</param>
-    <param name="new_string">    plan_provider = PrContextProvider(
-        pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
-    )</param>
+  <assistant>Perfect. I found one occurrence of `plan_backend` on line 286. Now I'll apply the rename:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="218" cache_read_input_tokens="25193" cache_creation="{'ephemeral_5m_input_tokens': 218, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017xjUa4UNwD5tiweR4719JW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py</param>
+    <param name="old_string">                pr_id=ctx.plan_backend.resolve_pr_number_for_branch(main_repo_root, branch),</param>
+    <param name="new_string">                pr_id=ctx.pr_backend.resolve_pr_number_for_branch(main_repo_root, branch),</param>
   </tool_use>
-  <usage input_tokens="5" cache_creation_input_tokens="284" cache_read_input_tokens="19459" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="253" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01HeetXWLt8Kn6cQxmBFKFYK">
-The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py has been updated successfully.
+  <usage input_tokens="6" cache_creation_input_tokens="218" cache_read_input_tokens="25193" cache_creation="{'ephemeral_5m_input_tokens': 218, 'ephemeral_1h_input_tokens': 0}" output_tokens="198" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017xjUa4UNwD5tiweR4719JW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py has been updated successfully.
   </tool_result>
-  <assistant>Perfect! Let me verify the change was applied correctly:</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="302" cache_read_input_tokens="19743" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_013BwzSF8bVeuNqTaVUVdULy">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
-    <param name="offset">110</param>
-    <param name="limit">15</param>
-  </tool_use>
-  <usage input_tokens="4" cache_creation_input_tokens="302" cache_read_input_tokens="19743" cache_creation="{'ephemeral_5m_input_tokens': 302, 'ephemeral_1h_input_tokens': 0}" output_tokens="128" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013BwzSF8bVeuNqTaVUVdULy">
-   110→        raise click.ClickException("Failed to extract diff for AI analysis")
-   111→    click.echo("")
-   112→
-   113→    # Phase 4: Generate AI title/body
-   114→    click.echo(click.style("Phase 3: Generating commit message", bold=True))
-   115→
-   116→    plan_provider = PrContextProvider(
-   117→        pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
-   118→    )
-   119→    if isinstance(ctx.repo, NoRepoSentinel) or ctx.repo.github is None:
-   120→        raise click.ClickException("Repository has no GitHub remote configured")
-   121→    plan_context = plan_provider.get_plan_context(
-   122→        repo_root=discovery.repo_root,
-   123→        branch_name=discovery.current_branch,
-   124→        owner=ctx.repo.github.owner,
-
-&lt;system-reminder&gt;
-Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
-&lt;/system-reminder&gt;
-
-  </tool_result>
-  <assistant>Excellent! The rename has been successfully applied. Let me verify there are no other occurrences of the old names in this file:</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="557" cache_read_input_tokens="20045" cache_creation="{'ephemeral_5m_input_tokens': 557, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01TxHvJPJ9SMd5pNVvbPW1sx">
-    <param name="command">grep -n "plan_backend\|require_plan_backend" /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="557" cache_read_input_tokens="20045" cache_creation="{'ephemeral_5m_input_tokens': 557, 'ephemeral_1h_input_tokens': 0}" output_tokens="125" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01TxHvJPJ9SMd5pNVvbPW1sx">
-
-  </tool_result>
-  <assistant>Perfect! All occurrences have been successfully renamed. Here's a summary of the changes made:
+  <assistant>Perfect! I've successfully completed the rename. Here's a summary of the changes:
 
 ## Summary
 
-Successfully renamed all occurrences in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py`:
+I've renamed all occurrences of `plan_backend` to `pr_backend` in the file `/home/runner/work/erk/erk/src/erk/cli/commands/land_stack.py`.
 
-**Changes Made:**
-- **Line 117**: Renamed parameter `plan_backend=` to `pr_backend=`
-- **Line 117**: Renamed attribute access `ctx.plan_backend` to `ctx.pr_backend`
+**Changes made:**
+- **Line 286**: `ctx.plan_backend.resolve_pr_number_for_branch(...)` → `ctx.pr_backend.resolve_pr_number_for_branch(...)`
 
-**Final Result:**
-```python
-# Before:
-plan_provider = PrContextProvider(
-    plan_backend=ctx.plan_backend, remote_github=get_remote_github(ctx)
-)
+**Note on `require_plan_backend`:** 
+No occurrences of `require_plan_backend` were found in this file, so no changes were needed for that symbol.
 
-# After:
-plan_provider = PrContextProvider(
-    pr_backend=ctx.pr_backend, remote_github=get_remote_github(ctx)
-)
-```
-
-No instances of `require_plan_backend` were found in this file. The file has been successfully updated with all required renames applied.</assistant>
-  <usage input_tokens="4" cache_creation_input_tokens="150" cache_read_input_tokens="20602" cache_creation="{'ephemeral_5m_input_tokens': 150, 'ephemeral_1h_input_tokens': 0}" output_tokens="239" service_tier="standard" inference_geo="not_available" />
+The rename is complete and the file has been updated.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="244" cache_read_input_tokens="25411" cache_creation="{'ephemeral_5m_input_tokens': 244, 'ephemeral_1h_input_tokens': 0}" output_tokens="177" service_tier="standard" inference_geo="not_available" />
 </session>

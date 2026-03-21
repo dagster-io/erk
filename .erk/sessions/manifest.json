@@ -5,8 +5,8 @@
     {
       "session_id": "e308186a-822d-4217-a50d-0bbec84b9409",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-21T16:44:58.263965+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T16:45:26.175955+00:00",
       "files": [
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part1.xml",
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part10.xml",
@@ -44,6 +44,7 @@
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part4.xml",
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part40.xml",
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part41.xml",
+        "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part42.xml",
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part5.xml",
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part6.xml",
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part7.xml",
@@ -51,9 +52,9 @@
         "impl-e308186a-822d-4217-a50d-0bbec84b9409-e308186a-822d-4217-a50d-0bbec84b9409-part9.xml"
       ],
       "user_turns": 7,
-      "duration_minutes": 19,
-      "raw_size_kb": 2187,
-      "xml_size_kb": 1140,
+      "duration_minutes": 20,
+      "raw_size_kb": 2195,
+      "xml_size_kb": 1142,
       "git_branch": "plnd/O9318-rename-phase3-plan-t-03-21-1623"
     }
   ]
