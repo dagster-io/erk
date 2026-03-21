@@ -1,0 +1,918 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-21-1606" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_use name="Edit" id="toolu_01X7mEmPZojruEBfgmvQ7tss">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
+    <param name="old_string">The `PlanListService` transforms `Plan` → `PlanRowData`. Metadata must be preserved through this transformation.</param>
+    <param name="new_string">The `PrListService` transforms `Plan` → `PlanRowData`. Metadata must be preserved through this transformation.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1038" cache_read_input_tokens="60793" cache_creation="{'ephemeral_5m_input_tokens': 1038, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015qSKw4jCZYxtgxYMPtvw1Y">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md</param>
+    <param name="old_string">The `PlanListService` transforms raw `Plan` objects to `PlanRowData`:</param>
+    <param name="new_string">The `PrListService` transforms raw `Plan` objects to `PlanRowData`:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1038" cache_read_input_tokens="60793" cache_creation="{'ephemeral_5m_input_tokens': 1038, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X7mEmPZojruEBfgmvQ7tss">
+The file /home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_015qSKw4jCZYxtgxYMPtvw1Y">
+The file /home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me fix `gateway-vs-backend.md` - the `plan_store/` references at lines 49-60:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="61831" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HjCpftauuCKpGaQNALtYdu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="old_string">| Place        | Purpose                                          | Example File          ...[truncated 324 chars]... | Fake for testing ABC design (validates contract) | _(add when second backend exists)_ |</param>
+    <param name="new_string">| Place        | Purpose                                          | Example File          ...[truncated 324 chars]... | Fake for testing ABC design (validates contract) | _(add when second backend exists)_ |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="61831" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0185wBcKM6gwpiC1dnUq1cC7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md</param>
+    <param name="old_string">**Example:** `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/plan_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.</param>
+    <param name="new_string">**Example:** `ManagedPrBackend` at `packages/erk-shared/src/erk_shared/pr_store/backend.py` — abstracts plan CRUD with `PlannedPRBackend` implementation backed by `GitHub` gateway.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="61831" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HjCpftauuCKpGaQNALtYdu">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0185wBcKM6gwpiC1dnUq1cC7">
+The file /home/runner/work/erk/erk/docs/learned/architecture/gateway-vs-backend.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `erk-shared-package.md` - update the note about "directory still named plan_store":</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1028" cache_read_input_tokens="62267" cache_creation="{'ephemeral_5m_input_tokens': 1028, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01TLsPCwXfqe8Hi2WJjSAuup">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md</param>
+    <param name="old_string">├── plan_store/    # Plan backend abstraction (directory still named plan_store)</param>
+    <param name="new_string">├── pr_store/      # Plan backend abstraction (renamed from plan_store)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1028" cache_read_input_tokens="62267" cache_creation="{'ephemeral_5m_input_tokens': 1028, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TLsPCwXfqe8Hi2WJjSAuup">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MywurAXz3ZUYq1QD5ob2Uq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="63295" cache_creation="{'ephemeral_5m_input_tokens': 224, 'ephemeral_1h_input_tokens': 0}" output_tokens="79" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MywurAXz3ZUYq1QD5ob2Uq">
+     1→---
+     2→title: erk_shared Package
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "deciding where to put new utilities"
+     7→  - "moving code between packages"
+     8→---
+     9→
+    10→# erk_shared Package
+    11→
+    12→The `erk_shared` package (`packages/erk-shared/`) contains reusable code that can be shared between the main `erk` package and future packages.
+    13→
+    14→## When to Use erk_shared
+    15→
+    16→| Situation                           | Location               |
+    17→| ----------------------------------- | ---------------------- |
+    18→| Code only used by erk CLI           | `src/erk/`             |
+    19→| Reusable utilities and abstractions | `packages/erk-shared/` |
+    20→
+    21→## Package Structure
+    22→
+    23→```
+    24→packages/erk-shared/src/erk_shared/
+    25→├── config/        # Configuration management
+    26→├── context/       # Context helpers for dependency injection
+    27→├── core/          # Core abstractions (PromptExecutor ABC)
+    28→├── gateway/       # Gateway abstractions (git, github, shell, etc.)
+    29→├── hooks/         # Hook utilities
+    30→├── learn/         # Learn workflow utilities
+
+... [26 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HS4dkxiRR4c24ow5deuGqD">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md</param>
+    <param name="old_string">├── plan_store/    # Plan backend abstraction (directory still named plan_store)</param>
+    <param name="new_string">├── pr_store/      # Plan backend abstraction (renamed from plan_store)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1178" cache_read_input_tokens="63474" cache_creation="{'ephemeral_5m_input_tokens': 1178, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HS4dkxiRR4c24ow5deuGqD">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-shared-package.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `erk-architecture.md` lines 372, 374:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="64652" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X3Rvsarr4Cjc4xC8GrCRTv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="offset">368</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="64652" cache_creation="{'ephemeral_5m_input_tokens': 197, 'ephemeral_1h_input_tokens': 0}" output_tokens="129" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X3Rvsarr4Cjc4xC8GrCRTv">
+   368→- `ctx.plan_backend` — The `ManagedPrBackend` ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
+   369→
+   370→After PR #8210, the `PlanStore` ABC was consolidated into `ManagedPrBackend` (formerly `PlanBackend`). There is no separate read-side interface.
+   371→
+   372→&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, ManagedPrBackend --&gt;
+   373→
+   374→**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+   375→
+   376→## TUI Exit-with-Command Pattern
+   377→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01YWJgwzWHwy9DLv1qkJe7rE">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md</param>
+    <param name="old_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, ManagedPrBackend --&gt;
+
+**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.</param>
+    <param name="new_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/pr_store/backend.py, ManagedPrBackend --&gt;
+
+**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/pr_store/backend.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="64849" cache_creation="{'ephemeral_5m_input_tokens': 763, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YWJgwzWHwy9DLv1qkJe7rE">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `planned-pr-backend.md` line 37 - the file was already read and says the class is at `plan_store/planned_pr.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="65612" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017376ARHfFhQZywoUQwvMeU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+    <param name="old_string">PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`.</param>
+    <param name="new_string">PlannedPRBackend uses **composition** — it wraps the top-level GitHub gateway, not inheritance. The class is at `packages/erk-shared/src/erk_shared/pr_store/planned_pr.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="65612" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017376ARHfFhQZywoUQwvMeU">
+The file /home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `planned-pr-lifecycle.md` line 85 - I need to read it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="65910" cache_creation="{'ephemeral_5m_input_tokens': 631, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G9B5fnkmZokk9PBDqET847">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="offset">80</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="631" cache_read_input_tokens="65910" cache_creation="{'ephemeral_5m_input_tokens': 631, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G9B5fnkmZokk9PBDqET847">
+    80→
+    81→PR is marked ready for review. Standard review/merge flow. No body format changes in this stage.
+    82→
+    83→## Key Functions
+    84→
+    85→All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:
+    86→
+    87→| Function                                                         | Purpose                                                                                                                                                  |
+    88→| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    89→| `build_plan_stage_body(metadata_body, plan_content, *, summary)` | Build Stage 1 body: details-wrapped plan + metadata. Optional `summary: str \| None` prepends before `&lt;details&gt;`. Footer NOT included (needs PR number). |
+    90→| `build_original_plan_section(plan_content)`                      | Wrap plan content in `&lt;details&gt;&lt;summary&gt;original-plan&lt;/summary&gt;` section. Used by both Stage 1 and Stage 2.                                              |
+    91→| `extract_plan_content(pr_body)`                                  | Extract plan content from PR body at any lifecycle stage. Handles both details-wrapped and old flat format. Summary is NOT included in output.           |
+    92→| `find_metadata_block(pr_body, "plan-header")`                    | Extract metadata block for preservation during stage transitions.                                                                                        |
+    93→
+    94→## Separator Semantics
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BnBT4hMMr6mRVGdFkzFtp7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="old_string">All in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`:</param>
+    <param name="new_string">All in `packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py`:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="66541" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BnBT4hMMr6mRVGdFkzFtp7">
+The file /home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `branch-plan-resolution.md` lines 20, 46 - already read:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="67116" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019NyDhKdLJ6JpT5QGyu548X">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md</param>
+    <param name="old_string">These methods live on `PlannedPRBackend` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`, accessed via the `PlanBackend` interface.</param>
+    <param name="new_string">These methods live on `PlannedPRBackend` in `packages/erk-shared/src/erk_shared/pr_store/planned_pr.py`, accessed via the `PlanBackend` interface.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="67116" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XWxFF3hg7hXT3qXvFjd7hr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md</param>
+    <param name="old_string">Defined in `packages/erk-shared/src/erk_shared/plan_store/types.py`:</param>
+    <param name="new_string">Defined in `packages/erk-shared/src/erk_shared/pr_store/types.py`:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="67116" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019NyDhKdLJ6JpT5QGyu548X">
+The file /home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01XWxFF3hg7hXT3qXvFjd7hr">
+The file /home/runner/work/erk/erk/docs/learned/planning/branch-plan-resolution.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the verification grep:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="833" cache_read_input_tokens="67658" cache_creation="{'ephemeral_5m_input_tokens': 833, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YDtVd9MyPxFGHTyaHvQknE">
+    <param name="command">grep -r "PlanContext\|PlanListService\|validate_plan_title\|plan_store/" /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Verify no stale terminology remains in docs/learned/</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="833" cache_read_input_tokens="67658" cache_creation="{'ephemeral_5m_input_tokens': 833, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YDtVd9MyPxFGHTyaHvQknE">
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md:&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py --&gt;
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md:**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):
+/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md:The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_store/` (backend ABC, GitHub implementation, types) and `packages/erk-shared/src/erk_shared/context/helpers.py` (context helpers). Refer to the source directly for current signatures and behavior.
+/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md:&lt;!-- Source: erk_shared/plan_store/create_plan_draft_pr.py, create_plan_draft_pr --&gt;
+/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md:The `create_plan_draft_pr()` function in `erk_shared/plan_store/create_plan_draft_pr.py` orchestrates this: it creates a draft PR with a metadata-only body, then explicitly adds the first comment with the plan content. The comment is not auto-created by GitHub — erk creates it via `add_comment()` and records the `plan_comment_id` back into the issue body for direct lookup.
+/home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md:**File:** `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`
+/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md:&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/conversion.py, header_str, header_int, header_datetime --&gt;
+/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md:See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`. These typed accessors replace the old `extract_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.
+/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md:**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`
+/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md:- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
+  </tool_result>
+  <assistant>There are remaining `plan_store/` references in files not listed in the plan. Let me check if those files are referenced by the source PRs or are already accurate (some may be in `plan-backend-migration.md` which isn't listed in our plan). The plan said to fix specific files - let me check if the remaining references in `planned-pr-lifecycle.md` need fixing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1020" cache_read_input_tokens="68491" cache_creation="{'ephemeral_5m_input_tokens': 1020, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014aTi8gcfjPnAaYUM3aGdgd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="offset">93</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1020" cache_read_input_tokens="68491" cache_creation="{'ephemeral_5m_input_tokens': 1020, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014aTi8gcfjPnAaYUM3aGdgd">
+    93→
+    94→## Separator Semantics
+    95→
+    96→Two distinct separators serve different purposes:
+    97→
+    98→- **Content separator** (`\n\n---\n\n`, double newline each side): Between metadata block and content section. Found with `find()`.
+    99→- **Footer separator** (`\n---\n`, single newline each side): Standard PR footer delimiter. Found with `rsplit()`.
+   100→
+   101→These are distinct: `find()` matches the first (content), `rsplit()` matches the last (footer).
+   102→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The `planned-pr-lifecycle.md` has two more `plan_store/` references in Source comments. The plan says to fix line 85 (done) but there are also inline Source comments at lines near 85 in the original file. Let me read those:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="756" cache_read_input_tokens="69511" cache_creation="{'ephemeral_5m_input_tokens': 756, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QJQV3WLyyMyzC84cygPieK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="offset">100</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="756" cache_read_input_tokens="69511" cache_creation="{'ephemeral_5m_input_tokens': 756, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QJQV3WLyyMyzC84cygPieK">
+   100→
+   101→These are distinct: `find()` matches the first (content), `rsplit()` matches the last (footer).
+   102→
+   103→## False Match Prevention
+   104→
+   105→The content separator `\n\n---\n\n` can accidentally form when "Remotely executed" notes or other text end with a blank line followed by the footer delimiter `\n---\n`. This creates a false positive for `find()`.
+   106→
+   107→&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py --&gt;
+   108→
+   109→`find_metadata_block()` defends against this by validating that `&lt;!-- erk:metadata-block:` appears in the prefix. If the marker is absent, the function returns None rather than treating the accidental separator as the real content boundary.
+   110→
+   111→The asymmetric search strategy reinforces this:
+   112→
+   113→- **Content separator**: `find()` — matches the _first_ occurrence (metadata is always at the top)
+   114→- **Footer separator**: `rsplit()` — matches the _last_ occurrence (footer is always at the bottom)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_013F18WneSax39icSb9y9mQA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="offset">115</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="70267" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013F18WneSax39icSb9y9mQA">
+   115→
+   116→This means even if `\n\n---\n\n` appears mid-body, `find()` still finds the real separator first (which has the metadata marker above it), and `rsplit()` still finds the real footer last.
+   117→
+   118→## Constants
+   119→
+   120→**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`
+   121→
+   122→## Self-Referential Close Prevention
+   123→
+   124→Planned PR IS the plan. The `pr_id` from prepare_state is the PR's own number. Using `Closes #N` in the footer would be self-referential, causing the plan to close itself. All three consumers of `assemble_pr_body()` set `issue_number=None` when the backend is `github-draft-pr`.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013zLB7oufRzrqZuGFRNVQBr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="old_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py --&gt;
+
+`find_metadata_block()`</param>
+    <param name="new_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py --&gt;
+
+`find_metadata_block()`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="70440" cache_creation="{'ephemeral_5m_input_tokens': 1139, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LwQisvJC5jXne7cmJeFa2Q">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="old_string">**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py`</param>
+    <param name="new_string">**Source:** `PLAN_CONTENT_SEPARATOR`, `DETAILS_OPEN`, `DETAILS_CLOSE` in `packages/erk-shared/src/erk_shared/pr_store/planned_pr_lifecycle.py`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="70440" cache_creation="{'ephemeral_5m_input_tokens': 1139, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013zLB7oufRzrqZuGFRNVQBr">
+The file /home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01LwQisvJC5jXne7cmJeFa2Q">
+The file /home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also fix the remaining `plan_store/` references in the other files that showed up in the grep but weren't in the original plan scope. The plan's verification says "grep returns no matches" - so I need to fix all of them. Let me check those files:
+
+The remaining files are:
+- `plan-backend-migration.md` (in planning/) 
+- `metadata-block-fallback.md` (in planning/)
+- `metadata-field-workflow.md` (in planning/)
+- `plan-backend-migration.md` (in architecture/)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="71579" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EkJnKVrYkZZWeySmD3VTaV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="71579" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UJ5BLbrzy1XKLQiykyBkZe">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="71579" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EkJnKVrYkZZWeySmD3VTaV">
+     1→---
+     2→title: PlanBackend Migration Guide
+     3→read_when:
+     4→  - "migrating exec scripts from direct GitHubIssues to PlanBackend"
+     5→  - "implementing LBYL pattern for plan existence checks"
+     6→  - "handling PlanNotFound vs PlanHeaderNotFoundError"
+     7→tripwires:
+     8→  - action: "calling update_metadata() on PlanBackend"
+     9→    warning: "Always check isinstance(result, PlanNotFound) before calling update_metadata()"
+    10→  - action: "catching PlanHeaderNotFoundError"
+    11→    warning: "PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter"
+    12→last_audited: "2026-02-16 14:30 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# PlanBackend Migration Guide
+    17→
+    18→When exec scripts need to read or update plans, use `PlanBackend` instead of direct `GitHubIssues` calls. PlanBackend provides typed abstractions with discriminated union error handling.
+    19→
+    20→## Migration Pattern
+    21→
+    22→**Before (direct GitHubIssues):**
+    23→
+    24→```python
+    25→gh = require_issues(ctx)
+    26→issue = gh.get_issue(repo_root, issue_number)
+    27→# No type safety on failure case
+    28→```
+    29→
+    30→**After (PlanBackend):**
+
+... [156 lines omitted] ...
+
+    52→    output_error("issue-not-found", f"Issue #{issue_number} not found")
+    59→## Error Type Distinction
+    61→Two different error types serve different purposes:
+    66→| `PlanHeaderNotFoundError` | Exception (RuntimeError) | Raised when plan exists but metadata block is missing |
+    68→**PlanNotFound** is checked with `isinstance()` (LBYL pattern). **PlanHeaderNotFoundError** is caught with try/except because it indicates a corrupted plan state that cannot be predicted.
+    78→except PlanHeaderNotFoundError:
+    80→    output_error("no-plan-header-block", str(e))
+    81→except RuntimeError:
+    82→    # GitHub API failure
+    83→    output_error("github-api-failed", str(e))
+    95→    result["issue_update_error"] = f"Issue #{issue_number} not found"
+   100→    except RuntimeError as e:
+   102→        result["issue_update_error"] = str(e)
+   153→`add_label()` raises `RuntimeError` if the provider fails or the plan is not found (unlike `get_plan`/`update_metadata` which use the `PlanNotFound` result type).
+   163→## Error Handling Asymmetry: get vs update
+   168→- **update**: caller typically wants to report failure and continue
+   178→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) -- the broader error handling pattern
+  </tool_result>
+  <tool_result tool="toolu_01UJ5BLbrzy1XKLQiykyBkZe">
+     1→---
+     2→title: Plan Content Extraction Fallback
+     3→last_audited: "2026-02-17 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "extracting plan content from GitHub issue comments"
+     7→  - "debugging 'no plan content found' errors in replan or plan-implement"
+     8→  - "working with older erk-plans that lack metadata blocks"
+     9→tripwires:
+    10→  - action: "assuming plan content is in the issue body"
+    11→    warning: "Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic."
+    12→  - action: "checking only one location when extracting plan content"
+    13→    warning: "Always check both the first comment (plan-body metadata block) and the issue body before reporting 'no plan content found'. The replan command documents this explicitly in Step 4a."
+    14→  - action: "using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction"
+    15→    warning: "These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering."
+    16→  - action: "using PLAN_CONTENT_SEPARATOR for new code"
+    17→    warning: "Metadata blocks are now self-delimiting via HTML comment markers (&lt;!-- erk:metadata-block:{key} --&gt;). PLAN_CONTENT_SEPARATOR is retained for backward compatibility only — new code must not use it."
+    18→  - action: "assuming metadata is at the top of a PR body"
+    19→    warning: "PR body metadata position changed from top to bottom. Do not assume metadata is at the start of the body."
+    20→---
+    21→
+    22→# Plan Content Extraction Fallback
+    23→
+    24→Plans use a two-location storage design with backward-compatible fallback. Understanding why content lives where it does prevents agents from looking in the wrong place and reporting false "no content" errors.
+    25→
+    26→## Why Two Locations Exist
+    27→
+    28→Schema v2 plans split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
+    29→
+    30→| Location      | What it stores                                                | Why                                                                                                                        |
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TNsa2ci57KSiEBzjHZNxcd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/plan_store/backend.py`):</param>
+    <param name="new_string">Key methods on `PlanBackend` ABC (`packages/erk-shared/src/erk_shared/pr_store/backend.py`):</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5188" cache_read_input_tokens="72099" cache_creation="{'ephemeral_5m_input_tokens': 5188, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G1z6v74bGC4PfDLJVGCQLT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md</param>
+    <param name="old_string">The canonical implementation lives in `packages/erk-shared/src/erk_shared/plan_store/` (ba...[truncated 75 chars]...s.py` (context helpers). Refer to the source directly for current signatures and behavior.</param>
+    <param name="new_string">The canonical implementation lives in `packages/erk-shared/src/erk_shared/pr_store/` (back...[truncated 73 chars]...s.py` (context helpers). Refer to the source directly for current signatures and behavior.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5188" cache_read_input_tokens="72099" cache_creation="{'ephemeral_5m_input_tokens': 5188, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TNsa2ci57KSiEBzjHZNxcd">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01G1z6v74bGC4PfDLJVGCQLT">
+The file /home/runner/work/erk/erk/docs/learned/planning/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RGw2wyNJYozJePssF1QiFa">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md</param>
+    <param name="old_string">&lt;!-- Source: erk_shared/plan_store/create_plan_draft_pr.py, create_plan_draft_pr --&gt;
+
+The `create_plan_draft_pr()` function in `erk_shared/plan_store/create_plan_draft_pr.py` orchestrates this:</param>
+    <param name="new_string">&lt;!-- Source: erk_shared/pr_store/create_plan_draft_pr.py, create_plan_draft_pr --&gt;
+
+The `create_plan_draft_pr()` function in `erk_shared/pr_store/create_plan_draft_pr.py` orchestrates this:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="77287" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RGw2wyNJYozJePssF1QiFa">
+The file /home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `metadata-field-workflow.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="77829" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jw8sg3Z8gbr99ix1Ax2DXZ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="77829" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jw8sg3Z8gbr99ix1Ax2DXZ">
+     1→---
+     2→title: Metadata Field Addition Workflow
+     3→read_when:
+     4→  - "adding a new field to plan-header metadata"
+     5→  - "extending plan metadata schema"
+     6→  - "coordinating metadata changes across files"
+     7→last_audited: "2026-02-05 20:38 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# Metadata Field Addition Workflow
+    12→
+    13→Adding a new field to the plan-header metadata block requires coordinated changes across multiple files. This checklist ensures nothing is missed.
+    14→
+    15→## 5-File Coordination Checklist
+    16→
+    17→### 1. schemas.py -- Define the Field
+    18→
+    19→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+    20→
+    21→Three changes required in this file:
+    22→
+    23→- Add the field name as a new entry in the `PlanHeaderFieldName` Literal union type
+    24→- Add a module-level constant with a matching `Literal` type (e.g., `YOUR_NEW_FIELD: Literal["your_new_field"] = "your_new_field"`)
+    25→- Add validation logic inside `PlanHeaderSchema.validate()` -- follow the existing pattern of checking `if FIELD in data and data[FIELD] is not None:` then validating the type. Also add the constant to the `optional_fields` set in that method.
+    26→
+    27→### 2. plan_header.py -- Thread the Parameter
+    28→
+    29→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+    30→
+
+... [53 lines omitted] ...
+
+    70→1. Run `make fast-ci` to catch type errors
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JkZdvyqBwQoKLr9BxDjQXJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md</param>
+    <param name="old_string">**File:** `packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py`</param>
+    <param name="new_string">**File:** `packages/erk-shared/src/erk_shared/pr_store/create_plan_draft_pr.py`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1419" cache_read_input_tokens="78449" cache_creation="{'ephemeral_5m_input_tokens': 1419, 'ephemeral_1h_input_tokens': 0}" output_tokens="178" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JkZdvyqBwQoKLr9BxDjQXJ">
+The file /home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `architecture/plan-backend-migration.md`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="79868" cache_creation="{'ephemeral_5m_input_tokens': 548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Vt3wR9YtaXT5oPqFTat7xc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="79868" cache_creation="{'ephemeral_5m_input_tokens': 548, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vt3wR9YtaXT5oPqFTat7xc">
+     1→---
+     2→title: ManagedPrBackend Migration Pattern
+     3→read_when:
+     4→  - "migrating exec scripts to use ManagedPrBackend"
+     5→  - "working with require_plan_backend"
+     6→  - "understanding post_event vs update_metadata"
+     7→  - "Phase 3 ManagedPrBackend consolidation"
+     8→tripwires:
+     9→  - action: "calling gh api directly in an exec script for plan metadata updates"
+    10→    warning: "Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers."
+    11→  - action: "choosing between post_event and update_metadata"
+    12→    warning: "post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline."
+    13→---
+    14→
+    15→# ManagedPrBackend Migration Pattern
+    16→
+    17→Pattern for migrating exec scripts from direct GitHub CLI calls to the `ManagedPrBackend` abstraction (formerly `PlanBackend`). Part of Objective #6864 "Consolidate Plan Operations Behind ManagedPrBackend".
+    18→
+    19→## Context
+    20→
+    21→Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The `ManagedPrBackend` abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+    22→
+    23→## Migration Pattern
+    24→
+    25→### Before: Direct `gh` Calls
+    26→
+    27→```python
+    28→# Old pattern: direct subprocess calls
+    29→subprocess.run(["gh", "api", f"repos/{owner}/{repo}/issues/{issue_number}", ...])
+    30→subprocess.run(["gh", "issue", "comment", str(issue_number), "--body", comment])
+
+... [68 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019Bv1vFYZRjsEHzasVpbswS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/plan_store/conversion.py, header_str, head...[truncated 180 chars]...t_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.</param>
+    <param name="new_string">&lt;!-- Source: packages/erk-shared/src/erk_shared/pr_store/conversion.py, header_str, header...[truncated 176 chars]...t_plan_header_*()` functions, taking `plan.header_fields` and a key constant as arguments.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1948" cache_read_input_tokens="80416" cache_creation="{'ephemeral_5m_input_tokens': 1948, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017gDbVDRdqDKtrhU3ZmCKaT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string">**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/plan_store/conversion.py`</param>
+    <param name="new_string">**Canonical conversion points:** `github_issue_to_plan()` (issue-backed) and `pr_details_to_plan()` (PR-backed) in `packages/erk-shared/src/erk_shared/pr_store/conversion.py`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1948" cache_read_input_tokens="80416" cache_creation="{'ephemeral_5m_input_tokens': 1948, 'ephemeral_1h_input_tokens': 0}" output_tokens="563" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Bv1vFYZRjsEHzasVpbswS">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_017gDbVDRdqDKtrhU3ZmCKaT">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AUToPxTgMdVHyXAzRzYZ3A">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md</param>
+    <param name="old_string">- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference</param>
+    <param name="new_string">- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/pr_store/backend.py) - Complete method reference</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1012" cache_read_input_tokens="82364" cache_creation="{'ephemeral_5m_input_tokens': 1012, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AUToPxTgMdVHyXAzRzYZ3A">
+The file /home/runner/work/erk/erk/docs/learned/architecture/plan-backend-migration.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also fix the `planned-pr-backend.md` file - there are more `plan_store/` references in it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="83376" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RECte6n1jvkN68wUkyuvoG">
+    <param name="command">grep -n "plan_store/" /home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md 2&gt;&amp;1</param>
+    <param name="description">Check remaining plan_store refs in planned-pr-backend.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="83376" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RECte6n1jvkN68wUkyuvoG">
+
+  </tool_result>
+  <assistant>Good - no more `plan_store/` in `planned-pr-backend.md`. Now let's run the verification again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="83614" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012Wz6Wzf4Zmf9mPtBVxXfd8">
+    <param name="command">grep -r "PlanContext\|PlanListService\|validate_plan_title\|plan_store/" /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1</param>
+    <param name="description">Verify all stale terminology fixed in docs/learned/</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="83614" cache_creation="{'ephemeral_5m_input_tokens': 485, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Wz6Wzf4Zmf9mPtBVxXfd8">
+
+  </tool_result>
+  <assistant>Step 1 is complete. Now let me move on to the remaining steps. Let me check the actual code files I need to reference for the new docs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="84099" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01FzQYv8fPAdsStjzkqxM4z9">
+    <param name="todos">[{'content': 'Step 1: Fix stale plan-to-PR terminology in docs/learned/', 'status': 'compl...[truncated 1474 chars]...pwires', 'status': 'pending', 'activeForm': 'Updating docs/learned/ index and tripwires'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="84099" cache_creation="{'ephemeral_5m_input_tokens': 181, 'ephemeral_1h_input_tokens': 0}" output_tokens="527" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FzQYv8fPAdsStjzkqxM4z9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now I need to read the source files to create the action plan pattern doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="84280" cache_creation="{'ephemeral_5m_input_tokens': 569, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F9G2eDCPGTaomYy91ubwt7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="84280" cache_creation="{'ephemeral_5m_input_tokens': 569, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F9G2eDCPGTaomYy91ubwt7">
+&lt;tool_use_error&gt;File does not exist.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018iYMh45u9qLRiKFPKqrBgS">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands/pr/ -name "*.py" | head -20 2&gt;&amp;1</param>
+    <param name="description">Find teleport command file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="169" cache_read_input_tokens="84849" cache_creation="{'ephemeral_5m_input_tokens': 169, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018iYMh45u9qLRiKFPKqrBgS">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/duplicate_check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/resolve_conflicts_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/check_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/log_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/address_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/parse_pr_reference.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/create_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/replan_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/diverge_fix_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/view/operation.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017xryvXMCk3bDz5doKRKnYV">
+    <param name="command">find /home/runner/work/erk/erk/ -name "teleport*" -path "*/commands/*" 2&gt;&amp;1</param>
+    <param name="description">Find teleport command location</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="728" cache_read_input_tokens="85018" cache_creation="{'ephemeral_5m_input_tokens': 728, 'ephemeral_1h_input_tokens': 0}" output_tokens="104" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017xryvXMCk3bDz5doKRKnYV">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013BLr7LqhSEP9QSw9WkiXC8">
+    <param name="command">find /home/runner/work/erk/erk/ -name "teleport*" 2&gt;&amp;1 | head -10</param>
+    <param name="description">Find all teleport files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="130" cache_read_input_tokens="85746" cache_creation="{'ephemeral_5m_input_tokens': 130, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013BLr7LqhSEP9QSw9WkiXC8">
+/home/runner/work/erk/erk/docs/learned/cli/teleport-slot-awareness.md
+/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/__pycache__/teleport_cmd.cpython-312.pyc
+/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py
+/home/runner/work/erk/erk/.git/logs/refs/remotes/origin/plnd/teleport-helpstring-docs-03-12-1330
+/home/runner/work/erk/erk/.git/refs/remotes/origin/plnd/teleport-helpstring-docs-03-12-1330
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WTdmk3V7cehHuqsmhUEnQN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="85851" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WTdmk3V7cehHuqsmhUEnQN">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from contextlib import nullcontext
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.activation import (
+    19→    activation_config_activate_only,
+    20→    ensure_worktree_activate_script,
+    21→    print_activation_instructions,
+    22→)
+    23→from erk.cli.commands.checkout_helpers import (
+    24→    ensure_branch_has_worktree,
+    25→    navigate_and_display_checkout,
+    26→)
+    27→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    28→from erk.cli.ensure import Ensure
+    29→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    30→from erk.core.context import ErkContext
+
+... [551 lines omitted] ...
+
+    33→from erk_shared.core.script_error import script_error_handler
+   110→        ctx.console.error("Not in a git repository")
+   119→        ctx_manager = script_error_handler(ctx)
+   127→            ctx.console.error(
+   134→            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   257→        except RuntimeError:
+   371→    # Check if branch already has a worktree — navigate to it instead of erroring
+   551→    except RuntimeError:
+   566→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <assistant>Now I have everything I need for the action plan pattern doc. The file is in `packages/erk-slots/src/erk_slots/teleport_cmd.py` not `src/erk/cli/commands/pr/teleport_cmd.py` as the plan mentioned. Let me note the actual location and create the doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8244" cache_read_input_tokens="86177" cache_creation="{'ephemeral_5m_input_tokens': 8244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CY1oQYnG4FS77QtUusCnYp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/action-plan-pattern.md</param>
+    <param name="content">---
+title: Action Plan Pattern
+read_when:
+  - "implementing a command with --dry-run capab...[truncated 2848 chars]...Exec Script Patterns](../cli/exec-script-patterns.md) — General patterns for CLI commands
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8244" cache_read_input_tokens="86177" cache_creation="{'ephemeral_5m_input_tokens': 8244, 'ephemeral_1h_input_tokens': 0}" output_tokens="1027" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CY1oQYnG4FS77QtUusCnYp">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/architecture/action-plan-pattern.md
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XyWzQwPyH6c8NGCfWMdLxY">
+    <param name="todos">[{'content': 'Step 1: Fix stale plan-to-PR terminology in docs/learned/', 'status': 'compl...[truncated 1476 chars]...pwires', 'status': 'pending', 'activeForm': 'Updating docs/learned/ index and tripwires'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1070" cache_read_input_tokens="94421" cache_creation="{'ephemeral_5m_input_tokens': 1070, 'ephemeral_1h_input_tokens': 0}" output_tokens="493" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XyWzQwPyH6c8NGCfWMdLxY">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me explore the erk_slots package for the overview doc:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="95491" cache_creation="{'ephemeral_5m_input_tokens': 535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QTg6m6xgvbUHBJaMBwnXSJ">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/ 2&gt;&amp;1</param>
+    <param name="description">List erk_slots package contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="535" cache_read_input_tokens="95491" cache_creation="{'ephemeral_5m_input_tokens': 535, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTg6m6xgvbUHBJaMBwnXSJ">
+__init__.py
+__pycache__
+assign_cmd.py
+checkout_cmd.py
+common.py
+config.py
+diagnostics.py
+down_cmd.py
+goto_cmd.py
+group.py
+init_pool_cmd.py
+list_cmd.py
+navigation.py
+repair_cmd.py
+teleport_cmd.py
+unassign_cmd.py
+up_cmd.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EVjhFts5HVjE42MHy95zzx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/common.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="96026" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GpPnMnZ7t6CGChY2WzGKXx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/config.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="96026" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EVjhFts5HVjE42MHy95zzx">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import shutil
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import write_worktree_activate_script
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    12→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    13→from erk_shared.gateway.console.abc import Console
+    14→from erk_shared.gateway.git.abc import Git
+    15→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    16→from erk_shared.output.output import user_output
+    17→from erk_shared.slots.naming import (
+    18→    extract_slot_number,
+    19→    generate_slot_name,
+    20→    is_placeholder_branch,
+    21→)
+    22→from erk_slots.config import load_pool_config
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class SlotAllocationResult:
+    27→    """Result of allocating a slot for a branch."""
+    28→
+    29→    slot_name: str
+    30→    worktree_path: Path
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GpPnMnZ7t6CGChY2WzGKXx">
+     1→"""Pool configuration for erk_slots.
+     2→
+     3→This module is responsible for reading pool-related configuration
+     4→from .erk/config.toml independently of the core erk config system.
+     5→"""
+     6→
+     7→import tomllib
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→DEFAULT_POOL_SIZE = 4
+    12→
+    13→
+    14→@dataclass(frozen=True)
+    15→class PoolConfig:
+    16→    """Pool configuration read directly from .erk/config.toml."""
+    17→
+    18→    pool_size: int  # Never None; uses DEFAULT_POOL_SIZE as fallback
+    19→    pool_checkout_commands: list[str]  # For future use (not executed yet)
+    20→    pool_checkout_shell: str | None
+    21→
+    22→
+    23→def load_pool_config(repo_root: Path) -&gt; PoolConfig:
+    24→    """Load pool configuration from .erk/config.toml.
+    25→
+    26→    Args:
+    27→        repo_root: Path to the repository root
+    28→
+    29→    Returns:
+    30→        PoolConfig with DEFAULT_POOL_SIZE as fallback if not configured
+
+... [34 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UJyfhtJEANUnE8TRreRR6t">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/navigation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="96256" cache_creation="{'ephemeral_5m_input_tokens': 1876, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NA9fxYWrzBpJd9i3wHtJVo">
+    <param name="command">grep -n "def allocate_slot_for_branch\|def find_inactive_slot\|def find_next_available_slot\|def sync_pool_assignments" /home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/common.py 2&gt;&amp;1</param>
+    <param name="description">Find key functions in common.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1876" cache_read_input_tokens="96256" cache_creation="{'ephemeral_5m_input_tokens': 1876, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UJyfhtJEANUnE8TRreRR6t">
+     1→"""Navigation-specific functions for erk slot up/down commands."""
+     2→
+     3→import shlex
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal, NoReturn
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import (
+    11→    activation_config_activate_only,
+    12→    ensure_worktree_activate_script,
+    13→    print_activation_instructions,
+    14→    render_activation_script,
+    15→)
+    16→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    17→from erk.cli.commands.navigation_helpers import (
+    18→    activate_target,
+    19→    find_assignment_by_worktree_path,
+    20→    validate_for_deletion,
+    21→)
+    22→from erk.cli.core import discover_repo_context, worktree_path_for
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk.core.display_utils import copy_to_clipboard_osc52
+    26→from erk.core.repo_discovery import RepoContext
+    27→from erk.core.worktree_pool import SlotAssignment, load_pool_state
+    28→from erk.core.worktree_utils import compute_relative_path_in_worktree
+    29→from erk_shared.gateway.git.abc import WorktreeInfo
+    30→from erk_shared.naming import sanitize_worktree_name
+
+... [562 lines omitted] ...
+
+   186→        except RuntimeError as e:
+   187→            raise click.ClickException(str(e)) from None
+   275→        # Not on trunk but no parent - keep as direct error (no clear condition to express)
+   277→            click.style("Error: ", fg="red")
+   418→        force: If True, prompts instead of blocking on validation failures
+   421→        SystemExit: Always exits with 0 on success or 1 on error
+   497→                click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <tool_result tool="toolu_01NA9fxYWrzBpJd9i3wHtJVo">
+47:def find_next_available_slot(state: PoolState, worktrees_dir: Path | None) -&gt; int | None:
+81:def find_inactive_slot(
+166:def sync_pool_assignments(
+506:def allocate_slot_for_branch(
+  </tool_result>
+  <assistant>Now I have enough context to create the erk_slots package overview doc. Let me also check the navigation_helpers location:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8937" cache_read_input_tokens="98132" cache_creation="{'ephemeral_5m_input_tokens': 8937, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012zbmsoztHLedXza58U6tFd">
+    <param name="command">find /home/runner/work/erk/erk/src/erk/cli/commands/ -name "navigation_helpers.py" 2&gt;&amp;1</param>
+    <param name="description">Find navigation_helpers.py location</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8937" cache_read_input_tokens="98132" cache_creation="{'ephemeral_5m_input_tokens': 8937, 'ephemeral_1h_input_tokens': 0}" output_tokens="137" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012zbmsoztHLedXza58U6tFd">
+/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py
+  </tool_result>
+  <tool_use name="Write" id="toolu_018fYzpesms1fMGvWjudfkLJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/erk-slots-package.md</param>
+    <param name="content">---
+title: erk_slots Package Overview
+read_when:
+  - "working with slot commands (assign, ...[truncated 3402 chars]...tern](../architecture/action-plan-pattern.md) — Used by teleport_cmd.py's dry-run support
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="107069" cache_creation="{'ephemeral_5m_input_tokens': 175, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018fYzpesms1fMGvWjudfkLJ">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/erk/erk-slots-package.md
+  </tool_result>
+</session>
