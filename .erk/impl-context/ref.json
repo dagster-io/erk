@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: TUI close command silently fails with Graphite URLs"
+}
