@@ -17,7 +17,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.plan_store.conversion import github_issue_to_plan
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @dataclass(frozen=True)
@@ -140,7 +140,7 @@ def run_pr_view(
     # Optional local enrichment for richer header metadata
     if repo_root is not None:
         all_meta = ctx.plan_backend.get_all_metadata_fields(repo_root, pr_id)
-        if isinstance(all_meta, PlanNotFound):
+        if isinstance(all_meta, PrNotFound):
             header_info: dict[str, object] = plan.header_fields
         else:
             header_info = all_meta

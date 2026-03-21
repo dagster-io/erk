@@ -81,7 +81,7 @@ class PlanHeaderNotFoundError(RuntimeError):
 
 
 @dataclass(frozen=True)
-class PlanNotFound:
-    """Result when a plan cannot be found by identifier."""
+class PrNotFound:
+    """Result when a PR cannot be found by identifier."""
 
     pr_id: str

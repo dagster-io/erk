@@ -4,7 +4,7 @@ This module provides ErkContext - the unified context that holds all dependencie
 for erk and erk-kits operations.
 
 The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
-PlanListService) are defined in erk_shared.core, enabling
+PrListService) are defined in erk_shared.core, enabling
 proper type hints without circular imports. Real implementations remain in erk.
 """
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from erk_shared.core.health_check_runner import HealthCheckRunner
     from erk_shared.core.objective_list_service import ObjectiveListService
 
-from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.plan_list_service import PrListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
@@ -101,7 +101,7 @@ class ErkContext:
     erk_installation: ErkInstallation
     script_writer: ScriptWriter
     codespace_registry: CodespaceRegistry
-    plan_list_service: PlanListService
+    plan_list_service: PrListService
     objective_list_service: ObjectiveListService
 
     # Paths

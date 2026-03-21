@@ -486,7 +486,7 @@ class TestObjectiveFetchContext:
         pr = _make_pr_details(number=6517, title="PR Title", body="pr body")
 
         fake_issues = FakeGitHubIssues(issues={6423: objective})
-        # No plan PR configured for the branch - will trigger PlanNotFound
+        # No plan PR configured for the branch - will trigger PrNotFound
         fake_github = FakeLocalGitHub(pr_details={6517: pr}, issues_gateway=fake_issues)
         planned_pr_backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 

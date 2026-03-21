@@ -63,7 +63,7 @@ from erk_shared.objective_fetch_context_result import (
     PlanInfoDict,
     PRInfoDict,
 )
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 def _error_json(error: str) -> str:
@@ -216,7 +216,7 @@ def objective_apply_landed_update(
 
     # --- Resolve plan using PR number (the PR IS the plan) ---
     plan_result = plan_backend.get_managed_pr(repo_root, str(pr_number))
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)
 

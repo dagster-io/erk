@@ -37,7 +37,7 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
 
 
@@ -111,11 +111,11 @@ def plan_update(
     # Step 2: Check plan exists via ManagedPrBackend
     pr_id = str(pr_number)
     plan_result = backend.get_managed_pr(repo_root, pr_id)
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         _handle_update_error(f"PR #{pr_number} not found")
 
-    # Narrow type for type checker (PlanNotFound case exits above)
-    assert not isinstance(plan_result, PlanNotFound)
+    # Narrow type for type checker (PrNotFound case exits above)
+    assert not isinstance(plan_result, PrNotFound)
 
     # Step 3: Update plan content via ManagedPrBackend
     try:

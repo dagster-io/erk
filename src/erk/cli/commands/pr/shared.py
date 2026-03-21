@@ -35,7 +35,7 @@ from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.planned_pr_lifecycle import build_original_plan_section
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 # ---------------------------------------------------------------------------
 # Branch Discovery
@@ -159,7 +159,7 @@ def maybe_advance_lifecycle_to_impl(
     Silently returns on any failure — lifecycle updates must never block submission.
     """
     plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         return
 
     current_stage = header_str(plan_result.header_fields, LIFECYCLE_STAGE)
@@ -199,7 +199,7 @@ def recover_plan_header(
     without a plan-header (current behavior).
     """
     plan_result = ctx.plan_backend.get_managed_pr(repo_root, pr_id)
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         return None
 
     # If the plan still has header_fields, use them directly

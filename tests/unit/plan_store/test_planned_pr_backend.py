@@ -15,7 +15,7 @@ from erk_shared.plan_store.planned_pr_lifecycle import (
     build_plan_stage_body,
     extract_plan_content,
 )
-from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+from erk_shared.plan_store.types import PlanQuery, PlanState, PrNotFound
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.time import FakeTime
@@ -228,15 +228,15 @@ def test_get_plan_for_branch_roundtrip() -> None:
     )
 
     plan = backend.get_managed_pr_for_branch(Path("/repo"), "my-branch")
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert plan.body == "Content for branch"
 
 
 def test_get_plan_for_branch_returns_plan_not_found() -> None:
-    """get_plan_for_branch returns PlanNotFound for non-existent branch."""
+    """get_plan_for_branch returns PrNotFound for non-existent branch."""
     backend = ManagedGitHubPrBackend(FakeLocalGitHub(), FakeGitHubIssues(), time=FakeTime())
     result = backend.get_managed_pr_for_branch(Path("/repo"), "nonexistent")
-    assert isinstance(result, PlanNotFound)
+    assert isinstance(result, PrNotFound)
 
 
 # =============================================================================
@@ -261,7 +261,7 @@ def test_update_plan_content_roundtrip() -> None:
     backend.update_managed_pr_content(Path("/repo"), result.pr_id, "Updated content", summary="")
 
     plan = backend.get_managed_pr(Path("/repo"), result.pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert plan.body == "Updated content"
 
 

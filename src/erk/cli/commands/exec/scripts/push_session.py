@@ -40,7 +40,7 @@ from erk_shared.learn.extraction.session_schema import (
     SessionProvenance,
     compute_session_provenance,
 )
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 from erk_shared.sessions.manifest import read_session_manifest
 
 
@@ -298,7 +298,7 @@ def push_session(
     }
 
     plan_result = backend.get_managed_pr(repo_root, pr_number_str)
-    if not isinstance(plan_result, PlanNotFound):
+    if not isinstance(plan_result, PrNotFound):
         try:
             backend.update_metadata(repo_root, pr_number_str, metadata)
         except RuntimeError:

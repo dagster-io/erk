@@ -6,13 +6,13 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.core.plan_list_service import PrListData
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.gateway.console import FakeConsole
-from tests.fakes.gateway.core import FakePlanListService
+from tests.fakes.gateway.core import FakePrListService
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.test_context import context_for_test
@@ -288,9 +288,9 @@ def _make_plan(
     )
 
 
-def _make_plan_list_service(plans: list[Plan]) -> FakePlanListService:
-    return FakePlanListService(
-        data=PlanListData(plans=plans, pr_linkages={}, workflow_runs={}),
+def _make_plan_list_service(plans: list[Plan]) -> FakePrListService:
+    return FakePrListService(
+        data=PrListData(plans=plans, pr_linkages={}, workflow_runs={}),
     )
 
 

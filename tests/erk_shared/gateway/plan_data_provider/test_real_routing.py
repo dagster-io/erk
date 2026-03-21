@@ -24,7 +24,7 @@ def _make_provider(
     mock_objective_service.get_objective_list_data.return_value = MagicMock(
         plans=[], api_ms=0.0, pr_parsing_ms=0.0, workflow_runs_ms=0.0, warnings=[]
     )
-    mock_plan_service.get_plan_list_data.return_value = MagicMock(
+    mock_plan_service.get_pr_list_data.return_value = MagicMock(
         plans=[], api_ms=0.0, pr_parsing_ms=0.0, workflow_runs_ms=0.0, warnings=[]
     )
     # Timing calls need real numbers for arithmetic in fetch_prs
@@ -73,7 +73,7 @@ class TestPrDataProviderRouting:
         # Assert: objective_list_service should be called
         mock_objective_service.get_objective_list_data.assert_called_once()
         # plan_list_service should NOT be called
-        mock_plan_service.get_plan_list_data.assert_not_called()
+        mock_plan_service.get_pr_list_data.assert_not_called()
 
     def test_routes_to_plan_service_when_erk_objective_label_absent(self) -> None:
         """Routes to plan_list_service when 'erk-objective' is NOT in labels."""
@@ -99,7 +99,7 @@ class TestPrDataProviderRouting:
         provider.fetch_prs(filters)
 
         # Assert: plan_list_service should be called
-        mock_plan_service.get_plan_list_data.assert_called_once()
+        mock_plan_service.get_pr_list_data.assert_called_once()
         # objective_list_service should NOT be called
         mock_objective_service.get_objective_list_data.assert_not_called()
 
@@ -127,7 +127,7 @@ class TestPrDataProviderRouting:
         provider.fetch_prs(filters)
 
         # Assert: plan_list_service should be called (not objective service)
-        mock_plan_service.get_plan_list_data.assert_called_once()
+        mock_plan_service.get_pr_list_data.assert_called_once()
         mock_objective_service.get_objective_list_data.assert_not_called()
 
     def test_routes_to_plan_service_for_multi_label_query(self) -> None:
@@ -154,7 +154,7 @@ class TestPrDataProviderRouting:
         provider.fetch_prs(filters)
 
         # Assert: plan_list_service should be called
-        mock_plan_service.get_plan_list_data.assert_called_once()
+        mock_plan_service.get_pr_list_data.assert_called_once()
         mock_objective_service.get_objective_list_data.assert_not_called()
 
     def test_condition_inverts_correctly_objective_vs_plan(self) -> None:
@@ -185,7 +185,7 @@ class TestPrDataProviderRouting:
         assert mock_objective_service.get_objective_list_data.call_count == 1, (
             "Should route WITH objective to objective service"
         )
-        assert mock_plan_service.get_plan_list_data.call_count == 0, (
+        assert mock_plan_service.get_pr_list_data.call_count == 0, (
             "Should NOT route WITH objective to plan service"
         )
 
@@ -204,7 +204,7 @@ class TestPrDataProviderRouting:
             exclude_labels=(),
         )
         provider.fetch_prs(filters_without_objective)
-        assert mock_plan_service.get_plan_list_data.call_count == 1, (
+        assert mock_plan_service.get_pr_list_data.call_count == 1, (
             "Should route WITHOUT objective to plan service"
         )
         assert mock_objective_service.get_objective_list_data.call_count == 0, (

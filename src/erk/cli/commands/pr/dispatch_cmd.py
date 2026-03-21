@@ -41,7 +41,7 @@ from erk_shared.impl_context import build_impl_context_files
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.planned_pr_lifecycle import extract_plan_content
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 from erk_shared.slots.naming import is_placeholder_branch
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -220,7 +220,7 @@ def _dispatch_planned_pr_plan(
     # Fetch plan content via ManagedPrBackend
     user_output("Fetching plan content...")
     result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
-    if isinstance(result, PlanNotFound):
+    if isinstance(result, PrNotFound):
         user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
         raise SystemExit(1)
     plan = result

@@ -45,9 +45,9 @@ from erk_shared.plan_store.types import (
     CreatePlanResult,
     Plan,
     PlanHeaderNotFoundError,
-    PlanNotFound,
     PlanQuery,
     PlanState,
+    PrNotFound,
 )
 
 _PLAN_TITLE_PREFIX = "[erk-pr]"
@@ -133,7 +133,7 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             return None
         return str(result.number)
 
-    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PlanNotFound:
+    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PrNotFound:
         """Look up the plan associated with a branch.
 
         Queries for a draft PR on the branch and converts to Plan.
@@ -143,14 +143,14 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             branch_name: Git branch name
 
         Returns:
-            Plan if found, PlanNotFound if no draft PR exists for the branch
+            Plan if found, PrNotFound if no draft PR exists for the branch
         """
         result = self._github.get_pr_for_branch(repo_root, branch_name)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=branch_name)
+            return PrNotFound(pr_id=branch_name)
         return self._convert_to_plan(result)
 
-    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PlanNotFound:
+    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PrNotFound:
         """Fetch plan from a draft PR by PR number.
 
         Args:
@@ -158,12 +158,12 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             pr_number: PR number as string (e.g., "42")
 
         Returns:
-            Plan with converted data, or PlanNotFound if PR does not exist
+            Plan with converted data, or PrNotFound if PR does not exist
         """
         pr_num = int(pr_number)
         result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=pr_number)
+            return PrNotFound(pr_id=pr_number)
         return self._convert_to_plan(result)
 
     def get_comments(self, repo_root: Path, pr_number: str) -> list[str]:
@@ -399,7 +399,7 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
         repo_root: Path,
         pr_number: str,
         field_name: str,
-    ) -> object | PlanNotFound:
+    ) -> object | PrNotFound:
         """Get a single metadata field from the plan-header block in the PR body.
 
         Args:
@@ -408,12 +408,12 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             field_name: Name of the metadata field to read
 
         Returns:
-            Field value (may be None if unset), or PlanNotFound if PR doesn't exist
+            Field value (may be None if unset), or PrNotFound if PR doesn't exist
         """
         pr_num = int(pr_number)
         result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=pr_number)
+            return PrNotFound(pr_id=pr_number)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
@@ -425,7 +425,7 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
         self,
         repo_root: Path,
         pr_number: str,
-    ) -> dict[str, object] | PlanNotFound:
+    ) -> dict[str, object] | PrNotFound:
         """Get all metadata fields from the plan-header block in the PR body.
 
         Args:
@@ -433,13 +433,13 @@ class ManagedGitHubPrBackend(ManagedPrBackend):
             pr_number: PR number as string
 
         Returns:
-            Dictionary of all metadata fields, or PlanNotFound if PR doesn't exist.
+            Dictionary of all metadata fields, or PrNotFound if PR doesn't exist.
             Returns empty dict if PR exists but has no metadata block.
         """
         pr_num = int(pr_number)
         result = self._github.get_pr(repo_root, pr_num)
         if isinstance(result, PRNotFound):
-            return PlanNotFound(pr_id=pr_number)
+            return PrNotFound(pr_id=pr_number)
 
         block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:

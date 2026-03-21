@@ -22,7 +22,7 @@ from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 from erk_shared.plan_workflow import (
     PlanBranchSetup,
     PlanValidationFailed,
@@ -135,7 +135,7 @@ def branch_create(
     if for_pr is not None:
         pr_number = parse_issue_identifier(for_pr)
         result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
-        if isinstance(result, PlanNotFound):
+        if isinstance(result, PrNotFound):
             raise click.ClickException(f"PR #{pr_number} not found")
         plan = result
 

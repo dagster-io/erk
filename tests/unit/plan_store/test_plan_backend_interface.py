@@ -10,7 +10,7 @@ import pytest
 
 from erk_shared.plan_store.backend import ManagedPrBackend
 from erk_shared.plan_store.planned_pr import ManagedGitHubPrBackend
-from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+from erk_shared.plan_store.types import PlanQuery, PlanState, PrNotFound
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
 
@@ -105,7 +105,7 @@ def test_create_and_get_plan_roundtrip(plan_backend: ManagedPrBackend) -> None:
 
     # Retrieve the plan
     plan = plan_backend.get_managed_pr(Path("/repo"), result.pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
 
     # Verify Plan structure
     assert plan.pr_identifier == result.pr_id
@@ -147,13 +147,13 @@ def test_close_plan_changes_state(
     backend, pr_id = backend_with_plan
 
     plan_before = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan_before, PlanNotFound)
+    assert not isinstance(plan_before, PrNotFound)
     assert plan_before.state == PlanState.OPEN
 
     backend.close_managed_pr(Path("/repo"), pr_id)
 
     plan_after = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan_after, PlanNotFound)
+    assert not isinstance(plan_after, PrNotFound)
     assert plan_after.state == PlanState.CLOSED
 
 
@@ -174,9 +174,9 @@ def test_add_comment_returns_string_id(
 
 
 def test_get_plan_not_found_returns_plan_not_found(plan_backend: ManagedPrBackend) -> None:
-    """Backend returns PlanNotFound when plan not found."""
+    """Backend returns PrNotFound when plan not found."""
     result = plan_backend.get_managed_pr(Path("/repo"), "99999999")
-    assert isinstance(result, PlanNotFound)
+    assert isinstance(result, PrNotFound)
     assert result.pr_id == "99999999"  # pr_id is the identifier for the not-found result
 
 
@@ -215,7 +215,7 @@ def test_plan_identifier_is_string(
     backend, pr_id = backend_with_plan
 
     plan = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert isinstance(plan.pr_identifier, str)
 
 
@@ -226,7 +226,7 @@ def test_assignees_is_list(
     backend, pr_id = backend_with_plan
 
     plan = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert isinstance(plan.assignees, list)
     for assignee in plan.assignees:
         assert isinstance(assignee, str)
@@ -239,7 +239,7 @@ def test_labels_is_list(
     backend, pr_id = backend_with_plan
 
     plan = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert isinstance(plan.labels, list)
     for label in plan.labels:
         assert isinstance(label, str)
@@ -252,7 +252,7 @@ def test_timestamps_are_timezone_aware(
     backend, pr_id = backend_with_plan
 
     plan = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert plan.created_at.tzinfo is not None
     assert plan.updated_at.tzinfo is not None
 
@@ -302,9 +302,9 @@ def test_create_multiple_plans_have_unique_ids(plan_backend: ManagedPrBackend) -
 
 
 def test_get_metadata_field_returns_plan_not_found(plan_backend: ManagedPrBackend) -> None:
-    """Backend returns PlanNotFound for nonexistent plan."""
+    """Backend returns PrNotFound for nonexistent plan."""
     result = plan_backend.get_metadata_field(Path("/repo"), "99999999", "worktree_name")
-    assert isinstance(result, PlanNotFound)
+    assert isinstance(result, PrNotFound)
 
 
 def test_get_metadata_field_returns_none_for_missing_field(plan_backend: ManagedPrBackend) -> None:
@@ -351,9 +351,9 @@ def test_get_metadata_field_roundtrips_with_update_metadata(
 
 
 def test_get_all_metadata_fields_returns_plan_not_found(plan_backend: ManagedPrBackend) -> None:
-    """Backend returns PlanNotFound for nonexistent plan."""
+    """Backend returns PrNotFound for nonexistent plan."""
     result = plan_backend.get_all_metadata_fields(Path("/repo"), "99999999")
-    assert isinstance(result, PlanNotFound)
+    assert isinstance(result, PrNotFound)
 
 
 def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
@@ -370,7 +370,7 @@ def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
     )
 
     result = plan_backend.get_all_metadata_fields(Path("/repo"), created.pr_id)
-    assert not isinstance(result, PlanNotFound)
+    assert not isinstance(result, PrNotFound)
     assert isinstance(result, dict)
 
 
@@ -394,7 +394,7 @@ def test_get_all_metadata_fields_roundtrips_with_update_metadata(
     )
 
     result = plan_backend.get_all_metadata_fields(Path("/repo"), created.pr_id)
-    assert not isinstance(result, PlanNotFound)
+    assert not isinstance(result, PrNotFound)
     assert result["worktree_name"] == "my-worktree"
     assert result["branch_name"] == "feature-branch"
 
@@ -413,7 +413,7 @@ def test_update_plan_title_roundtrip(
     backend.update_managed_pr_title(Path("/repo"), pr_id, "New Title")
 
     plan = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert "New Title" in plan.title
 
 
@@ -626,7 +626,7 @@ def test_add_label_adds_label(
     backend.add_label(Path("/repo"), pr_id, "erk-consolidated")
 
     plan = backend.get_managed_pr(Path("/repo"), pr_id)
-    assert not isinstance(plan, PlanNotFound)
+    assert not isinstance(plan, PrNotFound)
     assert "erk-consolidated" in plan.labels
 
 

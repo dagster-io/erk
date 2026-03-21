@@ -10,7 +10,7 @@ from pathlib import Path
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.plan_store.backend import ManagedPrBackend
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,7 @@ class PlanContextProvider:
         branches not linked to plans.
         """
         result = self._plan_backend.get_managed_pr_for_branch(repo_root, branch_name)
-        if isinstance(result, PlanNotFound):
+        if isinstance(result, PrNotFound):
             return None
 
         objective_summary = self._get_objective_summary(

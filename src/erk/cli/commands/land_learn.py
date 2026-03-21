@@ -34,7 +34,7 @@ from erk_shared.naming import generate_planned_pr_branch_name
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 from erk_shared.sessions.discovery import SessionsForPlan, get_readable_sessions
 from erk_shared.sessions.manifest import read_session_manifest
 
@@ -224,7 +224,7 @@ def _create_learn_pr_core(
     """
     # Fetch plan to check labels — skip learn plans (cycle prevention)
     plan_result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
-    if isinstance(plan_result, PlanNotFound):
+    if isinstance(plan_result, PrNotFound):
         return
     if "erk-learn" in plan_result.labels:
         return

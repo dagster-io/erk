@@ -26,7 +26,7 @@ from erk.core.prompt_executor import ClaudeCliPromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.objective_list_service import RealObjectiveListService
-from erk.core.services.plan_list_service import PlannedPRPlanListService
+from erk.core.services.plan_list_service import ManagedPrListService
 from erk.core.shell import RealShell
 
 # Re-export ErkContext from erk_shared for isinstance() compatibility
@@ -37,7 +37,7 @@ from erk_shared.context.types import LoadedConfig as LoadedConfig
 from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.plan_list_service import PrListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_docs.real import RealAgentDocs
@@ -302,7 +302,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     github: LocalGitHub = RealLocalGitHub(time, repo_info, issues=issues)
 
     plan_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
-    plan_list_service: PlanListService = PlannedPRPlanListService(github, time=time)
+    plan_list_service: PrListService = ManagedPrListService(github, time=time)
 
     # Objectives use GitHub issues (not draft PRs)
     objective_list_service: ObjectiveListService = RealObjectiveListService(github, time=time)

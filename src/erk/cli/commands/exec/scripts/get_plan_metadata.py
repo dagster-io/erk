@@ -18,7 +18,7 @@ from typing import Any
 import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @dataclass(frozen=True)
@@ -61,7 +61,7 @@ def get_plan_metadata(
 
     # Get metadata field via ManagedPrBackend
     result = backend.get_metadata_field(repo_root, pr_id, field_name)
-    if isinstance(result, PlanNotFound):
+    if isinstance(result, PrNotFound):
         error_result = MetadataError(
             success=False,
             error="issue_not_found",

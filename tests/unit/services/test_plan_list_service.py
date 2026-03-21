@@ -1,4 +1,4 @@
-"""Tests for PlanListService."""
+"""Tests for PrListService."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 
 from erk.core.services.plan_list_service import (
-    PlanListData,
-    PlannedPRPlanListService,
-    RealPlanListService,
+    ManagedPrListService,
+    PrListData,
+    RealPrListService,
 )
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -26,12 +26,12 @@ from tests.fakes.gateway.time import FakeTime
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
 
 
-class TestPlanListData:
-    """Tests for PlanListData dataclass."""
+class TestPrListData:
+    """Tests for PrListData dataclass."""
 
     def test_dataclass_is_frozen(self) -> None:
-        """PlanListData instances are immutable."""
-        data = PlanListData(
+        """PrListData instances are immutable."""
+        data = PrListData(
             plans=[],
             pr_linkages={},
             workflow_runs={},
@@ -41,7 +41,7 @@ class TestPlanListData:
             data.plans = []  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
 
     def test_dataclass_contains_all_fields(self) -> None:
-        """PlanListData has all expected fields."""
+        """PrListData has all expected fields."""
         now = datetime.now(UTC)
         plans = [
             Plan(
@@ -78,7 +78,7 @@ class TestPlanListData:
         )
         runs: dict[int, WorkflowRun | None] = {1: run}
 
-        data = PlanListData(
+        data = PrListData(
             plans=plans,
             pr_linkages=linkages,
             workflow_runs=runs,
@@ -96,7 +96,7 @@ class TestPlanListData:
 
     def test_timing_fields_default_to_zero(self) -> None:
         """Timing fields default to 0.0 when not provided."""
-        data = PlanListData(
+        data = PrListData(
             plans=[],
             pr_linkages={},
             workflow_runs={},
@@ -179,8 +179,8 @@ def _setup_http_for_prs(
     return client
 
 
-class TestPlannedPRPlanListService:
-    """Tests for PlannedPRPlanListService using HTTP-based data fetching."""
+class TestManagedPrListService:
+    """Tests for ManagedPrListService using HTTP-based data fetching."""
 
     def test_returns_plans_for_planned_prs(self) -> None:
         """Happy path: 1 draft plan PR returns 1 plan."""
@@ -188,8 +188,8 @@ class TestPlannedPRPlanListService:
         rest_items = [_make_rest_issue_pr(number=42, title="My Plan", body=pr_body)]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[42])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -203,8 +203,8 @@ class TestPlannedPRPlanListService:
         """No PRs returns empty plans/linkages/runs."""
         http_client = _setup_http_for_prs(rest_items=[], pr_numbers=[])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -255,8 +255,8 @@ class TestPlannedPRPlanListService:
             graphql_override=enrichment,
         )
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -283,8 +283,8 @@ class TestPlannedPRPlanListService:
         ]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[90])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -307,8 +307,8 @@ class TestPlannedPRPlanListService:
         rest_items = [_make_rest_issue_pr(number=80, title="Plan Title", body=pr_body)]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[80])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -347,8 +347,8 @@ last_dispatched_at: '2024-06-01T10:00:00Z'
             response=_make_graphql_enrichment([100]),
         )
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -377,8 +377,8 @@ last_dispatched_node_id: 'WFR_draft456'
         rest_items = [_make_rest_issue_pr(number=101, title="Plan", body=pr_body)]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[101])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             skip_workflow_runs=True,
@@ -419,8 +419,8 @@ last_dispatched_node_id: 'WFR_draft456'
         rest_items = [_make_rest_issue_pr(number=200, title="Frobnication", body=pr_body)]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[200])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -457,8 +457,8 @@ last_dispatched_node_id: 'WFR_draft456'
         rest_items = [_make_rest_issue_pr(number=201, title="Stage 1 Plan", body=pr_body)]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[201])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -477,8 +477,8 @@ last_dispatched_node_id: 'WFR_draft456'
         rest_items = [_make_rest_issue_pr(number=102, title="Plan", body=pr_body)]
         http_client = _setup_http_for_prs(rest_items=rest_items, pr_numbers=[102])
 
-        service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-        result = service.get_plan_list_data(
+        service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+        result = service.get_pr_list_data(
             location=TEST_LOCATION,
             labels=["erk-pr"],
             http_client=http_client,
@@ -527,7 +527,7 @@ class TestBuildEnrichmentWarnings:
         assert isinstance(_build_enrichment_warnings(1, 1), tuple)
 
 
-# --- RealPlanListService tests (Layer 4) ---
+# --- RealPrListService tests (Layer 4) ---
 
 _NOW = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
 
@@ -569,11 +569,11 @@ def _make_issue(
 
 
 def test_real_plan_list_service_returns_empty_data_when_no_issues() -> None:
-    """FakeLocalGitHub with no issues_data returns empty PlanListData."""
+    """FakeLocalGitHub with no issues_data returns empty PrListData."""
     github = FakeLocalGitHub()
-    service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
+    service = RealPrListService(github, FakeGitHubIssues(), time=FakeTime())
 
-    result = service.get_plan_list_data(
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=FakeHttpClient(),
@@ -591,9 +591,9 @@ def test_real_plan_list_service_fetches_issues_and_converts_to_plans() -> None:
         _make_issue(number=20, title="Plan B"),
     ]
     github = FakeLocalGitHub(issues_data=issues)
-    service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
+    service = RealPrListService(github, FakeGitHubIssues(), time=FakeTime())
 
-    result = service.get_plan_list_data(
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=FakeHttpClient(),
@@ -622,9 +622,9 @@ def test_real_plan_list_service_skips_workflow_runs_when_requested() -> None:
         issues_data=issues,
         workflow_runs_by_node_id=workflow_runs_by_node_id,
     )
-    service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
+    service = RealPrListService(github, FakeGitHubIssues(), time=FakeTime())
 
-    result = service.get_plan_list_data(
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         skip_workflow_runs=True,
@@ -649,9 +649,9 @@ def test_real_plan_list_service_fetches_workflow_runs_by_node_id() -> None:
         issues_data=issues,
         workflow_runs_by_node_id={"WFR_node123": run},
     )
-    service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
+    service = RealPrListService(github, FakeGitHubIssues(), time=FakeTime())
 
-    result = service.get_plan_list_data(
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=FakeHttpClient(),
@@ -670,9 +670,9 @@ def test_real_plan_list_service_graceful_on_workflow_run_failure() -> None:
         issues_data=issues,
         workflow_runs_error="API rate limited",
     )
-    service = RealPlanListService(github, FakeGitHubIssues(), time=FakeTime())
+    service = RealPrListService(github, FakeGitHubIssues(), time=FakeTime())
 
-    result = service.get_plan_list_data(
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=FakeHttpClient(),
@@ -687,9 +687,9 @@ def test_real_plan_list_service_populates_timing_fields() -> None:
     issues = [_make_issue(number=1)]
     github = FakeLocalGitHub(issues_data=issues)
     fake_time = FakeTime(monotonic_values=[0.0, 0.1, 0.15, 0.2])
-    service = RealPlanListService(github, FakeGitHubIssues(), time=fake_time)
+    service = RealPrListService(github, FakeGitHubIssues(), time=fake_time)
 
-    result = service.get_plan_list_data(
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=FakeHttpClient(),

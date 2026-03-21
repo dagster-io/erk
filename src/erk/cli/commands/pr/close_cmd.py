@@ -10,7 +10,7 @@ from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @click.command("close")
@@ -40,7 +40,7 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     if not isinstance(ctx.repo, NoRepoSentinel):
         repo_root = ctx.repo.root
         result = ctx.plan_store.get_managed_pr(repo_root, str(number))
-        if not isinstance(result, PlanNotFound):
+        if not isinstance(result, PrNotFound):
             objective_id = result.objective_id
         ctx.plan_store.close_managed_pr(repo_root, identifier)
     else:

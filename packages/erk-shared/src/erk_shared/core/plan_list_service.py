@@ -1,6 +1,6 @@
-"""Plan list service abstraction - ABC and types.
+"""PR list service abstraction - ABC and types.
 
-This module provides the abstract interface for efficiently fetching plan list data.
+This module provides the abstract interface for efficiently fetching PR list data.
 The real implementation remains in erk.core.services.plan_list_service.
 """
 
@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class PlanListData:
-    """Combined data for plan listing.
+class PrListData:
+    """Combined data for PR listing.
 
     Attributes:
         plans: List of Plan objects with enriched metadata
@@ -45,16 +45,16 @@ class PlanListData:
     warnings: tuple[str, ...] = ()
 
 
-class PlanListService(ABC):
-    """Abstract interface for efficiently fetching plan list data.
+class PrListService(ABC):
+    """Abstract interface for efficiently fetching PR list data.
 
     Composes GitHub and GitHubIssues integrations to batch fetch all data
-    needed for plan listing. Uses GraphQL nodes(ids: [...]) for efficient
+    needed for PR listing. Uses GraphQL nodes(ids: [...]) for efficient
     batch lookup of workflow runs by node_id.
     """
 
     @abstractmethod
-    def get_plan_list_data(
+    def get_pr_list_data(
         self,
         *,
         location: GitHubRepoLocation,
@@ -65,8 +65,8 @@ class PlanListService(ABC):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
-        """Batch fetch all data needed for plan listing.
+    ) -> PrListData:
+        """Batch fetch all data needed for PR listing.
 
         Args:
             location: GitHub repository location (local root + repo identity)
@@ -80,6 +80,6 @@ class PlanListService(ABC):
                 expensive enrichment operations. None means no exclusion.
 
         Returns:
-            PlanListData containing plans, PR linkages, and workflow runs
+            PrListData containing PRs, PR linkages, and workflow runs
         """
         ...

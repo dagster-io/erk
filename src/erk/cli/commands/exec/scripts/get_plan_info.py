@@ -22,7 +22,7 @@ import json
 import click
 
 from erk_shared.context.helpers import require_plan_backend, require_repo_root
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.plan_store.types import PrNotFound
 
 
 @click.command(name="get-plan-info")
@@ -46,7 +46,7 @@ def get_plan_info(
     pr_id = str(pr_number)
 
     plan = backend.get_managed_pr(repo_root, pr_id)
-    if isinstance(plan, PlanNotFound):
+    if isinstance(plan, PrNotFound):
         click.echo(
             json.dumps(
                 {

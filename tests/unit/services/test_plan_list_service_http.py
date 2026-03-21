@@ -1,8 +1,8 @@
-"""Tests for PlannedPRPlanListService HTTP path (_get_plan_list_data_http)."""
+"""Tests for ManagedPrListService HTTP path (_get_pr_list_data_http)."""
 
 from pathlib import Path
 
-from erk.core.services.plan_list_service import PlannedPRPlanListService
+from erk.core.services.plan_list_service import ManagedPrListService
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.http import FakeHttpClient
@@ -71,8 +71,8 @@ def test_http_path_returns_plan_for_pr() -> None:
     rest_items = [_make_rest_issue_pr(number=42, title="My Plan")]
     http_client = _setup_http_client_for_plan(rest_items=rest_items, pr_numbers=[42])
 
-    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
+    service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=http_client,
@@ -90,8 +90,8 @@ def test_http_path_empty_response() -> None:
         response=[],
     )
 
-    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
+    service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=http_client,
@@ -123,8 +123,8 @@ def test_http_path_filters_non_pr_items() -> None:
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([42]))
 
-    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
+    service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=http_client,
@@ -148,8 +148,8 @@ def test_http_path_excludes_labels() -> None:
     )
     http_client.set_response("graphql", response=_make_graphql_enrichment([1]))
 
-    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
+    service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         exclude_labels=["erk-learn"],
@@ -165,8 +165,8 @@ def test_http_path_populates_timing_data() -> None:
     rest_items = [_make_rest_issue_pr(number=42)]
     http_client = _setup_http_client_for_plan(rest_items=rest_items, pr_numbers=[42])
 
-    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
+    service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         http_client=http_client,
@@ -181,8 +181,8 @@ def test_http_path_skip_workflow_runs() -> None:
     rest_items = [_make_rest_issue_pr(number=42)]
     http_client = _setup_http_client_for_plan(rest_items=rest_items, pr_numbers=[42])
 
-    service = PlannedPRPlanListService(FakeLocalGitHub(), time=FakeTime())
-    result = service.get_plan_list_data(
+    service = ManagedPrListService(FakeLocalGitHub(), time=FakeTime())
+    result = service.get_pr_list_data(
         location=TEST_LOCATION,
         labels=["erk-pr"],
         skip_workflow_runs=True,

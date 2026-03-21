@@ -44,7 +44,7 @@ from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import (
-    InvalidPlanTitle,
+    InvalidPrTitle,
     generate_planned_pr_branch_name,
     validate_plan_title,
 )
@@ -157,7 +157,7 @@ def _save_as_planned_pr(
 
     # Validate plan title before proceeding
     title_validation = validate_plan_title(title)
-    if isinstance(title_validation, InvalidPlanTitle):
+    if isinstance(title_validation, InvalidPrTitle):
         if output_format == "display":
             click.echo(f"Error: {title_validation.message}", err=True)
         else:

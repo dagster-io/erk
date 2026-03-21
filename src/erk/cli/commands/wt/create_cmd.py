@@ -37,7 +37,7 @@ from erk_shared.naming import (
     strip_plan_from_filename,
 )
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import Plan, PlanNotFound
+from erk_shared.plan_store.types import Plan, PrNotFound
 from erk_shared.plan_workflow import (
     PlanBranchSetup,
     PlanValidationFailed,
@@ -667,7 +667,7 @@ def create_wt(
 
         # Fetch plan using plan_store
         result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number_parsed))
-        if isinstance(result, PlanNotFound):
+        if isinstance(result, PrNotFound):
             user_output(
                 click.style("Error: ", fg="red")
                 + f"Failed to fetch plan #{pr_number_parsed}\n"

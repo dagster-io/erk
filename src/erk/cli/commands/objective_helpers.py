@@ -13,7 +13,7 @@ from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.naming import extract_objective_number
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound, PlanState
+from erk_shared.plan_store.types import PlanState, PrNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def check_and_display_plan_issue_closure(
     pr_number = int(pr_id)
 
     result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
-    if isinstance(result, PlanNotFound):
+    if isinstance(result, PrNotFound):
         logger.debug("Plan #%d not found, skipping closure check", pr_number)
         return None
 
@@ -66,7 +66,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
         result = ctx.plan_backend.get_managed_pr_for_branch(repo_root, branch)
     except RuntimeError:
         return extract_objective_number(branch)
-    if isinstance(result, PlanNotFound):
+    if isinstance(result, PrNotFound):
         return extract_objective_number(branch)
     if result.objective_id is not None:
         return result.objective_id
