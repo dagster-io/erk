@@ -21,10 +21,10 @@ from erk_shared.gateway.github.metadata.core import (
     render_plan_body_block,
     replace_metadata_block_in_body,
 )
+from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
 from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
     CI_SUMMARY_COMMENT_ID,
-    CREATED_FROM_SESSION,
     LAST_DISPATCHED_AT,
     LAST_DISPATCHED_NODE_ID,
     LAST_DISPATCHED_RUN_ID,
@@ -32,14 +32,9 @@ from erk_shared.gateway.github.metadata.schemas import (
     LAST_LEARN_SESSION,
     LAST_LOCAL_IMPL_AT,
     LAST_LOCAL_IMPL_EVENT,
-    LAST_LOCAL_IMPL_SESSION,
-    LAST_LOCAL_IMPL_USER,
     LAST_REMOTE_IMPL_AT,
     LAST_REMOTE_IMPL_RUN_ID,
     LAST_REMOTE_IMPL_SESSION_ID,
-    LAST_SESSION_AT,
-    LAST_SESSION_BRANCH,
-    LAST_SESSION_ID,
     LAST_SESSION_SOURCE,
     LEARN_MATERIALS_BRANCH,
     LEARN_PLAN_ISSUE,
@@ -56,7 +51,6 @@ from erk_shared.gateway.github.metadata.schemas import (
     PlanHeaderSchema,
     SessionSourceValue,
 )
-from erk_shared.gateway.github.metadata.plan_header_data import PlanHeaderData
 from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 
 
@@ -556,35 +550,6 @@ def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
     return block.data.get(LAST_LOCAL_IMPL_AT)
 
 
-def update_plan_header_local_impl_event(
-    *, issue_body: str, local_impl_at: str, event: str, session_id: str | None, user: str
-) -> str:
-    """Update local implementation event fields atomically.
-
-    Args:
-        issue_body: Current issue body containing plan-header block
-        local_impl_at: ISO 8601 timestamp of local implementation
-        event: Event type ("started" or "ended")
-        session_id: Claude Code session ID (optional)
-        user: User who ran implementation
-
-    Returns:
-        Updated issue body with new local implementation event fields
-
-    Raises:
-        ValueError: If plan-header block not found or invalid
-    """
-    return _update_plan_header(
-        issue_body,
-        **{
-            LAST_LOCAL_IMPL_AT: local_impl_at,
-            LAST_LOCAL_IMPL_EVENT: event,
-            LAST_LOCAL_IMPL_SESSION: session_id,
-            LAST_LOCAL_IMPL_USER: user,
-        },
-    )
-
-
 def extract_plan_header_local_impl_event(issue_body: str) -> str | None:
     """Extract last_local_impl_event from plan-header block.
 
@@ -708,38 +673,6 @@ def update_plan_header_node_ids(
     return _update_plan_header(issue_body, **{NODE_IDS: node_ids})
 
 
-def extract_plan_header_created_from_session(issue_body: str) -> str | None:
-    """Extract created_from_session from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        Session ID that created this plan if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(CREATED_FROM_SESSION)
-
-
-def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
-    """Extract last_local_impl_session from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        Session ID of last local implementation if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_LOCAL_IMPL_SESSION)
-
-
 def update_plan_header_learn_event(
     *,
     issue_body: str,
@@ -763,70 +696,6 @@ def update_plan_header_learn_event(
         issue_body,
         **{LAST_LEARN_AT: learn_at, LAST_LEARN_SESSION: session_id},
     )
-
-
-def extract_plan_header_last_learn_session(issue_body: str) -> str | None:
-    """Extract last_learn_session from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        Session ID of last learn invocation if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_LEARN_SESSION)
-
-
-def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
-    """Extract last_learn_at from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        ISO 8601 timestamp of last learn invocation if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_LEARN_AT)
-
-
-def extract_plan_header_remote_impl_run_id(issue_body: str) -> str | None:
-    """Extract last_remote_impl_run_id from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        GitHub Actions run ID if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_REMOTE_IMPL_RUN_ID)
-
-
-def extract_plan_header_remote_impl_session_id(issue_body: str) -> str | None:
-    """Extract last_remote_impl_session_id from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        Claude Code session ID for remote implementation if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_REMOTE_IMPL_SESSION_ID)
 
 
 def update_plan_header_remote_impl_event(
@@ -858,26 +727,6 @@ def update_plan_header_remote_impl_event(
             LAST_REMOTE_IMPL_SESSION_ID: session_id,
         },
     )
-
-
-def extract_plan_header_learn_status(issue_body: str) -> LearnStatusValue | None:
-    """Extract learn_status from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        learn_status ("pending" or "completed") if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    # Type narrowing: validation ensures this is a valid LearnStatusValue
-    value = block.data.get(LEARN_STATUS)
-    if value is None:
-        return None
-    return value
 
 
 def extract_plan_header_learn_run_id(issue_body: str) -> str | None:
@@ -919,72 +768,6 @@ def update_plan_header_learn_status(
     if learn_run_id is not None:
         updates[LEARN_RUN_ID] = learn_run_id
     return _update_plan_header(issue_body, **updates)
-
-
-def update_plan_header_session_branch(
-    *,
-    issue_body: str,
-    session_branch: str,
-    session_id: str,
-    session_at: str,
-    source: SessionSourceValue,
-) -> str:
-    """Update session branch fields atomically.
-
-    Args:
-        issue_body: Current issue body containing plan-header block
-        session_branch: Branch name where session was committed
-        session_id: Claude Code session ID
-        session_at: ISO 8601 timestamp of session upload
-        source: "local" or "remote" indicating where session was run
-
-    Returns:
-        Updated issue body with new session branch fields
-
-    Raises:
-        ValueError: If plan-header block not found or invalid
-    """
-    return _update_plan_header(
-        issue_body,
-        **{
-            LAST_SESSION_BRANCH: session_branch,
-            LAST_SESSION_ID: session_id,
-            LAST_SESSION_AT: session_at,
-            LAST_SESSION_SOURCE: source,
-        },
-    )
-
-
-def extract_plan_header_session_branch(issue_body: str) -> str | None:
-    """Extract last_session_branch from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        Branch name containing session JSONL if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_SESSION_BRANCH)
-
-
-def extract_plan_header_last_session_id(issue_body: str) -> str | None:
-    """Extract last_session_id from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        Claude Code session ID if found, None otherwise
-    """
-    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
-    if block is None:
-        return None
-
-    return block.data.get(LAST_SESSION_ID)
 
 
 def extract_plan_header_last_session_source(issue_body: str) -> SessionSourceValue | None:
