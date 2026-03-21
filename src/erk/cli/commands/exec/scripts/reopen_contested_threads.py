@@ -78,7 +78,7 @@ def _find_contested_threads(threads: list[PRReviewThread]) -> list[PRReviewThrea
         if not thread.is_resolved:
             continue
 
-        comments = list(thread.comments)
+        comments = thread.comments
 
         # Find the index of the last marker comment
         last_marker_index: int | None = None
