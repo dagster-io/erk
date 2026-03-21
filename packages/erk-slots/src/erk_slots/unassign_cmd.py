@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from erk.cli.core import discover_repo_context
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
     PoolState,
@@ -14,9 +14,18 @@ from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
 )
+from erk.core.worktree_utils import get_worktree_branch
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.output.output import user_output
+from erk_shared.pr_store.types import PlanState
 from erk_shared.slots.naming import get_placeholder_branch_name
+from erk_shared.worktree_cleanup import (
+    close_plan_for_worktree,
+    close_pr_for_branch,
+    delete_branch,
+    get_plan_info_for_worktree,
+    get_pr_info_for_branch,
+)
 
 
 @dataclass(frozen=True)
@@ -148,10 +157,114 @@ def _find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | Non
     return None
 
 
+def _display_planned_operations(
+    *,
+    slot_name: str,
+    branch_to_delete: str | None,
+    close_all: bool,
+    pr_info: tuple[int, str] | None,
+    plan_info: tuple[int, PlanState] | None,
+) -> None:
+    """Display the operations that will be performed.
+
+    Args:
+        slot_name: Name of the slot being unassigned
+        branch_to_delete: Branch name to delete, or None if no branch deletion
+        close_all: Whether -a/--all flag was passed
+        pr_info: Tuple of (PR number, state) if found, None otherwise
+        plan_info: Tuple of (plan number, state) if found, None otherwise
+    """
+    user_output(click.style("📋 Planning to perform the following operations:", bold=True))
+    slot_text = click.style(slot_name, fg="cyan")
+    step = 1
+    user_output(f"  {step}. 🔓 Unassign slot: {slot_text}")
+
+    if close_all and branch_to_delete:
+        step += 1
+        pr_text = _format_pr_plan_text(pr_info, "PR")
+        user_output(f"  {step}. 🔒 {pr_text}")
+        step += 1
+        plan_text = _format_plan_text(plan_info)
+        user_output(f"  {step}. 📝 {plan_text}")
+
+    if branch_to_delete:
+        step += 1
+        branch_text = click.style(branch_to_delete, fg="yellow")
+        user_output(f"  {step}. 🌳 Delete branch: {branch_text}")
+
+
+def _format_pr_plan_text(pr_info: tuple[int, str] | None, item_type: str) -> str:
+    """Format PR info for display in planning phase."""
+    if pr_info is None:
+        return f"Close associated {item_type} (if any)"
+
+    number, state = pr_info
+    if state == "OPEN":
+        return f"Close {item_type} #{number} (currently open)"
+    elif state == "MERGED":
+        state_text = click.style("merged", fg="green")
+        return f"{item_type} #{number} already {state_text}"
+    else:
+        state_text = click.style("closed", fg="yellow")
+        return f"{item_type} #{number} already {state_text}"
+
+
+def _format_plan_text(plan_info: tuple[int, PlanState] | None) -> str:
+    """Format plan info for display in planning phase."""
+    if plan_info is None:
+        return "Close associated plan (if any)"
+
+    pr_number, state = plan_info
+    if state == PlanState.OPEN:
+        return f"Close plan #{pr_number} (currently open)"
+    else:
+        state_text = click.style("closed", fg="yellow")
+        return f"Plan #{pr_number} already {state_text}"
+
+
+def _confirm_operations(ctx: ErkContext, *, force: bool, dry_run: bool) -> bool:
+    """Prompt for confirmation unless force or dry-run mode.
+
+    Returns True if operations should proceed, False if aborted.
+    """
+    if force or dry_run:
+        return True
+
+    user_output()
+    if not ctx.console.confirm("Proceed with these operations?", default=True):
+        user_output(click.style("⭕ Aborted.", fg="red", bold=True))
+        return False
+
+    return True
+
+
 @click.command("unassign")
 @click.argument("worktree", metavar="WORKTREE", required=False)
+@click.option("-b", "--branch", is_flag=True, help="Delete the branch after unassigning.")
+@click.option(
+    "-a",
+    "--all",
+    "close_all",
+    is_flag=True,
+    help="Delete branch, close associated PR and plan (implies --branch).",
+)
+@click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt.")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Show what would happen without executing.",
+)
 @click.pass_obj
-def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
+def slot_unassign(
+    ctx: ErkContext,
+    worktree: str | None,
+    *,
+    branch: bool,
+    close_all: bool,
+    force: bool,
+    dry_run: bool,
+) -> None:
     """Remove a branch assignment from a pool slot.
 
     WORKTREE is the slot name (e.g., erk-slot-01).
@@ -161,10 +274,27 @@ def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
 
     The worktree directory is kept for reuse with future assignments.
 
+    With `-b/--branch`, also deletes the branch after unassigning.
+
+    With `-a/--all`, deletes branch + closes associated PR + closes plan (implies --branch).
+
+    With `-f/--force`, skips the confirmation prompt.
+
+    With `--dry-run`, shows what would happen without executing.
+
     Examples:
         erk slot unassign erk-slot-01    # Unassign by worktree name
         erk slot unassign                # Unassign current slot (from within pool worktree)
+        erk slot unassign -b             # Unassign + delete branch
+        erk slot unassign erk-slot-01 -a # Unassign + close PR + close plan + delete branch
     """
+    if dry_run:
+        ctx = create_context(dry_run=True)
+
+    # --all implies --branch
+    if close_all:
+        branch = True
+
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Load pool state
@@ -195,6 +325,39 @@ def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
             )
             raise SystemExit(1) from None
 
+    # Determine branch to delete (if requested)
+    branch_to_delete: str | None = None
+    if branch:
+        worktrees = ctx.git.worktree.list_worktrees(repo.root)
+        worktree_branch = get_worktree_branch(worktrees, assignment.worktree_path)
+        if worktree_branch is None:
+            user_output(
+                f"Warning: Slot {assignment.slot_name} is in detached HEAD state. "
+                "Cannot delete branch."
+            )
+        else:
+            branch_to_delete = worktree_branch
+
+    # Fetch PR/plan info before displaying plan (for informative planning output)
+    pr_info: tuple[int, str] | None = None
+    plan_info: tuple[int, PlanState] | None = None
+    if close_all and branch_to_delete:
+        pr_info = get_pr_info_for_branch(ctx, repo.root, branch_to_delete)
+        plan_info = get_plan_info_for_worktree(ctx, repo.root, assignment.slot_name)
+
+    # Display planned operations if flags are present
+    if branch or close_all:
+        _display_planned_operations(
+            slot_name=assignment.slot_name,
+            branch_to_delete=branch_to_delete,
+            close_all=close_all,
+            pr_info=pr_info,
+            plan_info=plan_info,
+        )
+
+        if not _confirm_operations(ctx, force=force, dry_run=dry_run):
+            return
+
     # Execute the unassign operation
     result = execute_unassign(ctx, repo, state, assignment)
 
@@ -203,5 +366,24 @@ def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
         + f"Unassigned {click.style(result.branch_name, fg='yellow')} "
         + f"from {click.style(result.slot_name, fg='cyan')}"
     )
-    user_output("  Switched to placeholder branch")
-    user_output("  Tip: Use 'erk wt co root' to return to root worktree")
+
+    # Execute cleanup operations if requested
+    if close_all and branch_to_delete:
+        # Close PR for the branch (if exists and open)
+        close_pr_for_branch(ctx, repo.root, branch_to_delete)
+        # Close plan for the worktree (if exists and open)
+        close_plan_for_worktree(ctx, repo.root, assignment.slot_name)
+
+    if branch_to_delete:
+        # Delete branch (force=True since user already confirmed)
+        delete_branch(
+            ctx,
+            repo_root=repo.root,
+            branch=branch_to_delete,
+            force=True,
+            dry_run=dry_run,
+        )
+
+    if not branch and not close_all:
+        user_output("  Switched to placeholder branch")
+        user_output("  Tip: Use 'erk wt co root' to return to root worktree")

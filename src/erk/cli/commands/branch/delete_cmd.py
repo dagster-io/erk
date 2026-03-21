@@ -8,12 +8,7 @@ import click
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
 from erk.cli.commands.wt.delete_cmd import (
-    _close_plan_for_worktree,
-    _close_pr_for_branch,
-    _delete_branch_at_error_boundary,
     _escape_worktree_if_inside,
-    _get_plan_info_for_worktree,
-    _get_pr_info_for_branch,
     _prune_worktrees_safe,
     _try_git_worktree_delete,
 )
@@ -25,6 +20,13 @@ from erk.core.worktree_pool import SlotAssignment, load_pool_state
 from erk.core.worktree_utils import find_worktree_with_branch
 from erk_shared.output.output import user_output
 from erk_shared.pr_store.types import PlanState
+from erk_shared.worktree_cleanup import (
+    close_plan_for_worktree,
+    close_pr_for_branch,
+    delete_branch,
+    get_plan_info_for_worktree,
+    get_pr_info_for_branch,
+)
 from erk_slots.unassign_cmd import execute_unassign
 
 
@@ -291,11 +293,11 @@ def _delete_branch(
     worktree_name: str | None = None
 
     if close_all:
-        pr_info = _get_pr_info_for_branch(ctx, repo.root, branch)
+        pr_info = get_pr_info_for_branch(ctx, repo.root, branch)
         if wt_info.has_worktree:
             assert wt_info.worktree_path is not None
             worktree_name = wt_info.worktree_path.name
-            plan_info = _get_plan_info_for_worktree(ctx, repo.root, worktree_name)
+            plan_info = get_plan_info_for_worktree(ctx, repo.root, worktree_name)
 
     # Display planned operations
     _display_branch_delete_plan(
@@ -323,12 +325,12 @@ def _delete_branch(
 
     # 2. Close PR and plan (if --all)
     if close_all:
-        _close_pr_for_branch(ctx, repo.root, branch)
+        close_pr_for_branch(ctx, repo.root, branch)
         if worktree_name is not None:
-            _close_plan_for_worktree(ctx, repo.root, worktree_name)
+            close_plan_for_worktree(ctx, repo.root, worktree_name)
 
     # 3. Delete the branch
-    _delete_branch_at_error_boundary(
+    delete_branch(
         ctx,
         repo_root=repo.root,
         branch=branch,
