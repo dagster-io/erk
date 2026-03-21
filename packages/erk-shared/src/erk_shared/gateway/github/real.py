@@ -2190,7 +2190,7 @@ class RealLocalGitHub(LocalGitHub):
         if thread_data is None:
             return False
 
-        return thread_data.get("isResolved", False) is False
+        return not thread_data.get("isResolved", False)
 
     def add_review_thread_reply(
         self,
