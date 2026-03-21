@@ -2597,9 +2597,7 @@ query {{
 
             # Create self-linkage for PullRequest nodes (isDraft only present on PRs)
             elif "isDraft" in node:
-                checks_passing, checks_counts = parse_status_rollup(
-                    node.get("statusCheckRollup")
-                )
+                checks_passing, checks_counts = parse_status_rollup(node.get("statusCheckRollup"))
                 has_conflicts = parse_mergeable_status(node.get("mergeable"))
                 pr_linkages[issue.number] = [
                     PullRequestInfo(
