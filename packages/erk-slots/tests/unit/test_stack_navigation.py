@@ -91,9 +91,7 @@ def test_up_at_top_of_stack() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Already at the top of the stack" in result.stderr
@@ -264,9 +262,7 @@ def test_down_at_trunk() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Already at the bottom of the stack" in result.stderr
@@ -341,18 +337,14 @@ def test_up_down_graphite_not_enabled() -> None:
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
         # Try 'erk up'
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "requires Graphite to be enabled" in result.stderr
         assert "erk config set use_graphite true" in result.stderr
 
         # Try 'erk down'
-        result = runner.invoke(
-            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "requires Graphite to be enabled" in result.stderr
@@ -373,9 +365,7 @@ def test_up_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Not currently on a branch" in result.stderr

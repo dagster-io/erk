@@ -147,9 +147,7 @@ def test_down_at_trunk() -> None:
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Already at the bottom of the stack", "trunk branch 'main'")
 
@@ -224,9 +222,7 @@ def test_down_graphite_not_enabled() -> None:
         graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
-        result = runner.invoke(
-            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
@@ -249,9 +245,7 @@ def test_down_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "down"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 

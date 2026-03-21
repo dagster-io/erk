@@ -122,9 +122,7 @@ def test_up_at_top_of_stack() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Already at the top of the stack")
 
@@ -209,9 +207,7 @@ def test_up_graphite_not_enabled() -> None:
         graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled, repo=repo)
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
@@ -246,9 +242,7 @@ def test_up_graphite_not_installed() -> None:
         graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled, repo=repo)
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,
@@ -282,9 +276,7 @@ def test_up_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 
@@ -377,9 +369,7 @@ def test_up_multiple_children_fails_explicitly() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(
-            cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "up"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result,

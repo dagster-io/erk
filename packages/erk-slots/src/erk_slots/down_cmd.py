@@ -24,9 +24,7 @@ from erk_slots.navigation import execute_stack_navigation
     help="Force deletion even if marker exists or PR is open (prompts)",
 )
 @click.pass_obj
-def slot_down(
-    ctx: ErkContext, count: int, script: bool, delete_current: bool, force: bool
-) -> None:
+def slot_down(ctx: ErkContext, count: int, script: bool, delete_current: bool, force: bool) -> None:
     """Move to parent branch in worktree stack.
 
     Navigate down COUNT levels (default: 1).
