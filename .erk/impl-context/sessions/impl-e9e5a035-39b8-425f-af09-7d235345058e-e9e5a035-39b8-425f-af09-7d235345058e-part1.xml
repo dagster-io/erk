@@ -1,0 +1,1265 @@
+<session>
+  <meta branch="plnd/O9324-fix-escape-md-table-03-21-0705" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="e9e5a035-39b8-425f-af09-7d235345058e" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="e9e5a035-39b8-425f-af09-7d235345058e" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="e9e5a035-39b8-425f-af09-7d235345058e" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="e9e5a035-39b8-425f-af09-7d235345058e" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15519" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15519}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15519" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15519}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GVN6iwTNngZg1yfTDm3vrb">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15519" cache_read_input_tokens="9015" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15519, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GVN6iwTNngZg1yfTDm3vrb">
+Found existing impl dir for PR #9325, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.erk/impl-context/plnd--O9324-fix-escape-md-table-03-21-0705", "pr_number": 9325, "pr_url": "https://github.com/dagster-io/erk/pull/9325", "branch": "plnd/O9324-fix-escape-md-table-03-21-0705", "pr_title": "", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9325, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="24534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0183ANpGae28CkDrpX12XXA3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/.erk/impl-context/plnd--O9324-fix-escape-md-table-03-21-0705/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="24534" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 445, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0183ANpGae28CkDrpX12XXA3">
+     1→# Fix: Escape pipe characters in objective roadmap table cells
+     2→
+     3→## Context
+     4→
+     5→Node descriptions containing `|` (e.g., `SubmitStackResult | SubmitStackError`) break markdown table rendering because the pipe is interpreted as a column separator. This caused corrupted table rows in objective #9324.
+     6→
+     7→## Files to modify
+     8→
+     9→1. **`packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:627`** — `render_roadmap_tables()`
+    10→2. **`src/erk/cli/commands/exec/scripts/objective_render_roadmap.py:155`** — `_render_roadmap()`
+    11→
+    12→## Approach
+    13→
+    14→Add a shared `escape_md_table_cell(value)` function that sanitizes any string for safe inclusion in a markdown table cell. Apply it uniformly to **all** cell values at both rendering sites — not just descriptions.
+    15→
+    16→The function lives in `erk_shared` since both rendering sites can import from there. Place it alongside the roadmap rendering code in the roadmap module itself (it's the only consumer pattern).
+    17→
+    18→### What to escape
+    19→
+    20→- `|` → `\|` (column separator — the bug that triggered this)
+    21→- `\n` → ` ` (newlines would break the row)
+    22→
+    23→## TDD Steps
+    24→
+    25→### Red: Write failing tests first
+    26→
+    27→**Test 1** — `packages/erk-shared/tests/unit/github/metadata/test_roadmap.py`:
+    28→
+    29→New standalone test for the utility:
+    30→
+
+... [111 lines omitted] ...
+
+    52→                    description="SuccessType | ErrorType",
+    60→    assert r"SuccessType \| ErrorType" in result
+    75→                {"id": "1.1", "description": "SuccessType | ErrorType"},
+    80→    assert r"SuccessType \| ErrorType" in result
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2170" cache_read_input_tokens="24979" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Plan is clear. Two files to modify, one utility function, TDD approach. Let me read the source files and existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2170" cache_read_input_tokens="24979" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01LFsdkhYije2rWyWwMHzWYw">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2170" cache_read_input_tokens="24979" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2170, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LFsdkhYije2rWyWwMHzWYw">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MjuByiqsx9f9pbfLzmPmgH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">610</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="991" cache_read_input_tokens="27149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 991}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MjuByiqsx9f9pbfLzmPmgH">
+   610→
+   611→    for phase in phases:
+   612→        pr_count = sum(1 for step in phase.nodes if step.pr is not None)
+   613→        header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"
+   614→
+   615→        rows: list[str] = []
+   616→        if any_has_depends_on:
+   617→            rows.append("| Node | Description | Depends On | Status | PR |")
+   618→            rows.append("|------|-------------|------------|--------|----|")
+   619→        else:
+   620→            rows.append("| Node | Description | Status | PR |")
+   621→            rows.append("|------|-------------|--------|----|")
+   622→
+   623→        for step in phase.nodes:
+   624→            status_display = step.status.replace("_", "-")
+   625→            cells = [
+   626→                step.id,
+   627→                step.description,
+   628→            ]
+   629→            if any_has_depends_on:
+   630→                cells.append(_format_depends_on(step.depends_on))
+   631→            cells.extend(
+   632→                [
+   633→                    status_display,
+   634→                    step.pr if step.pr is not None else "-",
+   635→                ]
+   636→            )
+   637→            rows.append("| " + " | ".join(cells) + " |")
+   638→
+   639→        sections.append(header + "\n" + "\n".join(rows))
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KAH4TRZT2zt6bQR72X89kx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py</param>
+    <param name="offset">140</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="991" cache_read_input_tokens="27149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 991}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KAH4TRZT2zt6bQR72X89kx">
+   140→        if description := phase.get("description"):
+   141→            sections.append(description)
+   142→            sections.append("")
+   143→
+   144→        # Table header (conditional Depends On column)
+   145→        if any_has_depends_on:
+   146→            sections.append("| Node | Description | Depends On | Status | PR |")
+   147→            sections.append("|------|-------------|------------|--------|----|")
+   148→        else:
+   149→            sections.append("| Node | Description | Status | PR |")
+   150→            sections.append("|------|-------------|--------|----|")
+   151→
+   152→        # Table rows
+   153→        for step_data in phase["steps"]:
+   154→            step_id = step_data["id"]
+   155→            step_desc = step_data["description"]
+   156→            raw_depends_on = step_data.get("depends_on")
+   157→            depends_on: tuple[str, ...] | None = (
+   158→                tuple(raw_depends_on) if raw_depends_on is not None else None
+   159→            )
+   160→
+   161→            # Handle slug: use provided, or generate hash-based fallback
+   162→            raw_slug = step_data.get("slug")
+   163→            if isinstance(raw_slug, str) and raw_slug:
+   164→                slug = raw_slug
+   165→            else:
+   166→                slug = slugify_node_description(step_desc)
+   167→
+   168→            status = step_data.get("status", "pending")
+   169→            pr = step_data.get("pr")
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GbMph3QVyKhHWFfrzvnRhE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="991" cache_read_input_tokens="27149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 991}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017uFEFfBS2XvYCKXoDomVFy">
+    <param name="pattern">tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="991" cache_read_input_tokens="27149" output_tokens="411" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 991, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GbMph3QVyKhHWFfrzvnRhE">
+     1→"""Unit tests for roadmap parsing, utility functions, and table rendering."""
+     2→
+     3→from erk_shared.gateway.github.metadata.roadmap import (
+     4→    RoadmapNode,
+     5→    RoadmapPhase,
+     6→    compute_summary,
+     7→    find_next_node,
+     8→    parse_roadmap,
+     9→    parse_v2_roadmap,
+    10→    render_roadmap_block_inner,
+    11→    render_roadmap_tables,
+    12→    serialize_phases,
+    13→    validate_roadmap_frontmatter,
+    14→)
+    15→
+    16→WELL_FORMED_V2_BODY = """\
+    17→# Objective: Test
+    18→
+    19→## Roadmap
+    20→
+    21→### Phase 1: Foundation
+    22→
+    23→### Phase 2: Core
+    24→
+    25→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    26→&lt;details&gt;
+    27→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    28→
+    29→```yaml
+    30→schema_version: '2'
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017uFEFfBS2XvYCKXoDomVFy">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XisPeDTxk6Gqw1sKdcXcL3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3281" cache_read_input_tokens="28140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3281}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XisPeDTxk6Gqw1sKdcXcL3">
+     1→"""Unit tests for objective-render-roadmap command."""
+     2→
+     3→import json
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.commands.exec.scripts.objective_render_roadmap import (
+     8→    _render_roadmap,
+     9→    _validate_input,
+    10→    objective_render_roadmap,
+    11→)
+    12→from erk_shared.gateway.github.metadata.roadmap import parse_roadmap_frontmatter
+    13→
+    14→# --- Validation tests ---
+    15→
+    16→
+    17→def test_validate_input_valid_minimal() -&gt; None:
+    18→    """Validate accepts minimal valid input."""
+    19→    data = {
+    20→        "phases": [
+    21→            {
+    22→                "name": "Steelthread",
+    23→                "steps": [
+    24→                    {"id": "1.1", "description": "First step"},
+    25→                ],
+    26→            },
+    27→        ],
+    28→    }
+    29→    phases, error = _validate_input(data)
+    30→    assert error is None
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qyoce66YYa9qifQD7WFpiV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">50</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3281" cache_read_input_tokens="28140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3281}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qyoce66YYa9qifQD7WFpiV">
+    50→  plan: null
+    51→  pr: null
+    52→- id: '2.2'
+    53→  description: Performance
+    54→  status: skipped
+    55→  plan: null
+    56→  pr: null
+    57→```
+    58→
+    59→&lt;/details&gt;
+    60→&lt;!-- /erk:metadata-block:objective-roadmap --&gt;
+    61→"""
+    62→
+    63→
+    64→def test_parse_roadmap_v2_well_formed() -&gt; None:
+    65→    """Test parsing a well-formed v2 roadmap body."""
+    66→    phases, errors = parse_roadmap(WELL_FORMED_V2_BODY)
+    67→
+    68→    assert len(phases) == 2
+    69→    assert errors == []
+    70→
+    71→    assert phases[0].number == 1
+    72→    assert phases[0].suffix == ""
+    73→    assert phases[0].name == "Foundation"
+    74→    assert len(phases[0].nodes) == 3
+    75→
+    76→    assert phases[1].number == 2
+    77→    assert phases[1].suffix == ""
+    78→    assert phases[1].name == "Core"
+    79→    assert len(phases[1].nodes) == 2
+
+... [70 lines omitted] ...
+
+   145→    phases, _errors = parse_roadmap(body)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JWPfN9hqCy7mLVFgAmNeWw">
+    <param name="pattern">class TestRenderRoadmapTables</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3281" cache_read_input_tokens="28140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3281}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWPfN9hqCy7mLVFgAmNeWw">
+819:class TestRenderRoadmapTables:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QexoRaqApsC9C41MGQEV1K">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">819</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6064" cache_read_input_tokens="31421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6064}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QexoRaqApsC9C41MGQEV1K">
+   819→class TestRenderRoadmapTables:
+   820→    def test_single_phase_basic(self) -&gt; None:
+   821→        phases = [
+   822→            RoadmapPhase(
+   823→                number=1,
+   824→                suffix="",
+   825→                name="Foundation",
+   826→                nodes=[
+   827→                    RoadmapNode(
+   828→                        id="1.1",
+   829→                        description="Setup",
+   830→                        status="done",
+   831→                        plan=None,
+   832→                        pr="#10",
+   833→                        depends_on=None,
+   834→                        slug=None,
+   835→                    ),
+   836→                    RoadmapNode(
+   837→                        id="1.2",
+   838→                        description="Build",
+   839→                        status="pending",
+   840→                        plan=None,
+   841→                        pr=None,
+   842→                        depends_on=None,
+   843→                        slug=None,
+   844→                    ),
+   845→                ],
+   846→            )
+   847→        ]
+   848→        result = render_roadmap_tables(phases)
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012ePanLBA19GnzWu84uc5mK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="offset">30</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6064" cache_read_input_tokens="31421" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6064, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012ePanLBA19GnzWu84uc5mK">
+    30→    assert error is None
+    31→    assert len(phases) == 1
+    32→
+    33→
+    34→def test_validate_input_valid_full() -&gt; None:
+    35→    """Validate accepts full input with all optional fields."""
+    36→    data = {
+    37→        "phases": [
+    38→            {
+    39→                "name": "Steelthread",
+    40→                "description": "Minimal vertical slice.",
+    41→                "pr_count": "1 PR",
+    42→                "steps": [
+    43→                    {"id": "1.1", "description": "Minimal infrastructure"},
+    44→                    {"id": "1.2", "description": "Wire into one path"},
+    45→                ],
+    46→                "test": "End-to-end acceptance test",
+    47→            },
+    48→            {
+    49→                "name": "Complete Feature",
+    50→                "description": "Fill out remaining functionality.",
+    51→                "pr_count": "2 PRs",
+    52→                "steps": [
+    53→                    {"id": "2.1", "description": "Extend to remaining commands"},
+    54→                ],
+    55→                "test": "Full acceptance criteria",
+    56→            },
+    57→        ],
+    58→    }
+    59→    phases, error = _validate_input(data)
+
+... [70 lines omitted] ...
+
+    60→    assert error is None
+    66→    _, error = _validate_input("not a dict")
+    67→    assert error == "Input must be a JSON object"
+    72→    _, error = _validate_input({})
+    73→    assert error == "Missing required field: phases"
+    78→    _, error = _validate_input({"phases": "not a list"})
+    79→    assert error == "Field 'phases' must be a list"
+    84→    _, error = _validate_input({"phases": []})
+    85→    assert error == "Field 'phases' must not be empty"
+    91→    _, error = _validate_input(data)
+    92→    assert "missing required field: name" in error
+    98→    _, error = _validate_input(data)
+    99→    assert "missing required field: steps" in error
+   105→    _, error = _validate_input(data)
+   106→    assert "must not be empty" in error
+   112→    _, error = _validate_input(data)
+   113→    assert "missing required field: id" in error
+   119→    _, error = _validate_input(data)
+   120→    assert "missing required field: description" in error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2390" cache_read_input_tokens="37485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2390}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HJSVXLxmat6XWZpeC9QEaj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">895</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2390" cache_read_input_tokens="37485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2390}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HJSVXLxmat6XWZpeC9QEaj">
+   895→            )
+   896→        ]
+   897→        result = render_roadmap_tables(phases)
+   898→
+   899→        assert "| 1.1 | Step | pending | - | - |" in result
+   900→
+   901→    def test_multi_phase(self) -&gt; None:
+   902→        phases = [
+   903→            RoadmapPhase(
+   904→                number=1,
+   905→                suffix="",
+   906→                name="Foundation",
+   907→                nodes=[
+   908→                    RoadmapNode(
+   909→                        id="1.1",
+   910→                        description="A",
+   911→                        status="done",
+   912→                        plan=None,
+   913→                        pr="#1",
+   914→                        depends_on=None,
+   915→                        slug=None,
+   916→                    ),
+   917→                ],
+   918→            ),
+   919→            RoadmapPhase(
+   920→                number=2,
+   921→                suffix="",
+   922→                name="Core",
+   923→                nodes=[
+   924→                    RoadmapNode(
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MvnsHM6dCvte1kSnLf1voQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="offset">126</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2390" cache_read_input_tokens="37485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2390}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MvnsHM6dCvte1kSnLf1voQ">
+   126→def test_render_roadmap_single_phase() -&gt; None:
+   127→    """Render produces correct markdown for a single phase."""
+   128→    phases: list[dict[str, object]] = [
+   129→        {
+   130→            "name": "Foundation",
+   131→            "description": "Set up infrastructure.",
+   132→            "pr_count": "1 PR",
+   133→            "steps": [
+   134→                {"id": "1.1", "description": "Create base module"},
+   135→                {"id": "1.2", "description": "Add core types"},
+   136→            ],
+   137→            "test": "Module imports and types are available",
+   138→        },
+   139→    ]
+   140→
+   141→    result = _render_roadmap(phases)
+   142→
+   143→    assert "## Roadmap" in result
+   144→    assert "### Phase 1: Foundation (1 PR)" in result
+   145→    assert "Set up infrastructure." in result
+   146→    assert "| 1.1 | Create base module | pending | - |" in result
+   147→    assert "| 1.2 | Add core types | pending | - |" in result
+   148→    assert "**Test:** Module imports and types are available" in result
+   149→    assert "erk:metadata-block:objective-roadmap" in result
+   150→
+   151→
+   152→def test_render_roadmap_multiple_phases() -&gt; None:
+   153→    """Render produces correct markdown for multiple phases."""
+   154→    phases: list[dict[str, object]] = [
+   155→        {
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CcutUVtPm32pZJcEUg87S8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">970</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2490" cache_read_input_tokens="39875" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2490}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CcutUVtPm32pZJcEUg87S8">
+   970→                nodes=[
+   971→                    RoadmapNode(
+   972→                        id="1.1",
+   973→                        description="Step",
+   974→                        status="pending",
+   975→                        plan=None,
+   976→                        pr=None,
+   977→                        depends_on=None,
+   978→                        slug=None,
+   979→                    ),
+   980→                ],
+   981→            )
+   982→        ]
+   983→        result = render_roadmap_tables(phases)
+   984→        lines = result.split("\n")
+   985→
+   986→        assert lines[1] == "| Node | Description | Status | Plan | PR |"
+   987→        assert lines[2] == "|------|-------------|--------|------|----|"
+   988→
+   989→    def test_plan_and_pr_values(self) -&gt; None:
+   990→        phases = [
+   991→            RoadmapPhase(
+   992→                number=1,
+   993→                suffix="",
+   994→                name="Test",
+   995→                nodes=[
+   996→                    RoadmapNode(
+   997→                        id="1.1",
+   998→                        description="Done",
+   999→                        status="done",
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BfPKMCBwAXpYUnZQFrVfcR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="offset">225</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2490" cache_read_input_tokens="39875" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2490, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BfPKMCBwAXpYUnZQFrVfcR">
+   225→
+   226→    result = _render_roadmap(phases)
+   227→
+   228→    assert "### Phase 1: Implementation (2-3 PRs)" in result
+   229→
+   230→
+   231→def test_render_roadmap_no_optional_fields() -&gt; None:
+   232→    """Render works without optional fields (description, pr_count, test)."""
+   233→    phases: list[dict[str, object]] = [
+   234→        {
+   235→            "name": "Phase",
+   236→            "steps": [{"id": "1.1", "description": "Do thing"}],
+   237→        },
+   238→    ]
+   239→
+   240→    result = _render_roadmap(phases)
+   241→
+   242→    assert "### Phase 1: Phase (1 PR)" in result
+   243→    assert "| 1.1 | Do thing | pending | - |" in result
+   244→    assert "**Test:**" not in result
+   245→
+   246→
+   247→# --- CLI integration tests ---
+   248→
+   249→
+   250→def test_cli_valid_input() -&gt; None:
+   251→    """CLI produces roadmap output for valid JSON input."""
+   252→    input_data = json.dumps(
+   253→        {
+   254→            "phases": [
+
+... [70 lines omitted] ...
+
+   275→    """CLI exits with error for empty input."""
+   282→    assert "No input" in output["error"]
+   286→    """CLI exits with error for invalid JSON."""
+   293→    assert "Invalid JSON" in output["error"]
+   297→    """CLI exits with error for valid JSON but invalid structure."""
+   307→    assert "must be a list" in output["error"]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012nrSEoCHuu3a19yasCQ9k7">
+    <param name="pattern">def test_</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2422" cache_read_input_tokens="42365" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012nrSEoCHuu3a19yasCQ9k7">
+17:def test_validate_input_valid_minimal() -&gt; None:
+34:def test_validate_input_valid_full() -&gt; None:
+64:def test_validate_input_not_dict() -&gt; None:
+70:def test_validate_input_missing_phases() -&gt; None:
+76:def test_validate_input_phases_not_list() -&gt; None:
+82:def test_validate_input_empty_phases() -&gt; None:
+88:def test_validate_input_phase_missing_name() -&gt; None:
+95:def test_validate_input_phase_missing_steps() -&gt; None:
+102:def test_validate_input_empty_steps() -&gt; None:
+109:def test_validate_input_step_missing_id() -&gt; None:
+116:def test_validate_input_step_missing_description() -&gt; None:
+126:def test_render_roadmap_single_phase() -&gt; None:
+152:def test_render_roadmap_multiple_phases() -&gt; None:
+177:def test_render_roadmap_metadata_block_parseable() -&gt; None:
+216:def test_render_roadmap_custom_pr_count() -&gt; None:
+231:def test_render_roadmap_no_optional_fields() -&gt; None:
+250:def test_cli_valid_input() -&gt; None:
+274:def test_cli_empty_input() -&gt; None:
+285:def test_cli_invalid_json() -&gt; None:
+296:def test_cli_invalid_structure() -&gt; None:
+313:def test_validate_input_step_with_depends_on() -&gt; None:
+330:def test_validate_input_step_depends_on_not_list() -&gt; None:
+348:def test_validate_input_step_depends_on_non_string_items() -&gt; None:
+369:def test_render_roadmap_with_depends_on() -&gt; None:
+388:def test_render_roadmap_without_depends_on_unchanged() -&gt; None:
+406:def test_render_roadmap_preserves_status_and_pr() -&gt; None:
+440:def test_render_roadmap_preserves_status_and_pr_with_depends_on() -&gt; None:
+464:def test_cli_preserves_status_and_pr() -&gt; None:
+488:def test_render_roadmap_depends_on_metadata_roundtrip() -&gt; None:
+  </tool_result>
+  <assistant>Now let me check where the last test ends in that file, and also read the full `render_roadmap_tables` function to understand the plan/status column logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="838" cache_read_input_tokens="44787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 838}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UMocJ1LCpASKxH93UZapzr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="offset">488</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="838" cache_read_input_tokens="44787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 838}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UMocJ1LCpASKxH93UZapzr">
+   488→def test_render_roadmap_depends_on_metadata_roundtrip() -&gt; None:
+   489→    """Metadata block with depends_on parses correctly."""
+   490→    phases: list[dict[str, object]] = [
+   491→        {
+   492→            "name": "Foundation",
+   493→            "steps": [
+   494→                {"id": "1.1", "description": "Base"},
+   495→                {"id": "1.2", "description": "Wire", "depends_on": ["1.1"]},
+   496→                {"id": "1.3", "description": "Polish", "depends_on": ["1.1", "1.2"]},
+   497→            ],
+   498→        },
+   499→    ]
+   500→
+   501→    result = _render_roadmap(phases)
+   502→
+   503→    # Extract and parse the metadata block
+   504→    start_marker = "&lt;!-- erk:metadata-block:objective-roadmap --&gt;"
+   505→    end_marker = "&lt;!-- /erk:metadata-block:objective-roadmap --&gt;"
+   506→    start_idx = result.index(start_marker) + len(start_marker) + 1
+   507→    end_idx = result.index(end_marker)
+   508→    block_content = result[start_idx:end_idx].strip()
+   509→
+   510→    steps = parse_roadmap_frontmatter(block_content)
+   511→    assert steps is not None
+   512→    assert len(steps) == 3
+   513→    # Node without depends_on in input is serialized as [] when any node has depends_on
+   514→    assert steps[0].depends_on == ()
+   515→    assert steps[1].depends_on == ("1.1",)
+   516→    assert steps[2].depends_on == ("1.1", "1.2")
+   517→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UnvYk7QuJPewjerqNQWZSt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">580</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="838" cache_read_input_tokens="44787" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 838}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UnvYk7QuJPewjerqNQWZSt">
+   580→
+   581→def _format_depends_on(depends_on: tuple[str, ...] | None) -&gt; str:
+   582→    """Format depends_on for table display.
+   583→
+   584→    None or empty tuple renders as ``-``, non-empty tuple as comma-separated IDs.
+   585→    """
+   586→    if not depends_on:
+   587→        return "-"
+   588→    return ", ".join(depends_on)
+   589→
+   590→
+   591→def render_roadmap_tables(phases: list[RoadmapPhase]) -&gt; str:
+   592→    """Render phases as markdown tables matching the objective-body display format.
+   593→
+   594→    Format per phase:
+   595→        ### Phase {number}{suffix}: {name} ({N} PR)
+   596→        | Node | Description | Status | PR |
+   597→        |------|-------------|--------|----|
+   598→        | {id} | {desc}      | {status} | {pr} |
+   599→
+   600→    When any node across all phases has ``depends_on`` specified, a "Depends On"
+   601→    column is inserted between Description and Status.
+   602→
+   603→    Status display: underscores are replaced with hyphens (in_progress → in-progress).
+   604→    Null values render as ``-``.
+   605→    """
+   606→    any_has_depends_on = any(
+   607→        step.depends_on is not None for phase in phases for step in phase.nodes
+   608→    )
+   609→    sections: list[str] = []
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Mv2UsQvXZQxYft34gaLwDq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">1048</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="838" cache_read_input_tokens="44787" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 838, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mv2UsQvXZQxYft34gaLwDq">
+  1048→        """5-column table unchanged when no node has depends_on."""
+  1049→        phases = [
+  1050→            RoadmapPhase(
+  1051→                number=1,
+  1052→                suffix="",
+  1053→                name="Test",
+  1054→                nodes=[
+  1055→                    RoadmapNode(
+  1056→                        id="1.1",
+  1057→                        description="Step",
+  1058→                        status="pending",
+  1059→                        plan=None,
+  1060→                        pr=None,
+  1061→                        depends_on=None,
+  1062→                        slug=None,
+  1063→                    ),
+  1064→                ],
+  1065→            )
+  1066→        ]
+  1067→        result = render_roadmap_tables(phases)
+  1068→
+  1069→        assert "| Node | Description | Status | Plan | PR |" in result
+  1070→        assert "Depends On" not in result
+  1071→
+  1072→    def test_depends_on_formatting(self) -&gt; None:
+  1073→        """Verify depends_on display formatting for various values."""
+  1074→        phases = [
+  1075→            RoadmapPhase(
+  1076→                number=1,
+  1077→                suffix="",
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MYUym3WWRMSj7NdNAMQZ5K">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">1095</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2010" cache_read_input_tokens="45625" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2010, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MYUym3WWRMSj7NdNAMQZ5K">
+  1095→                        depends_on=("1.1",),
+  1096→                        slug=None,
+  1097→                    ),
+  1098→                    RoadmapNode(
+  1099→                        id="1.3",
+  1100→                        description="Two deps",
+  1101→                        status="pending",
+  1102→                        plan=None,
+  1103→                        pr=None,
+  1104→                        depends_on=("1.1", "1.2"),
+  1105→                        slug=None,
+  1106→                    ),
+  1107→                ],
+  1108→            )
+  1109→        ]
+  1110→        result = render_roadmap_tables(phases)
+  1111→
+  1112→        # () renders as "-"
+  1113→        assert "| 1.1 | No deps | - | pending | - | - |" in result
+  1114→        # ("1.1",) renders as "1.1"
+  1115→        assert "| 1.2 | One dep | 1.1 | pending | - | - |" in result
+  1116→        # ("1.1", "1.2") renders as "1.1, 1.2"
+  1117→        assert "| 1.3 | Two deps | 1.1, 1.2 | pending | - | - |" in result
+  1118→
+  1119→
+  1120→# ---------------------------------------------------------------------------
+  1121→# v4 schema slug tests
+  1122→# ---------------------------------------------------------------------------
+  1123→
+  1124→WELL_FORMED_V4_BODY = """\
+
+... [20 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="47635" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I see the table has a "Plan" column too. Let me check the full rendering logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="47635" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019Zf8hy7w7rqimLNKZtSew4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">614</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="47635" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Zf8hy7w7rqimLNKZtSew4">
+   614→
+   615→        rows: list[str] = []
+   616→        if any_has_depends_on:
+   617→            rows.append("| Node | Description | Depends On | Status | PR |")
+   618→            rows.append("|------|-------------|------------|--------|----|")
+   619→        else:
+   620→            rows.append("| Node | Description | Status | PR |")
+   621→            rows.append("|------|-------------|--------|----|")
+   622→
+   623→        for step in phase.nodes:
+   624→            status_display = step.status.replace("_", "-")
+   625→            cells = [
+   626→                step.id,
+   627→                step.description,
+   628→            ]
+   629→            if any_has_depends_on:
+   630→                cells.append(_format_depends_on(step.depends_on))
+   631→            cells.extend(
+   632→                [
+   633→                    status_display,
+   634→                    step.pr if step.pr is not None else "-",
+   635→                ]
+   636→            )
+   637→            rows.append("| " + " | ".join(cells) + " |")
+   638→
+   639→        sections.append(header + "\n" + "\n".join(rows))
+   640→
+   641→    return "\n\n".join(sections)
+   642→
+   643→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="601" cache_read_input_tokens="48393" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 601}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Wait - the test shows "Plan" column but source shows no "Plan" column. Let me check if there's a different version of the function, or if the test data has a Plan column via some other path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="601" cache_read_input_tokens="48393" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 601}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VfRRyBxCq4mBV3wdP8w6mx">
+    <param name="pattern">Plan \|</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="601" cache_read_input_tokens="48393" output_tokens="281" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 601, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VfRRyBxCq4mBV3wdP8w6mx">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LNwSdYfXbbMwDDKBcujcDb">
+    <param name="pattern">plan.*if.*plan|Plan \|</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="48994" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LNwSdYfXbbMwDDKBcujcDb">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="49290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 307}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a good understanding of the codebase. Let me create the tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="49290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 307}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_012UGCeGcW6P8MUKuVmp7AHw">
+    <param name="query">select:TaskUpdate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="307" cache_read_input_tokens="49290" output_tokens="3888" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012UGCeGcW6P8MUKuVmp7AHw">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01VE1bRAAbAnJR5fbSW6ra8E">
+    <param name="subject">Add escape_md_table_cell utility function</param>
+    <param name="description">Add escape_md_table_cell(value) to roadmap.py that escapes | and \n for safe markdown table cells</param>
+    <param name="activeForm">Adding escape_md_table_cell utility</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4907" cache_read_input_tokens="49597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4907}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VE1bRAAbAnJR5fbSW6ra8E">
+Task #1 created successfully: Add escape_md_table_cell utility function
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01H1JCxJpBDyEkQyofvZKxvk">
+    <param name="subject">Write failing tests (TDD red phase)</param>
+    <param name="description">Write tests for escape_md_table_cell and pipe-in-description escaping in both test files</param>
+    <param name="activeForm">Writing failing tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4907" cache_read_input_tokens="49597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4907}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H1JCxJpBDyEkQyofvZKxvk">
+Task #2 created successfully: Write failing tests (TDD red phase)
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XBj9du7ubhyddBBFsUEtx4">
+    <param name="subject">Apply escaping in render_roadmap_tables()</param>
+    <param name="description">Wrap all cell values with escape_md_table_cell in roadmap.py render_roadmap_tables()</param>
+    <param name="activeForm">Applying escaping in roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4907" cache_read_input_tokens="49597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4907}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XBj9du7ubhyddBBFsUEtx4">
+Task #3 created successfully: Apply escaping in render_roadmap_tables()
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014nD1eKd7GcfC2XoAPbe9cU">
+    <param name="subject">Apply escaping in _render_roadmap()</param>
+    <param name="description">Import and apply escape_md_table_cell to display values in objective_render_roadmap.py</param>
+    <param name="activeForm">Applying escaping in objective_render_roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4907" cache_read_input_tokens="49597" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4907}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014nD1eKd7GcfC2XoAPbe9cU">
+Task #4 created successfully: Apply escaping in _render_roadmap()
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_0188Pq2XrfX6cKy6WXLWe6PC">
+    <param name="subject">Run tests and verify</param>
+    <param name="description">Run both test suites to verify all tests pass including new pipe-escaping tests</param>
+    <param name="activeForm">Running tests</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4907" cache_read_input_tokens="49597" output_tokens="546" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4907, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0188Pq2XrfX6cKy6WXLWe6PC">
+Task #5 created successfully: Run tests and verify
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017zQPZf8etXDsxY2g2uCjwk">
+    <param name="command">erk exec impl-signal started --session-id="e9e5a035-39b8-425f-af09-7d235345058e" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="54504" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 759, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017zQPZf8etXDsxY2g2uCjwk">
+{
+  "success": true,
+  "event": "started",
+  "pr_number": 9325
+}
+  </tool_result>
+  <assistant>Now let me implement. Starting with the utility function and tests together.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="55263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 152}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_015AZu2hqv2tyqnbCAuYGwst">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="55263" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 152, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015AZu2hqv2tyqnbCAuYGwst">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019MTbZfyZJHwmEnPg4ULbVu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="old_string">def _format_depends_on(depends_on: tuple[str, ...] | None) -&gt; str:</param>
+    <param name="new_string">def escape_md_table_cell(value: str) -&gt; str:
+    """Escape a string for safe inclusion in ...[truncated 40 chars]...").replace("\n", " ")
+
+
+def _format_depends_on(depends_on: tuple[str, ...] | None) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="55415" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 105, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MTbZfyZJHwmEnPg4ULbVu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01AyGnYprvirtBxBYAnfMX1q">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="55520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyGnYprvirtBxBYAnfMX1q">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01LM2XiN3huAvy3zh6neyRxj">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="55520" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LM2XiN3huAvy3zh6neyRxj">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now write the tests. First, add tests to the erk-shared test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="55845" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UpHH5b2LGEngLo2qrFsYzC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapNode,
+    RoadmapPhase...[truncated 90 chars]...nner,
+    render_roadmap_tables,
+    serialize_phases,
+    validate_roadmap_frontmatter,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapNode,
+    RoadmapPhase...[truncated 116 chars]...nner,
+    render_roadmap_tables,
+    serialize_phases,
+    validate_roadmap_frontmatter,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="55845" output_tokens="369" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UpHH5b2LGEngLo2qrFsYzC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the standalone escape tests and the pipe-in-description test to `TestRenderRoadmapTables`. Let me find the right insertion point — right before the class.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="56043" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 454}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SsrXuKKC2jHhLUatGPyho6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">815</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="56043" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SsrXuKKC2jHhLUatGPyho6">
+   815→# ---------------------------------------------------------------------------
+   816→# render_roadmap_tables tests
+   817→# ---------------------------------------------------------------------------
+   818→
+   819→
+   820→class TestRenderRoadmapTables:
+   821→    def test_single_phase_basic(self) -&gt; None:
+   822→        phases = [
+   823→            RoadmapPhase(
+   824→                number=1,
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019uGaP89xAgaTxiiHuMLfdK">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="old_string"># ---------------------------------------------------------------------------
+# render_roa...[truncated 18 chars]...---------------------------------------------------------
+
+
+class TestRenderRoadmapTables:</param>
+    <param name="new_string"># ---------------------------------------------------------------------------
+# escape_md_...[truncated 540 chars]...---------------------------------------------------------
+
+
+class TestRenderRoadmapTables:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="282" cache_read_input_tokens="56497" output_tokens="349" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019uGaP89xAgaTxiiHuMLfdK">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `test_pipe_in_description_escaped` test to the class. Let me find the end of the class (before `test_depends_on_formatting` ends).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="56779" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 415}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JcCRe1VSebiYSmgZUVHs4N">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">1125</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="56779" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JcCRe1VSebiYSmgZUVHs4N">
+  1125→                ],
+  1126→            )
+  1127→        ]
+  1128→        result = render_roadmap_tables(phases)
+  1129→
+  1130→        # () renders as "-"
+  1131→        assert "| 1.1 | No deps | - | pending | - | - |" in result
+  1132→        # ("1.1",) renders as "1.1"
+  1133→        assert "| 1.2 | One dep | 1.1 | pending | - | - |" in result
+  1134→        # ("1.1", "1.2") renders as "1.1, 1.2"
+  1135→        assert "| 1.3 | Two deps | 1.1, 1.2 | pending | - | - |" in result
+  1136→
+  1137→
+  1138→# ---------------------------------------------------------------------------
+  1139→# v4 schema slug tests
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XpsDfMhYeCrKYgxn47358b">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="old_string">        # ("1.1", "1.2") renders as "1.1, 1.2"
+        assert "| 1.3 | Two deps | 1.1, 1.2...[truncated 24 chars]...-------------------------------------------------------------------
+# v4 schema slug tests</param>
+    <param name="new_string">        # ("1.1", "1.2") renders as "1.1, 1.2"
+        assert "| 1.3 | Two deps | 1.1, 1.2...[truncated 899 chars]...-------------------------------------------------------------------
+# v4 schema slug tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="57194" output_tokens="514" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 421, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XpsDfMhYeCrKYgxn47358b">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-12/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the test to the objective_render_roadmap test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="57615" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 580}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>
