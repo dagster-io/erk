@@ -11,7 +11,7 @@ audit_result: clean
 
 # Checkout Three-Path Logic
 
-`erk br co` uses a three-path decision tree when `--for-pr` is involved, implemented in `branch/checkout_cmd.py:614-717`.
+`erk br co` uses a three-path decision tree when `--for-pr` is involved, implemented in `_branch_checkout_impl()` in `branch/checkout_cmd.py`.
 
 ## Decision Tree
 

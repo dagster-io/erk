@@ -59,6 +59,13 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 }
 
 
+def _status_validation_error(*, error_code: str, message: str) -> None:
+    """Emit a status validation error as JSON and exit."""
+    error = TrackLearnResultError(success=False, error=error_code, message=message)
+    click.echo(json.dumps(asdict(error)))
+    raise SystemExit(1)
+
+
 @click.command(name="track-learn-result")
 @click.option(
     "--pr-id",
@@ -99,53 +106,38 @@ def track_learn_result(
     """
     # Validate: completed_with_plan requires --learn-pr
     if status == "completed_with_plan" and learn_pr is None:
-        error = TrackLearnResultError(
-            success=False,
-            error="missing-learn-pr",
+        _status_validation_error(
+            error_code="missing-learn-pr",
             message="--learn-pr is required when status is 'completed_with_plan'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # completed_no_plan should not have --learn-pr
     if status == "completed_no_plan" and learn_pr is not None:
-        error = TrackLearnResultError(
-            success=False,
-            error="unexpected-learn-pr",
+        _status_validation_error(
+            error_code="unexpected-learn-pr",
             message="--learn-pr should not be provided when status is 'completed_no_plan'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # Validate: pending_review requires --plan-pr
     if status == "pending_review" and plan_pr is None:
-        error = TrackLearnResultError(
-            success=False,
-            error="missing-plan-pr",
+        _status_validation_error(
+            error_code="missing-plan-pr",
             message="--plan-pr is required when status is 'pending_review'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # pending_review should not have --learn-pr
     if status == "pending_review" and learn_pr is not None:
-        error = TrackLearnResultError(
-            success=False,
-            error="unexpected-learn-pr",
+        _status_validation_error(
+            error_code="unexpected-learn-pr",
             message="--learn-pr should not be provided when status is 'pending_review'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # completed_with_plan should not have --plan-pr
     if status == "completed_with_plan" and plan_pr is not None:
-        error = TrackLearnResultError(
-            success=False,
-            error="unexpected-plan-pr",
+        _status_validation_error(
+            error_code="unexpected-plan-pr",
             message="--plan-pr should not be provided when status is 'completed_with_plan'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # Get dependencies from context
     backend = require_plan_backend(ctx)
