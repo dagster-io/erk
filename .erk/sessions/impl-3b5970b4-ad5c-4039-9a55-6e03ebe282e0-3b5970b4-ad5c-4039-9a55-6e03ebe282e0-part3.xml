@@ -1,0 +1,1022 @@
+<session>
+  <meta branch="plnd/eliminate-erk-plan-refs-03-21-1552" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01D6jDs57unFd4y2ESXvD38F">
+Found 10 files
+.claude/skills/objective/references/workflow.md
+.claude/skills/objective/SKILL.md
+.claude/skills/erk-exec/SKILL.md
+.claude/skills/erk-planning/SKILL.md
+.claude/commands/erk/system/objective-plan-node.md
+.claude/commands/local/audit-plans.md
+.claude/commands/local/pr-triage.md
+.claude/commands/erk/objective-create.md
+.claude/commands/erk/objective-plan.md
+.claude/commands/erk/replan.md
+  </tool_result>
+  <assistant>40 files to update. The plan says to NOT modify:
+- `CHANGELOG.md` (historical)
+- `.claude/skills/erk-planning/SKILL.md` (already [REMOVED] tombstone)
+
+Let me use a background agent to do all doc replacements:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="832" cache_read_input_tokens="91924" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Gx2MetiPvVrvRMyXnBscYS">
+    <param name="description">Replace erk-plan with erk-pr in docs</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Replace ALL occurrences of `erk-plan` with `erk-pr` in a list of documentation and skill f...[truncated 3479 chars]..."ing") should NOT be changed - only `erk-plan` (without "ing" suffix) should be replaced.
+</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="832" cache_read_input_tokens="91924" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gx2MetiPvVrvRMyXnBscYS">
+Async agent launched successfully.
+agentId: a5afd65 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While the doc updates run in background, let me do a quick verification of what remaining `erk-plan` references exist in the Python source (non-test) to make sure I haven't missed anything:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="92756" cache_creation="{'ephemeral_5m_input_tokens': 1744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016taoZA614VLUdFUkFKiEDW">
+    <param name="pattern">erk-plan|ERK_PLAN|erk_plan</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="92756" cache_creation="{'ephemeral_5m_input_tokens': 1744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YL2tAs4jtDZaXZDzvgPXpT">
+    <param name="pattern">erk-plan|ERK_PLAN|erk_plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1744" cache_read_input_tokens="92756" cache_creation="{'ephemeral_5m_input_tokens': 1744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016taoZA614VLUdFUkFKiEDW">
+src/erk/capabilities/skills/bundled.py:65:        "erk-planning": "[REMOVED] Plan management now in slash commands",
+src/erk/cli/commands/pr/log_cmd.py:201:        "erk-plan": _extract_plan_created_event,  # backward-compat alias
+src/erk/core/capabilities/codex_portable.py:30:            "erk-planning",
+  </tool_result>
+  <tool_result tool="toolu_01YL2tAs4jtDZaXZDzvgPXpT">
+packages/erk-statusline/tests/test_statusline.py:723:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:760:erk_plan: false
+packages/erk-statusline/tests/test_statusline.py:777:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:794:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:803:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:850:erk_plan: true
+packages/erk-statusline/tests/test_statusline.py:873:erk_plan: false
+packages/erk-statusline/src/erk_statusline/statusline.py:303:                        # Check for erk_pr: true (or erk_plan: true for backward compat)
+packages/erk-statusline/src/erk_statusline/statusline.py:306:                            if line.startswith("erk_pr:") or line.startswith("erk_plan:"):
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:63:    # Backward-compat alias: existing GitHub PRs may have "erk-plan" HTML comment markers
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:64:    "erk-plan": BlockTypeInfo(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:65:        key="erk-plan",
+  </tool_result>
+  <assistant>The remaining `erk-plan` references in source Python are:
+1. `src/erk/capabilities/skills/bundled.py` - `"erk-planning"` (skill name, NOT block key - this is the "not changing" case)
+2. `src/erk/cli/commands/pr/log_cmd.py` - backward-compat alias entry (intentional)
+3. `src/erk/core/capabilities/codex_portable.py` - `"erk-planning"` (skill name, NOT block key - not changing)
+4. `packages/erk-statusline/tests/test_statusline.py` - `erk_plan: true/false` in frontmatter (backward-compat test data)
+5. `packages/erk-statusline/src/erk_statusline/statusline.py` - backward-compat code in `find_new_plan_file`
+6. `packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py` - backward-compat alias entry
+
+All remaining references are intentional backward-compat aliases or skill name references (`erk-planning`). This matches the plan's expectations.
+
+Let me check on the background doc-update agent:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="94500" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_015sY5vQK2T8wMmJP15AGADc">
+    <param name="task_id">a5afd65</param>
+    <param name="block">False</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1158" cache_read_input_tokens="94500" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015sY5vQK2T8wMmJP15AGADc">
+&lt;retrieval_status&gt;not_ready&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a5afd65&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;running&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/user/planner-setup.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/architecture.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/data-contract.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/view-switching.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/raw-session-processing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-title-prefix-system.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-title-prefix-system.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md"}
+&lt;/output&gt;
+  </tool_result>
+  <assistant>Agent is still running. Let me continue checking remaining work while it runs. Let me verify the test for the `test_round_trip.py` - specifically the backward-compat case. The tests now use `"erk-pr"` as dictionary key for the sample data and for `create_plan_block`. But `create_plan_block` now generates a block with key `"erk-pr"`. Let me verify the round-trip test properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="908" cache_read_input_tokens="95658" cache_creation="{'ephemeral_5m_input_tokens': 908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LEX9ysYGQEkfUNw9uG5HQr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">155</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="908" cache_read_input_tokens="95658" cache_creation="{'ephemeral_5m_input_tokens': 908, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LEX9ysYGQEkfUNw9uG5HQr">
+   155→            max_prompt_display_length=500,
+   156→        )
+   157→    raise ValueError(f"No content renderer for key: {key}")
+   158→
+   159→
+   160→# ---------------------------------------------------------------------------
+   161→# Factory blocks for schema-backed types
+   162→# ---------------------------------------------------------------------------
+   163→
+   164→FACTORY_BLOCKS: dict[str, MetadataBlock] = {
+   165→    "erk-implementation-status": create_implementation_status_block(
+   166→        status="complete",
+   167→        timestamp="2025-01-15T10:00:00Z",
+   168→        summary="All phases completed successfully",
+   169→    ),
+   170→    "erk-worktree-creation": create_worktree_creation_block(
+   171→        worktree_name="test-worktree",
+   172→        branch_name="plnd/test-branch",
+   173→        timestamp="2025-01-15T10:00:00Z",
+   174→    ),
+   175→    "erk-pr": create_plan_block(
+   176→        pr_number=42,
+   177→        worktree_name="test-worktree",
+   178→        timestamp="2025-01-15T10:00:00Z",
+   179→    ),
+   180→    "submission-queued": create_submission_queued_block(
+   181→        queued_at="2025-01-15T10:00:00Z",
+   182→        submitted_by="testuser",
+   183→        pr_number=42,
+   184→        validation_results={"pr_is_open": True, "has_erk_pr_title": True},
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now let me also check a critical edge case - the `test_round_trip.py` has a `SAMPLE_DATA` dict keyed with `"erk-pr"`. The round-trip test probably uses this data to verify parsing. Let me understand the test structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1032" cache_read_input_tokens="96566" cache_creation="{'ephemeral_5m_input_tokens': 1032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016YYjc72bQJaA1WNbF4gAVx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">190</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1032" cache_read_input_tokens="96566" cache_creation="{'ephemeral_5m_input_tokens': 1032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016YYjc72bQJaA1WNbF4gAVx">
+   190→        workflow_run_url="https://github.com/owner/repo/actions/runs/12345678",
+   191→        pr_number=42,
+   192→    ),
+   193→    "plan-header": create_plan_header_block(
+   194→        created_at="2025-01-15T10:00:00Z",
+   195→        created_by="testuser",
+   196→        worktree_name=None,
+   197→        branch_name=None,
+   198→        plan_comment_id=None,
+   199→        last_dispatched_run_id=None,
+   200→        last_dispatched_node_id=None,
+   201→        last_dispatched_at=None,
+   202→        last_local_impl_at=None,
+   203→        last_local_impl_event=None,
+   204→        last_local_impl_session=None,
+   205→        last_local_impl_user=None,
+   206→        last_remote_impl_at=None,
+   207→        last_remote_impl_run_id=None,
+   208→        last_remote_impl_session_id=None,
+   209→        source_repo=None,
+   210→        objective_issue=None,
+   211→        node_ids=None,
+   212→        created_from_session=None,
+   213→        created_from_workflow_run_url=None,
+   214→        last_learn_session=None,
+   215→        last_learn_at=None,
+   216→        learn_status=None,
+   217→        learn_plan_issue=None,
+   218→        learn_plan_pr=None,
+   219→        learned_from_issue=None,
+
+... [55 lines omitted] ...
+
+   257→        assert not result.has_errors, f"Parse errors for {key}: {result.errors}"
+  </tool_result>
+  <assistant>I see that `test_yaml_block_round_trip` uses `get_yaml_block_types()` to parametrize. This returns all YAML block types including `"erk-plan"` (backward-compat alias) and `"erk-pr"`. 
+
+The `SAMPLE_DATA` dict now has `"erk-pr"` but NOT `"erk-plan"`. The backward-compat `"erk-plan"` registry entry will cause `test_yaml_block_round_trip` to try to look up `SAMPLE_DATA["erk-plan"]` which doesn't exist.
+
+I need to add `"erk-plan"` back to `SAMPLE_DATA` for backward-compat, or... let me re-read the test:
+
+```python
+@pytest.mark.parametrize("key", [info.key for info in get_yaml_block_types()], ids=str)
+def test_yaml_block_round_trip(self, key: str) -&gt; None:
+    data = SAMPLE_DATA[key]
+```
+
+`get_yaml_block_types()` returns items with `category == YAML`. The backward-compat entry has `key="erk-plan"`. So `SAMPLE_DATA["erk-plan"]` would be missing.
+
+I need to add `"erk-plan"` to `SAMPLE_DATA` as well, OR I need to skip it in the test, OR I should also add `"erk-plan"` to `FACTORY_BLOCKS`.
+
+The simplest fix: add `"erk-plan"` to the `SAMPLE_DATA` dict (same data as `"erk-pr"`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1365" cache_read_input_tokens="97598" cache_creation="{'ephemeral_5m_input_tokens': 1365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016Tg6EKGYMxofHXnL24JHET">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">63</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1365" cache_read_input_tokens="97598" cache_creation="{'ephemeral_5m_input_tokens': 1365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Tg6EKGYMxofHXnL24JHET">
+    63→        "objective_comment_id": None,
+    64→    },
+    65→    "erk-pr": {
+    66→        "pr_number": 42,
+    67→        "worktree_name": "test-worktree",
+    68→        "timestamp": "2025-01-15T10:00:00Z",
+    69→    },
+    70→    "erk-worktree-creation": {
+    71→        "worktree_name": "test-worktree",
+    72→        "branch_name": "plnd/test-branch",
+    73→        "timestamp": "2025-01-15T10:00:00Z",
+    74→    },
+    75→    "erk-implementation-status": {
+    76→        "status": "complete",
+    77→        "timestamp": "2025-01-15T10:00:00Z",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Ae9m4g7CTiwEVPucAoHhio">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="old_string">    "erk-pr": {
+        "pr_number": 42,
+        "worktree_name": "test-worktree",
+        "timestamp": "2025-01-15T10:00:00Z",
+    },</param>
+    <param name="new_string">    "erk-pr": {
+        "pr_number": 42,
+        "worktree_name": "test-worktree",
+       ...[truncated 153 chars]...     "worktree_name": "test-worktree",
+        "timestamp": "2025-01-15T10:00:00Z",
+    },</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1125" cache_read_input_tokens="98963" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ae9m4g7CTiwEVPucAoHhio">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py has been updated successfully.
+  </tool_result>
+  <assistant>Similarly, I need to add `"erk-plan"` to `FACTORY_BLOCKS`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="100088" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PsmudMUs2ckCZdKYFKz9CH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="old_string">    "erk-pr": create_plan_block(
+        pr_number=42,
+        worktree_name="test-worktree",
+        timestamp="2025-01-15T10:00:00Z",
+    ),</param>
+    <param name="new_string">    "erk-pr": create_plan_block(
+        pr_number=42,
+        worktree_name="test-worktre...[truncated 245 chars]...       "timestamp": "2025-01-15T10:00:00Z",
+        },
+        schema=PlanSchema(),
+    ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="100088" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PsmudMUs2ckCZdKYFKz9CH">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py has been updated successfully.
+  </tool_result>
+  <assistant>I need to check if `create_metadata_block` and `PlanSchema` are imported in the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="100459" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BSQeJANrYfedPmh67dsWhk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="100459" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BSQeJANrYfedPmh67dsWhk">
+     1→"""Parameterized round-trip tests for all metadata block types.
+     2→
+     3→Proves that every registered block type survives render -&gt; parse -&gt; verify
+     4→correctly. Uses the block type registry to drive parameterization, ensuring
+     5→tests stay in sync with the registry automatically.
+     6→
+     7→Block categories:
+     8→- YAML blocks (13): Render as YAML in &lt;details&gt; -&gt; parse back to MetadataBlock
+     9→- CONTENT blocks (3): Render with content-specific renderers -&gt; parse back to RawMetadataBlock
+    10→"""
+    11→
+    12→import pytest
+    13→
+    14→from erk_shared.gateway.github.metadata.core import (
+    15→    create_implementation_status_block,
+    16→    create_metadata_block,
+    17→    create_objective_header_block,
+    18→    create_plan_block,
+    19→    create_plan_body_block,
+    20→    create_submission_queued_block,
+    21→    create_workflow_started_block,
+    22→    create_worktree_creation_block,
+    23→    parse_metadata_blocks,
+    24→    render_metadata_block,
+    25→    render_objective_body_block,
+    26→    render_plan_body_block,
+    27→)
+    28→from erk_shared.gateway.github.metadata.plan_header import create_plan_header_block
+    29→from erk_shared.gateway.github.metadata.registry import (
+    30→    get_all_block_types,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012S6JiQpG2ZrHRzpw7VMxqY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">30</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="101172" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012S6JiQpG2ZrHRzpw7VMxqY">
+    30→    get_all_block_types,
+    31→    get_block_type,
+    32→    get_content_block_types,
+    33→    get_yaml_block_types,
+    34→)
+    35→from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema
+    36→from erk_shared.gateway.github.metadata.session import render_session_prompts_block
+    37→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    38→
+    39→# ---------------------------------------------------------------------------
+    40→# Sample data for YAML block types
+    41→# ---------------------------------------------------------------------------
+    42→
+    43→SAMPLE_DATA: dict[str, dict] = {
+    44→    "plan-header": {
+    45→        "schema_version": "2",
+    46→        "created_at": "2025-01-15T10:00:00Z",
+    47→        "created_by": "testuser",
+    48→        "plan_comment_id": None,
+    49→        "last_dispatched_run_id": None,
+    50→        "last_dispatched_node_id": None,
+    51→        "last_dispatched_at": None,
+    52→        "last_local_impl_at": None,
+    53→        "last_local_impl_event": None,
+    54→        "last_local_impl_session": None,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good - `create_metadata_block` and `PlanRetrySchema` are imported. But I used `PlanSchema` in my edit, not `PlanRetrySchema`. I need to also import `PlanSchema`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="860" cache_read_input_tokens="101802" cache_creation="{'ephemeral_5m_input_tokens': 860, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015mcGGjLGDPdvwNxFsNirEa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema, PlanSchema</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="860" cache_read_input_tokens="101802" cache_creation="{'ephemeral_5m_input_tokens': 860, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015mcGGjLGDPdvwNxFsNirEa">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, but the round-trip test for `"erk-plan"` will try to render it with key `"erk-plan"` and parse it back. When rendered with key `"erk-plan"`, it produces `&lt;!-- erk:metadata-block:erk-plan --&gt;`. When parsed, it should find the registry entry for `"erk-plan"` and return a `MetadataBlock(key="erk-plan", data=...)`. 
+
+But the test then asserts `result.blocks[0].key == key` where key is `"erk-plan"`. This should work since the registry entry has `key="erk-plan"`.
+
+However, there's a subtle issue: the `TestSchemaBackedRoundTrip` test that uses `FACTORY_BLOCKS` might also fail if it tries to check `"erk-plan"` block:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="102662" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SRyqayUsE5nwLzWZjs3r9C">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="offset">295</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="102662" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SRyqayUsE5nwLzWZjs3r9C">
+   295→    """Factory -&gt; render -&gt; parse -&gt; schema.validate() for schema-backed types."""
+   296→
+   297→    @pytest.mark.parametrize("key", SCHEMA_BACKED_KEYS, ids=str)
+   298→    def test_schema_factory_round_trip(self, key: str) -&gt; None:
+   299→        block = FACTORY_BLOCKS[key]
+   300→        rendered = render_metadata_block(block)
+   301→        result = parse_metadata_blocks(rendered)
+   302→
+   303→        assert not result.has_errors, f"Parse errors for {key}: {result.errors}"
+   304→        assert len(result.blocks) == 1
+   305→
+   306→        info = get_block_type(key)
+   307→        assert info is not None, f"Block type {key} not found in registry"
+   308→        assert info.schema is not None, f"Block type {key} should have a schema"
+   309→        # Schema validation should not raise
+   310→        info.schema.validate(result.blocks[0].data)
+   311→
+   312→
+   313→class TestRegistryCompleteness:
+   314→    """Every registered block type has sample data for round-trip testing."""
+   315→
+   316→    def test_all_registered_types_have_sample_data(self) -&gt; None:
+   317→        all_keys = set(get_all_block_types().keys())
+   318→        yaml_keys = set(SAMPLE_DATA.keys())
+   319→        content_keys = set(SAMPLE_CONTENT.keys())
+   320→        covered_keys = yaml_keys | content_keys
+   321→
+   322→        missing = all_keys - covered_keys
+   323→        assert not missing, f"Block types missing sample data: {missing}"
+   324→        assert covered_keys == all_keys
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>There are completeness tests that check:
+1. `all_registered_types_have_sample_data` - all registry keys must be in SAMPLE_DATA or SAMPLE_CONTENT. 
+2. `yaml_sample_data_matches_yaml_registry` - `SAMPLE_DATA.keys() == yaml_registry_keys`
+3. `factory_blocks_cover_all_schema_backed_types` - `FACTORY_BLOCKS.keys() == schema_backed_keys`
+4. `test_registry_has_expected_count` - 16 total, 13 yaml, 3 content
+
+Currently I added `"erk-plan"` to both SAMPLE_DATA and FACTORY_BLOCKS. With the backward-compat alias, the registry now has 17 entries instead of 16 (added `"erk-plan"` entry). But the test expects exactly 16.
+
+This is getting complex. Let me think about the right approach:
+
+**The backward-compat alias `"erk-plan"` in the registry is intentional** - existing GitHub PRs have `&lt;!-- erk:metadata-block:erk-plan --&gt;` markers and need to be parseable.
+
+The round-trip test needs to be updated to handle the new count. But I should update it carefully. Let me count what the registry has after my changes:
+
+Before my changes:
+- YAML with schemas: plan-header, objective-header, erk-plan, erk-worktree-creation, erk-implementation-status, workflow-started, submission-queued, plan-retry (8)
+- YAML without schemas: impl-started, impl-ended, learn-invoked, tripwire-candidates, objective-roadmap (5)
+- CONTENT: plan-body, objective-body, planning-session-prompts (3)
+- Total: 16
+
+After my changes (added `erk-pr` as new canonical + kept `erk-plan` as backward-compat alias):
+- YAML with schemas: plan-header, objective-header, **erk-pr**, **erk-plan (alias)**, erk-worktree-creation, erk-implementation-status, workflow-started, submission-queued, plan-retry (9)
+- YAML without schemas: impl-started, impl-ended, learn-invoked, tripwire-candidates, objective-roadmap (5)
+- CONTENT: plan-body, objective-body, planning-session-prompts (3)
+- Total: 17
+
+So I need to update the count assertion in the test. Let me update it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1573" cache_read_input_tokens="102929" cache_creation="{'ephemeral_5m_input_tokens': 1573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XV4S2V6rV7zG1ChzsKNpLs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py</param>
+    <param name="old_string">        assert len(all_types) == 16
+        assert len(yaml_types) == 13
+        assert len(content_types) == 3</param>
+    <param name="new_string">        assert len(all_types) == 17
+        assert len(yaml_types) == 14
+        assert len(content_types) == 3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1573" cache_read_input_tokens="102929" cache_creation="{'ephemeral_5m_input_tokens': 1573, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XV4S2V6rV7zG1ChzsKNpLs">
+The file /home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_round_trip.py has been updated successfully.
+  </tool_result>
+  <assistant>Also need to check `test_block_type_registry.py` for similar count assertions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="837" cache_read_input_tokens="104502" cache_creation="{'ephemeral_5m_input_tokens': 837, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011dETC5LKDnKSRiRajCcrb7">
+    <param name="pattern">len.*==\s*\d+|assert.*count|assert.*len</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/gateways/github/metadata_blocks/test_block_type_registry.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="837" cache_read_input_tokens="104502" cache_creation="{'ephemeral_5m_input_tokens': 837, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011dETC5LKDnKSRiRajCcrb7">
+72:    assert len(yaml_types) &gt; 0
+80:    assert len(content_types) == 3
+170:    assert len(result.errors) == 0
+171:    assert len(result.content_blocks) == 1
+188:    assert len(result.blocks) == 0
+189:    assert len(result.content_blocks) == 1
+213:    assert len(result.blocks) == 1
+217:    assert len(result.content_blocks) == 1
+220:    assert len(result.errors) == 0
+237:    assert len(result.blocks) == 1
+240:    assert len(result.content_blocks) == 0
+250:    assert len(result.blocks) == 0
+251:    assert len(result.errors) == 1
+269:    assert len(result.blocks) == 0
+270:    assert len(result.errors) == 0
+271:    assert len(result.content_blocks) == 1
+  </tool_result>
+  <assistant>No fixed count assertions in the block_type_registry test for total count. Good.
+
+Now let me wait for the doc agent to finish:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="705" cache_read_input_tokens="105339" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskOutput" id="toolu_01JEriNuByhQHz8jEGJadHC8">
+    <param name="task_id">a5afd65</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="705" cache_read_input_tokens="105339" cache_creation="{'ephemeral_5m_input_tokens': 705, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JEriNuByhQHz8jEGJadHC8">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a5afd65&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/user/planner-setup.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/architecture.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/data-contract.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/plan-title-rendering-pipeline.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/tui/view-switching.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/testing/fake-github-api-reference.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/sessions/raw-session-processing.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/tripwires.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-title-prefix-system.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/plan-title-prefix-system.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/consolidation-labels.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/incremental-dispatch.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/index.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-vs-implementation-plans.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-vs-implementation-plans.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/objectives/objective-storage-format.md"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/docs/learned/integrations/codex/codex-skills-system.md"}
+
+... [111 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! The doc agent completed successfully - 39 files modified with 104 replacements. Now let me move to Phase 5: verification.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11334" cache_read_input_tokens="106044" cache_creation="{'ephemeral_5m_input_tokens': 11334, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_011233xtF4AWCTY7ksCqoML7">
+    <param name="todos">[{'content': 'Phase 1: Update source code Python files (constant rename, docstrings, strin...[truncated 634 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11334" cache_read_input_tokens="106044" cache_creation="{'ephemeral_5m_input_tokens': 11334, 'ephemeral_1h_input_tokens': 0}" output_tokens="318" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011233xtF4AWCTY7ksCqoML7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016uuUoocnwZYqfyiXXWu8gk">
+    <param name="command">rg "erk-plan" --type py 2&gt;&amp;1 | head -40</param>
+    <param name="description">Verify erk-plan refs in Python files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="117378" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01APRrw4rAvu9APymYUqzgWA">
+    <param name="command">rg "ERK_PLAN" --type py 2&gt;&amp;1 | head -20</param>
+    <param name="description">Verify ERK_PLAN constant refs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="117378" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016uuUoocnwZYqfyiXXWu8gk">
+src/erk/core/capabilities/codex_portable.py:            "erk-planning",
+src/erk/cli/commands/pr/log_cmd.py:        "erk-plan": _extract_plan_created_event,  # backward-compat alias
+src/erk/capabilities/skills/bundled.py:        "erk-planning": "[REMOVED] Plan management now in slash commands",
+tests/commands/workspace/create/test_plan_file_operations.py:        long_plan_name = "fix-branch-worktree-name-mismatch-in-erk-plan-workflow-plan.md"
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py:    # Backward-compat alias: test that old "erk-plan" blocks can still round-trip
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py:    "erk-plan": {
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py:    "erk-plan": create_metadata_block(
+tests/unit/gateways/github/metadata_blocks/test_round_trip.py:        key="erk-plan",
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:    # Backward-compat alias: existing GitHub PRs may have "erk-plan" HTML comment markers
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:    "erk-plan": BlockTypeInfo(
+packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py:        key="erk-plan",
+  </tool_result>
+  <tool_result tool="toolu_01APRrw4rAvu9APymYUqzgWA">
+tests/unit/cli/commands/codespace/test_connect_cmd.py:        cli, ["codespace", "connect", "--env", "ERK_PLAN_BACKEND=draft_pr"], obj=ctx
+tests/unit/cli/commands/codespace/test_connect_cmd.py:    assert "export ERK_PLAN_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+tests/unit/cli/commands/exec/scripts/test_plan_save.py:    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+  </tool_result>
+  <assistant>Good. The remaining references are all expected:
+
+1. `"erk-planning"` in `codex_portable.py` and `bundled.py` - skill name (NOT changing per plan)
+2. `"erk-plan"` backward-compat alias in `log_cmd.py` - intentional
+3. `"erk-plan"` in `test_plan_file_operations.py` - a filename reference (not a label/key, fine to keep)
+4. `"erk-plan"` in `test_round_trip.py` - backward-compat test data (intentional)
+5. `"erk-plan"` in `registry.py` - backward-compat alias (intentional)
+6. `ERK_PLAN_BACKEND` - env var name (different concept, NOT changing per plan)
+
+Now let me verify docs:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1059" cache_read_input_tokens="117738" cache_creation="{'ephemeral_5m_input_tokens': 1059, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Sd9eENcNy3GzHDUVDGXuys">
+    <param name="command">rg "erk-plan" docs/ .claude/ --type md 2&gt;&amp;1 | grep -v "erk-planning" | grep -v CHANGELOG | grep -v "erk-planning/SKILL" | head -20</param>
+    <param name="description">Verify no remaining erk-plan in docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1059" cache_read_input_tokens="117738" cache_creation="{'ephemeral_5m_input_tokens': 1059, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sd9eENcNy3GzHDUVDGXuys">
+
+  </tool_result>
+  <assistant>No remaining `erk-plan` references in docs (excluding `erk-planning` and CHANGELOG). Let me also run the verification from the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="118797" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0112Rn7juAoBtW1dzqjzGVik">
+    <param name="command">rg "erk-plan" docs/ 2&gt;&amp;1 | head -5</param>
+    <param name="description">Verify no erk-plan in docs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="118797" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014SVmGr1PNeft2KbQjukZUp">
+    <param name="command">rg "ERK_PLAN" --type py 2&gt;&amp;1 | grep -v "ERK_PLAN_BACKEND" | head -10</param>
+    <param name="description">Verify no ERK_PLAN constant refs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="360" cache_read_input_tokens="118797" cache_creation="{'ephemeral_5m_input_tokens': 360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0112Rn7juAoBtW1dzqjzGVik">
+
+  </tool_result>
+  <tool_result tool="toolu_014SVmGr1PNeft2KbQjukZUp">
+
+  </tool_result>
+  <assistant>All verifications pass:
+- No `erk-plan` in docs/
+- No `ERK_PLAN` constant (only `ERK_PLAN_BACKEND` env var which is separate)
+
+Now let me also verify the `erk_plan` underscore variant in Python source files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="119157" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KrEv1ZMaSaNyeWSpywyHNi">
+    <param name="command">rg "erk_plan" --type py 2&gt;&amp;1 | grep -v "test_statusline\|statusline.py" | head -20</param>
+    <param name="description">Check erk_plan underscore refs outside statusline</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="119157" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KrEv1ZMaSaNyeWSpywyHNi">
+tests/unit/pr_store/test_planned_pr_backend.py:def test_create_plan_adds_erk_plan_label() -&gt; None:
+  </tool_result>
+  <assistant>There's one remaining - the function name `test_create_plan_adds_erk_plan_label`. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="119690" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016A1aaxgtf4h9JJMu196K9S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_backend.py</param>
+    <param name="old_string">def test_create_plan_adds_erk_plan_label() -&gt; None:</param>
+    <param name="new_string">def test_create_plan_adds_erk_pr_label() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="119690" cache_creation="{'ephemeral_5m_input_tokens': 230, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016A1aaxgtf4h9JJMu196K9S">
+The file /home/runner/work/erk/erk/tests/unit/pr_store/test_planned_pr_backend.py has been updated successfully.
+  </tool_result>
+  <assistant>Now verification is complete. Let me mark Phase 5 done and run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="119920" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01XH6sy64vEkhwcr28vBZqza">
+    <param name="todos">[{'content': 'Phase 1: Update source code Python files (constant rename, docstrings, strin...[truncated 636 chars]...CI and submit PR', 'status': 'in_progress', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="119920" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XH6sy64vEkhwcr28vBZqza">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01UH7Adnk1f6JhwFoiw2dGtT">
+    <param name="description">Run fast CI checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` in the directory `/home/runner/work/erk/erk` and report the full output including any test failures, errors, or lint issues. This is a read-only task - do not modify any files.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="120397" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UH7Adnk1f6JhwFoiw2dGtT">
+The `make fast-ci` command failed with exit code 2. Here's a summary of the issues found:
+
+## Summary
+
+**Status: FAILED**
+
+### Issues Found:
+
+1. **Prettier Formatting Issues (15 files)**
+   - Code style issues found in 15 files that need formatting with `--write` flag
+   - Files include:
+     - `.claude/commands/erk/objective-create.md`
+     - `.claude/commands/erk/objective-plan.md`
+     - `.claude/commands/erk/replan.md`
+     - `.claude/commands/erk/system/objective-plan-node.md`
+     - `.claude/skills/objective/SKILL.md`
+     - `docs/learned/architecture/github-graphql-label-semantics.md`
+     - `docs/learned/cli/backend-aware-display.md`
+     - `docs/learned/cli/local-commands.md`
+     - `docs/learned/integrations/codex/codex-skills-system.md`
+     - `docs/learned/integrations/github-review-decision.md`
+     - `docs/learned/integrations/linear-erk-mapping.md`
+     - `docs/learned/planning/incremental-dispatch.md`
+     - `docs/learned/planning/learn-vs-implementation-plans.md`
+     - `docs/learned/tui/data-contract.md`
+     - `docs/learned/tui/status-indicators.md`
+
+2. **Ruff Lint Error (1 error)**
+   - Location: `/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py`
+   - Rule: **F811** - Redefinition of unused `test_get_erk_label_definitions_contains_erk_pr`
+
+... [18 lines omitted] ...
+  </tool_result>
+  <assistant>There are two issues to fix:
+1. Duplicate function name in `test_label_definitions.py` (F811)
+2. Prettier formatting issues in 15 files
+
+Let me fix the duplicate function and then run prettier:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="829" cache_read_input_tokens="120742" cache_creation="{'ephemeral_5m_input_tokens': 829, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SSHMUKPL3wxFNC1u7Tx1NM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="offset">15</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="829" cache_read_input_tokens="120742" cache_creation="{'ephemeral_5m_input_tokens': 829, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SSHMUKPL3wxFNC1u7Tx1NM">
+    15→
+    16→    assert len(labels) == 4
+    17→
+    18→
+    19→def test_get_erk_label_definitions_contains_erk_pr() -&gt; None:
+    20→    """Test that erk-pr label IS included (applied to plan PRs)."""
+    21→    labels = get_erk_label_definitions()
+    22→
+    23→    label_names = [label.name for label in labels]
+    24→    assert "erk-pr" in label_names
+    25→
+    26→
+    27→def test_get_erk_label_definitions_excludes_erk_core() -&gt; None:
+    28→    """Test that erk-core label is NOT included (deprecated/unused)."""
+    29→    labels = get_erk_label_definitions()
+    30→
+    31→    label_names = [label.name for label in labels]
+    32→    assert "erk-core" not in label_names
+    33→
+    34→
+    35→def test_get_erk_label_definitions_contains_erk_learn() -&gt; None:
+    36→    """Test that erk-learn label is included with correct properties."""
+    37→    labels = get_erk_label_definitions()
+    38→
+    39→    erk_learn_labels = [label for label in labels if label.name == "erk-learn"]
+    40→    assert len(erk_learn_labels) == 1
+    41→
+    42→    erk_learn = erk_learn_labels[0]
+    43→    assert erk_learn.name == "erk-learn"
+    44→    assert erk_learn.description == "Documentation learning plan"
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0132y55DyrG68SD3fxMkiqni">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="offset">57</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="121571" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0132y55DyrG68SD3fxMkiqni">
+    57→    assert erk_objective.description == "Multi-phase objective with roadmap"
+    58→    assert erk_objective.color == "5319E7"  # Purple
+    59→
+    60→
+    61→def test_get_erk_label_definitions_contains_erk_pr() -&gt; None:
+    62→    """Test that erk-pr label is included with correct properties."""
+    63→    labels = get_erk_label_definitions()
+    64→
+    65→    erk_pr_labels = [label for label in labels if label.name == "erk-pr"]
+    66→    assert len(erk_pr_labels) == 1
+    67→
+    68→    erk_pr = erk_pr_labels[0]
+    69→    assert erk_pr.name == "erk-pr"
+    70→    assert erk_pr.description == "Plan managed as a draft PR"
+    71→    assert erk_pr.color == "1D76DB"
+    72→
+    73→
+    74→def test_get_erk_label_definitions_contains_no_changes() -&gt; None:
+    75→    """Test that no-changes label is included with correct properties."""
+    76→    labels = get_erk_label_definitions()
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>There are two `test_get_erk_label_definitions_contains_erk_pr` functions:
+- Line 19: simple one checking that `"erk-pr"` is in label_names
+- Line 61: detailed one checking properties
+
+The first one (line 19) is redundant since line 61 does the same check AND more. I should remove the first one or rename it. The first one was originally the replacement for the old `excludes_erk_plan` test (which just checked membership). The second one is a new, more detailed test. Let me remove the duplicate at line 19:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="122249" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BX3ZEqcBxHyRcRgoBnUcWK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py</param>
+    <param name="old_string">def test_get_erk_label_definitions_contains_erk_pr() -&gt; None:
+    """Test that erk-pr labe...[truncated 123 chars]... "erk-pr" in label_names
+
+
+def test_get_erk_label_definitions_excludes_erk_core() -&gt; None:</param>
+    <param name="new_string">def test_get_erk_label_definitions_excludes_erk_core() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="518" cache_read_input_tokens="122249" cache_creation="{'ephemeral_5m_input_tokens': 518, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BX3ZEqcBxHyRcRgoBnUcWK">
+The file /home/runner/work/erk/erk/tests/unit/objective_issues/test_label_definitions.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run prettier to fix formatting issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="122767" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JuoR8JFgemFCkfTFRYZ15Q">
+    <param name="command">npx prettier --write \
+  ".claude/commands/erk/objective-create.md" \
+  ".claude/commands/...[truncated 474 chars]...ed/planning/learn-vs-implementation-plans.md" \
+  "docs/learned/tui/data-contract.md" 2&gt;&amp;1</param>
+    <param name="description">Run prettier on files with formatting issues</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="122767" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JuoR8JFgemFCkfTFRYZ15Q">
+.claude/commands/erk/objective-create.md 141ms
+.claude/commands/erk/objective-plan.md 38ms
+.claude/commands/erk/replan.md 76ms
+.claude/commands/erk/system/objective-plan-node.md 21ms
+.claude/skills/objective/SKILL.md 24ms
+docs/learned/architecture/github-graphql-label-semantics.md 10ms
+docs/learned/cli/backend-aware-display.md 13ms
+docs/learned/cli/local-commands.md 9ms
+docs/learned/integrations/codex/codex-skills-system.md 45ms
+docs/learned/integrations/linear-erk-mapping.md 29ms
+docs/learned/planning/incremental-dispatch.md 9ms
+docs/learned/planning/learn-vs-implementation-plans.md 22ms
+docs/learned/tui/data-contract.md 38ms
+  </tool_result>
+  <assistant>The devrun agent also flagged two more files: `docs/learned/integrations/github-review-decision.md` and `docs/learned/tui/status-indicators.md`. Let me check if these are unrelated to our changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="123441" cache_creation="{'ephemeral_5m_input_tokens': 574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DrQzuCe9JwEmEm3NunP5z2">
+    <param name="command">npx prettier --check "docs/learned/integrations/github-review-decision.md" "docs/learned/tui/status-indicators.md" 2&gt;&amp;1</param>
+    <param name="description">Check if these two files need prettier</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="123441" cache_creation="{'ephemeral_5m_input_tokens': 574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DrQzuCe9JwEmEm3NunP5z2">
+Exit code 1
+Checking formatting...
+[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
+[[33mwarn[39m] docs/learned/tui/status-indicators.md
+[[33mwarn[39m] Code style issues found in 2 files. Run Prettier with --write to fix.
+  </tool_result>
+  <assistant>These two files also need formatting. They were pre-existing issues, not caused by our changes. Let me fix them anyway to keep CI green:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="124015" cache_creation="{'ephemeral_5m_input_tokens': 516, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NdME4BrdvsY7g1yFSTdMqT">
+    <param name="command">npx prettier --write "docs/learned/integrations/github-review-decision.md" "docs/learned/tui/status-indicators.md" 2&gt;&amp;1</param>
+    <param name="description">Format the two additional files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="124015" cache_creation="{'ephemeral_5m_input_tokens': 516, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NdME4BrdvsY7g1yFSTdMqT">
+docs/learned/integrations/github-review-decision.md 62ms
+docs/learned/tui/status-indicators.md 19ms
+  </tool_result>
+  <assistant>Now let me re-run CI to verify everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="124531" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01UGZCjhEYVekwETUCH6nF6i">
+    <param name="description">Re-run fast CI checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` in the directory `/home/runner/work/erk/erk` and report the full output...[truncated 56 chars]...dify any files. Focus on whether all checks pass or fail, and list any failures in detail.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="124531" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UGZCjhEYVekwETUCH6nF6i">
+**make fast-ci passed: All checks successful**
+
+All components of the fast-ci target passed cleanly:
+
+**Linting &amp; Code Quality:**
+- Lint: All checks passed
+- Format check: 1739 files already formatted
+- Prettier: All matched files use correct code style
+- Markdown check: Passed
+- Exec reference check: Reference.md up to date
+- Type checking (ty): All checks passed
+
+**Tests:**
+- Unit tests (erk): 5921 passed in 12.86s
+- Tests (erk-dev): 138 passed in 5.01s
+- Tests (erk-statusline): 123 passed in 0.75s
+- Tests (erk-mcp): 50 passed
+
+**Documentation Validation:**
+- AGENTS.md standard: PASSED
+- CLAUDE.md files properly paired: 19 files checked with 0 violations
+
+**Summary:** All checks passed with no failures or errors.
+agentId: a8be14d (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now let me submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="672" cache_read_input_tokens="124718" cache_creation="{'ephemeral_5m_input_tokens': 672, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BJAo9W1xR7QqUz143ekdC9">
+    <param name="command">erk exec impl-signal ended 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="672" cache_read_input_tokens="124718" cache_creation="{'ephemeral_5m_input_tokens': 672, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BJAo9W1xR7QqUz143ekdC9">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9367
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019zuEYv95eyZZ9g9KrZoM9j">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload implementation session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="125390" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019zuEYv95eyZZ9g9KrZoM9j">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FiKjjEdyMbZjv69UypFLYR">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="369" cache_read_input_tokens="125528" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FiKjjEdyMbZjv69UypFLYR">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Gs3zXkPTip496A59tMzhdf">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit the PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="125897" cache_creation="{'ephemeral_5m_input_tokens': 109, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gs3zXkPTip496A59tMzhdf">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #9367 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #9367
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (80,474 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   Still waiting... (10s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WHXYHfUB5mMQPsJQQu8RVD">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="126006" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WHXYHfUB5mMQPsJQQu8RVD">
+{
+  "success": true,
+  "event": "submitted",
+  "pr_number": 9367
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FsWEghDgjP54MRXReyHoVc">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="126417" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="85" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FsWEghDgjP54MRXReyHoVc">
+Exit code 1
+Checking PR #9367 for branch plnd/eliminate-erk-plan-refs-03-21-1552...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#9367)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl context directory wasn't cleaned up. Let me check if it exists and clean it manually:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="126785" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016TSSXEFREf3ys1zWcVRXTo">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;&amp;1</param>
+    <param name="description">Check impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="126785" cache_creation="{'ephemeral_5m_input_tokens': 187, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016TSSXEFREf3ys1zWcVRXTo">
+plan.md
+plnd--eliminate-erk-plan-refs-03-21-1552
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011C6fSKckczhKBUcHTSfxzP">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Remove impl-context director...[truncated 48 chars]...e.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+EOF
+)" &amp;&amp; git push 2&gt;&amp;1</param>
+    <param name="description">Remove impl-context directory and push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="126972" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011C6fSKckczhKBUcHTSfxzP">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ShuRpp9ivgsBmQjgNfAGnV">
+    <param name="command">git status .erk/impl-context/ 2&gt;&amp;1</param>
+    <param name="description">Check git status of impl-context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="127378" cache_creation="{'ephemeral_5m_input_tokens': 199, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ShuRpp9ivgsBmQjgNfAGnV">
+On branch plnd/eliminate-erk-plan-refs-03-21-1552
+Your branch and 'origin/plnd/eliminate-erk-plan-refs-03-21-1552' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+  </tool_result>
+  <assistant>The `.erk/impl-context/` is in `.gitignore`. The check is looking for it being committed in git history. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="127577" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013MHaqeXv6tguHFKk6BugTi">
+    <param name="command">git ls-files .erk/impl-context/ 2&gt;&amp;1</param>
+    <param name="description">Check if impl-context is tracked by git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="127577" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013MHaqeXv6tguHFKk6BugTi">
+
+  </tool_result>
+  <assistant>The `impl-context` directory is not tracked in git. The `erk pr check` might be checking for it differently. Let me re-run it after pushing the current changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="127771" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AY9who5ErwzRXhJ53R1mvf">
+    <param name="command">git log --oneline -3 2&gt;&amp;1</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="380" cache_read_input_tokens="127771" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+</session>
