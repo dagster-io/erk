@@ -16,6 +16,21 @@
       "raw_size_kb": 330,
       "xml_size_kb": 38,
       "git_branch": "plnd/fix-worktree-copy-03-20-1959"
+    },
+    {
+      "session_id": "4c96ae57-fc21-4e13-b2fc-f133f9551137",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T00:05:31.794360+00:00",
+      "files": [
+        "impl-4c96ae57-fc21-4e13-b2fc-f133f9551137-4c96ae57-fc21-4e13-b2fc-f133f9551137-part1.xml",
+        "impl-4c96ae57-fc21-4e13-b2fc-f133f9551137-4c96ae57-fc21-4e13-b2fc-f133f9551137-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 4,
+      "raw_size_kb": 354,
+      "xml_size_kb": 47,
+      "git_branch": "plnd/fix-worktree-copy-03-20-1959"
     }
   ]
 }
