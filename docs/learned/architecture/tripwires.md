@@ -92,7 +92,7 @@ Rules triggered by matching actions in code.
 
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
-**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+**bypassing PrListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PrListService handles HTTP API calls. Direct API calls bypass caching and error handling.
 
 **calling .read_text() or .write_text() without encoding parameter** → Read [Erk Architecture Patterns](erk-architecture.md) first. Always pass encoding='utf-8' to .read_text() and .write_text(). Python's default encoding varies by platform.
 
@@ -258,7 +258,7 @@ Rules triggered by matching actions in code.
 
 **parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
 
-**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PrListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
 
 **passing array or object variables to gh api graphql with -F and json.dumps()** [pattern: `json\.dumps\(.*-F`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 
