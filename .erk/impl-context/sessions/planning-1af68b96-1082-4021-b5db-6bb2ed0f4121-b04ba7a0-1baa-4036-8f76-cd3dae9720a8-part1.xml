@@ -1,0 +1,1017 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:objective-plan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-plan&lt;/command-name&gt;
+&lt;command-args&gt;9318&lt;/command-args&gt;</user>
+  <user># /erk:objective-plan
+
+Create an implementation plan for a specific node in an objective's dependency graph.
+
+## Usage
+
+```bash
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for objective reference
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `9318` for `--node &lt;node-id&gt;`. If `--node` is present along with an issue number:
+
+1. Run `/erk:objective-reconcile &lt;objective-number&gt;` via the Skill tool.
+2. Then invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Resolve Objective Reference
+
+Strip `--node` from `9318` if present, then run:
+
+```bash
+erk exec resolve-objective-ref 9318
+```
+
+**Interpret the JSON result:**
+
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
+
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup &lt;objective-number&gt; --session-id "b04ba7a0-1baa-4036-8f76-cd3dae9720a8"
+```
+
+**Interpret the JSON result:**
+
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 2.5: Reconcile Objective
+
+Invoke `/erk:objective-reconcile &lt;objective-number&gt;` via the Skill tool.
+
+This audits the objective against the current codebase, identifies stale references
+and nodes completed outside the erk land workflow, and applies updates with user
+confirmation before proceeding to node selection.
+
+If reconciliation finds no issues, it reports "all references current" and continues.
+If it finds and fixes issues, the roadmap displayed in Step 4 will reflect the
+updated state.
+
+### Step 3: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 4: Display Roadmap and Prompt User
+
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
+
+Then use AskUserQuestion to ask which node to plan:
+
+```
+Which node should I create a plan for?
+- Node 1A.1: &lt;description&gt; (Recommended) ← first pending node without plan in progress
+- Node 1A.2: &lt;description&gt;
+- Node 2B.1: &lt;description&gt; (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
+```
+
+**Filtering rules (based on node `status` field from phases):**
+
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
+
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
+
+If all nodes are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5: Invoke Inner Skill
+
+After the user selects a node, invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;selected-node-id&gt;
+```
+
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+---
+
+## Output Format
+
+- **Start:** "Loading objective #&lt;number&gt;..."
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node &lt;step-id&gt;: &lt;description&gt;"
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="18366" cache_read_input_tokens="9018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18366}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Loading objective #9318...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="18366" cache_read_input_tokens="9018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18366}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01S2rdrvWcvkdm95KHTpztUU">
+    <param name="command">erk exec resolve-objective-ref 9318</param>
+    <param name="description">Resolve objective reference</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="18366" cache_read_input_tokens="9018" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S2rdrvWcvkdm95KHTpztUU">
+{"resolved": true, "objective_number": 9318, "source": "argument"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014uGuu6rcjevLNY2Ce5BVL9">
+    <param name="command">erk exec objective-plan-setup 9318 --session-id "b04ba7a0-1baa-4036-8f76-cd3dae9720a8"</param>
+    <param name="description">Fetch objective context and roadmap</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="27384" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 204, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014uGuu6rcjevLNY2Ce5BVL9">
+{"success": true, "objective": {"number": 9318, "title": "Objective: Complete plan-to-PR terminology rename", "state": "OPEN", "labels": ["erk-objective"]}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "rename-plan-not-found", "description": "Rename PlanNotFound to PrNotFound in types.py and all 31 import sites", "status": "done", "pr": "#9319", "depends_on": [], "comment": null}, {"id": "1.2", "slug": "rename-plan-list-service", "description": "Rename PlanListService to PrListService and PlanListData to PrListData (ABC + real impl)", "status": "done", "pr": "#9319", "depends_on": ["1.1"], "comment": null}, {"id": "1.3", "slug": "rename-planned-pr-plan-list-service", "description": "Rename PlannedPRPlanListService to ManagedPrListService (fix mixed terminology)", "status": "done", "pr": "#9319", "depends_on": ["1.2"], "comment": null}, {"id": "1.4", "slug": "rename-plan-title-types", "description": "Rename ValidPlanTitle to ValidPrTitle and InvalidPlanTitle to InvalidPrTitle in naming.py", "status": "done", "pr": "#9319", "depends_on": ["1.3"], "comment": null}, {"id": "1.5", "slug": "rename-plan-context", "description": "Rename PlanContext to PrContext in plan_context_provider.py", "status": "in_progress", "pr": "#9340", "depends_on": ["1.4"], "comment": null}, {"id": "1.6", "slug": "rename-validate-plan-title", "description": "Rename validate_plan_title() to validate_pr_title() and update all call sites", "status": "pending", "pr": null, "depends_on": ["1.5"], "comment": null}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "rename-plan-store-package", "description": "Rename plan_store package to pr_store in erk-shared and update all 42 import sites", "status": "pending", "pr": null, "depends_on": ["1.6"], "comment": null}, {"id": "2.2", "slug": "rename-plan-duplicate-checker", "description": "Rename plan_duplicate_checker.py to pr_duplicate_checker.py + test file", "status": "pending", "pr": null, "depends_on": ["2.1"], "comment": null}, {"id": "2.3", "slug": "rename-plan-relevance-checker", "description": "Rename plan_relevance_checker.py to pr_relevance_checker.py + test file", "status": "pending", "pr": null, "depends_on": ["2.2"], "comment": null}, {"id": "2.4", "slug": "rename-plan-context-provider", "description": "Rename plan_context_provider.py to pr_context_provider.py + test file", "status": "pending", "pr": null, "depends_on": ["2.3"], "comment": null}, {"id": "2.5", "slug": "rename-plan-list-service-modules", "description": "Rename plan_list_service.py to pr_list_service.py (both ABC in erk-shared and impl in services/) + test files", "status": "pending", "pr": null, "depends_on": ["2.4"], "comment": null}, {"id": "2.6", "slug": "remove-plan-store-namespace", "description": "Remove empty namespace marker at src/erk/core/plan_store/", "status": "pending", "pr": null, "depends_on": ["2.5"], "comment": null}, {"id": "2.7", "slug": "rename-plan-content-modules", "description": "Rename plan_content.py and plan_utils.py references, consolidate duplicate extract_title_from_plan()", "status": "pending", "pr": null, "depends_on": ["2.6"], "comment": null}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "slug": "rename-ctx-plan-store", "description": "Rename ErkContext.plan_store to ErkContext.pr_store and update all ~101 call sites", "status": "pending", "pr": null, "depends_on": ["2.7"], "comment": null}, {"id": "3.2", "slug": "rename-plan-backend-property", "description": "Rename plan_backend property to pr_backend in context provider", "status": "pending", "pr": null, "depends_on": ["3.1"], "comment": null}, {"id": "3.3", "slug": "rename-extract-plan-number", "description": "Rename extract_plan_number() to extract_pr_number() in run/shared.py", "status": "pending", "pr": null, "depends_on": ["3.2"], "comment": null}, {"id": "3.4", "slug": "rename-extract-title-from-plan", "description": "Rename extract_title_from_plan() to extract_title_from_pr()", "status": "pending", "pr": null, "depends_on": ["3.3"], "comment": null}, {"id": "3.5", "slug": "rename-build-original-plan-section", "description": "Rename build_original_plan_section() to build_original_pr_section()", "status": "pending", "pr": null, "depends_on": ["3.4"], "comment": null}]}, {"number": 4, "suffix": "", "name": "Phase 4", "nodes": [{"id": "4.1", "slug": "rename-wt-create-flags", "description": "Rename --from-plan-file to --from-pr-file, --keep-plan-file to --keep-pr-file, --copy-plan to --copy-pr in wt/create_cmd.py", "status": "pending", "pr": null, "depends_on": ["3.5"], "comment": null}, {"id": "4.2", "slug": "rename-sort-key-plan-id", "description": "Rename SortKey.PLAN_ID to SortKey.PR_ID and display label from \"by plan#\" to \"by pr#\"", "status": "pending", "pr": null, "depends_on": ["4.1"], "comment": null}, {"id": "4.3", "slug": "rename-plan-heading-prefix", "description": "Rename PLAN_HEADING_PREFIX constant in cli/constants.py", "status": "pending", "pr": null, "depends_on": ["4.2"], "comment": null}, {"id": "4.4", "slug": "fix-pr-view-help-text", "description": "Update help text in pr/view/cli.py (\"Show full plan body\" to \"Show full PR body\", etc.)", "status": "pending", "pr": null, "depends_on": ["4.3"], "comment": null}, {"id": "4.5", "slug": "fix-one-shot-help-text", "description": "Update help text and docstrings in one_shot/cli.py and pr/metadata_helpers.py", "status": "pending", "pr": null, "depends_on": ["4.4"], "comment": null}]}, {"number": 5, "suffix": "", "name": "Phase 5", "nodes": [{"id": "5.1", "slug": "rename-add-plan-label-scripts", "description": "Rename add_plan_label.py to add_pr_label.py and add_plan_labels.py to add_pr_labels.py + update exec registry", "status": "pending", "pr": null, "depends_on": ["4.5"], "comment": null}, {"id": "5.2", "slug": "rename-detect-plan-script", "description": "Rename detect_plan_from_branch.py to detect_pr_from_branch.py + update exec registry", "status": "pending", "pr": null, "depends_on": ["5.1"], "comment": null}, {"id": "5.3", "slug": "rename-get-plan-scripts", "description": "Rename get_plan_info.py to get_pr_info.py and get_plan_metadata.py to get_pr_metadata.py + update exec registry", "status": "pending", "pr": null, "depends_on": ["5.2"], "comment": null}, {"id": "5.4", "slug": "rename-register-one-shot-script", "description": "Rename register_one_shot_plan.py to register_one_shot_pr.py + update exec registry", "status": "pending", "pr": null, "depends_on": ["5.3"], "comment": null}, {"id": "5.5", "slug": "rename-update-validate-scripts", "description": "Rename update_plan_header.py to update_pr_header.py and validate_plan_content.py to validate_pr_content.py + update exec registry", "status": "pending", "pr": null, "depends_on": ["5.4"], "comment": null}, {"id": "5.6", "slug": "rename-workflow-plan-backend", "description": "Rename plan_backend workflow input in plan-implement.yml and update all references", "status": "pending", "pr": null, "depends_on": ["5.5"], "comment": null}, {"id": "5.7", "slug": "rename-plans-repo-labels", "description": "Update plans_repo_labels health check naming and create_plans_repo_labels()", "status": "pending", "pr": null, "depends_on": ["5.6"], "comment": null}]}], "summary": {"total_nodes": 30, "pending": 25, "planning": 0, "done": 4, "in_progress": 1, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.6", "slug": "rename-validate-plan-title", "description": "Rename validate_plan_title() to validate_pr_title() and update all call sites", "phase": "Phase 1", "status": "pending"}, "all_complete": false}, "validation": {"passed": true, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "PR references use '#' prefix"}, {"passed": true, "description": "Roadmap table in sync with YAML"}, {"passed": true, "description": "PR backlinks: all PR references have matching objective_issue backlinks"}]}, "marker_created": true, "warnings": []}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2915" cache_read_input_tokens="27588" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now reconciling the objective against the current codebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2915" cache_read_input_tokens="27588" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2915}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Hz32UKKzLL5hEWy7yEFpY2">
+    <param name="skill">erk:objective-reconcile</param>
+    <param name="args">9318</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2915" cache_read_input_tokens="27588" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hz32UKKzLL5hEWy7yEFpY2">
+Launching skill: erk:objective-reconcile
+  </tool_result>
+  <user># /erk:objective-reconcile
+
+Audits an open objective against the current codebase state, identifies stale references, already-done work, and outdated prose, then proposes and applies updates with user confirmation.
+
+## Usage
+
+```bash
+/erk:objective-reconcile &lt;issue-number&gt;
+```
+
+---
+
+## Agent Instructions
+
+### Phase 1: Validate Input and Fetch Objective Context
+
+Parse `9318` for the issue number. If no issue number provided:
+
+```
+Error: Issue number required.
+Usage: /erk:objective-reconcile &lt;issue_number&gt;
+```
+
+Fetch the objective issue:
+
+**Do NOT use `objective-fetch-context`** — it requires plan/branch/PR context and fails on master.
+
+```bash
+erk exec get-issue-body &lt;NUMBER&gt;
+```
+
+Parse the JSON output to get:
+
+- `body`: Full issue body text
+- `title`: Issue title
+- `state`: OPEN or CLOSED
+- `labels`: Labels list
+
+Verify the issue has the `erk-objective` label. If not:
+
+```
+Error: Issue #&lt;number&gt; is not an erk-objective issue (missing erk-objective label).
+```
+
+If the objective is CLOSED, warn:
+
+```
+Warning: Objective #&lt;number&gt; is CLOSED. Proceeding with audit anyway.
+```
+
+### Phase 2: Extract Auditable References
+
+Systematically extract concrete references from the objective body that can be verified against the codebase. Build a checklist of items to audit.
+
+**From roadmap node descriptions** (parsed directly from the issue body markdown tables and YAML metadata blocks, not from a pre-parsed field):
+
+- File paths (e.g., `src/erk/foo.py`, `tests/test_bar.py`)
+- Command names (e.g., `erk inspect`, `/local:some-command`, `erk exec script-name`)
+- Function/class/module names mentioned as implementation targets
+- CLI subcommand references
+
+**From Implementation Context section:**
+
+- Key Files list entries
+- Architecture descriptions referencing specific modules or patterns
+- Technology or library references
+
+**From Design Decisions section:**
+
+- Pattern references (e.g., "uses the gateway ABC pattern")
+- Technology choices that may have changed
+
+**From pending node descriptions:**
+
+- Descriptions of work that may already be done via other PRs
+
+Build a structured checklist:
+
+```
+Reference Type | Source Location | Reference Value | Verification Method
+file_path      | Node 1.4 desc  | src/erk/foo.py  | Glob for existence
+command        | Node 2.1 desc  | erk inspect     | Grep for CLI registration
+function       | Key Files       | do_thing()      | Grep for definition
+pending_work   | Node 3.2       | "Add caching"   | Search for implementation
+```
+
+### Phase 3: Verify References Against Codebase
+
+For each reference in the checklist, verify it against the current codebase:
+
+**File paths:** Check existence via Glob tool.
+
+**Command names:**
+
+- For CLI commands (`erk &lt;cmd&gt;`): Search for Click command registration in `src/erk/cli/`
+- For slash commands (`/local:&lt;cmd&gt;` or `/erk:&lt;cmd&gt;`): Check `.claude/commands/` for the file
+- For exec scripts (`erk exec &lt;script&gt;`): Check `src/erk/cli/commands/exec/scripts/` for the file
+
+**Function/class names:** Search via Grep in `src/erk/` for definitions.
+
+**Pending node work:** For each pending node, search the codebase for evidence the work was already accomplished:
+
+- Search for key terms from the node description
+- Check git log for related merged PRs:
+  ```bash
+  gh pr list --state merged --search "&lt;keywords from node description&gt;" --json number,title,mergedAt --limit 5
+  ```
+
+Classify each reference:
+
+| Status  | Meaning                                                   |
+| ------- | --------------------------------------------------------- |
+| CURRENT | Reference is accurate, exists as described                |
+| STALE   | Reference points to something renamed, moved, or deleted  |
+| DONE    | Pending node whose work was accomplished elsewhere        |
+| UNCLEAR | Cannot determine status automatically, needs human review |
+
+### Phase 4: Build Findings Report
+
+Present a structured findings table to the user:
+
+```markdown
+## Reconciliation Findings for Objective #&lt;number&gt;
+
+### Summary
+
+- **References audited:** &lt;total&gt;
+- **Current (no action needed):** &lt;count&gt;
+- **Stale (needs update):** &lt;count&gt;
+- **Done elsewhere (node completed):** &lt;count&gt;
+- **Unclear (needs review):** &lt;count&gt;
+
+### Findings
+
+| Location             | Reference                    | Status  | Finding                                          |
+| -------------------- | ---------------------------- | ------- | ------------------------------------------------ |
+| Node 1.4 description | `inspect` command            | STALE   | Command merged into `view` (PR #7385)            |
+| Key Files            | `src/erk/inspect_cmd.py`     | STALE   | File deleted, now `src/erk/cli/commands/view.py` |
+| Node 2.3             | pending: "Add caching layer" | DONE    | Implemented in PR #7401                          |
+| Node 3.1             | pending: "Refactor gateway"  | CURRENT | No evidence of implementation                    |
+| Design Decisions     | "Uses polling for updates"   | UNCLEAR | Found both polling and WebSocket code            |
+```
+
+If all references are CURRENT:
+
+```
+All references are current. No updates needed for objective #&lt;number&gt;.
+```
+
+Stop here (skip Phases 5-6).
+
+### Phase 5: Propose Updates
+
+For each non-CURRENT finding, propose a specific update:
+
+**For STALE references:**
+
+- Propose the exact text replacement (old text -&gt; new text)
+- Identify which section of the objective body needs editing
+- If a command was renamed, find the new name
+
+**For DONE nodes:**
+
+- Propose changing the node status to `done`
+- Include evidence (PR number, commit, or code location)
+- Propose adding a `pr` reference to the node metadata
+
+**For UNCLEAR items:**
+
+- Present the ambiguity and ask the user to decide
+
+Format proposals as a numbered list:
+
+```markdown
+### Proposed Updates
+
+1. **[STALE] Node 1.4 description**: Replace `inspect` with `view`
+   - Old: "Run `erk inspect` to examine the objective"
+   - New: "Run `erk objective view` to examine the objective"
+
+2. **[STALE] Key Files**: Update file path
+   - Old: `src/erk/inspect_cmd.py`
+   - New: `src/erk/cli/commands/view.py`
+
+3. **[DONE] Node 2.3**: Mark as done
+   - Evidence: PR #7401 implemented the caching layer
+   - Action: Set status to `done`, add `pr: "#7401"`
+
+4. **[UNCLEAR] Design Decisions**: Polling vs WebSocket
+   - Found both patterns in codebase. Which is the current approach?
+```
+
+### Phase 6: Execute Updates (with confirmation)
+
+Use AskUserQuestion to let the user approve, reject, or modify proposals:
+
+```
+I've identified &lt;N&gt; proposed updates for objective #&lt;number&gt;. Would you like me to:
+1. Apply all proposed updates
+2. Let me pick which ones to apply
+3. Skip all updates (just informational)
+```
+
+**If user approves (all or selected):**
+
+**For DONE nodes** — update node status via exec script.
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id&gt; --status done --pr "#&lt;pr-number&gt;" --include-body
+```
+
+Pass all completed nodes as multiple `--node` flags in ONE command if multiple nodes are being marked done.
+
+**For STALE references and outdated prose** — update the objective body:
+
+After all node status updates, if prose changes are needed:
+
+1. Use the `updated_body` from the last `update-objective-node` call (if one was made with `--include-body`), OR fetch the current body:
+   ```bash
+   erk exec get-issue-body &lt;objective-number&gt;
+   ```
+2. Apply the approved text replacements to the body
+3. Write the updated body:
+   ```bash
+   erk exec update-issue-body &lt;objective-number&gt; --body-file /tmp/updated-objective-body.md
+   ```
+   (Write the updated body to a temp file first via Write tool to avoid shell quoting issues)
+
+**Post an action comment** summarizing what was reconciled:
+
+```bash
+echo '&lt;json&gt;' | erk exec objective-post-action-comment
+```
+
+With JSON structure:
+
+```json
+{
+  "issue_number": &lt;N&gt;,
+  "date": "&lt;YYYY-MM-DD&gt;",
+  "pr_number": null,
+  "phase_step": "&lt;affected node IDs, comma-separated&gt;",
+  "title": "Objective reconciliation",
+  "what_was_done": ["Audited objective against current codebase", "Updated stale references: ...", "Marked nodes as done: ..."],
+  "lessons_learned": ["&lt;any insights discovered&gt;"],
+  "roadmap_updates": ["Node X.Y: pending -&gt; done", ...],
+  "body_reconciliation": [{"section": "Node 1.4 description", "change": "Updated inspect -&gt; view"}]
+}
+```
+
+Set `pr_number` to `null` (or `0`) since this is an audit action, not a PR landing.
+
+**Report completion:**
+
+```
+Reconciliation complete for objective #&lt;number&gt;:
+- &lt;N&gt; stale references updated
+- &lt;N&gt; nodes marked as done
+- &lt;N&gt; items flagged for manual review
+- Action comment posted
+
+View objective: &lt;objective URL&gt;
+```
+
+---
+
+## Error Handling
+
+- **Issue not found:** Display "Error: Issue #&lt;number&gt; not found." and stop.
+- **Not an objective:** Display label requirement error and stop.
+- **GitHub API rate limited:** Display "Error: GitHub API rate limited. Try again later." and stop.
+- **No references found to audit:** Report "No auditable references found in objective body" and stop.
+- **Exec script failure:** Display the error JSON and continue with remaining updates if possible.
+
+## Notes
+
+- This is a judgment-heavy skill: interpreting whether a reference is stale requires codebase understanding. Use Grep and Glob liberally.
+- Never auto-mutate. Always present findings and get user approval before making changes.
+- Updates both the issue body (prose/metadata) AND node statuses (via exec scripts).
+- For `pr_number` in the action comment: use `null` or `0` when the reconciliation is not tied to a specific PR.
+- Reuses existing exec scripts: `get-issue-body`, `update-objective-node`, `update-issue-body`, `objective-post-action-comment`.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2836" cache_read_input_tokens="30503" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2836}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SvmEXkQcnJrXz7hgMfbquB">
+    <param name="command">erk exec get-issue-body 9318</param>
+    <param name="description">Fetch objective issue body</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2836" cache_read_input_tokens="30503" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2836, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SvmEXkQcnJrXz7hgMfbquB">
+{"success": true, "issue_number": 9318, "title": "Objective: Complete plan-to-PR terminology rename", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-03-21T05:06:55.251827+00:00'\ncreated_by: schrockn\nobjective_comment_id: 4102906417\nslug: complete-plan-to-pr-rename\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '4'\nnodes:\n- id: '1.1'\n  slug: rename-plan-not-found\n  description: Rename PlanNotFound to PrNotFound in types.py and all 31 import sites\n  status: done\n  pr: '#9319'\n- id: '1.2'\n  slug: rename-plan-list-service\n  description: Rename PlanListService to PrListService and PlanListData to PrListData\n    (ABC + real impl)\n  status: done\n  pr: '#9319'\n- id: '1.3'\n  slug: rename-planned-pr-plan-list-service\n  description: Rename PlannedPRPlanListService to ManagedPrListService (fix mixed\n    terminology)\n  status: done\n  pr: '#9319'\n- id: '1.4'\n  slug: rename-plan-title-types\n  description: Rename ValidPlanTitle to ValidPrTitle and InvalidPlanTitle to InvalidPrTitle\n    in naming.py\n  status: done\n  pr: '#9319'\n- id: '1.5'\n  slug: rename-plan-context\n  description: Rename PlanContext to PrContext in plan_context_provider.py\n  status: in_progress\n  pr: '#9340'\n- id: '1.6'\n  slug: rename-validate-plan-title\n  description: Rename validate_plan_title() to validate_pr_title() and update all\n    call sites\n  status: pending\n  pr: null\n- id: '2.1'\n  slug: rename-plan-store-package\n  description: Rename plan_store package to pr_store in erk-shared and update all\n    42 import sites\n  status: pending\n  pr: null\n- id: '2.2'\n  slug: rename-plan-duplicate-checker\n  description: Rename plan_duplicate_checker.py to pr_duplicate_checker.py + test\n    file\n  status: pending\n  pr: null\n- id: '2.3'\n  slug: rename-plan-relevance-checker\n  description: Rename plan_relevance_checker.py to pr_relevance_checker.py + test\n    file\n  status: pending\n  pr: null\n- id: '2.4'\n  slug: rename-plan-context-provider\n  description: Rename plan_context_provider.py to pr_context_provider.py + test file\n  status: pending\n  pr: null\n- id: '2.5'\n  slug: rename-plan-list-service-modules\n  description: Rename plan_list_service.py to pr_list_service.py (both ABC in erk-shared\n    and impl in services/) + test files\n  status: pending\n  pr: null\n- id: '2.6'\n  slug: remove-plan-store-namespace\n  description: Remove empty namespace marker at src/erk/core/plan_store/\n  status: pending\n  pr: null\n- id: '2.7'\n  slug: rename-plan-content-modules\n  description: Rename plan_content.py and plan_utils.py references, consolidate duplicate\n    extract_title_from_plan()\n  status: pending\n  pr: null\n- id: '3.1'\n  slug: rename-ctx-plan-store\n  description: Rename ErkContext.plan_store to ErkContext.pr_store and update all\n    ~101 call sites\n  status: pending\n  pr: null\n- id: '3.2'\n  slug: rename-plan-backend-property\n  description: Rename plan_backend property to pr_backend in context provider\n  status: pending\n  pr: null\n- id: '3.3'\n  slug: rename-extract-plan-number\n  description: Rename extract_plan_number() to extract_pr_number() in run/shared.py\n  status: pending\n  pr: null\n- id: '3.4'\n  slug: rename-extract-title-from-plan\n  description: Rename extract_title_from_plan() to extract_title_from_pr()\n  status: pending\n  pr: null\n- id: '3.5'\n  slug: rename-build-original-plan-section\n  description: Rename build_original_plan_section() to build_original_pr_section()\n  status: pending\n  pr: null\n- id: '4.1'\n  slug: rename-wt-create-flags\n  description: Rename --from-plan-file to --from-pr-file, --keep-plan-file to --keep-pr-file,\n    --copy-plan to --copy-pr in wt/create_cmd.py\n  status: pending\n  pr: null\n- id: '4.2'\n  slug: rename-sort-key-plan-id\n  description: Rename SortKey.PLAN_ID to SortKey.PR_ID and display label from \"by\n    plan#\" to \"by pr#\"\n  status: pending\n  pr: null\n- id: '4.3'\n  slug: rename-plan-heading-prefix\n  description: Rename PLAN_HEADING_PREFIX constant in cli/constants.py\n  status: pending\n  pr: null\n- id: '4.4'\n  slug: fix-pr-view-help-text\n  description: Update help text in pr/view/cli.py (\"Show full plan body\" to \"Show\n    full PR body\", etc.)\n  status: pending\n  pr: null\n- id: '4.5'\n  slug: fix-one-shot-help-text\n  description: Update help text and docstrings in one_shot/cli.py and pr/metadata_helpers.py\n  status: pending\n  pr: null\n- id: '5.1'\n  slug: rename-add-plan-label-scripts\n  description: Rename add_plan_label.py to add_pr_label.py and add_plan_labels.py\n    to add_pr_labels.py + update exec registry\n  status: pending\n  pr: null\n- id: '5.2'\n  slug: rename-detect-plan-script\n  description: Rename detect_plan_from_branch.py to detect_pr_from_branch.py + update\n    exec registry\n  status: pending\n  pr: null\n- id: '5.3'\n  slug: rename-get-plan-scripts\n  description: Rename get_plan_info.py to get_pr_info.py and get_plan_metadata.py\n    to get_pr_metadata.py + update exec registry\n  status: pending\n  pr: null\n- id: '5.4'\n  slug: rename-register-one-shot-script\n  description: Rename register_one_shot_plan.py to register_one_shot_pr.py + update\n    exec registry\n  status: pending\n  pr: null\n- id: '5.5'\n  slug: rename-update-validate-scripts\n  description: Rename update_plan_header.py to update_pr_header.py and validate_plan_content.py\n    to validate_pr_content.py + update exec registry\n  status: pending\n  pr: null\n- id: '5.6'\n  slug: rename-workflow-plan-backend\n  description: Rename plan_backend workflow input in plan-implement.yml and update\n    all references\n  status: pending\n  pr: null\n- id: '5.7'\n  slug: rename-plans-repo-labels\n  description: Update plans_repo_labels health check naming and create_plans_repo_labels()\n  status: pending\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;", "state": "OPEN", "labels": ["erk-objective"], "url": "https://github.com/dagster-io/erk/issues/9318"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now auditing references against the codebase. Let me check the key items in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TcF5e1JXgAhDsYjU1HXDmP">
+    <param name="command">gh pr view 9340 --json state,title,mergedAt,number 2&gt;/dev/null || echo '{"error": "not found"}'</param>
+    <param name="description">Check PR #9340 status (node 1.5)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TcF5e1JXgAhDsYjU1HXDmP">
+{"mergedAt":"2026-03-21T14:01:16Z","number":9340,"state":"MERGED","title":"Rename PlanContext → PrContext and validate_plan_title → validate_pr_title"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NdGz6yvgDiFmxzo4qD4JGV">
+    <param name="command">gh pr view 9319 --json state,title,mergedAt,number 2&gt;/dev/null || echo '{"error": "not found"}'</param>
+    <param name="description">Check PR #9319 status (nodes 1.1-1.4)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NdGz6yvgDiFmxzo4qD4JGV">
+{"mergedAt":"2026-03-21T10:46:08Z","number":9319,"state":"MERGED","title":"Rename plan-oriented types to PR terminology (Nodes 1.1–1.4)"}
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Xd16joWvFbYPRe6dK3TYHY">
+    <param name="pattern">validate_plan_title</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xd16joWvFbYPRe6dK3TYHY">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01942LyLHftdcf5BwWSV6eKw">
+    <param name="pattern">validate_pr_title</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01942LyLHftdcf5BwWSV6eKw">
+Found 1 file
+src/erk/cli/commands/exec/scripts/plan_save.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016MU3h7dByAJaH3SboJHp88">
+    <param name="pattern">class PlanContext</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016MU3h7dByAJaH3SboJHp88">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01E2WWbVXQxkTh47RcRrkq3W">
+    <param name="pattern">class PrContext</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2410" cache_read_input_tokens="33339" output_tokens="813" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2410, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E2WWbVXQxkTh47RcRrkq3W">
+Found 1 file
+src/erk/core/pr_context_provider.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>PR #9340 is merged and covered both node 1.5 AND node 1.6. Let me verify more pending nodes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BdfByUGMohZQMdgbh2eKBp">
+    <param name="pattern">plan_context_provider</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BdfByUGMohZQMdgbh2eKBp">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AgGEY8UqmnQcAaJupvC2md">
+    <param name="pattern">pr_context_provider</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AgGEY8UqmnQcAaJupvC2md">
+Found 7 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/core/commit_message_generator.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01KV8N1vFFBXLLP85A1dujAd">
+    <param name="pattern">src/**/plan_store/**</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KV8N1vFFBXLLP85A1dujAd">
+/workspaces/erk/src/erk/core/plan_store/__pycache__/__init__.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01Hk55L7cyLeLLzvKwk7KQt9">
+    <param name="pattern">src/**/pr_store/**</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hk55L7cyLeLLzvKwk7KQt9">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01A6g1RyX5Es5cgGZ6ZKvb9q">
+    <param name="pattern">plan_duplicate_checker</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1328}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A6g1RyX5Es5cgGZ6ZKvb9q">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DXxyyFHF8HXcwVRHGZGTZK">
+    <param name="pattern">plan_relevance_checker</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1328" cache_read_input_tokens="35749" output_tokens="719" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DXxyyFHF8HXcwVRHGZGTZK">
+No files found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>PR #9352 from the git log mentions "Rename plan-to-PR modules across erk and erk_shared (Phase 2)". Let me check what it covered.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MuuDtxFh2RfQDdBAiY7PBU">
+    <param name="command">gh pr view 9352 --json state,title,mergedAt,body --jq '{state,title,mergedAt}' 2&gt;/dev/null</param>
+    <param name="description">Check PR #9352 status (Phase 2)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MuuDtxFh2RfQDdBAiY7PBU">
+{"mergedAt":"2026-03-21T15:12:54Z","state":"MERGED","title":"Complete Phase 2: Rename plan-focused modules to PR-focused terminology (Objective #9318)"}
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01TJSLtPQ48JxSLGs1FesxQ2">
+    <param name="pattern">src/**/plan_duplicate_checker*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BazW4fa1i95X9BZPAL1ab8">
+    <param name="pattern">src/**/pr_duplicate_checker*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TJSLtPQ48JxSLGs1FesxQ2">
+/workspaces/erk/src/erk/core/__pycache__/plan_duplicate_checker.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01FyNDtf1RdkSj41GkaLRbMH">
+    <param name="pattern">src/**/plan_list_service*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BazW4fa1i95X9BZPAL1ab8">
+/workspaces/erk/src/erk/core/pr_duplicate_checker.py
+/workspaces/erk/src/erk/core/__pycache__/pr_duplicate_checker.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01KUTvzpJaMEUJ2zfoE65BnZ">
+    <param name="pattern">src/**/pr_list_service*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FyNDtf1RdkSj41GkaLRbMH">
+/workspaces/erk/src/erk/core/services/__pycache__/plan_list_service.cpython-313.pyc
+  </tool_result>
+  <tool_result tool="toolu_01KUTvzpJaMEUJ2zfoE65BnZ">
+/workspaces/erk/src/erk/core/services/pr_list_service.py
+/workspaces/erk/src/erk/core/services/__pycache__/pr_list_service.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_018gCbYXWMiPK6Cd4isunssQ">
+    <param name="pattern">src/**/plan_relevance_checker*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1146}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PGUFJ2RC9LqMHHCsaEkxqn">
+    <param name="pattern">src/**/pr_relevance_checker*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1146" cache_read_input_tokens="37077" output_tokens="504" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1146, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018gCbYXWMiPK6Cd4isunssQ">
+/workspaces/erk/src/erk/core/__pycache__/plan_relevance_checker.cpython-313.pyc
+  </tool_result>
+  <tool_result tool="toolu_01PGUFJ2RC9LqMHHCsaEkxqn">
+/workspaces/erk/src/erk/core/pr_relevance_checker.py
+/workspaces/erk/src/erk/core/__pycache__/pr_relevance_checker.cpython-313.pyc
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Phase 2 is fully done via PR #9352. Let me check remaining phases.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Wn7xCNcUpgzh5dTH1TDQZt">
+    <param name="pattern">plan_store</param>
+    <param name="path">/workspaces/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wn7xCNcUpgzh5dTH1TDQZt">
+Found 10 files
+src/erk/core/context.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/commands/pr/close_cmd.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/objective/plan_cmd.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01NFgMctj25zW7T4FY1axCdG">
+    <param name="pattern">\.plan_store</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NFgMctj25zW7T4FY1axCdG">
+src/erk/cli/commands/wt/create_cmd.py:669:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number_parsed))
+src/erk/cli/commands/wt/delete_cmd.py:69:    plans = ctx.plan_store.list_managed_prs(repo_root, query)
+src/erk/cli/commands/wt/delete_cmd.py:142:    ctx.plan_store.close_managed_pr(repo_root, str(pr_number))
+src/erk/cli/commands/objective_helpers.py:40:    result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/objective_helpers.py:50:    ctx.plan_store.close_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/implement.py:168:    result = ctx.plan_store.get_managed_pr(repo.root, pr_number)
+src/erk/cli/commands/implement.py:222:    provider_name = ctx.plan_store.get_provider_name()
+src/erk/cli/commands/branch/checkout_cmd.py:498:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/close_cmd.py:42:        result = ctx.plan_store.get_managed_pr(repo_root, str(number))
+src/erk/cli/commands/pr/close_cmd.py:45:        ctx.plan_store.close_managed_pr(repo_root, identifier)
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017TB5qpD1eQQ6TnGofjkqLM">
+    <param name="pattern">\.pr_store</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">count</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017TB5qpD1eQQ6TnGofjkqLM">
+src/erk/cli/commands/consolidate_learn_plans_dispatch.py:1
+src/erk/cli/commands/land_learn.py:3
+src/erk/cli/commands/implement.py:1
+src/erk/tui/data/real_provider.py:2
+src/erk/cli/commands/wt/create_cmd.py:1
+src/erk/cli/commands/objective_helpers.py:1
+src/erk/cli/commands/learn/learn_cmd.py:1
+src/erk/cli/commands/wt/delete_cmd.py:2
+src/erk/cli/commands/branch/checkout_cmd.py:1
+src/erk/cli/commands/branch/delete_cmd.py:1
+src/erk/cli/commands/pr/create_cmd.py:1
+src/erk/cli/commands/objective/list_cmd.py:2
+src/erk/cli/commands/one_shot_remote_dispatch.py:1
+src/erk/cli/commands/pr/shared.py:3
+src/erk/cli/commands/pr/view/operation.py:2
+src/erk/cli/commands/pr/close_cmd.py:1
+src/erk/cli/commands/pr/metadata_helpers.py:2
+src/erk/cli/commands/pr/dispatch_cmd.py:2
+src/erk/cli/commands/pr/check_cmd.py:1
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py:1
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py:1
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:2
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py:1
+src/erk/core/services/objective_list_service.py:1
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:1
+src/erk/core/services/pr_list_service.py:2
+src/erk/cli/commands/exec/scripts/plan_update.py:2
+src/erk/cli/commands/exec/scripts/update_plan_header.py:1
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:1
+src/erk/core/pr_context_provider.py:2
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014426KQ6oqc32CAo7ng6isr">
+    <param name="pattern">plan_backend</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014426KQ6oqc32CAo7ng6isr">
+Found 41 files
+src/erk/core/pr_context_provider.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/pr/view/operation.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/one_shot_remote_dispatch.py
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/resolve_objective_ref.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/track_learn_result.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+src/erk/cli/commands/exec/scripts/impl_signal.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/commands/exec/scripts/get_plan_info.py
+src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_stack.py
+
+... [12 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AGBbNuFq7u7TAf6ys6b6PT">
+    <param name="pattern">extract_plan_number</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AGBbNuFq7u7TAf6ys6b6PT">
+Found 1 file
+src/erk/cli/commands/run/shared.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01W59eSr8BVrD5Rza7qci72s">
+    <param name="pattern">extract_title_from_plan</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W59eSr8BVrD5Rza7qci72s">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01G9WSqqU6xa6AFPqC4Deaz9">
+    <param name="pattern">build_original_plan_section</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G9WSqqU6xa6AFPqC4Deaz9">
+Found 2 files
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UEn9LexYfQjAh8i8fBo35y">
+    <param name="pattern">from-plan-file|keep-plan-file|copy-plan</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UEn9LexYfQjAh8i8fBo35y">
+Found 2 files
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/ensure-conversion-tasks.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0115DsG7JBuiutb4j45HzU1U">
+    <param name="pattern">PLAN_ID|PLAN_HEADING_PREFIX</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="38223" output_tokens="908" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0115DsG7JBuiutb4j45HzU1U">
+Found 6 files
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/constants.py
+src/erk/cli/commands/pr/list/cli.py
+src/erk/tui/sorting/logic.py
+src/erk/cli/commands/pr/list/operation.py
+src/erk/tui/sorting/types.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the remaining Phase 2 and Phase 5 items.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01D7toVcPEZrsHD4tCK7RjLz">
+    <param name="pattern">src/**/plan_content*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D7toVcPEZrsHD4tCK7RjLz">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_018GfpQz6k43ncQDuVRM9398">
+    <param name="pattern">src/**/pr_content*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018GfpQz6k43ncQDuVRM9398">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01CYyjL8T2uP32iqYm8tQieW">
+    <param name="pattern">src/**/plan_utils*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01UMPvCDjdj3icEW5apX3WDi">
+    <param name="pattern">src/**/add_plan_label*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CYyjL8T2uP32iqYm8tQieW">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01UMPvCDjdj3icEW5apX3WDi">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/add_plan_labels.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/add_plan_labels.cpython-313.pyc
+/workspaces/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/add_plan_label.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01RSCPYRoLaqrcVBijD1rUC7">
+    <param name="pattern">src/**/detect_plan_from_branch*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RSCPYRoLaqrcVBijD1rUC7">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/detect_plan_from_branch.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01MzWHt9KQumYhu37ESETz8z">
+    <param name="pattern">src/**/get_plan_info*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019e5crXeBEhKdmGFm4FAPeh">
+    <param name="pattern">src/**/get_plan_metadata*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MzWHt9KQumYhu37ESETz8z">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/get_plan_info.cpython-313.pyc
+  </tool_result>
+  <tool_result tool="toolu_019e5crXeBEhKdmGFm4FAPeh">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/get_plan_metadata.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01ALfBNTMnnLXAxx6BCFUaNr">
+    <param name="pattern">src/**/register_one_shot_plan*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ALfBNTMnnLXAxx6BCFUaNr">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/register_one_shot_plan.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01WVgQDJws8fYRyyGvNs5d1y">
+    <param name="pattern">src/**/update_plan_header*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4856}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WVgQDJws8fYRyyGvNs5d1y">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/update_plan_header.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/update_plan_header.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_014aJx93tg5ABpq314FAnUEX">
+    <param name="pattern">src/**/validate_plan_content*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4856" cache_read_input_tokens="39435" output_tokens="498" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4856, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014aJx93tg5ABpq314FAnUEX">
+/workspaces/erk/src/erk/cli/commands/exec/scripts/validate_plan_content.py
+/workspaces/erk/src/erk/cli/commands/exec/scripts/__pycache__/validate_plan_content.cpython-313.pyc
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1514" cache_read_input_tokens="44291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1514}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PTC1qNwm1LTFYkQuGZAZJA">
+    <param name="command">ls -la /workspaces/erk/src/erk/core/plan_store/ 2&gt;/dev/null || echo "directory not found"</param>
+    <param name="description">Check plan_store directory existence</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1514" cache_read_input_tokens="44291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1514}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PTC1qNwm1LTFYkQuGZAZJA">
+total 12
+drwxrwxrwx+  3 vscode root   4096 Mar 21 15:19 .
+drwxrwxrwx+ 12 vscode root   4096 Mar 21 15:19 ..
+drwxrwxrwx+  2 vscode vscode 4096 Jan 25 04:29 __pycache__
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XtGankkuR1u8vH8GgM95Qz">
+    <param name="command">ls -la /workspaces/erk/src/erk_shared/plan_store/ 2&gt;/dev/null; ls -la /workspaces/erk/src/erk_shared/pr_store/ 2&gt;/dev/null; echo "---"; ls /workspaces/erk/src/erk_shared/ 2&gt;/dev/null | head -20</param>
+    <param name="description">Check erk_shared plan_store/pr_store</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1514" cache_read_input_tokens="44291" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1514}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XtGankkuR1u8vH8GgM95Qz">
+---
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01T99jMK3fEjwjE2LLk7cfDV">
+    <param name="pattern">plan_content|plan_utils</param>
+    <param name="path">/workspaces/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1514" cache_read_input_tokens="44291" output_tokens="501" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1514, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T99jMK3fEjwjE2LLk7cfDV">
+Found 28 files
+src/erk/core/pr_context_provider.py
+src/erk/core/pr_duplicate_checker.py
+src/erk/core/pr_relevance_checker.py
+src/erk/core/services/pr_list_service.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/core/commit_message_generator.py
+src/erk/cli/commands/pr/create_cmd.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/implement.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/pr/check_cmd.py
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/implement_shared.py
+src/erk/tui/operations/workers.py
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+src/erk/cli/commands/exec/scripts/setup_impl.py
+src/erk/cli/commands/exec/scripts/impl_init.py
+src/erk/cli/commands/exec/scripts/validate_plan_content.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="45805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>## Reconciliation Findings for Objective #9318
+
+### Summary
+
+- **References audited:** 30 nodes
+- **Current (no action needed):** 4 (nodes 1.1-1.4, already marked done)
+- **Stale - should be marked done:** 9 (nodes 1.5, 1.6, 2.1-2.7)
+- **Current pending (work remains):** 17 (nodes 3.1-3.5, 4.1-4.5, 5.1-5.7)
+
+### Findings
+
+| Node | Description | Current Status | Finding |
+|------|------------|---------------|---------|
+| 1.5 | Rename PlanContext to PrContext | `in_progress` (PR #9340) | **DONE** — PR #9340 merged, `PrContext` exists in `pr_context_provider.py`, `PlanContext` gone |
+| 1.6 | Rename validate_plan_title() | `pending` | **DONE** — PR #9340 also renamed this, `validate_plan_title` gone from src, `validate_pr_title` exists |
+| 2.1 | Rename plan_store package to pr_store | `pending` | **DONE** — PR #9352 merged (Phase 2), `erk_shared/plan_store/` gone |
+| 2.2 | Rename plan_duplicate_checker.py | `pending` | **DONE** — `pr_duplicate_checker.py` exists, old file gone |
+| 2.3 | Rename plan_relevance_checker.py | `pending` | **DONE** — `pr_relevance_checker.py` exists, old file gone |
+| 2.4 | Rename plan_context_provider.py | `pending` | **DONE** — `pr_context_provider.py` exists, old file gone |
+| 2.5 | Rename plan_list_service.py | `pending` | **DONE** — `pr_list_service.py` exists in services/, old file gone |
+| 2.6 | Remove empty plan_store namespace | `pending` | **DONE** — Only `__pycache__/` remains (no .py files), can be cleaned up |
+| 2.7 | Rename plan_content.py and plan_utils.py | `pending` | **DONE** — Both files gone from filesystem |
+| 3.1 | Rename ctx.plan_store → ctx.pr_store | `pending` | CURRENT — `ctx.plan_store` still used in ~10 files, `ctx.pr_store` used in ~40 files (partial) |
+| 3.2-5.7 | Remaining phases | `pending` | CURRENT — All still pending (verified exec scripts, CLI flags, constants still use old names) |
+
+### Proposed Updates
+
+1. **[DONE] Node 1.5**: Mark as `done`, PR #9340
+2. **[DONE] Node 1.6**: Mark as `done`, PR #9340
+3. **[DONE] Node 2.1**: Mark as `done`, PR #9352
+4. **[DONE] Node 2.2**: Mark as `done`, PR #9352
+5. **[DONE] Node 2.3**: Mark as `done`, PR #9352
+6. **[DONE] Node 2.4**: Mark as `done`, PR #9352
+7. **[DONE] Node 2.5**: Mark as `done`, PR #9352
+8. **[DONE] Node 2.6**: Mark as `done`, PR #9352
+9. **[DONE] Node 2.7**: Mark as `done`, PR #9352</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="45805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1198}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Sv9LJwgD6Md7YbWXyPNEKs">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="45805" output_tokens="1601" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Sv9LJwgD6Md7YbWXyPNEKs">
+
+  </tool_result>
+</session>
