@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9330,
+  "sessions": [
+    {
+      "session_id": "f3602c15-9066-4093-97cf-cb91bac6ca06",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T08:33:43.784052+00:00",
+      "files": [
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part1.xml",
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part2.xml",
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part3.xml",
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part4.xml",
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part5.xml",
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part6.xml",
+        "impl-f3602c15-9066-4093-97cf-cb91bac6ca06-f3602c15-9066-4093-97cf-cb91bac6ca06-part7.xml"
+      ],
+      "user_turns": 20,
+      "duration_minutes": 68,
+      "raw_size_kb": 4108,
+      "xml_size_kb": 440,
+      "git_branch": "plnd/fix-script-output-content-03-21-0724"
+    }
+  ]
+}
