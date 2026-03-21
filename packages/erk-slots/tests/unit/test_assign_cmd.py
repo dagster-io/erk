@@ -5,7 +5,6 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
-from erk.core.slot_allocation import cleanup_worktree_artifacts
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_slots.common import cleanup_worktree_artifacts
