@@ -18,6 +18,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_learn_plan_pr,
     extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
+    extract_plan_header_node_ids,
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
@@ -27,6 +28,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     update_plan_header_learn_plan_completed,
     update_plan_header_learn_result,
     update_plan_header_learn_status,
+    update_plan_header_node_ids,
     update_plan_header_objective_issue,
     update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
@@ -106,11 +108,54 @@ def test_plan_header_schema_accepts_all_optional_fields() -> None:
         "last_dispatched_at": "2024-01-15T11:00:00Z",
         "source_repo": "owner/repo",
         "objective_issue": 42,
+        "node_ids": ["1.1", "1.2"],
         "created_from_session": "session-abc",
     }
 
     # Should not raise
     schema.validate(data)
+
+
+def test_plan_header_schema_accepts_node_ids_null() -> None:
+    """Schema accepts node_ids as null."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "node_ids": None,
+    }
+
+    # Should not raise
+    schema.validate(data)
+
+
+def test_plan_header_schema_rejects_node_ids_non_list() -> None:
+    """Schema rejects node_ids that is not a list."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "node_ids": "1.1",
+    }
+
+    with pytest.raises(ValueError, match="node_ids must be a list or null"):
+        schema.validate(data)
+
+
+def test_plan_header_schema_rejects_node_ids_non_string_items() -> None:
+    """Schema rejects node_ids with non-string items."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "node_ids": [1, 2],
+    }
+
+    with pytest.raises(ValueError, match="node_ids items must be strings"):
+        schema.validate(data)
 
 
 def test_plan_header_schema_rejects_missing_schema_version() -> None:
@@ -172,6 +217,7 @@ def test_create_plan_header_block_minimal() -> None:
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -209,6 +255,7 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=42,
+        node_ids=None,
         created_from_session="session-abc",
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -248,6 +295,7 @@ def test_create_plan_header_block_omits_none_values() -> None:
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -359,6 +407,7 @@ def test_render_and_extract_round_trip() -> None:
         last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=100,
+        node_ids=None,
         created_from_session="session-xyz",
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -450,6 +499,7 @@ def test_create_plan_header_block_with_learn_fields() -> None:
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session="learn-session-abc",
@@ -1010,6 +1060,7 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
         last_remote_impl_session_id="remote-session-abc",
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -1814,3 +1865,62 @@ def test_update_plan_header_objective_issue_raises_for_missing_block() -> None:
 
     with pytest.raises(ValueError, match="plan-header block not found"):
         update_plan_header_objective_issue(body, 9009)
+
+
+# === Node IDs Tests ===
+
+
+def test_extract_plan_header_node_ids_returns_tuple() -> None:
+    """extract_plan_header_node_ids returns tuple of node ID strings."""
+    body = format_plan_header_body_for_test(node_ids=["1.1", "1.2", "2.1"])
+
+    result = extract_plan_header_node_ids(body)
+
+    assert result == ("1.1", "1.2", "2.1")
+
+
+def test_extract_plan_header_node_ids_returns_none_when_absent() -> None:
+    """extract_plan_header_node_ids returns None when field is not set."""
+    body = format_plan_header_body_for_test()
+
+    result = extract_plan_header_node_ids(body)
+
+    assert result is None
+
+
+def test_extract_plan_header_node_ids_returns_none_for_missing_block() -> None:
+    """extract_plan_header_node_ids returns None when no plan-header block."""
+    result = extract_plan_header_node_ids("No plan-header here")
+
+    assert result is None
+
+
+def test_update_plan_header_node_ids_sets_new_value() -> None:
+    """update_plan_header_node_ids sets node_ids in existing plan-header."""
+    body = format_plan_header_body_for_test(objective_issue=100)
+
+    updated_body = update_plan_header_node_ids(body, ["1.1", "1.2"])
+
+    result = extract_plan_header_node_ids(updated_body)
+    assert result == ("1.1", "1.2")
+
+    # Other fields preserved
+    assert extract_plan_header_objective_issue(updated_body) == 100
+
+
+def test_update_plan_header_node_ids_overwrites_existing() -> None:
+    """update_plan_header_node_ids overwrites an existing value."""
+    body = format_plan_header_body_for_test(node_ids=["1.1"])
+
+    updated_body = update_plan_header_node_ids(body, ["2.1", "2.2"])
+
+    result = extract_plan_header_node_ids(updated_body)
+    assert result == ("2.1", "2.2")
+
+
+def test_update_plan_header_node_ids_raises_for_missing_block() -> None:
+    """update_plan_header_node_ids raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_node_ids(body, ["1.1"])

@@ -6,6 +6,7 @@ from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.schemas import (
     LAST_LOCAL_IMPL_AT,
     LEARN_PLAN_ISSUE,
+    NODE_IDS,
     OBJECTIVE_ISSUE,
     WORKTREE_NAME,
 )
@@ -255,3 +256,25 @@ class TestPrDetailsToPlan:
         plan = pr_details_to_plan(pr, plan_body=None)
 
         assert plan.body == "raw pr body"
+
+    def test_node_ids_parsed_from_plan_header(self) -> None:
+        """node_ids are parsed from plan-header metadata block."""
+        body = format_plan_header_body_for_test(
+            objective_issue=100,
+            node_ids=["1.1", "1.2"],
+        )
+        pr = _make_pr_details(body=body)
+
+        plan = pr_details_to_plan(pr, plan_body=None)
+
+        assert plan.node_ids == ("1.1", "1.2")
+        assert plan.header_fields.get(NODE_IDS) == ["1.1", "1.2"]
+
+    def test_node_ids_none_when_absent(self) -> None:
+        """node_ids is None when not in plan-header."""
+        body = format_plan_header_body_for_test()
+        pr = _make_pr_details(body=body)
+
+        plan = pr_details_to_plan(pr, plan_body=None)
+
+        assert plan.node_ids is None

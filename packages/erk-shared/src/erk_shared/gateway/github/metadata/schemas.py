@@ -352,6 +352,7 @@ PlanHeaderFieldName = Literal[
     "last_remote_impl_session_id",
     "source_repo",
     "objective_issue",
+    "node_ids",
     "created_from_session",
     "created_from_workflow_run_url",
     "last_learn_session",
@@ -392,6 +393,7 @@ LAST_REMOTE_IMPL_RUN_ID: Literal["last_remote_impl_run_id"] = "last_remote_impl_
 LAST_REMOTE_IMPL_SESSION_ID: Literal["last_remote_impl_session_id"] = "last_remote_impl_session_id"
 SOURCE_REPO: Literal["source_repo"] = "source_repo"
 OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
+NODE_IDS: Literal["node_ids"] = "node_ids"
 CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
 CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = (
     "created_from_workflow_run_url"
@@ -482,6 +484,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_remote_impl_session_id: Claude Code session ID for remote implementation (nullable)
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
+        node_ids: List of objective roadmap node IDs covered by this plan (nullable)
         created_from_session: Session ID that created this plan (nullable)
         created_from_workflow_run_url: Workflow run URL that created this plan (nullable)
         last_learn_session: Session ID that last invoked learn (nullable)
@@ -522,6 +525,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_REMOTE_IMPL_SESSION_ID,
             SOURCE_REPO,
             OBJECTIVE_ISSUE,
+            NODE_IDS,
             CREATED_FROM_SESSION,
             CREATED_FROM_WORKFLOW_RUN_URL,
             LAST_LEARN_SESSION,
@@ -675,6 +679,14 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("objective_issue must be an integer or null")
             if data[OBJECTIVE_ISSUE] <= 0:
                 raise ValueError("objective_issue must be positive when provided")
+
+        # Validate optional node_ids field
+        if NODE_IDS in data and data[NODE_IDS] is not None:
+            if not isinstance(data[NODE_IDS], list):
+                raise ValueError("node_ids must be a list or null")
+            for item in data[NODE_IDS]:
+                if not isinstance(item, str):
+                    raise ValueError("node_ids items must be strings")
 
         # Validate optional created_from_session field
         if CREATED_FROM_SESSION in data and data[CREATED_FROM_SESSION] is not None:

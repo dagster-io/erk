@@ -208,6 +208,7 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,

@@ -248,6 +248,8 @@ def objective_apply_landed_update(
 
     if node_ids:
         matched_steps = list(node_ids)
+    elif plan_result.node_ids:
+        matched_steps = list(plan_result.node_ids)
     else:
         matched_steps = [
             node["id"]

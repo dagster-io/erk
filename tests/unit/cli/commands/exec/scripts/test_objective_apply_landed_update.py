@@ -19,6 +19,7 @@ from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.fakes.gateway.time import FakeTime
 from tests.fakes.tests.shared_context import context_for_test
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 _TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
 
@@ -456,6 +457,67 @@ class TestApplyLandedUpdateAutoMatch:
 
         # Issue body was updated
         assert len(remote.updated_issue_bodies) == 1
+
+    def test_auto_matches_nodes_from_plan_metadata(self, tmp_path: Path) -> None:
+        """When plan-header has node_ids, they are used for auto-discovery even without pr refs."""
+        # Roadmap has NO pr refs set on nodes — but plan metadata has node_ids
+        objective = _make_issue(number=6423, title="My Objective", body=ROADMAP_BODY)
+
+        # Plan PR body with node_ids in plan-header metadata
+        plan_body = format_plan_header_body_for_test(
+            objective_issue=6423,
+            node_ids=["1.1", "1.2"],
+        )
+        pr = _make_pr_details(number=6517, title="Add auth system", body=plan_body)
+
+        comment = IssueComment(
+            body=OBJECTIVE_COMMENT_BODY,
+            url="https://github.com/owner/repo/issues/6423#issuecomment-55555",
+            id=55555,
+            author="testuser",
+        )
+        fake_issues = FakeGitHubIssues(
+            issues={6423: objective, 6517: _make_issue(number=6517, title="Plan", body=plan_body)},
+            comments_with_urls={6423: [comment]},
+        )
+        fake_github = FakeLocalGitHub(
+            issues_gateway=fake_issues,
+            pr_details={6517: pr},
+        )
+        remote = _make_remote(
+            {6423: objective},
+            comments_by_id={55555: OBJECTIVE_COMMENT_BODY},
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(
+            objective_apply_landed_update,
+            [
+                "--pr",
+                "6517",
+                "--objective",
+                "6423",
+                "--branch",
+                "plnd/some-branch",
+            ],
+            obj=context_for_test(
+                github=fake_github,
+                plan_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
+                remote_github=remote,
+                repo_root=tmp_path,
+                cwd=tmp_path,
+                repo_info=_TEST_REPO_INFO,
+            ),
+        )
+
+        assert result.exit_code == 0, result.output
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Both nodes 1.1 and 1.2 were matched via plan metadata node_ids
+        node_updates = data["node_updates"]
+        matched_ids = {u["node_id"] for u in node_updates}
+        assert matched_ids == {"1.1", "1.2"}
 
 
 class TestApplyLandedUpdateErrors:
