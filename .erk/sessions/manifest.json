@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9350,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T14:15:58.607901+00:00",
+      "files": [
+        "impl--7176d21b-1146-437f-b981-15f1f29ea437-part1.xml",
+        "impl--7176d21b-1146-437f-b981-15f1f29ea437-part2.xml",
+        "impl--7176d21b-1146-437f-b981-15f1f29ea437-part3.xml",
+        "impl--7176d21b-1146-437f-b981-15f1f29ea437-part4.xml",
+        "impl--7176d21b-1146-437f-b981-15f1f29ea437-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 1092,
+      "xml_size_kb": 88,
+      "git_branch": "plnd/prune-plan-header-fns-03-21-1006"
+    }
+  ]
+}
