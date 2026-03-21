@@ -513,7 +513,7 @@ def execute_stack_navigation(
     if delete_current and current_worktree_path is not None:
         main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
         slot_name = get_slot_name_for_worktree(repo.pool_json_path, current_worktree_path)
-        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config is not None else False
         is_current_root_wt = any(
             wt.is_root and wt.path == current_worktree_path for wt in worktrees
         )
