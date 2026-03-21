@@ -137,7 +137,7 @@ def test_create_with_json_and_plan_file() -> None:
         # Don't provide NAME - it's derived from plan filename
         result = runner.invoke(
             cli,
-            ["wt", "create", "--json", "--from-plan-file", str(plan_file)],
+            ["wt", "create", "--json", "--from-pr-file", str(plan_file)],
             obj=test_ctx,
         )
 
@@ -247,7 +247,7 @@ def test_create_with_stay_and_json() -> None:
 
 
 def test_create_with_stay_and_plan_file() -> None:
-    """Test that --stay works with --from-plan-file flag."""
+    """Test that --stay works with --from-pr-file flag."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
@@ -276,7 +276,7 @@ def test_create_with_stay_and_plan_file() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file), "--script", "--stay"],
+            ["wt", "create", "--from-pr-file", str(plan_file), "--script", "--stay"],
             obj=test_ctx,
         )
 

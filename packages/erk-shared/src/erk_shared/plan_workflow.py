@@ -20,7 +20,7 @@ _ERK_PR_TITLE_PREFIX = "[erk-pr] "
 _ERK_LEARN_TITLE_PREFIX = "[erk-learn] "
 
 
-def _has_plan_title_prefix(title: str) -> bool:
+def _has_pr_title_prefix(title: str) -> bool:
     """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
     return title.startswith(_ERK_PR_TITLE_PREFIX) or title.startswith(_ERK_LEARN_TITLE_PREFIX)
 
@@ -85,7 +85,7 @@ def prepare_plan_for_worktree(
         PlanBranchSetup on success, PlanValidationFailed on validation failure
     """
     # Validate plan title prefix
-    if not _has_plan_title_prefix(plan.title):
+    if not _has_pr_title_prefix(plan.title):
         return PlanValidationFailed(
             f"Plan #{plan.pr_identifier} does not have a valid plan title prefix"
             " ([erk-pr] or [erk-learn]).\n"

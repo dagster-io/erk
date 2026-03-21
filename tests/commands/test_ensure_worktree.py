@@ -469,7 +469,7 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
         import pytest
 
         with pytest.raises(UserFacingCliError):
-            ensure_worktree_for_branch(ctx, repo, "feature-name", is_plan_derived=False)
+            ensure_worktree_for_branch(ctx, repo, "feature-name", is_pr_derived=False)
 
 
 def test_ensure_worktree_returns_was_created_flag() -> None:
@@ -543,7 +543,7 @@ def test_ensure_worktree_detached_head_error_message() -> None:
         import pytest
 
         with pytest.raises(UserFacingCliError):
-            ensure_worktree_for_branch(ctx, repo, "feature-branch", is_plan_derived=False)
+            ensure_worktree_for_branch(ctx, repo, "feature-branch", is_pr_derived=False)
 
         # No worktrees should be created
         assert len(git_ops.added_worktrees) == 0

@@ -14,7 +14,7 @@ from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
-    has_plan_title_prefix,
+    has_pr_title_prefix,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
@@ -164,7 +164,7 @@ def _validate_planned_pr_for_dispatch(
         raise SystemExit(1)
 
     # Validate: must have [erk-pr] or [erk-learn] title prefix
-    if not has_plan_title_prefix(pr_result.title):
+    if not has_pr_title_prefix(pr_result.title):
         user_output(
             click.style("Error: ", fg="red")
             + f"PR #{pr_number} does not have a valid plan title prefix"
@@ -408,7 +408,7 @@ def _validate_planned_pr_for_dispatch_remote(
         user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
         raise SystemExit(1)
 
-    if not has_plan_title_prefix(issue.title):
+    if not has_pr_title_prefix(issue.title):
         user_output(
             click.style("Error: ", fg="red")
             + f"PR #{pr_number} does not have a valid plan title prefix"

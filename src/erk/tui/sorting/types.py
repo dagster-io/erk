@@ -10,7 +10,7 @@ from enum import Enum, auto
 class SortKey(Enum):
     """Available sort keys for plan list."""
 
-    PLAN_ID = auto()  # Default: sort by plan ID (descending)
+    PR_ID = auto()  # Default: sort by PR ID (descending)
     BRANCH_ACTIVITY = auto()  # Sort by most recent commit on branch
 
 
@@ -47,8 +47,8 @@ class SortState:
 
     @staticmethod
     def initial() -> SortState:
-        """Create initial state with default sort (by plan ID)."""
-        return SortState(key=SortKey.PLAN_ID)
+        """Create initial state with default sort (by PR ID)."""
+        return SortState(key=SortKey.PR_ID)
 
     def toggle(self) -> SortState:
         """Toggle between sort keys.
@@ -56,13 +56,13 @@ class SortState:
         Returns:
             New state with next sort key
         """
-        if self.key == SortKey.PLAN_ID:
+        if self.key == SortKey.PR_ID:
             return SortState(key=SortKey.BRANCH_ACTIVITY)
-        return SortState(key=SortKey.PLAN_ID)
+        return SortState(key=SortKey.PR_ID)
 
     @property
     def display_label(self) -> str:
         """Get display label for current sort mode."""
-        if self.key == SortKey.PLAN_ID:
-            return "by plan#"
+        if self.key == SortKey.PR_ID:
+            return "by pr#"
         return "by recent activity"

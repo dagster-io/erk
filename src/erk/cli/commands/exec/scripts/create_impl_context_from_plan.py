@@ -47,7 +47,7 @@ def create_impl_context_from_plan(
     Fetches plan content via ManagedPrBackend and creates .erk/impl-context/ folder structure
     with plan.md and ref.json metadata.
 
-    PLAN_ID: Plan identifier (e.g., GitHub issue number or PR number)
+    PR_ID: Plan identifier (e.g., GitHub issue number or PR number)
     """
     backend = require_plan_backend(ctx)
     repo_root = require_repo_root(ctx)

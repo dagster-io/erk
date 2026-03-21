@@ -312,11 +312,11 @@ Create a cmux workspace to open a PR.
 
 **Options:**
 
-| Flag       | Type    | Required | Default        | Description                                                                      |
-| ---------- | ------- | -------- | -------------- | -------------------------------------------------------------------------------- |
-| `--pr`     | INTEGER | Yes      | Sentinel.UNSET | PR number to open                                                                |
-| `--branch` | TEXT    | No       | -              | PR head branch name (auto-detected via gh if omitted)                            |
-| `--mode`   | CHOICE  | No       | 'checkout'     | checkout (lightweight) or teleport (heavyweight with sync via erk slot teleport) |
+| Flag       | Type    | Required | Default        | Description                                                |
+| ---------- | ------- | -------- | -------------- | ---------------------------------------------------------- |
+| `--pr`     | INTEGER | Yes      | Sentinel.UNSET | PR number to open                                          |
+| `--branch` | TEXT    | No       | -              | PR head branch name (auto-detected via gh if omitted)      |
+| `--mode`   | CHOICE  | No       | 'checkout'     | checkout (lightweight) or teleport (heavyweight with sync) |
 
 ### create-impl-context-from-plan
 

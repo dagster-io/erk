@@ -140,7 +140,7 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
         assert result.exit_code == 1
         assert "Error" in result.output
         assert "No identifier specified and could not infer from branch name" in result.output
-        assert "plan reference file" in result.output
+        assert "PR reference file" in result.output
 
 
 def test_view_plan_with_full_flag() -> None:
@@ -175,7 +175,7 @@ def test_view_plan_with_full_flag() -> None:
         assert "Test Issue" in result.output
         # Body SHOULD be displayed with --full
         assert "This is a test issue description" in result.output
-        assert "─── Plan ───" in result.output
+        assert "─── PR Body ───" in result.output
 
 
 def test_view_plan_with_short_full_flag() -> None:

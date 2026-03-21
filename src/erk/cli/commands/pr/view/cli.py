@@ -1,4 +1,4 @@
-"""Command to fetch and display a single plan.
+"""Command to fetch and display a single PR.
 
 Human-facing command with Click options and rich terminal output.
 Machine-readable JSON equivalent lives in pr/view/json_cli.py.
@@ -180,8 +180,8 @@ def _format_header_section(header_info: dict[str, object], *, pr_url: str | None
     return lines
 
 
-def _display_plan(result: PrViewResult) -> None:
-    """Display plan details with consistent formatting."""
+def _display_pr(result: PrViewResult) -> None:
+    """Display PR details with consistent formatting."""
     user_output("")
     user_output(_format_field("Title", click.style(result.title, bold=True)))
 
@@ -221,13 +221,13 @@ def _display_plan(result: PrViewResult) -> None:
 
     if result.body:
         user_output("")
-        user_output(click.style("\u2500\u2500\u2500 Plan \u2500\u2500\u2500", bold=True))
+        user_output(click.style("\u2500\u2500\u2500 PR Body \u2500\u2500\u2500", bold=True))
         user_output(result.body)
 
 
 @click.command("view")
 @click.argument("identifier", type=str, required=False, default=None)
-@click.option("--full", "-f", is_flag=True, help="Show full plan body")
+@click.option("--full", "-f", is_flag=True, help="Show full PR body")
 @resolved_repo_option
 @click.pass_obj
 def pr_view(
@@ -237,15 +237,15 @@ def pr_view(
     full: bool,
     repo_id: GitHubRepoId,
 ) -> None:
-    """Fetch and display a plan by identifier.
+    """Fetch and display a PR by identifier.
 
     IDENTIFIER can be a plain number (e.g., "42") or a GitHub issue URL
     (e.g., "https://github.com/owner/repo/issues/123").
 
-    If not provided, infers the plan number from the current branch name.
+    If not provided, infers the PR number from the current branch name.
 
     By default, shows only header information. Use --full to display
-    the complete plan body.
+    the complete PR body.
 
     Examples:
         erk pr view 42
@@ -259,7 +259,7 @@ def pr_view(
         user_output(click.style("Error: ", fg="red") + result.message)
         if result.error_type == "missing_identifier":
             user_output("Usage: erk pr view <identifier>")
-            user_output("Or run from a plan branch with a plan reference file")
+            user_output("Or run from a PR branch with a PR reference file")
         raise SystemExit(1)
 
-    _display_plan(result)
+    _display_pr(result)

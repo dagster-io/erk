@@ -171,7 +171,7 @@ When the API key is missing or the LLM call fails, the dispatch code falls back 
 | `src/erk/cli/commands/one_shot_dispatch.py`                   | `dispatch_one_shot()`, `generate_branch_name()`, `OneShotDispatchParams`, `OneShotDispatchResult` |
 | `src/erk/cli/commands/objective/plan_cmd.py`                  | `_handle_one_shot()`, `_find_node_in_phases()`                                                    |
 | `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` | Best-effort registration of metadata, comment, closing ref                                        |
-| `src/erk/cli/commands/pr/metadata_helpers.py`                 | `write_dispatch_metadata()`, `maybe_update_plan_dispatch_metadata()`                              |
+| `src/erk/cli/commands/pr/metadata_helpers.py`                 | `write_dispatch_metadata()`, `maybe_update_pr_dispatch_metadata()`                                |
 | `.github/workflows/one-shot.yml`                              | Two-job pipeline (plan + implement)                                                               |
 | `.claude/commands/erk/system/one-shot-plan.md`                | Claude planning command with skeleton update logic                                                |
 
