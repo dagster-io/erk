@@ -14,8 +14,8 @@ from erk.cli.activation import (
 from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk.core.slot_allocation import allocate_slot_for_branch
 from erk_shared.output.output import user_output
+from erk_slots.common import allocate_slot_for_branch
 
 logger = logging.getLogger(__name__)
 
