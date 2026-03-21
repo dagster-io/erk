@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "pr_number": 9355,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T15:00:27.409224+00:00",
+      "files": [
+        "impl--2ef367c8-2cf2-44c7-9804-9eede70704ff-part1.xml",
+        "impl--2ef367c8-2cf2-44c7-9804-9eede70704ff-part2.xml",
+        "impl--2ef367c8-2cf2-44c7-9804-9eede70704ff-part3.xml",
+        "impl--2ef367c8-2cf2-44c7-9804-9eede70704ff-part4.xml",
+        "impl--2ef367c8-2cf2-44c7-9804-9eede70704ff-part5.xml",
+        "impl--2ef367c8-2cf2-44c7-9804-9eede70704ff-part6.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 11,
+      "raw_size_kb": 1257,
+      "xml_size_kb": 170,
+      "git_branch": "plnd/O9272-move-teleport-to-slo-03-21-1446"
+    }
+  ]
+}
