@@ -1,0 +1,1311 @@
+<session>
+  <meta branch="plnd/reopen-contested-threads-03-21-1520" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9361&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9361` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start implementing plan #9361. Let me set up the implementation environment first.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11377" cache_read_input_tokens="17494" cache_creation="{'ephemeral_5m_input_tokens': 11377, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KSnCdS8B7ahEtsyR87X7aa">
+    <param name="command">erk exec setup-impl --issue 9361 2&gt;&amp;1</param>
+    <param name="description">Set up implementation for plan #9361</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11377" cache_read_input_tokens="17494" cache_creation="{'ephemeral_5m_input_tokens': 11377, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KSnCdS8B7ahEtsyR87X7aa">
+Already on PR branch 'plnd/reopen-contested-threads-03-21-1520', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--reopen-contested-threads-03-21-1520", "pr_number": 9361, "pr_url": "https://github.com/dagster-io/erk/pull/9361", "branch": "plnd/reopen-contested-threads-03-21-1520", "pr_title": "[erk-pr] Reopen Contested Resolved Threads (Push-Down Replan)", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9361, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="28871" cache_creation="{'ephemeral_5m_input_tokens': 337, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wp8bjEJYAu8tBKQtqbdp9g">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--reopen-contested-threads-03-21-1520/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="28871" cache_creation="{'ephemeral_5m_input_tokens': 337, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wp8bjEJYAu8tBKQtqbdp9g">
+     1→# Reopen Contested Resolved Threads (Push-Down Replan)
+     2→
+     3→&gt; **Replans:** #9262
+     4→
+     5→## Context
+     6→
+     7→When `erk:pr-address` resolves a PR review thread, it adds a reply with attribution text and resolves the thread. If a reviewer pushes back (adds comments after resolution), the thread stays resolved and subsequent pr-address runs never see it (resolved threads are filtered out by default).
+     8→
+     9→This plan adds detection and reopening of "contested" threads — resolved threads with unaddressed reviewer comments after the last pr-address attribution marker.
+    10→
+    11→**What changed since original plan:** The `refac-cli-push-down` pattern now formalizes the approach of moving mechanical computation from prompts into tested CLI commands. The original plan already created an exec script (good), but the pr-address.md changes can be made even more minimal — just call the command and let JSON output drive behavior.
+    12→
+    13→## Investigation Findings
+    14→
+    15→### Current State (master)
+    16→- 0% of #9262 is implemented on master
+    17→- `resolve_review_thread` ABC at `abc.py:679`, real at `real.py:2122`
+    18→- `RESOLVE_REVIEW_THREAD_MUTATION` at `graphql_queries.py:53`
+    19→- `_format_resolution_comment` at `resolve_review_thread.py:64` — no marker yet
+    20→- pr-address.md has Phases 0-6, no Phase 0.5
+    21→
+    22→### Corrections to Original Plan
+    23→- Line numbers shifted slightly due to recent master commits
+    24→- `resolve_review_thread` is at abc.py:679 (not 671), real.py:2122 (not 2086)
+    25→
+    26→## Implementation Steps
+    27→
+    28→### Step 1: Add GraphQL mutation
+    29→
+    30→**File:** `packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py`
+
+... [137 lines omitted] ...
+
+    61→- Constructor param: `unresolve_thread_failures: set[str] | None = None`
+    63→- Method: check failures, track in `_unresolved_thread_ids`, return `True`
+   153→- API failure during unresolve captured per-thread
+  </tool_result>
+  <assistant>Now let me signal GitHub that implementation has started and create todo entries.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2701" cache_read_input_tokens="29208" cache_creation="{'ephemeral_5m_input_tokens': 2701, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TLF7LazUz8HFmdJ7iE4QSP">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2701" cache_read_input_tokens="29208" cache_creation="{'ephemeral_5m_input_tokens': 2701, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TLF7LazUz8HFmdJ7iE4QSP">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01LLm97r37hxYnakVmdDiEVY">
+    <param name="todos">[{'content': 'Step 1: Add UNRESOLVE_REVIEW_THREAD_MUTATION GraphQL mutation', 'activeForm'...[truncated 1133 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="31909" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LLm97r37hxYnakVmdDiEVY">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me read the relevant files before making changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="32095" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R5gQmYhsP1MjRBStu9XvsC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="32095" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015f9nZ8AuDNRoFGnyJv4DhP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">30</param>
+    <param name="offset">670</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="32095" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R5gQmYhsP1MjRBStu9XvsC">
+     1→"""GraphQL queries and mutations for GitHub API.
+     2→
+     3→These are stored in a separate file to keep the implementation code clean
+     4→and make the queries easier to read and maintain.
+     5→"""
+     6→
+     7→# Query to fetch PR review threads with comments
+     8→GET_PR_REVIEW_THREADS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
+     9→  repository(owner: $owner, name: $repo) {
+    10→    pullRequest(number: $number) {
+    11→      reviewThreads(first: 100) {
+    12→        nodes {
+    13→          id
+    14→          isResolved
+    15→          isOutdated
+    16→          path
+    17→          line
+    18→          comments(first: 20) {
+    19→            nodes {
+    20→              databaseId
+    21→              body
+    22→              author { login }
+    23→              path
+    24→              line: originalLine
+    25→              createdAt
+    26→            }
+    27→          }
+    28→        }
+    29→      }
+    30→    }
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015f9nZ8AuDNRoFGnyJv4DhP">
+   670→            repo_root: Repository root directory
+   671→            pr_number: PR number to query
+   672→
+   673→        Returns:
+   674→            List of PRCheckRun for failing checks, sorted by name
+   675→        """
+   676→        ...
+   677→
+   678→    @abstractmethod
+   679→    def resolve_review_thread(
+   680→        self,
+   681→        repo_root: Path,
+   682→        thread_id: str,
+   683→    ) -&gt; bool:
+   684→        """Resolve a PR review thread.
+   685→
+   686→        Args:
+   687→            repo_root: Repository root (for owner/repo context)
+   688→            thread_id: GraphQL node ID of the thread
+   689→
+   690→        Returns:
+   691→            True if resolved successfully
+   692→        """
+   693→        ...
+   694→
+   695→    @abstractmethod
+   696→    def add_review_thread_reply(
+   697→        self,
+   698→        repo_root: Path,
+   699→        thread_id: str,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Dxzm6a9UmsKLG3rvDS2oKH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="limit">60</param>
+    <param name="offset">2110</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1571" cache_read_input_tokens="32579" cache_creation="{'ephemeral_5m_input_tokens': 1571, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013Zo2NWzdB7uWGyGfShy8ms">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1571" cache_read_input_tokens="32579" cache_creation="{'ephemeral_5m_input_tokens': 1571, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dxzm6a9UmsKLG3rvDS2oKH">
+  2110→                    checks.append(
+  2111→                        PRCheckRun(
+  2112→                            name=node.get("context", ""),
+  2113→                            status="completed" if is_terminal else "pending",
+  2114→                            conclusion=state.lower() if is_terminal else None,
+  2115→                            detail_url=node.get("targetUrl"),
+  2116→                        )
+  2117→                    )
+  2118→
+  2119→        checks.sort(key=lambda c: c.name)
+  2120→        return checks
+  2121→
+  2122→    def resolve_review_thread(
+  2123→        self,
+  2124→        repo_root: Path,
+  2125→        thread_id: str,
+  2126→    ) -&gt; bool:
+  2127→        """Resolve a PR review thread via GraphQL mutation.
+  2128→
+  2129→        Args:
+  2130→            repo_root: Repository root (for gh CLI context)
+  2131→            thread_id: GraphQL node ID of the thread
+  2132→
+  2133→        Returns:
+  2134→            True if resolved successfully
+  2135→        """
+  2136→        # GH-API-AUDIT: GraphQL - resolveReviewThread mutation
+  2137→        # WHY GRAPHQL: No REST endpoint exists for resolving review threads
+  2138→        cmd = [
+  2139→            "gh",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013Zo2NWzdB7uWGyGfShy8ms">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→from typing import Any
+     5→
+     6→from erk_shared.gateway.github.abc import LocalGitHub
+     7→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     8→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeResult,
+    15→    PRCheckRun,
+    16→    PRDetails,
+    17→    PRListState,
+    18→    PRNotFound,
+    19→    PRReview,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→
+    26→class DryRunLocalGitHub(LocalGitHub):
+    27→    """No-op wrapper for GitHub operations.
+    28→
+    29→    Read operations are delegated to the wrapped implementation.
+    30→    Write operations return without executing (no-op behavior).
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LDLo83mtxa836TzTb96rLD">
+    <param name="pattern">resolve_review_thread</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1517" cache_read_input_tokens="34150" cache_creation="{'ephemeral_5m_input_tokens': 1517, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ya5yAmTEtzSNtAAQTZ4DLz">
+    <param name="pattern">resolve_review_thread</param>
+    <param name="path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1517" cache_read_input_tokens="34150" cache_creation="{'ephemeral_5m_input_tokens': 1517, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LDLo83mtxa836TzTb96rLD">
+299:    def resolve_review_thread(
+  </tool_result>
+  <tool_result tool="toolu_01Ya5yAmTEtzSNtAAQTZ4DLz">
+995:    def resolve_review_thread(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01K87R4Fd9Gd68BJ73iJstjs">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="limit">20</param>
+    <param name="offset">290</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="35667" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019nD9eWb32BFVmKPvhhEd5G">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="limit">60</param>
+    <param name="offset">980</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="35667" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K87R4Fd9Gd68BJ73iJstjs">
+   290→
+   291→    def get_pr_check_runs(
+   292→        self,
+   293→        repo_root: Path,
+   294→        pr_number: int,
+   295→    ) -&gt; list[PRCheckRun]:
+   296→        """Delegate read operation to wrapped implementation."""
+   297→        return self._wrapped.get_pr_check_runs(repo_root, pr_number)
+   298→
+   299→    def resolve_review_thread(
+   300→        self,
+   301→        repo_root: Path,
+   302→        thread_id: str,
+   303→    ) -&gt; bool:
+   304→        """No-op for resolving review thread in dry-run mode.
+   305→
+   306→        Returns True to indicate success without actually resolving.
+   307→        """
+   308→        return True
+   309→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_019nD9eWb32BFVmKPvhhEd5G">
+   980→        self,
+   981→        repo_root: Path,
+   982→        pr_number: int,
+   983→    ) -&gt; list[PRReview]:
+   984→        """Get PR-level reviews for a PR from pre-configured data."""
+   985→        return self._pr_reviews.get(pr_number, [])
+   986→
+   987→    def get_pr_check_runs(
+   988→        self,
+   989→        repo_root: Path,
+   990→        pr_number: int,
+   991→    ) -&gt; list[PRCheckRun]:
+   992→        """Get failing check runs for a PR from pre-configured data."""
+   993→        return self._pr_check_runs.get(pr_number, [])
+   994→
+   995→    def resolve_review_thread(
+   996→        self,
+   997→        repo_root: Path,
+   998→        thread_id: str,
+   999→    ) -&gt; bool:
+  1000→        """Record thread resolution in mutation tracking set.
+  1001→
+  1002→        Returns False if thread_id is in resolve_thread_failures set.
+  1003→        Otherwise returns True to simulate successful resolution.
+  1004→        """
+  1005→        if thread_id in self._resolve_thread_failures:
+  1006→            return False
+  1007→        self._resolved_thread_ids.add(thread_id)
+  1008→        return True
+  1009→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the fake's constructor to understand the init pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1389" cache_read_input_tokens="36314" cache_creation="{'ephemeral_5m_input_tokens': 1389, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013QvufdoLE6GxFC3KyyvcCA">
+    <param name="pattern">resolve_thread_failures|_resolved_thread_ids</param>
+    <param name="path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1389" cache_read_input_tokens="36314" cache_creation="{'ephemeral_5m_input_tokens': 1389, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WtrCNSoM6L7dJRMTNHKTRY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/resolve_review_thread.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1389" cache_read_input_tokens="36314" cache_creation="{'ephemeral_5m_input_tokens': 1389, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WtrCNSoM6L7dJRMTNHKTRY">
+     1→"""Resolve a PR review thread via GraphQL mutation.
+     2→
+     3→This exec command resolves a single PR review thread and outputs
+     4→JSON with the result. Optionally adds a reply comment before resolving.
+     5→
+     6→Usage:
+     7→    erk exec resolve-review-thread --thread-id "PRRT_xxxx"
+     8→    erk exec resolve-review-thread --thread-id "PRRT_xxxx" --comment "Resolved via ..."
+     9→
+    10→Output:
+    11→    JSON with success status
+    12→
+    13→Exit Codes:
+    14→    0: Always (even on error, to support || true pattern)
+    15→    1: Context not initialized
+    16→
+    17→Examples:
+    18→    $ erk exec resolve-review-thread --thread-id "PRRT_abc123"
+    19→    {"success": true, "thread_id": "PRRT_abc123"}
+    20→
+    21→    $ erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed"
+    22→    {"success": true, "thread_id": "PRRT_abc123", "comment_added": true}
+    23→
+    24→    $ erk exec resolve-review-thread --thread-id "invalid"
+    25→    {"success": false, "error_type": "resolution_failed", "message": "..."}
+    26→"""
+    27→
+    28→from __future__ import annotations
+    29→
+    30→import json
+
+... [168 lines omitted] ...
+
+    56→class ResolveThreadError:
+    57→    """Error response for thread resolution."""
+    60→    error_type: str
+    77→def _ensure_not_error(result: T | ResolveThreadError) -&gt; T:
+    78→    """Ensure result is not an error, otherwise output JSON and exit.
+    80→    Provides type narrowing: takes `T | ResolveThreadError` and returns `T`.
+    83→        result: Value that may be a ResolveThreadError
+    86→        The value unchanged if not an error (with narrowed type T)
+    89→        SystemExit: If result is ResolveThreadError (with exit code 0)
+    91→    if isinstance(result, ResolveThreadError):
+   102→) -&gt; bool | ResolveThreadError:
+   106→        True/False for comment_added status, or ResolveThreadError on failure
+   114→    except RuntimeError as e:
+   115→        return ResolveThreadError(
+   117→            error_type="comment-failed",
+   118→            message=f"Failed to add comment: {e}",
+   127→) -&gt; ResolveThreadSuccess | ResolveThreadError:
+   140→        ResolveThreadSuccess if thread was resolved, ResolveThreadError on failure
+   144→    if isinstance(comment_result, ResolveThreadError):
+   150→    except RuntimeError as e:
+   151→        return ResolveThreadError(
+   153→            error_type="github-api-failed",
+   164→        return ResolveThreadError(
+   166→            error_type="resolution-failed",
+   167→            message=f"Failed to resolve thread {thread_id}",
+  </tool_result>
+  <tool_result tool="toolu_013QvufdoLE6GxFC3KyyvcCA">
+74:        resolve_thread_failures: set[str] | None = None,
+120:            resolve_thread_failures: Set of thread IDs that should fail when resolved
+165:        self._resolve_thread_failures = resolve_thread_failures or set()
+187:        self._resolved_thread_ids: set[str] = set()
+960:            is_resolved = t.is_resolved or t.id in self._resolved_thread_ids
+1002:        Returns False if thread_id is in resolve_thread_failures set.
+1005:        if thread_id in self._resolve_thread_failures:
+1007:        self._resolved_thread_ids.add(thread_id)
+1013:        return self._resolved_thread_ids
+  </tool_result>
+  <assistant>Now let me read the get_pr_feedback.py for the PR detection pattern, and the group.py for the registration pattern:</assistant>
+  <usage input_tokens="2359" cache_creation_input_tokens="731" cache_read_input_tokens="37703" cache_creation="{'ephemeral_5m_input_tokens': 731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KXN48XAaHGWLvAkNEwWxBx">
+    <param name="command">ls /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ | sort</param>
+    <param name="description">List exec scripts</param>
+  </tool_use>
+  <usage input_tokens="2359" cache_creation_input_tokens="731" cache_read_input_tokens="37703" cache_creation="{'ephemeral_5m_input_tokens': 731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Dh7iyYeq7kuNv8nYUkFWSg">
+    <param name="pattern">register_one_shot_plan|reply_to_discussion|register_reopen|reopen_contested</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="2359" cache_creation_input_tokens="731" cache_read_input_tokens="37703" cache_creation="{'ephemeral_5m_input_tokens': 731, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KXN48XAaHGWLvAkNEwWxBx">
+AGENTS.md
+CLAUDE.md
+__init__.py
+__pycache__
+add_objective_node.py
+add_plan_label.py
+add_plan_labels.py
+add_pr_labels_cmd.py
+add_remote_execution_note.py
+capture_session_info.py
+ci_fetch_summaries.py
+ci_generate_summaries.py
+ci_update_pr_body.py
+ci_verify_autofix.py
+classify_pr_feedback.py
+cleanup_impl_context.py
+close_pr.py
+close_prs.py
+cmux_checkout_workspace.py
+create_impl_context_from_plan.py
+create_pr_from_session.py
+dash_data.py
+detect_plan_from_branch.py
+detect_trunk_branch.py
+discover_reviews.py
+download_remote_session.py
+exit_plan_mode_hook.py
+extract_latest_plan.py
+fetch_sessions.py
+generate_pr_address_summary.py
+
+... [67 lines omitted] ...
+
+summarize_impl_failure.py
+  </tool_result>
+  <tool_result tool="toolu_01Dh7iyYeq7kuNv8nYUkFWSg">
+134:from erk.cli.commands.exec.scripts.register_one_shot_plan import (
+135:    register_one_shot_plan,
+137:from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
+138:    reply_to_discussion_comment,
+260:exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
+265:exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QCZfWjinjc6Cgx6vQU3FVh">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="limit">30</param>
+    <param name="offset">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3919" cache_read_input_tokens="38434" cache_creation="{'ephemeral_5m_input_tokens': 3919, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FjFnG6Wgho7ePey1PhZZWy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/group.py</param>
+    <param name="limit">20</param>
+    <param name="offset">255</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3919" cache_read_input_tokens="38434" cache_creation="{'ephemeral_5m_input_tokens': 3919, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QCZfWjinjc6Cgx6vQU3FVh">
+   130→from erk.cli.commands.exec.scripts.quick_submit import quick_submit
+   131→from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
+   132→    rebase_with_conflict_resolution,
+   133→)
+   134→from erk.cli.commands.exec.scripts.register_one_shot_plan import (
+   135→    register_one_shot_plan,
+   136→)
+   137→from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
+   138→    reply_to_discussion_comment,
+   139→)
+   140→from erk.cli.commands.exec.scripts.resolve_objective_ref import (
+   141→    resolve_objective_ref,
+   142→)
+   143→from erk.cli.commands.exec.scripts.resolve_review_thread import (
+   144→    resolve_review_thread,
+   145→)
+   146→from erk.cli.commands.exec.scripts.resolve_review_threads import (
+   147→    resolve_review_threads,
+   148→)
+   149→from erk.cli.commands.exec.scripts.run_review import run_review
+   150→from erk.cli.commands.exec.scripts.session_id_injector_hook import (
+   151→    session_id_injector_hook,
+   152→)
+   153→from erk.cli.commands.exec.scripts.set_local_review_marker import (
+   154→    set_local_review_marker,
+   155→)
+   156→from erk.cli.commands.exec.scripts.set_pr_description import set_pr_description
+   157→from erk.cli.commands.exec.scripts.setup_impl import setup_impl
+   158→from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
+   159→    setup_impl_from_pr,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FjFnG6Wgho7ePey1PhZZWy">
+   255→exec_group.add_command(preprocess_session, name="preprocess-session")
+   256→exec_group.add_command(push_and_create_pr, name="push-and-create-pr")
+   257→exec_group.add_command(push_session, name="push-session")
+   258→exec_group.add_command(quick_submit, name="quick-submit")
+   259→exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
+   260→exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
+   261→exec_group.add_command(resolve_objective_ref, name="resolve-objective-ref")
+   262→exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
+   263→exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
+   264→exec_group.add_command(run_review, name="run-review")
+   265→exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
+   266→exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
+   267→exec_group.add_command(set_local_review_marker, name="set-local-review-marker")
+   268→exec_group.add_command(set_pr_description, name="set-pr-description")
+   269→exec_group.add_command(setup_impl, name="setup-impl")
+   270→exec_group.add_command(setup_impl_from_pr, name="setup-impl-from-pr")
+   271→exec_group.add_command(store_tripwire_candidates, name="store-tripwire-candidates")
+   272→exec_group.add_command(summarize_impl_failure, name="summarize-impl-failure")
+   273→exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
+   274→exec_group.add_command(track_learn_result, name="track-learn-result")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me read get_pr_feedback.py for the PR detection pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1436" cache_read_input_tokens="42353" cache_creation="{'ephemeral_5m_input_tokens': 1436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UXy4XRo8ukqUd6qeQxUwMk">
+    <param name="pattern">pr_for_branch|current_branch|--pr</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1436" cache_read_input_tokens="42353" cache_creation="{'ephemeral_5m_input_tokens': 1436, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UXy4XRo8ukqUd6qeQxUwMk">
+5-
+6-Usage:
+7-    erk exec get-pr-feedback
+8:    erk exec get-pr-feedback --pr 123
+9-    erk exec get-pr-feedback --include-resolved
+10-
+11-Output:
+--
+26-
+27-from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+28-from erk_shared.context.helpers import (
+29:    get_current_branch,
+30-    require_github,
+31-    require_issues,
+32-    require_repo_root,
+--
+116-
+117-
+118-@click.command(name="get-pr-feedback")
+119:@click.option("--pr", type=int, default=None, help="PR number (defaults to current branch's PR)")
+120-@click.option("--include-resolved", is_flag=True, help="Include resolved review threads")
+121-@click.pass_context
+122-@handle_non_ideal_exit
+--
+126-    Combines review threads (GraphQL) and discussion comments (REST) into
+127-    one JSON response. Fetches both in parallel after a single PR lookup.
+128-
+129:    If --pr is not specified, finds the PR for the current branch.
+130-    """
+131-    repo_root = require_repo_root(ctx)
+
+... [13 lines omitted] ...
+
+138-        if isinstance(branch, BranchDetectionFailed):
+140-        assert not isinstance(branch, BranchDetectionFailed)  # Type narrowing after NoReturn
+  </tool_result>
+  <tool_use name="Read" id="toolu_014YWrUW1PjYeWB3hfwANevU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_feedback.py</param>
+    <param name="limit">60</param>
+    <param name="offset">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1004" cache_read_input_tokens="43789" cache_creation="{'ephemeral_5m_input_tokens': 1004, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014YWrUW1PjYeWB3hfwANevU">
+    25→import click
+    26→
+    27→from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+    28→from erk_shared.context.helpers import (
+    29→    get_current_branch,
+    30→    require_github,
+    31→    require_issues,
+    32→    require_repo_root,
+    33→)
+    34→from erk_shared.gateway.github.checks import GitHubChecks
+    35→from erk_shared.gateway.github.issues.types import IssueComment
+    36→from erk_shared.gateway.github.types import PRReview, PRReviewThread
+    37→from erk_shared.non_ideal_state import BranchDetectionFailed
+    38→
+    39→# --- JSON output types ---
+    40→
+    41→
+    42→class ReviewCommentDict(TypedDict):
+    43→    author: str
+    44→    body: str
+    45→    created_at: str
+    46→
+    47→
+    48→class ReviewThreadDict(TypedDict):
+    49→    id: str
+    50→    path: str
+    51→    line: int | None
+    52→    is_outdated: bool
+    53→    comments: list[ReviewCommentDict]
+    54→
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me look at PRReviewThread to understand the data structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="809" cache_read_input_tokens="44793" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01C7zr17qK4YNc3KfAQbWQN1">
+    <param name="pattern">class PRReviewThread|class PRReviewComment</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="809" cache_read_input_tokens="44793" cache_creation="{'ephemeral_5m_input_tokens': 809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C7zr17qK4YNc3KfAQbWQN1">
+67-    """
+68-
+69-    id: str
+70-    author: str
+71-    body: str
+72-    state: PRReviewState
+73-    submitted_at: str
+74-
+75-
+76-@dataclass(frozen=True)
+77:class PRReviewComment:
+78-    """A single comment within a PR review thread."""
+79-
+80-    id: int
+81-    body: str
+82-    author: str
+83-    path: str
+84-    line: int | None
+85-    created_at: str  # ISO format string
+86-
+87-
+88-@dataclass(frozen=True)
+89:class PRReviewThread:
+90-    """A review thread on a PR.
+91-
+92-    Attributes:
+93-        id: GraphQL node ID (needed for resolution mutation)
+94-        path: File path the thread is on
+95-        line: Line number in the file (None for file-level comments)
+96-        is_resolved: Whether the thread has been resolved
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AjZNsmm1v7ZzSr7UsUZctN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="limit">20</param>
+    <param name="offset">88</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="45602" cache_creation="{'ephemeral_5m_input_tokens': 788, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AjZNsmm1v7ZzSr7UsUZctN">
+    88→@dataclass(frozen=True)
+    89→class PRReviewThread:
+    90→    """A review thread on a PR.
+    91→
+    92→    Attributes:
+    93→        id: GraphQL node ID (needed for resolution mutation)
+    94→        path: File path the thread is on
+    95→        line: Line number in the file (None for file-level comments)
+    96→        is_resolved: Whether the thread has been resolved
+    97→        is_outdated: Whether the thread is outdated (code changed)
+    98→        comments: Tuple of comments in this thread
+    99→    """
+   100→
+   101→    id: str  # GraphQL node ID (needed for resolution mutation)
+   102→    path: str
+   103→    line: int | None
+   104→    is_resolved: bool
+   105→    is_outdated: bool
+   106→    comments: tuple[PRReviewComment, ...]
+   107→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I have all the information I need. Let me also check what fake's constructor looks like around resolve_thread_failures:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1234" cache_read_input_tokens="45602" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0124jtz6xCPbUoE4Xh2BkBgA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="limit">130</param>
+    <param name="offset">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1234" cache_read_input_tokens="45602" cache_creation="{'ephemeral_5m_input_tokens': 1234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0124jtz6xCPbUoE4Xh2BkBgA">
+    60→        auth_hostname: str | None = "github.com",
+    61→        issues_gateway: GitHubIssues | None = None,
+    62→        issues_data: list[IssueInfo] | None = None,
+    63→        pr_titles: dict[int, str] | None = None,
+    64→        pr_bodies_by_number: dict[int, str] | None = None,
+    65→        pr_diffs: dict[int, str] | None = None,
+    66→        pr_changed_files: dict[int, list[str]] | None = None,
+    67→        merge_should_succeed: bool = True,
+    68→        pr_update_should_succeed: bool = True,
+    69→        pr_base_update_should_apply: bool = True,
+    70→        pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
+    71→        pr_reviews: dict[int, list[PRReview]] | None = None,
+    72→        pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
+    73→        review_threads_rate_limited: bool = False,
+    74→        resolve_thread_failures: set[str] | None = None,
+    75→        pr_diff_error: str | None = None,
+    76→        workflow_runs_error: str | None = None,
+    77→        artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
+    78→        plan_pr_details: (
+    79→            tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
+    80→        ) = None,
+    81→        ci_summary_logs: dict[str, str] | None = None,
+    82→        comments_by_id: dict[int, str] | None = None,
+    83→        time: Time | None = None,
+    84→        add_label_errors: dict[str, str] | None = None,
+    85→        pr_head_branches: dict[int, str] | None = None,
+    86→    ) -&gt; None:
+    87→        """Create FakeLocalGitHub with pre-configured state.
+    88→
+    89→        Args:
+
+... [105 lines omitted] ...
+
+   119→                RuntimeError simulating GraphQL rate limit
+   120→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   121→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   122→                Use to simulate HTTP 406 "diff too large" errors.
+   123→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   124→                RuntimeError with this message. Use to simulate API failures.
+   128→                False or raise to simulate failure.
+   165→        self._resolve_thread_failures = resolve_thread_failures or set()
+   166→        self._pr_diff_error = pr_diff_error
+   167→        self._workflow_runs_error = workflow_runs_error
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3207" cache_read_input_tokens="46836" cache_creation="{'ephemeral_5m_input_tokens': 3207, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01DqMn8KWDerP7CFiQzRidqc">
+    <param name="todos">[{'content': 'Step 1: Add UNRESOLVE_REVIEW_THREAD_MUTATION GraphQL mutation', 'activeForm'...[truncated 1137 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3207" cache_read_input_tokens="46836" cache_creation="{'ephemeral_5m_input_tokens': 3207, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DqMn8KWDerP7CFiQzRidqc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 1: Add UNRESOLVE_REVIEW_THREAD_MUTATION**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="50043" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017FDeAhWrcUjCUnLbjfjsC7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py</param>
+    <param name="old_string"># Mutation to add a reply comment to a PR review thread</param>
+    <param name="new_string"># Mutation to unresolve a PR review thread
+UNRESOLVE_REVIEW_THREAD_MUTATION = """mutation(...[truncated 74 chars]...d
+      isResolved
+    }
+  }
+}"""
+
+# Mutation to add a reply comment to a PR review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="50043" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="249" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017FDeAhWrcUjCUnLbjfjsC7">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/graphql_queries.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Y1R8Rr6EU8YVtv8gQuKM44">
+    <param name="todos">[{'content': 'Step 1: Add UNRESOLVE_REVIEW_THREAD_MUTATION GraphQL mutation', 'activeForm'...[truncated 1139 chars]... 'pending'}, {'content': 'Submit PR', 'activeForm': 'Submitting PR', 'status': 'pending'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="50544" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y1R8Rr6EU8YVtv8gQuKM44">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 2a: ABC - add unresolve_review_thread after resolve_review_thread**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="50848" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KPcVe65iJBVC8YzXAvVLdt">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="old_string">    @abstractmethod
+    def add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,</param>
+    <param name="new_string">    @abstractmethod
+    def unresolve_review_thread(self, repo_root: Path, thread_id: str)...[truncated 72 chars]...ef add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="50848" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="264" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KPcVe65iJBVC8YzXAvVLdt">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py has been updated successfully.
+  </tool_result>
+  <assistant>**Step 2b: Real - add unresolve_review_thread after resolve_review_thread**
+
+First let me check the import of RESOLVE_REVIEW_THREAD_MUTATION in real.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="51334" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018DjVPmRUSBUs4CtHnLthg5">
+    <param name="pattern">RESOLVE_REVIEW_THREAD_MUTATION|UNRESOLVE_REVIEW_THREAD_MUTATION</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="51334" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018DjVPmRUSBUs4CtHnLthg5">
+31:    RESOLVE_REVIEW_THREAD_MUTATION,
+2143:            f"query={RESOLVE_REVIEW_THREAD_MUTATION}",
+  </tool_result>
+  <tool_use name="Read" id="toolu_016hQz5Gq35XQg5ANLWudeu3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="limit">15</param>
+    <param name="offset">26</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="51650" cache_creation="{'ephemeral_5m_input_tokens': 260, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016hQz5Gq35XQg5ANLWudeu3">
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_PR_REVIEWS_QUERY,
+    29→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    30→    ISSUE_PR_LINKAGE_FRAGMENT,
+    31→    RESOLVE_REVIEW_THREAD_MUTATION,
+    32→)
+    33→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    34→from erk_shared.gateway.github.issues.types import IssueInfo
+    35→from erk_shared.gateway.github.parsing import (
+    36→    execute_gh_command_with_retry,
+    37→    parse_gh_auth_status_output,
+    38→)
+    39→from erk_shared.gateway.github.pr_data_parsing import (
+    40→    merge_rest_graphql_pr_data,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BsGCrwSkotF8GZawAToJvX">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">    RESOLVE_REVIEW_THREAD_MUTATION,
+)</param>
+    <param name="new_string">    RESOLVE_REVIEW_THREAD_MUTATION,
+    UNRESOLVE_REVIEW_THREAD_MUTATION,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="458" cache_read_input_tokens="51910" cache_creation="{'ephemeral_5m_input_tokens': 458, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BsGCrwSkotF8GZawAToJvX">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the unresolve_review_thread method to real.py after resolve_review_thread:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="52368" cache_creation="{'ephemeral_5m_input_tokens': 527, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ue5PDZouw5dRexGffEucjP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="old_string">        # Check if the thread was resolved
+        thread_data = response.get("data", {})....[truncated 78 chars]...lse
+
+        return thread_data.get("isResolved", False)
+
+    def add_review_thread_reply(</param>
+    <param name="new_string">        # Check if the thread was resolved
+        thread_data = response.get("data", {})....[truncated 1186 chars]...    return thread_data.get("isResolved", False) is False
+
+    def add_review_thread_reply(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="52368" cache_creation="{'ephemeral_5m_input_tokens': 527, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ue5PDZouw5dRexGffEucjP">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py has been updated successfully.
+  </tool_result>
+  <assistant>**Step 2c: Dry-run - add unresolve_review_thread after resolve_review_thread**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="52895" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018iDvRnNKKXZ8nDQz4tVqma">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="limit">30</param>
+    <param name="offset">299</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="52895" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018iDvRnNKKXZ8nDQz4tVqma">
+   299→    def resolve_review_thread(
+   300→        self,
+   301→        repo_root: Path,
+   302→        thread_id: str,
+   303→    ) -&gt; bool:
+   304→        """No-op for resolving review thread in dry-run mode.
+   305→
+   306→        Returns True to indicate success without actually resolving.
+   307→        """
+   308→        return True
+   309→
+   310→    def add_review_thread_reply(
+   311→        self,
+   312→        repo_root: Path,
+   313→        thread_id: str,
+   314→        body: str,
+   315→    ) -&gt; bool:
+   316→        """No-op for adding reply to review thread in dry-run mode.
+   317→
+   318→        Returns True to indicate success without actually adding comment.
+   319→        """
+   320→        return True
+   321→
+   322→    def create_pr_review_comment(
+   323→        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
+   324→    ) -&gt; int:
+   325→        """No-op for creating PR review comment in dry-run mode.
+   326→
+   327→        Returns a fake comment ID to allow dry-run workflows to continue.
+   328→        """
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XXGMA7HUe5oFP62mNmwUGx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="old_string">    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: s...[truncated 106 chars]...hout actually resolving.
+        """
+        return True
+
+    def add_review_thread_reply(</param>
+    <param name="new_string">    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: s...[truncated 355 chars]...ut actually unresolving.
+        """
+        return True
+
+    def add_review_thread_reply(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="880" cache_read_input_tokens="53552" cache_creation="{'ephemeral_5m_input_tokens': 880, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XXGMA7HUe5oFP62mNmwUGx">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py has been updated successfully.
+  </tool_result>
+  <assistant>**Step 2d: Fake - add unresolve_review_thread**
+
+I need to add the constructor param, mutable state, method, and property. Let me read around lines 74 and 187 for insertion points:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="54432" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QVSWRQb6pNezd6Fpb941J7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="limit">15</param>
+    <param name="offset">73</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="406" cache_read_input_tokens="54432" cache_creation="{'ephemeral_5m_input_tokens': 406, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QVSWRQb6pNezd6Fpb941J7">
+    73→        review_threads_rate_limited: bool = False,
+    74→        resolve_thread_failures: set[str] | None = None,
+    75→        pr_diff_error: str | None = None,
+    76→        workflow_runs_error: str | None = None,
+    77→        artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
+    78→        plan_pr_details: (
+    79→            tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
+    80→        ) = None,
+    81→        ci_summary_logs: dict[str, str] | None = None,
+    82→        comments_by_id: dict[int, str] | None = None,
+    83→        time: Time | None = None,
+    84→        add_label_errors: dict[str, str] | None = None,
+    85→        pr_head_branches: dict[int, str] | None = None,
+    86→    ) -&gt; None:
+    87→        """Create FakeLocalGitHub with pre-configured state.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019vk2UXGR1hXPWZjJxWTrix">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="old_string">        resolve_thread_failures: set[str] | None = None,
+        pr_diff_error: str | None = None,</param>
+    <param name="new_string">        resolve_thread_failures: set[str] | None = None,
+        unresolve_thread_failures: set[str] | None = None,
+        pr_diff_error: str | None = None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="54838" cache_creation="{'ephemeral_5m_input_tokens': 836, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019vk2UXGR1hXPWZjJxWTrix">
+The file /home/runner/work/erk/erk/tests/fakes/gateway/github.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to find the docstring section for resolve_thread_failures to add a docstring for unresolve_thread_failures:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="55674" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VH4tf62cioRy86Xd4xgKV3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="limit">15</param>
+    <param name="offset">118</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="55674" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VH4tf62cioRy86Xd4xgKV3">
+   118→            pr_reviews: Mapping of pr_number -&gt; list[PRReview] for get_pr_reviews()
+   119→            review_threads_rate_limited: Whether get_pr_review_threads() should raise
+   120→                RuntimeError simulating GraphQL rate limit
+   121→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   122→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   123→                Use to simulate HTTP 406 "diff too large" errors.
+   124→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   125→                RuntimeError with this message. Use to simulate API failures.
+   126→            artifact_download_callback: Optional callback invoked when download_run_artifact()
+   127→                is called. Callback receives (run_id, artifact_name, destination) and can create
+   128→                files in destination to simulate artifact content. Return True for success,
+   129→                False or raise to simulate failure.
+   130→        plan_pr_details: Pre-configured data for list_plan_prs_with_details().
+   131→            Tuple of (pr_details_list, pr_linkages, unenriched_count). Defaults to empty.
+   132→            ci_summary_logs: Mapping of run_id -&gt; ci-summarize job log text.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XMY9G9LWWdKEuyNjBWvuuM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="old_string">            resolve_thread_failures: Set of thread IDs that should fail when resolved
+            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.</param>
+    <param name="new_string">            resolve_thread_failures: Set of thread IDs that should fail when resolved
+    ...[truncated 63 chars]...ed
+            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="875" cache_read_input_tokens="55905" cache_creation="{'ephemeral_5m_input_tokens': 875, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XMY9G9LWWdKEuyNjBWvuuM">
+The file /home/runner/work/erk/erk/tests/fakes/gateway/github.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the mutable state in __init__ after `_resolve_thread_failures`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="56780" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GacT2qwdmtfosj1MSip5xa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="old_string">        self._resolve_thread_failures = resolve_thread_failures or set()
+        self._pr_diff_error = pr_diff_error</param>
+    <param name="new_string">        self._resolve_thread_failures = resolve_thread_failures or set()
+        self._unresolve_thread_failures = unresolve_thread_failures or set()
+        self._pr_diff_error = pr_diff_error</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="56780" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GacT2qwdmtfosj1MSip5xa">
+The file /home/runner/work/erk/erk/tests/fakes/gateway/github.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `_unresolved_thread_ids` to the mutable state initialization (after `_resolved_thread_ids`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="57034" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011urMxzcx3tZSjXkAFBhc3i">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/gateway/github.py</param>
+    <param name="old_string">        self._resolved_thread_ids: set[str] = set()
+        self._thread_replies: list[tuple[str, str]] = []</param>
+    <param name="new_string">        self._resolved_thread_ids: set[str] = set()
+        self._unresolved_thread_ids: set[str] = set()
+        self._thread_replies: list[tuple[str, str]] = []</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="57034" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011urMxzcx3tZSjXkAFBhc3i">
+The file /home/runner/work/erk/erk/tests/fakes/gateway/github.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the `unresolve_review_thread` method and `unresolved_thread_ids` property after `resolved_thread_ids`. Let me read the context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="269" cache_read_input_tokens="57601" cache_creation="{'ephemeral_5m_input_tokens': 269, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
