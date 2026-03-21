@@ -11,6 +11,121 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     phases_from_graph,
 )
 
+# ---------------------------------------------------------------------------
+# simulate_next_n tests
+# ---------------------------------------------------------------------------
+
+
+def test_simulate_next_n_linear_chain_partial() -> None:
+    """Linear chain: request N < total returns first N in order."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1"),
+            _make_node("1.2", depends_on=("1.1",)),
+            _make_node("1.3", depends_on=("1.2",)),
+        )
+    )
+    result = graph.simulate_next_n(count=2)
+    assert len(result) == 2
+    assert result[0].id == "1.1"
+    assert result[1].id == "1.2"
+    # Original nodes still have pending status (no mutation)
+    assert result[0].status == "pending"
+    assert result[1].status == "pending"
+
+
+def test_simulate_next_n_cross_phase_unblocking() -> None:
+    """Completing the last node of phase 1 unblocks the first node of phase 2."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1"),
+            _make_node("1.2", depends_on=("1.1",)),
+            _make_node("2.1", depends_on=("1.2",)),
+        )
+    )
+    result = graph.simulate_next_n(count=3)
+    assert [n.id for n in result] == ["1.1", "1.2", "2.1"]
+
+
+def test_simulate_next_n_more_than_available() -> None:
+    """Requesting more nodes than available returns only what's available."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1"),
+            _make_node("1.2", depends_on=("1.1",)),
+        )
+    )
+    result = graph.simulate_next_n(count=10)
+    assert len(result) == 2
+    assert result[0].id == "1.1"
+    assert result[1].id == "1.2"
+
+
+def test_simulate_next_n_skips_non_pending_nodes() -> None:
+    """Done and in_progress nodes are not returned and do count as satisfied deps."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1", status="done"),
+            _make_node("1.2", status="in_progress", depends_on=("1.1",)),
+            _make_node("1.3", depends_on=("1.2",)),
+        )
+    )
+    # 1.3 is still blocked because 1.2 is in_progress (not done/skipped)
+    result = graph.simulate_next_n(count=5)
+    assert len(result) == 0
+
+
+def test_simulate_next_n_already_unblocked_by_done_nodes() -> None:
+    """Pending node whose deps are already done is immediately available."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1", status="done"),
+            _make_node("1.2", depends_on=("1.1",)),
+            _make_node("1.3", depends_on=("1.2",)),
+        )
+    )
+    result = graph.simulate_next_n(count=3)
+    assert [n.id for n in result] == ["1.2", "1.3"]
+
+
+def test_simulate_next_n_complete_graph_returns_empty() -> None:
+    """Graph where all nodes are done returns empty list."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1", status="done"),
+            _make_node("1.2", status="skipped"),
+        )
+    )
+    result = graph.simulate_next_n(count=5)
+    assert result == []
+
+
+def test_simulate_next_n_count_one_matches_next_node() -> None:
+    """simulate_next_n(count=1) returns the same node as next_node()."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1"),
+            _make_node("1.2", depends_on=("1.1",)),
+        )
+    )
+    result = graph.simulate_next_n(count=1)
+    next_single = graph.next_node()
+    assert len(result) == 1
+    assert next_single is not None
+    assert result[0].id == next_single.id
+
+
+def test_simulate_next_n_does_not_mutate_graph() -> None:
+    """Graph nodes retain their original status after simulate_next_n call."""
+    graph = DependencyGraph(
+        nodes=(
+            _make_node("1.1"),
+            _make_node("1.2", depends_on=("1.1",)),
+        )
+    )
+    graph.simulate_next_n(count=2)
+    assert all(node.status == "pending" for node in graph.nodes)
+
 
 def _make_node(
     node_id: str,

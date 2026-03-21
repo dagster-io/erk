@@ -90,6 +90,9 @@ from erk.cli.commands.exec.scripts.normalize_tripwire_candidates import (
 from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
     objective_apply_landed_update,
 )
+from erk.cli.commands.exec.scripts.objective_execute_plan import (
+    objective_execute_plan,
+)
 from erk.cli.commands.exec.scripts.objective_fetch_context import (
     objective_fetch_context,
 )
@@ -244,6 +247,7 @@ exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap"
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
+exec_group.add_command(objective_execute_plan, name="objective-execute-plan")
 exec_group.add_command(objective_plan_setup, name="objective-plan-setup")
 exec_group.add_command(objective_link_pr, name="objective-link-pr")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")

@@ -6,7 +6,7 @@ from existing RoadmapPhase/RoadmapNode data.
 """
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from erk_shared.gateway.github.metadata.roadmap import (
     RoadmapNode,
@@ -98,6 +98,35 @@ class DependencyGraph:
         if nodes:
             return nodes[0]
         return None
+
+    def simulate_next_n(self, *, count: int) -> list[ObjectiveNode]:
+        """Simulate sequential execution and return the next N nodes in order.
+
+        Repeatedly finds the next unblocked pending node, records it, then marks
+        it as done in a working copy to unblock dependent nodes. Returns the
+        original (pending-status) nodes in execution order.
+
+        Pure function — does not mutate self.
+
+        Args:
+            count: Maximum number of nodes to resolve
+
+        Returns:
+            List of pending ObjectiveNodes in execution order, up to count length
+        """
+        working_nodes = list(self.nodes)
+        result: list[ObjectiveNode] = []
+        for _ in range(count):
+            working_graph = DependencyGraph(nodes=tuple(working_nodes))
+            next_node = working_graph.next_node()
+            if next_node is None:
+                break
+            result.append(next_node)
+            working_nodes = [
+                replace(node, status="done") if node.id == next_node.id else node
+                for node in working_nodes
+            ]
+        return result
 
     def is_complete(self) -> bool:
         """True if every node is done or skipped."""
