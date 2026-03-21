@@ -389,20 +389,20 @@ if ctx.graphite.is_branch_diverged_from_tracking(ctx.git, repo_root, branch_name
 
 ## Non-Stacked PR Graphite Registration
 
-**Surprising Behavior**: `erk pr teleport` previously returned early for non-stacked PRs (where base = trunk), skipping Graphite registration entirely. This meant the branch wasn't tracked by Graphite after teleport, causing subsequent stack-aware operations to fail.
+**Surprising Behavior**: `erk slot teleport` previously returned early for non-stacked PRs (where base = trunk), skipping Graphite registration entirely. This meant the branch wasn't tracked by Graphite after teleport, causing subsequent stack-aware operations to fail.
 
 **Why It's Surprising**: Non-stacked PRs don't need parent branch fetching (since trunk is always local), leading to an incorrect optimization that skipped all Graphite setup — not just the fetch.
 
-<!-- Source: src/erk/cli/commands/pr/teleport_cmd.py, _register_with_graphite -->
+<!-- Source: packages/erk-slots/src/erk_slots/teleport_cmd.py, _register_with_graphite -->
 
-**Solution**: `_register_with_graphite()` in `src/erk/cli/commands/pr/teleport_cmd.py` now handles both paths:
+**Solution**: `_register_with_graphite()` in `packages/erk-slots/src/erk_slots/teleport_cmd.py` now handles both paths:
 
 1. **Stacked PRs** (base ≠ trunk): Fetch base branch if not local, create tracking branch, then register with Graphite
 2. **Non-stacked PRs** (base = trunk): Skip base fetch (trunk is always present), but still register/retrack with Graphite
 
 The registration step checks `get_parent_branch()`: if `None`, calls `track_branch()` for initial registration; if already tracked, calls `retrack_branch()` to update the SHA.
 
-**Location in Codebase**: `src/erk/cli/commands/pr/teleport_cmd.py` — `_register_with_graphite()`
+**Location in Codebase**: `packages/erk-slots/src/erk_slots/teleport_cmd.py` — `_register_with_graphite()`
 
 ## Plumbing Commit Retrack Requirement
 

@@ -1,7 +1,7 @@
 ---
 title: Checkout/Teleport Command Split
 read_when:
-  - "working with erk pr checkout or erk pr teleport commands"
+  - "working with erk pr checkout or erk slot teleport commands"
   - "understanding the difference between checkout and teleport"
   - "modifying cmux-open-pr command"
 tripwires:
@@ -32,10 +32,10 @@ erk pr checkout <REFERENCE> [--no-slot] [-f/--force] [--script]
 - For plans: finds branches/PRs referencing the plan issue
 - Alias: `erk pr co`
 
-### `erk pr teleport` (heavyweight, remote-first)
+### `erk slot teleport` (heavyweight, remote-first)
 
 ```
-erk pr teleport <PR_NUMBER> [--new-slot] [-f/--force] [--sync] [--script]
+erk slot teleport <PR_NUMBER> [--new-slot] [-f/--force] [--sync] [--script]
 ```
 
 - Force-resets local branch to match remote exactly
@@ -46,7 +46,7 @@ erk pr teleport <PR_NUMBER> [--new-slot] [-f/--force] [--sync] [--script]
 ## Key Files
 
 - `src/erk/cli/commands/pr/checkout_cmd.py` — checkout command
-- `src/erk/cli/commands/pr/teleport_cmd.py` — teleport command
+- `packages/erk-slots/src/erk_slots/teleport_cmd.py` — teleport command
 - `src/erk/cli/commands/checkout_helpers.py` — shared helpers
 - `src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py` — cmux integration
 
@@ -59,7 +59,7 @@ erk exec cmux-open-pr --pr <NUMBER> [--branch <BRANCH>] [--mode {checkout|telepo
 ```
 
 - `--mode checkout` (default): lightweight, runs `erk pr checkout {pr} --script`
-- `--mode teleport`: heavyweight, runs `erk pr teleport {pr} --new-slot --script --sync`
+- `--mode teleport`: heavyweight, runs `erk slot teleport {pr} --new-slot --script --sync`
 
 ## TUI Integration
 

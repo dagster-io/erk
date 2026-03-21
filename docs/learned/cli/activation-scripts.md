@@ -72,7 +72,7 @@ Activation scripts support dynamic post-CD commands via the `post_cd_commands` p
 
 **Example:** PR teleport with `--sync` flag passes `["gt submit --no-interactive"]` as `post_cd_commands`, causing the branch to be submitted to Graphite after navigation.
 
-**Implementation:** `src/erk/cli/commands/pr/teleport_cmd.py` uses the `post_cd_commands` parameter when `sync=True`.
+**Implementation:** `packages/erk-slots/src/erk_slots/teleport_cmd.py` uses the `post_cd_commands` parameter when `sync=True`.
 
 ## `force_script_activation` Parameter
 

@@ -49,7 +49,7 @@ Systematic rename of a command or concept across CLI, TUI, tests, documentation,
 ## Exemplars
 
 - **cmux sync -> checkout:** `src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py` and 12 consumer files
-- **sync -> teleport:** `src/erk/cli/commands/pr/teleport_cmd.py` and 7 consumer files
+- **sync -> teleport:** `packages/erk-slots/src/erk_slots/teleport_cmd.py` (moved from `src/erk/cli/commands/pr/`) and 7 consumer files
 
 ## Related Topics
 
