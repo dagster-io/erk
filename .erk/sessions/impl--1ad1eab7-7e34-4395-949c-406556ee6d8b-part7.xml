@@ -1,0 +1,742 @@
+<session>
+  <meta source="agent-ad409a8" />
+  <meta branch="plnd/O9318-rename-plan-store-pr-03-21-1544" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform a bulk rename of two identifiers across the Python codebase:
+
+1. `plan_backend` → `pr_backend` (property/attribute name)
+2. `require_plan_backend` → `require_pr_backend` (function name)
+
+This is a mechanical rename — replace every occurrence in all Python files.
+
+This includes:
+- Property definitions: `def plan_backend` → `def pr_backend`
+- Function definitions: `def require_plan_backend` → `def require_pr_backend`
+- Property access: `.plan_backend` → `.pr_backend`
+- `self.plan_backend` → `self.pr_backend`
+- `ctx.plan_backend` → `ctx.pr_backend`
+- `context.plan_backend` → `context.pr_backend`
+- Function calls: `require_plan_backend(` → `require_pr_backend(`
+- Imports: `from ... import require_plan_backend` → `from ... import require_pr_backend`
+- Any docstring mentions
+
+Files that need updating (from grep output):
+- `packages/erk-shared/src/erk_shared/context/context.py`
+- `packages/erk-shared/src/erk_shared/context/helpers.py`
+- `packages/erk-shared/src/erk_shared/learn/tracking.py`
+- `src/erk/cli/commands/exec/scripts/add_plan_label.py`
+- `src/erk/cli/commands/exec/scripts/add_plan_labels.py`
+- `src/erk/cli/commands/exec/scripts/close_pr.py`
+- `src/erk/cli/commands/exec/scripts/close_prs.py`
+- `src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py`
+- `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`
+- `src/erk/cli/commands/exec/scripts/get_plan_info.py`
+- `src/erk/cli/commands/exec/scripts/get_plan_metadata.py`
+- `src/erk/cli/commands/exec/scripts/get_pr_context.py`
+- `src/erk/cli/commands/exec/scripts/handle_no_changes.py`
+- `src/erk/cli/commands/exec/scripts/impl_signal.py`
+- `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+- `src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py`
+- `src/erk/cli/commands/exec/scripts/objective_fetch_context.py`
+- `src/erk/cli/commands/exec/scripts/plan_save.py`
+- `src/erk/cli/commands/exec/scripts/plan_update.py`
+- `src/erk/cli/commands/exec/scripts/post_workflow_started_comment.py`
+- `src/erk/cli/commands/exec/scripts/push_session.py`
+- `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py`
+- `src/erk/cli/commands/exec/scripts/resolve_objective_ref.py`
+- `src/erk/cli/commands/exec/scripts/set_pr_description.py`
+- `src/erk/cli/commands/exec/scripts/track_learn_evaluation.py`
+- `src/erk/cli/commands/exec/scripts/track_learn_result.py`
+- `src/erk/cli/commands/exec/scripts/update_plan_header.py`
+- `src/erk/cli/commands/exec/scripts/update_pr_description.py`
+- `src/erk/cli/commands/implement_shared.py`
+- `src/erk/cli/commands/land_cmd.py`
+- `src/erk/cli/commands/land_learn.py`
+- `src/erk/cli/commands/land_pipeline.py`
+- `src/erk/cli/commands/land_stack.py`
+- `src/erk/cli/commands/learn/learn_cmd.py`
+- `src/erk/cli/commands/objective_helpers.py`
+- `src/erk/cli/commands/one_shot_remote_dispatch.py`
+- `src/erk/cli/commands/pr/dispatch_cmd.py`
+- `src/erk/cli/commands/pr/metadata_helpers.py`
+- `src/erk/cli/commands/pr/rewrite_cmd.py`
+- `src/erk/cli/commands/pr/shared.py`
+- `src/erk/cli/commands/pr/submit_pipeline.py`
+- `src/erk/cli/commands/pr/view/operation.py`
+- `src/erk/cli/commands/reconcile_pipeline.py`
+- `src/erk/core/pr_context_provider.py`
+- `tests/commands/land/test_learn_skip_remote.py`
+- `tests/commands/one_shot/test_one_shot_dispatch.py`
+- `tests/commands/pr/test_dispatch.py`
+- `tests/commands/pr/test_remote_paths.py`
+- `tests/core/test_pr_context_provider.py`
+- `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py`
+- `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+- `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`
+- `tests/unit/cli/commands/pr/test_dispatch_cmd.py`
+- `tests/unit/cli/commands/pr/test_metadata_helpers.py`
+- `tests/unit/core/test_workflow_smoke_test.py`
+- `tests/unit/pr_store/test_plan_backend_interface.py`
+- `tests/unit/pr_store/test_planned_pr_backend.py`
+
+Use `replace_all=True` in each file to replace every occurrence.
+
+Working directory is `/home/runner/work/erk/erk`.
+
+Do NOT change any other identifiers - only:
+- `plan_backend` → `pr_backend`
+- `require_plan_backend` → `require_pr_backend`
+</user>
+  <assistant>I'll perform a bulk rename of these two identifiers across the Python codebase. Let me start by reading a few representative files to understand the patterns, then create a LibCST transformation script to handle this systematically.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="7432" cache_read_input_tokens="18910" cache_creation="{'ephemeral_5m_input_tokens': 7432, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HGuNdM7Dgw1Q6denaaAgTs">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="7432" cache_read_input_tokens="18910" cache_creation="{'ephemeral_5m_input_tokens': 7432, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013Z1Vfr1MCGvo69EZRwj19H">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="7432" cache_read_input_tokens="18910" cache_creation="{'ephemeral_5m_input_tokens': 7432, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xg6QPPEpRhAGRHAnnY9Bte">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="7432" cache_read_input_tokens="18910" cache_creation="{'ephemeral_5m_input_tokens': 7432, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HGuNdM7Dgw1Q6denaaAgTs">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PrListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.pr_list_service import PrListService
+    30→from erk_shared.core.prompt_executor import PromptExecutor
+
+... [250 lines omitted] ...
+
+   141→            RuntimeError: If not in a git repository
+   144→            raise RuntimeError("Not in a git repository")
+   204→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <tool_result tool="toolu_013Z1Vfr1MCGvo69EZRwj19H">
+     1→"""Helper functions for accessing context dependencies with LBYL checks.
+     2→
+     3→This module provides getter functions that encapsulate the "Look Before You Leap"
+     4→pattern for accessing dependencies from the ErkContext. These functions:
+     5→
+     6→1. Check that context is initialized
+     7→2. Return the typed dependency
+     8→3. Exit with clear error message if context is missing
+     9→
+    10→This eliminates code duplication across kit CLI commands.
+    11→"""
+    12→
+    13→from __future__ import annotations
+    14→
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+    21→from erk_shared.core.prompt_executor import PromptExecutor
+    22→from erk_shared.gateway.branch_manager.abc import BranchManager
+    23→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    24→from erk_shared.gateway.git.abc import Git
+    25→from erk_shared.gateway.github.abc import LocalGitHub
+    26→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→from erk_shared.gateway.time.abc import Time
+    28→from erk_shared.pr_store.backend import ManagedPrBackend
+    29→
+    30→
+
+... [454 lines omitted] ...
+
+    32→    """Get the full ErkContext, exiting with error if not initialized.
+    35→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    54→        click.echo("Error: Context not initialized", err=True)
+    58→        click.echo("Error: Context must be ErkContext", err=True)
+    65→    """Get GitHub Issues from context, exiting with error if not initialized.
+    68→    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+    87→        click.echo("Error: Context not initialized", err=True)
+    91→        click.echo("Error: Context must be ErkContext", err=True)
+    98→    """Get repo root from context, exiting with error if not initialized.
+   120→        click.echo("Error: Context not initialized", err=True)
+   124→        click.echo("Error: Context must be ErkContext", err=True)
+   129→        click.echo("Error: Not in a git repository", err=True)
+   161→    """Get Git from context, exiting with error if not initialized.
+   183→        click.echo("Error: Context not initialized", err=True)
+   190→    """Get GitHub from context, exiting with error if not initialized.
+   212→        click.echo("Error: Context not initialized", err=True)
+   219→    """Get current working directory from context, exiting with error if not initialized.
+   241→        click.echo("Error: Context not initialized", err=True)
+   248→    """Get ClaudeInstallation from context, exiting with error if not initialized.
+   269→        click.echo("Error: Context not initialized", err=True)
+   296→        ...         # handle error
+   305→    """Get PromptExecutor from context, exiting with error if not initialized.
+   326→        click.echo("Error: Context not initialized", err=True)
+   333→    """Get local config from context, exiting with error if not initialized.
+   354→        click.echo("Error: Context not initialized", err=True)
+   384→        click.echo("Error: Context not initialized", err=True)
+   398→    """Get ManagedPrBackend from context, exiting with error if not initialized.
+   419→        click.echo("Error: Context not initialized", err=True)
+   426→    """Get Time from context, exiting with error if not initialized.
+   447→        click.echo("Error: Context not initialized", err=True)
+   454→    """Get BranchManager from context, exiting with error if not initialized.
+   475→        click.echo("Error: Context not initialized", err=True)
+  </tool_result>
+  <tool_result tool="toolu_01Xg6QPPEpRhAGRHAnnY9Bte">
+     1→"""Shared utilities for implement commands.
+     2→
+     3→This module contains the common logic for erk implement.
+     4→"""
+     5→
+     6→import re
+     7→import shlex
+     8→from collections.abc import Callable
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→from typing import NamedTuple, TypeVar
+    12→
+    13→import click
+    14→
+    15→from erk.cli.activation import render_activation_script
+    16→from erk.cli.help_formatter import script_option
+    17→from erk.core.context import ErkContext
+    18→from erk.core.prompt_executor import PromptExecutor
+    19→from erk_shared.naming import (
+    20→    sanitize_worktree_name,
+    21→    strip_plan_from_filename,
+    22→)
+    23→from erk_shared.output.output import user_output
+    24→
+    25→# Valid model names and their aliases
+    26→_MODEL_ALIASES: dict[str, str] = {
+    27→    "h": "haiku",
+    28→    "s": "sonnet",
+    29→    "o": "opus",
+    30→}
+
+... [577 lines omitted] ...
+
+   121→        click.ClickException: If model name is invalid
+   131→        raise click.ClickException(f"Invalid model: '{model}'\nValid options: {valid_options}")
+   168→    """Validate flag combinations and raise ClickException if invalid.
+   176→        click.ClickException: If flag combination is invalid
+   181→        raise click.ClickException(
+   188→        raise click.ClickException(
+   272→        click.ClickException: If Claude CLI not found
+   287→    except RuntimeError as e:
+   288→        raise click.ClickException(str(e)) from e
+   311→        click.ClickException: If Claude CLI not found or command fails
+   322→        raise click.ClickException(
+   355→        # Stop on first failure
+   365→    # Raise exception if any command failed
+   367→        raise click.ClickException("One or more commands failed")
+   498→        ctx.console.error(f"Error: PR file not found: {plan_file}")
+  </tool_result>
+  <assistant>Now I understand the patterns. I can see that:
+1. `plan_backend` is a property that returns `ManagedPrBackend` 
+2. `require_plan_backend` is a helper function that retrieves it from context
+3. These appear as property access (`.plan_backend`) and function calls (`require_plan_backend(ctx)`)
+
+Let me create a LibCST transformation script to systematically rename these identifiers across all Python files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="17135" cache_read_input_tokens="26342" cache_creation="{'ephemeral_5m_input_tokens': 17135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01UShfXzrLYw358zZt7TfoZg">
+    <param name="file_path">/home/runner/work/erk/erk/refactor_rename_plan_backend.py</param>
+    <param name="content">#!/usr/bin/env python3
+"""Rename plan_backend → pr_backend and require_plan_backend → requ...[truncated 2316 chars]...dry_run else 'Modified'} {total_modified} files")
+
+
+if __name__ == "__main__":
+    main()
+</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="17135" cache_read_input_tokens="26342" cache_creation="{'ephemeral_5m_input_tokens': 17135, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UShfXzrLYw358zZt7TfoZg">
+File created successfully at: /home/runner/work/erk/erk/refactor_rename_plan_backend.py
+  </tool_result>
+  <assistant>Now let me test this script on a single file first to verify it works correctly:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1003" cache_read_input_tokens="43477" cache_creation="{'ephemeral_5m_input_tokens': 1003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LMbvuGdJ7EGiDfcG7bKXtN">
+    <param name="command">python refactor_rename_plan_backend.py packages/erk-shared/src/erk_shared/context/helpers.py --dry-run</param>
+    <param name="description">Test the refactoring script on a single file in dry-run mode</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1003" cache_read_input_tokens="43477" cache_creation="{'ephemeral_5m_input_tokens': 1003, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LMbvuGdJ7EGiDfcG7bKXtN">
+Exit code 1
+Traceback (most recent call last):
+  File "/home/runner/work/erk/erk/refactor_rename_plan_backend.py", line 9, in &lt;module&gt;
+    import libcst as cst
+ModuleNotFoundError: No module named 'libcst'
+  </tool_result>
+  <assistant>I need to install libcst first. Let me check if it's in the project dependencies:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="330" cache_read_input_tokens="44480" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W2do37uuEMYY8e5ZSDUJQ9">
+    <param name="command">uv pip install libcst</param>
+    <param name="description">Install libcst using uv</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="330" cache_read_input_tokens="44480" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="116" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W2do37uuEMYY8e5ZSDUJQ9">
+Exit code 2
+error: No virtual environment found; run `uv venv` to create an environment, or pass `--system` to install into a non-virtual environment
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01N5VxpxPsWJ1Pexg1Ku73w5">
+    <param name="command">uv pip install --system libcst</param>
+    <param name="description">Install libcst in system environment</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="160" cache_read_input_tokens="44810" cache_creation="{'ephemeral_5m_input_tokens': 160, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N5VxpxPsWJ1Pexg1Ku73w5">
+Exit code 2
+Using Python 3.12.3 environment at: /usr
+error: The interpreter at /usr is externally managed, and indicates the following:
+
+  To install Python packages system-wide, try apt install
+  python3-xyz, where xyz is the package you are trying to
+  install.
+
+  If you wish to install a non-Debian-packaged Python package,
+  create a virtual environment using python3 -m venv path/to/venv.
+  Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
+  sure you have python3-full installed.
+
+  If you wish to install a non-Debian packaged Python application,
+  it may be easiest to use pipx install xyz, which will manage a
+  virtual environment for you. Make sure you have pipx installed.
+
+  See /usr/share/doc/python3.12/README.venv for more information.
+
+hint: Virtual environments were not considered due to the `--system` flag
+  </tool_result>
+  <assistant>Let me check if there's a project venv I can use:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="442" cache_read_input_tokens="44970" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GVD2jT3wkwt8p7TcHnz7Zg">
+    <param name="command">if [ -f .venv/bin/python ]; then echo "venv exists"; .venv/bin/python -c "import libcst" 2&gt;&amp;1 &amp;&amp; echo "libcst available" || echo "libcst not available"; else echo "no venv"; fi</param>
+    <param name="description">Check for venv and libcst availability</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="442" cache_read_input_tokens="44970" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GVD2jT3wkwt8p7TcHnz7Zg">
+no venv
+  </tool_result>
+  <assistant>Let me create a simpler approach using regex-based search and replace, which doesn't require additional dependencies:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="172" cache_read_input_tokens="45412" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01NxGwvErFAVmzWtLbKQbNfw">
+    <param name="file_path">/home/runner/work/erk/erk/refactor_rename_plan_backend_simple.py</param>
+    <param name="content">#!/usr/bin/env python3
+"""Rename plan_backend → pr_backend and require_plan_backend → requ...[truncated 2673 chars]...ied} files ({total_changes} total replacements)")
+
+
+if __name__ == "__main__":
+    main()
+</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="172" cache_read_input_tokens="45412" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NxGwvErFAVmzWtLbKQbNfw">
+File created successfully at: /home/runner/work/erk/erk/refactor_rename_plan_backend_simple.py
+  </tool_result>
+  <assistant>Now let me test this on a single file first:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1123" cache_read_input_tokens="45584" cache_creation="{'ephemeral_5m_input_tokens': 1123, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XdwanWNimhJMmH6YJpS3Ya">
+    <param name="command">python refactor_rename_plan_backend_simple.py packages/erk-shared/src/erk_shared/context/helpers.py --dry-run</param>
+    <param name="description">Test refactoring script on single file in dry-run mode</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1123" cache_read_input_tokens="45584" cache_creation="{'ephemeral_5m_input_tokens': 1123, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XdwanWNimhJMmH6YJpS3Ya">
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/context/helpers.py: 5 replacements
+  - plan_backend: 3 occurrences
+  - require_plan_backend: 2 occurrences
+
+[DRY RUN] Would modify 1 files (5 total replacements)
+  </tool_result>
+  <assistant>Perfect! Let me verify what those changes would look like by checking the specific lines:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="222" cache_read_input_tokens="46707" cache_creation="{'ephemeral_5m_input_tokens': 222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016JxkqMix5cqmgBEsCTodtz">
+    <param name="command">grep -n "plan_backend\|require_plan_backend" packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="description">Show lines containing the identifiers to rename</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="222" cache_read_input_tokens="46707" cache_creation="{'ephemeral_5m_input_tokens': 222, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016JxkqMix5cqmgBEsCTodtz">
+397:def require_plan_backend(ctx: click.Context) -&gt; ManagedPrBackend:
+415:        ...     backend = require_plan_backend(ctx)
+422:    return ctx.obj.plan_backend
+  </tool_result>
+  <assistant>Good! Now let me run a dry-run on all the files mentioned in the task to see the full scope:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="295" cache_read_input_tokens="46929" cache_creation="{'ephemeral_5m_input_tokens': 295, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HNcXxUYQMsAvMPcdeweMRn">
+    <param name="command">python refactor_rename_plan_backend_simple.py packages/erk-shared/src/erk_shared/context/ src/erk/cli/commands/ src/erk/core/pr_context_provider.py tests/ --dry-run | head -100</param>
+    <param name="description">Test refactoring on all relevant directories in dry-run mode</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="295" cache_read_input_tokens="46929" cache_creation="{'ephemeral_5m_input_tokens': 295, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HNcXxUYQMsAvMPcdeweMRn">
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/context/context.py: 1 replacements
+  - plan_backend: 1 occurrences
+  - require_plan_backend: 0 occurrences
+[DRY RUN] Would modify packages/erk-shared/src/erk_shared/context/helpers.py: 5 replacements
+  - plan_backend: 3 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/add_plan_label.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/add_plan_labels.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/close_pr.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/close_prs.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/get_learn_sessions.py: 11 replacements
+  - plan_backend: 9 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/get_plan_info.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+[DRY RUN] Would modify src/erk/cli/commands/exec/scripts/get_plan_metadata.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+
+... [72 lines omitted] ...
+
+Exception ignored in: &lt;_io.TextIOWrapper name='&lt;stdout&gt;' mode='w' encoding='utf-8'&gt;
+BrokenPipeError: [Errno 32] Broken pipe
+  </tool_result>
+  <assistant>Excellent! The dry-run is working. Now let me run the actual transformation on all Python files. Let me apply it to the entire repository:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2325" cache_read_input_tokens="47224" cache_creation="{'ephemeral_5m_input_tokens': 2325, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L2VQsJNsHy9TaZsoPp6PVM">
+    <param name="command">python refactor_rename_plan_backend_simple.py packages/erk-shared/src/erk_shared/ src/erk/ tests/</param>
+    <param name="description">Apply the rename transformation to all Python files</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2325" cache_read_input_tokens="47224" cache_creation="{'ephemeral_5m_input_tokens': 2325, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L2VQsJNsHy9TaZsoPp6PVM">
+✓ Modified packages/erk-shared/src/erk_shared/context/context.py: 1 replacements
+  - plan_backend: 1 occurrences
+  - require_plan_backend: 0 occurrences
+✓ Modified packages/erk-shared/src/erk_shared/context/helpers.py: 5 replacements
+  - plan_backend: 3 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified packages/erk-shared/src/erk_shared/learn/tracking.py: 3 replacements
+  - plan_backend: 3 occurrences
+  - require_plan_backend: 0 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/add_plan_label.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/add_plan_labels.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/close_pr.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/close_prs.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/get_learn_sessions.py: 11 replacements
+  - plan_backend: 9 occurrences
+  - require_plan_backend: 2 occurrences
+✓ Modified src/erk/cli/commands/exec/scripts/get_plan_info.py: 4 replacements
+  - plan_backend: 2 occurrences
+  - require_plan_backend: 2 occurrences
+
+... [143 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! The transformation completed successfully. Let me verify a few of the modified files to ensure the renames are correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3503" cache_read_input_tokens="49549" cache_creation="{'ephemeral_5m_input_tokens': 3503, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012LmA2UEt2HxwoayFgN5U8i">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">175</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3503" cache_read_input_tokens="49549" cache_creation="{'ephemeral_5m_input_tokens': 3503, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Kr8pgqpWNWKzb24otz7NdS">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="offset">395</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3503" cache_read_input_tokens="49549" cache_creation="{'ephemeral_5m_input_tokens': 3503, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qf6RnMenXuzombmRxGGjCU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement_shared.py</param>
+    <param name="offset">447</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3503" cache_read_input_tokens="49549" cache_creation="{'ephemeral_5m_input_tokens': 3503, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012LmA2UEt2HxwoayFgN5U8i">
+   175→    @property
+   176→    def pr_backend(self) -&gt; ManagedPrBackend:
+   177→        """Access pr_store as ManagedPrBackend (read/write interface).
+   178→
+   179→        Since pr_store is typed as ManagedPrBackend, this is a direct alias.
+   180→        Retained for call-site compatibility.
+   181→        """
+   182→        return self.pr_store
+   183→
+   184→    @property
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01Kr8pgqpWNWKzb24otz7NdS">
+   395→
+   396→
+   397→def require_pr_backend(ctx: click.Context) -&gt; ManagedPrBackend:
+   398→    """Get ManagedPrBackend from context, exiting with error if not initialized.
+   399→
+   400→    Uses LBYL pattern to check context before accessing.
+   401→
+   402→    Args:
+   403→        ctx: Click context (must have ErkContext in ctx.obj)
+   404→
+   405→    Returns:
+   406→        ManagedPrBackend instance from context
+   407→
+   408→    Raises:
+   409→        SystemExit: If context not initialized (exits with code 1)
+   410→
+   411→    Example:
+   412→        &gt;&gt;&gt; @click.command()
+   413→        &gt;&gt;&gt; @click.pass_context
+   414→        &gt;&gt;&gt; def my_command(ctx: click.Context) -&gt; None:
+   415→        ...     backend = require_pr_backend(ctx)
+   416→        ...     result = backend.create_managed_pr(repo_root, title, content, labels, metadata)
+   417→    """
+   418→    if ctx.obj is None:
+   419→        click.echo("Error: Context not initialized", err=True)
+   420→        raise SystemExit(1)
+   421→
+   422→    return ctx.obj.pr_backend
+   423→
+   424→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Qf6RnMenXuzombmRxGGjCU">
+   447→def extract_plan_from_current_branch(ctx: ErkContext) -&gt; str | None:
+   448→    """Extract plan identifier from current branch name if it's a plan branch.
+   449→
+   450→    Args:
+   451→        ctx: ErkContext with pr_backend access
+   452→
+   453→    Returns:
+   454→        Plan identifier as string if current branch is a plan branch, else None
+   455→
+   456→    Examples:
+   457→        plnd/fix-bug-01-15-1430 (with plan-ref.json) → "123"
+   458→        main → None
+   459→        feature-branch → None
+   460→    """
+   461→    current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+   462→    if current_branch is None:
+   463→        return None
+   464→
+   465→    return ctx.pr_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
+   466→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! The renames look correct. Let me verify there are no remaining instances of the old identifiers:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1478" cache_read_input_tokens="53052" cache_creation="{'ephemeral_5m_input_tokens': 1478, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014in3cTP4KwCDZ2eLBgTvej">
+    <param name="command">grep -r "plan_backend\|require_plan_backend" packages/erk-shared/src/ src/erk/ tests/ --include="*.py" | head -20</param>
+    <param name="description">Check for any remaining old identifiers</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1478" cache_read_input_tokens="53052" cache_creation="{'ephemeral_5m_input_tokens': 1478, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014in3cTP4KwCDZ2eLBgTvej">
+
+  </tool_result>
+  <assistant>Great! No remaining instances found. Now let me clean up the temporary refactoring scripts:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="8956" cache_read_input_tokens="54530" cache_creation="{'ephemeral_5m_input_tokens': 8956, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017jjvYpozV49mmaNh2Y6exk">
+    <param name="command">rm refactor_rename_plan_backend.py refactor_rename_plan_backend_simple.py</param>
+    <param name="description">Remove temporary refactoring scripts</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="8956" cache_read_input_tokens="54530" cache_creation="{'ephemeral_5m_input_tokens': 8956, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017jjvYpozV49mmaNh2Y6exk">
+
+  </tool_result>
+  <assistant>Perfect! Let me verify a few more of the modified files to ensure the transformations are correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="229" cache_read_input_tokens="63486" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012BDwoAKEd4Kf6wmv1bfgLf">
+    <param name="command">grep -n "pr_backend" packages/erk-shared/src/erk_shared/context/context.py packages/erk-shared/src/erk_shared/context/helpers.py src/erk/cli/commands/implement_shared.py | head -20</param>
+    <param name="description">Verify renamed identifiers in key files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="229" cache_read_input_tokens="63486" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012BDwoAKEd4Kf6wmv1bfgLf">
+packages/erk-shared/src/erk_shared/context/context.py:176:    def pr_backend(self) -&gt; ManagedPrBackend:
+packages/erk-shared/src/erk_shared/context/helpers.py:397:def require_pr_backend(ctx: click.Context) -&gt; ManagedPrBackend:
+packages/erk-shared/src/erk_shared/context/helpers.py:415:        ...     backend = require_pr_backend(ctx)
+packages/erk-shared/src/erk_shared/context/helpers.py:422:    return ctx.obj.pr_backend
+src/erk/cli/commands/implement_shared.py:451:        ctx: ErkContext with pr_backend access
+src/erk/cli/commands/implement_shared.py:465:    return ctx.pr_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
+  </tool_result>
+  <assistant>Excellent! Let me create a summary of what was changed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="397" cache_read_input_tokens="63715" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014yWmA8xjA3WRaicySiuVSv">
+    <param name="command">git diff --stat</param>
+    <param name="description">Show git diff statistics for all changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="397" cache_read_input_tokens="63715" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014yWmA8xjA3WRaicySiuVSv">
+ .../erk-shared/src/erk_shared/context/context.py   |  16 +--
+ .../erk-shared/src/erk_shared/context/helpers.py   |   6 +-
+ .../erk_shared/gateway/github/objective_issues.py  |   2 +-
+ .../erk-shared/src/erk_shared/learn/tracking.py    |   6 +-
+ .../erk-shared/src/erk_shared/plan_workflow.py     |   2 +-
+ src/erk/cli/commands/branch/checkout_cmd.py        |   2 +-
+ .../cli/commands/exec/scripts/add_plan_label.py    |   4 +-
+ .../cli/commands/exec/scripts/add_plan_labels.py   |   4 +-
+ src/erk/cli/commands/exec/scripts/close_pr.py      |   4 +-
+ src/erk/cli/commands/exec/scripts/close_prs.py     |   4 +-
+ .../exec/scripts/create_impl_context_from_plan.py  |   4 +-
+ .../commands/exec/scripts/get_learn_sessions.py    |  14 +-
+ src/erk/cli/commands/exec/scripts/get_plan_info.py |   4 +-
+ .../cli/commands/exec/scripts/get_plan_metadata.py |   4 +-
+ .../cli/commands/exec/scripts/get_pr_context.py    |   2 +-
+ .../cli/commands/exec/scripts/handle_no_changes.py |   4 +-
+ src/erk/cli/commands/exec/scripts/impl_signal.py   |   8 +-
+ .../commands/exec/scripts/incremental_dispatch.py  |   8 +-
+ .../exec/scripts/objective_apply_landed_update.py  |   6 +-
+ .../exec/scripts/objective_fetch_context.py        |   8 +-
+ src/erk/cli/commands/exec/scripts/plan_save.py     |   4 +-
+ src/erk/cli/commands/exec/scripts/plan_update.py   |   4 +-
+ .../exec/scripts/post_workflow_started_comment.py  |   4 +-
+ src/erk/cli/commands/exec/scripts/push_session.py  |   4 +-
+ .../exec/scripts/register_one_shot_plan.py         |   8 +-
+ .../commands/exec/scripts/resolve_objective_ref.py |   6 +-
+ .../commands/exec/scripts/set_pr_description.py    |   2 +-
+ .../exec/scripts/track_learn_evaluation.py         |   4 +-
+ .../commands/exec/scripts/track_learn_result.py    |   4 +-
+ .../commands/exec/scripts/update_plan_header.py    |   4 +-
+
+... [81 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me verify one more comprehensive sample to ensure the changes are correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2915" cache_read_input_tokens="64112" cache_creation="{'ephemeral_5m_input_tokens': 2915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MrwAsjg1Y3o7Gg64ArtvQx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2915" cache_read_input_tokens="64112" cache_creation="{'ephemeral_5m_input_tokens': 2915, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MrwAsjg1Y3o7Gg64ArtvQx">
+     1→"""Get session information for a plan.
+     2→
+     3→This exec script returns JSON with session data for use by the /erk:learn skill.
+     4→It replaces the `erk learn --json --no-track` workflow, separating data retrieval
+     5→from tracking.
+     6→
+     7→Usage:
+     8→    erk exec get-learn-sessions &lt;issue-number&gt;
+     9→    erk exec get-learn-sessions &lt;issue-url&gt;
+    10→
+    11→Output:
+    12→    JSON object with session information:
+    13→    {
+    14→        "success": true,
+    15→        "pr_number": "123",
+    16→        "planning_session_id": "abc-123" | null,
+    17→        "implementation_session_ids": [...],
+    18→        "learn_session_ids": [...],
+    19→        "readable_session_ids": [...],
+    20→        "session_paths": [...],
+    21→        "local_session_ids": [...],
+    22→        "last_remote_impl_at": "2024-01-01T..." | null,
+    23→        "last_remote_impl_run_id": "12345678" | null,
+    24→        "last_remote_impl_session_id": "abc-def-ghi" | null
+    25→    }
+    26→
+    27→Exit Codes:
+    28→    0: Success
+    29→    1: Error (invalid issue, GitHub failure, etc.)
+    30→"""
+
+... [55 lines omitted] ...
+
+    45→    GetLearnSessionsErrorDict,
+  </tool_result>
+  <assistant>Perfect! Let me check the rest of that file to verify all occurrences were renamed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1125" cache_read_input_tokens="67027" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017SYvcHQaBdiGaS6VHyFSj9">
+    <param name="command">grep -n "pr_backend\|require_pr_backend" src/erk/cli/commands/exec/scripts/get_learn_sessions.py</param>
+    <param name="description">Verify all occurrences in get_learn_sessions.py were renamed</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1125" cache_read_input_tokens="67027" cache_creation="{'ephemeral_5m_input_tokens': 1125, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017SYvcHQaBdiGaS6VHyFSj9">
+41:    require_pr_backend,
+141:    pr_backend,
+152:        pr_backend: ManagedPrBackend for session discovery
+171:    sessions_for_plan = pr_backend.find_sessions_for_managed_pr(
+259:    pr_backend = require_pr_backend(ctx)
+277:        pr_id = pr_backend.resolve_pr_number_for_branch(repo_root, branch_name)
+289:        pr_backend=pr_backend,
+  </tool_result>
+  <assistant>Excellent! All occurrences have been correctly renamed. Let me create a final summary:
+
+## Summary
+
+I've successfully completed the bulk rename of two identifiers across the Python codebase:
+
+### Renamed Identifiers
+1. **`plan_backend` → `pr_backend`** (property/attribute name)
+2. **`require_plan_backend` → `require_pr_backend`** (function name)
+
+### Statistics
+- **110 files modified**
+- **559 lines changed**
+- **263 total replacements** across:
+  - 57 implementation files
+  - 53 test files
+
+### Key Files Modified
+
+**Core Context Files:**
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` - Property definition
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py` - Helper function definition
+
+**CLI Command Files:**
+- All exec scripts in `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/`
+- Command implementations in `/home/runner/work/erk/erk/src/erk/cli/commands/`
+- PR operations in `/home/runner/work/erk/erk/src/erk/cli/commands/pr/`
+
+**Test Files:**
+- All corresponding test files in `/home/runner/work/erk/erk/tests/`
+
+### Verification
+- ✅ All occurrences of both identifiers successfully renamed
+- ✅ No remaining instances of old identifiers found
+- ✅ Property definitions, function definitions, and all call sites updated
+- ✅ Imports, docstrings, and comments updated
+
+The rename was performed using a simple Python script with string replacement to ensure every occurrence was mechanically transformed without missing any instances.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="370" cache_read_input_tokens="68152" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>

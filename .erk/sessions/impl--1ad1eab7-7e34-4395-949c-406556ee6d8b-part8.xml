@@ -1,0 +1,402 @@
+<session>
+  <meta source="agent-afd9c88" />
+  <meta branch="plnd/O9318-rename-plan-store-pr-03-21-1544" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Perform a bulk rename of `plan_store` → `pr_store` across the entire Python codebase.
+
+This is a mechanical rename — replace every occurrence of the identifier `plan_store` with `pr_store` in all Python files.
+
+This includes:
+- Field names: `plan_store: ManagedPrBackend` → `pr_store: ManagedPrBackend`
+- Keyword arguments: `plan_store=` → `pr_store=`
+- Attribute access: `.plan_store` → `.pr_store`
+- `self.plan_store` → `self.pr_store`
+- `ctx.plan_store` → `ctx.pr_store`
+- `context.plan_store` → `context.pr_store`
+- Any docstring mentions of `plan_store` → `pr_store`
+
+Files that need updating (from grep output):
+- `packages/erk-shared/src/erk_shared/context/context.py`
+- `packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py`
+- `packages/erk-shared/src/erk_shared/plan_workflow.py`
+- `src/erk/cli/commands/branch/checkout_cmd.py`
+- `src/erk/cli/commands/implement.py`
+- `src/erk/cli/commands/land_learn.py`
+- `src/erk/cli/commands/objective/plan_cmd.py`
+- `src/erk/cli/commands/objective_helpers.py`
+- `src/erk/cli/commands/pr/close_cmd.py`
+- `src/erk/cli/commands/pr/dispatch_cmd.py`
+- `src/erk/cli/commands/wt/create_cmd.py`
+- `src/erk/cli/commands/wt/delete_cmd.py`
+- `src/erk/core/context.py`
+- All test files under `tests/`
+
+Use `replace_all=True` in each file to replace every occurrence.
+
+Working directory is `/home/runner/work/erk/erk`.
+
+Do NOT change any other identifiers - only `plan_store` → `pr_store`.
+</user>
+  <assistant>I'll perform a bulk rename of `plan_store` → `pr_store` across the entire Python codebase using the Edit tool with `replace_all=True`.
+
+Let me start by finding all Python files that contain `plan_store`:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="25312" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 25312, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018oi7Vss8ghM5gCwhdvdvj1">
+    <param name="command">grep -r "plan_store" --include="*.py" /home/runner/work/erk/erk | wc -l</param>
+    <param name="description">Count total occurrences of plan_store in Python files</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="25312" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 25312, 'ephemeral_1h_input_tokens': 0}" output_tokens="164" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018oi7Vss8ghM5gCwhdvdvj1">
+360
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017g897wiwzcnENYcyGCvpvu">
+    <param name="pattern">plan_store</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="174" cache_read_input_tokens="25312" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017g897wiwzcnENYcyGCvpvu">
+Found 61 files
+tests/unit/cli/commands/test_implement_shared.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/test_lifecycle_update.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_close_prs.py
+tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+
+... [32 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll read and update each file systematically. Let me start with the source files, then move to tests:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1221" cache_read_input_tokens="25486" cache_creation="{'ephemeral_5m_input_tokens': 1221, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011yaR6JH37krNNAS1N4VYmw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1221" cache_read_input_tokens="25486" cache_creation="{'ephemeral_5m_input_tokens': 1221, 'ephemeral_1h_input_tokens': 0}" output_tokens="109" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011yaR6JH37krNNAS1N4VYmw">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PrListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.pr_list_service import PrListService
+    30→from erk_shared.core.prompt_executor import PromptExecutor
+
+... [250 lines omitted] ...
+
+   141→            RuntimeError: If not in a git repository
+   144→            raise RuntimeError("Not in a git repository")
+   204→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <assistant>Now I'll systematically update all files. I'll use a Python script to do this efficiently:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="4091" cache_read_input_tokens="26707" cache_creation="{'ephemeral_5m_input_tokens': 4091, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011gc58J6CePq5edvdKjXLEa">
+    <param name="command">python3 &lt;&lt; 'PYTHON_SCRIPT'
+import re
+from pathlib import Path
+
+# Find all Python files con...[truncated 224 chars]...
+
+print(f"Found {len(result)} files")
+for f in sorted(result):
+    print(f)
+PYTHON_SCRIPT
+</param>
+    <param name="description">List all Python files containing plan_store</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4091" cache_read_input_tokens="26707" cache_creation="{'ephemeral_5m_input_tokens': 4091, 'ephemeral_1h_input_tokens': 0}" output_tokens="254" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011gc58J6CePq5edvdKjXLEa">
+Found 61 files
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py
+/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/implement.py
+/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/close_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py
+/home/runner/work/erk/erk/src/erk/cli/commands/wt/delete_cmd.py
+/home/runner/work/erk/erk/src/erk/core/context.py
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
+/home/runner/work/erk/erk/tests/commands/dispatch/conftest.py
+/home/runner/work/erk/erk/tests/commands/implement/test_execution_modes.py
+/home/runner/work/erk/erk/tests/commands/implement/test_flags.py
+/home/runner/work/erk/erk/tests/commands/implement/test_issue_mode.py
+/home/runner/work/erk/erk/tests/commands/implement/test_model_flag.py
+/home/runner/work/erk/erk/tests/commands/pr/test_close.py
+/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py
+/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_log.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py
+/home/runner/work/erk/erk/tests/commands/pr/test_view.py
+/home/runner/work/erk/erk/tests/commands/test_top_level_commands.py
+/home/runner/work/erk/erk/tests/commands/workspace/test_delete.py
+/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py
+/home/runner/work/erk/erk/tests/test_utils/test_context.py
+
+... [32 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll perform the bulk rename using a Python script:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2264" cache_read_input_tokens="30798" cache_creation="{'ephemeral_5m_input_tokens': 2264, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AuNFjHBUwP24LmJpVazmD8">
+    <param name="command">python3 &lt;&lt; 'PYTHON_SCRIPT'
+import re
+from pathlib import Path
+
+# Find all Python files con...[truncated 803 chars]...al: {total_replacements} replacements across {len(files_to_update)} files")
+PYTHON_SCRIPT
+</param>
+    <param name="description">Bulk rename plan_store to pr_store in all Python files</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2264" cache_read_input_tokens="30798" cache_creation="{'ephemeral_5m_input_tokens': 2264, 'ephemeral_1h_input_tokens': 0}" output_tokens="417" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AuNFjHBUwP24LmJpVazmD8">
+Updating 61 files...
+  tests/commands/test_top_level_commands.py: 1 replacements
+  tests/test_utils/test_context.py: 6 replacements
+  tests/unit/cli/commands/test_implement_shared.py: 13 replacements
+  tests/unit/cli/commands/land/test_land_learn.py: 27 replacements
+  tests/unit/cli/commands/pr/test_lifecycle_update.py: 4 replacements
+  tests/unit/cli/commands/pr/test_shared.py: 3 replacements
+  tests/unit/cli/commands/pr/test_metadata_helpers.py: 18 replacements
+  tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py: 6 replacements
+  tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py: 3 replacements
+  tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py: 3 replacements
+  tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py: 8 replacements
+  tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py: 3 replacements
+  tests/unit/cli/commands/exec/scripts/test_close_prs.py: 5 replacements
+  tests/unit/cli/commands/exec/scripts/test_get_pr_context.py: 2 replacements
+  tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py: 8 replacements
+  tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py: 13 replacements
+  tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py: 1 replacements
+  tests/unit/cli/commands/exec/scripts/test_set_pr_description.py: 1 replacements
+  tests/unit/cli/commands/exec/scripts/test_add_plan_label.py: 1 replacements
+  tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py: 14 replacements
+  tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py: 3 replacements
+  tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py: 21 replacements
+  tests/unit/cli/commands/exec/scripts/test_track_learn_result.py: 8 replacements
+  tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py: 5 replacements
+  tests/unit/cli/commands/exec/scripts/test_update_pr_description.py: 2 replacements
+  tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py: 7 replacements
+  tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py: 5 replacements
+  tests/unit/cli/commands/exec/scripts/test_update_plan_header.py: 16 replacements
+  tests/unit/cli/commands/exec/scripts/test_plan_update.py: 12 replacements
+
+... [34 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes by checking a few key files:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="1986" cache_read_input_tokens="33062" cache_creation="{'ephemeral_5m_input_tokens': 1986, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DyouwFG3GY6KBDuHPaTsCQ">
+    <param name="command">grep -n "plan_store" --include="*.py" -r . | head -20</param>
+    <param name="description">Verify no plan_store remains in Python files</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="1986" cache_read_input_tokens="33062" cache_creation="{'ephemeral_5m_input_tokens': 1986, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DyouwFG3GY6KBDuHPaTsCQ">
+
+  </tool_result>
+  <assistant>Excellent! No results found, meaning all occurrences of `plan_store` have been successfully replaced. Let me verify by checking a few specific files and looking at the changes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7898" cache_read_input_tokens="35048" cache_creation="{'ephemeral_5m_input_tokens': 7898, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JWBaH7Nm3aoDpDSEyzoaVM">
+    <param name="command">grep -n "pr_store" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py | head -10</param>
+    <param name="description">Verify pr_store appears in context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7898" cache_read_input_tokens="35048" cache_creation="{'ephemeral_5m_input_tokens': 7898, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWBaH7Nm3aoDpDSEyzoaVM">
+57:from erk_shared.pr_store.backend import ManagedPrBackend
+90:    pr_store: ManagedPrBackend
+177:        """Access pr_store as ManagedPrBackend (read/write interface).
+179:        Since pr_store is typed as ManagedPrBackend, this is a direct alias.
+182:        return self.pr_store
+221:        pr_store: ManagedPrBackend | None = None,
+241:            pr_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
+266:            pr_store=pr_store,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01L3UMJ4zNYPj5bG6JyC7pwk">
+    <param name="command">grep -n "pr_store" /home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="description">Verify pr_store in src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="331" cache_read_input_tokens="42946" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L3UMJ4zNYPj5bG6JyC7pwk">
+79:from erk_shared.pr_store.backend import ManagedPrBackend
+80:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+304:    pr_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
+358:        pr_store=pr_store,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NCFzSgnhU9xEyQrs4DhAd9">
+    <param name="command">grep -n "ctx.pr_store" /home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="description">Verify ctx.pr_store in implement.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="329" cache_read_input_tokens="43277" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NCFzSgnhU9xEyQrs4DhAd9">
+168:    result = ctx.pr_store.get_managed_pr(repo.root, pr_number)
+222:    provider_name = ctx.pr_store.get_provider_name()
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Pzmnxqt7pBpZsMWVkDhrxr">
+    <param name="command">grep -n "pr_store" /home/runner/work/erk/erk/tests/fakes/tests/shared_context.py | head -15</param>
+    <param name="description">Verify pr_store in test fakes</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="170" cache_read_input_tokens="43606" cache_creation="{'ephemeral_5m_input_tokens': 170, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pzmnxqt7pBpZsMWVkDhrxr">
+32:from erk_shared.pr_store.backend import ManagedPrBackend
+33:from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+56:    pr_store: ManagedPrBackend | None = None,
+85:        pr_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
+186:    # Resolve pr_store: explicit &gt; ManagedGitHubPrBackend default
+187:    resolved_pr_store: ManagedPrBackend
+188:    if pr_store is not None:
+189:        resolved_pr_store = pr_store
+191:        resolved_pr_store = ManagedGitHubPrBackend(
+207:        pr_store=resolved_pr_store,
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes are consistent across the codebase by doing a final check:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="330" cache_read_input_tokens="43776" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SkMyrJXCEpbn1LeqV2z1Hb">
+    <param name="command">python3 &lt;&lt; 'PYTHON_SCRIPT'
+# Final verification: count occurrences
+import subprocess
+
+# Ch...[truncated 523 chars]...dout.strip() else 0
+print(f"✓ Found {pr_store_count} pr_store occurrences")
+PYTHON_SCRIPT
+</param>
+    <param name="description">Final verification of rename</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="330" cache_read_input_tokens="43776" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SkMyrJXCEpbn1LeqV2z1Hb">
+✓ No plan_store occurrences remain in Python files
+✓ Found 530 pr_store occurrences
+  </tool_result>
+  <assistant>Excellent! Let me now generate a summary of the changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="44106" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XKnKLEgSBSzyhhszMp4Yzd">
+    <param name="command">git diff --stat</param>
+    <param name="description">Show git diff statistics</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="473" cache_read_input_tokens="44106" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XKnKLEgSBSzyhhszMp4Yzd">
+ .../erk-shared/src/erk_shared/context/context.py   | 14 ++++----
+ .../erk_shared/gateway/github/objective_issues.py  |  2 +-
+ .../erk-shared/src/erk_shared/plan_workflow.py     |  2 +-
+ src/erk/cli/commands/branch/checkout_cmd.py        |  2 +-
+ src/erk/cli/commands/implement.py                  |  4 +--
+ src/erk/cli/commands/land_learn.py                 |  2 +-
+ src/erk/cli/commands/objective/plan_cmd.py         |  4 +--
+ src/erk/cli/commands/objective_helpers.py          |  4 +--
+ src/erk/cli/commands/pr/close_cmd.py               |  4 +--
+ src/erk/cli/commands/pr/dispatch_cmd.py            |  2 +-
+ src/erk/cli/commands/wt/create_cmd.py              |  4 +--
+ src/erk/cli/commands/wt/delete_cmd.py              |  4 +--
+ src/erk/core/context.py                            |  4 +--
+ tests/commands/branch/test_checkout_cmd.py         | 28 +++++++--------
+ tests/commands/dispatch/conftest.py                |  2 +-
+ tests/commands/implement/test_execution_modes.py   | 26 +++++++-------
+ tests/commands/implement/test_flags.py             | 20 +++++------
+ tests/commands/implement/test_issue_mode.py        | 14 ++++----
+ tests/commands/implement/test_model_flag.py        | 14 ++++----
+ tests/commands/pr/test_close.py                    | 14 ++++----
+ tests/commands/pr/test_dispatch.py                 | 14 ++++----
+ tests/commands/pr/test_duplicate_check.py          | 28 +++++++--------
+ tests/commands/pr/test_log.py                      | 14 ++++----
+ tests/commands/pr/test_rewrite.py                  |  2 +-
+ tests/commands/pr/test_view.py                     | 38 ++++++++++----------
+ tests/commands/test_top_level_commands.py          |  2 +-
+ tests/commands/workspace/test_delete.py            |  6 ++--
+ tests/fakes/tests/shared_context.py                | 16 ++++-----
+ tests/test_utils/test_context.py                   | 10 +++---
+ .../commands/exec/scripts/test_add_plan_label.py   |  2 +-
+
+... [32 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! The bulk rename has been completed successfully. Let me create a final summary:
+
+## Summary
+
+Successfully performed a bulk rename of `plan_store` → `pr_store` across the entire Python codebase.
+
+### Results
+
+- **Files modified**: 61 Python files
+- **Total replacements**: 401 occurrences renamed
+- **Verification**: No `plan_store` occurrences remain in Python files
+- **New occurrences**: 530 `pr_store` occurrences (includes pre-existing uses)
+
+### Key Files Updated
+
+**Core source files:**
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` (8 replacements)
+- `/home/runner/work/erk/erk/src/erk/core/context.py` (3 replacements)
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_workflow.py` (1 replacement)
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py` (1 replacement)
+
+**CLI command files:**
+- `/home/runner/work/erk/erk/src/erk/cli/commands/implement.py` (2 replacements)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/objective_helpers.py` (2 replacements)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/create_cmd.py` (2 replacements)
+- `/home/runner/work/erk/erk/src/erk/cli/commands/wt/delete_cmd.py` (2 replacements)
+- And others (checkout_cmd, plan_cmd, close_cmd, dispatch_cmd, land_learn)
+
+**Test files:**
+- 48 test files updated across `tests/unit/`, `tests/commands/`, and `tests/fakes/`
+- Includes updates to shared test context in `/home/runner/work/erk/erk/tests/fakes/tests/shared_context.py`
+
+### Changes Made
+
+All occurrences replaced:
+- Field names: `plan_store: ManagedPrBackend` → `pr_store: ManagedPrBackend`
+- Keyword arguments: `plan_store=` → `pr_store=`
+- Attribute access: `.plan_store` → `.pr_store`
+- `self.plan_store` → `self.pr_store`
+- `ctx.plan_store` → `ctx.pr_store`
+- `context.plan_store` → `context.pr_store`
+- Docstring mentions updated
+
+The rename is complete and verified. All Python files have been successfully updated with no remaining `plan_store` references.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1628" cache_read_input_tokens="44579" cache_creation="{'ephemeral_5m_input_tokens': 1628, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
