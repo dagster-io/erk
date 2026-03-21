@@ -31,11 +31,11 @@ There is no error, no warning — you simply get fewer results than expected. Th
 
 Because of AND semantics, erk queries by **type-specific** labels only:
 
-| View       | Query Label     | NOT base label     |
-| ---------- | --------------- | ------------------ |
-| Plans      | `erk-pr`        | —                  |
-| Learn      | `erk-learn`     | —                  |
-| Objectives | `erk-objective` | N/A                |
+| View       | Query Label     | NOT base label |
+| ---------- | --------------- | -------------- |
+| Plans      | `erk-pr`        | —              |
+| Learn      | `erk-learn`     | —              |
+| Objectives | `erk-objective` | N/A            |
 
 ## Impact
 
