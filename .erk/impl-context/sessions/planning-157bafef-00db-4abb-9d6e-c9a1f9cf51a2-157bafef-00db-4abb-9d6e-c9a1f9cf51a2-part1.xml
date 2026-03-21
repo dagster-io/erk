@@ -1,0 +1,1076 @@
+<session>
+  <meta branch="plnd/O9272-move-slot-cmds-check-03-20-1504" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:objective-plan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-plan&lt;/command-name&gt;
+&lt;command-args&gt;9272&lt;/command-args&gt;</user>
+  <user># /erk:objective-plan
+
+Create an implementation plan for a specific node in an objective's dependency graph.
+
+## Usage
+
+```bash
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for objective reference
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `9272` for `--node &lt;node-id&gt;`. If `--node` is present along with an issue number:
+
+**Invoke the inner skill immediately** via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Resolve Objective Reference
+
+Strip `--node` from `9272` if present, then run:
+
+```bash
+erk exec resolve-objective-ref 9272
+```
+
+**Interpret the JSON result:**
+
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
+
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup &lt;objective-number&gt; --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2"
+```
+
+**Interpret the JSON result:**
+
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 3: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 4: Display Roadmap and Prompt User
+
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
+
+Then use AskUserQuestion to ask which node to plan:
+
+```
+Which node should I create a plan for?
+- Node 1A.1: &lt;description&gt; (Recommended) ← first pending node without plan in progress
+- Node 1A.2: &lt;description&gt;
+- Node 2B.1: &lt;description&gt; (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
+```
+
+**Filtering rules (based on node `status` field from phases):**
+
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
+
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
+
+If all nodes are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5: Invoke Inner Skill
+
+After the user selects a node, invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;selected-node-id&gt;
+```
+
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+---
+
+## Output Format
+
+- **Start:** "Loading objective #&lt;number&gt;..."
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node &lt;step-id&gt;: &lt;description&gt;"
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
+</user>
+  <assistant>
+
+Loading objective #9272...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="12660" cache_read_input_tokens="15114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12660}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KhspJTxvLAWt7NLdKNgvZy">
+    <param name="command">erk exec resolve-objective-ref 9272</param>
+    <param name="description">Resolve objective reference for #9272</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="12660" cache_read_input_tokens="15114" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KhspJTxvLAWt7NLdKNgvZy">
+{"resolved": true, "objective_number": 9272, "source": "argument"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XrkApDJnkvtTTkaCwyY8Je">
+    <param name="command">erk exec objective-plan-setup 9272 --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2"</param>
+    <param name="description">Fetch and set up objective context for #9272</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="128" cache_read_input_tokens="27774" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 128, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XrkApDJnkvtTTkaCwyY8Je">
+{"success": true, "objective": {"number": 9272, "title": "Objective: Extract Slot System into Plugin Package", "state": "OPEN", "labels": ["erk-objective"]}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "create-slots-package", "description": "Create packages/erk-slots/ workspace package with pyproject.toml, src/erk_slots/ layout, and entry in uv workspace", "status": "in_progress", "pr": "#9273", "depends_on": [], "comment": null}, {"id": "1.2", "slug": "conditional-loading", "description": "Conditional plugin loading in cli.py: try import erk_slots, register slot group if available, replacing hardcoded import", "status": "in_progress", "pr": "#9273", "depends_on": ["1.1"], "comment": null}, {"id": "1.3", "slug": "move-slot-commands", "description": "Move slot CLI commands and common.py into erk_slots package, update internal imports", "status": "in_progress", "pr": "#9276", "depends_on": ["1.2"], "comment": null}, {"id": "1.4", "slug": "move-branch-checkout", "description": "Move branch checkout into slot checkout: create erk slot checkout in erk_slots with full slot-aware logic, remove branch checkout from core", "status": "pending", "pr": null, "depends_on": ["1.3"], "comment": null}, {"id": "1.5", "slug": "simplify-branch-create", "description": "Simplify branch create: remove allocate_slot_for_branch and update_slot_assignment_tip, create branch + direct worktree only", "status": "pending", "pr": null, "depends_on": ["1.4"], "comment": null}, {"id": "1.6", "slug": "decouple-config", "description": "Remove slot imports from config.py (DEFAULT_POOL_SIZE) \u2014 pool config internal to erk_slots", "status": "pending", "pr": null, "depends_on": ["1.5"], "comment": null}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "move-navigation", "description": "Move navigation into erk_slots: slot up / slot down with slot-aware worktree allocation", "status": "pending", "pr": null, "depends_on": ["1.6"], "comment": null}, {"id": "2.2", "slug": "move-teleport", "description": "Move pr teleport into erk_slots: slot teleport with find_assignment_by_worktree and update_slot_assignment_tip", "status": "pending", "pr": null, "depends_on": ["2.1"], "comment": null}, {"id": "2.3", "slug": "move-wt-commands", "description": "Move wt create-from and wt delete into erk_slots: slot create-from and slot delete", "status": "pending", "pr": null, "depends_on": ["2.2"], "comment": null}, {"id": "2.4", "slug": "simplify-land", "description": "Simplify land: remove execute_unassign and pool state imports, rely on implicit pool reuse", "status": "pending", "pr": null, "depends_on": ["2.3"], "comment": null}, {"id": "2.5", "slug": "simplify-remaining", "description": "Simplify remaining: branch delete (remove unassign), branch/wt list (remove is_placeholder_branch), reconcile_pipeline, stack consolidate", "status": "pending", "pr": null, "depends_on": ["2.4"], "comment": null}, {"id": "2.6", "slug": "move-data-layer", "description": "Move worktree_pool.py and legacy_slot_naming health check into erk_slots package", "status": "pending", "pr": null, "depends_on": ["2.5"], "comment": null}, {"id": "2.7", "slug": "delete-slot-from-core", "description": "Delete erk.cli.commands.slot/ directory from core package entirely", "status": "pending", "pr": null, "depends_on": ["2.6"], "comment": null}]}], "summary": {"total_nodes": 13, "pending": 10, "planning": 0, "done": 0, "in_progress": 3, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.4", "slug": "move-branch-checkout", "description": "Move branch checkout into slot checkout: create erk slot checkout in erk_slots with full slot-aware logic, remove branch checkout from core", "phase": "Phase 1", "status": "pending"}, "all_complete": false}, "validation": {"passed": true, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "PR references use '#' prefix"}, {"passed": true, "description": "Roadmap table in sync with YAML"}, {"passed": true, "description": "PR backlinks: all PR references have matching objective_issue backlinks"}]}, "marker_created": true, "warnings": []}
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01YWqbaDEFdTYghhVmMpaceV">
+    <param name="skill">objective</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1556" cache_read_input_tokens="27902" output_tokens="52" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1556, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YWqbaDEFdTYghhVmMpaceV">
+Launching skill: objective
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/objective
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per phase** - Each phase is sized for a coherent single PR
+8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+# Objective: [Title]
+
+&gt; [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 2: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
+
+EOF
+)"
+```
+
+### Logging an Action
+
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
+```bash
+gh issue comment &lt;issue-number&gt; --body "$(cat &lt;&lt;'EOF'
+## Action: [Brief title]
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
+### What Was Done
+### Lessons Learned
+### Roadmap Updates
+EOF
+)"
+```
+
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
+
+### Updating Node Details
+
+Update node description, slug, or reason using `update-objective-node`:
+
+```bash
+# Update description
+erk exec update-objective-node 8470 --node 1.3 --description "Revised description"
+
+# Set slug
+erk exec update-objective-node 8470 --node 1.3 --slug "revised-slug"
+
+# Skip with comment
+erk exec update-objective-node 8470 --node 1.3 --status skipped --comment "Superseded by new approach"
+
+# Combine multiple updates
+erk exec update-objective-node 8470 --node 2.1 --description "New desc" --slug "new-slug" --status planning
+```
+
+### Adding Nodes
+
+Add new nodes to an existing objective's roadmap:
+
+```bash
+# Add to existing phase (auto-assigns next ID, e.g., 1.4)
+erk exec add-objective-node 8470 --phase 1 --description "Clean up dead code"
+
+# With explicit slug and dependencies
+erk exec add-objective-node 8470 --phase 2 \
+  --description "Integration tests" \
+  --slug integration-tests \
+  --depends-on 2.1 --depends-on 2.2
+
+# With comment for adding
+erk exec add-objective-node 8470 --phase 1 \
+  --description "Handle edge case" \
+  --comment "Discovered during re-evaluation"
+```
+
+### Updating Node Status
+
+Always use the programmatic command — never manually edit YAML or prose tables:
+
+```bash
+erk exec update-objective-node &lt;issue&gt; --node &lt;id&gt; --status &lt;status&gt;
+erk exec update-objective-node &lt;issue&gt; --node &lt;id&gt; --pr '#1234'
+```
+
+Then validate: `erk objective check &lt;issue-number&gt;`
+
+### Viewing an Objective
+
+View an objective's dependency graph, dependencies, and next node:
+
+```bash
+# CLI
+erk objective view &lt;issue-number&gt;
+
+# Slash command (in-session)
+/local:objective-view &lt;issue-number&gt;
+```
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap node, create an erk-plan that references the objective:
+
+```bash
+erk pr create --file plan.md --title "Implement [node description]"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Inspect progress** - View dependency graph and next node
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
+- `closing.md` - Closing triggers and procedures
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="1796" cache_read_input_tokens="29458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1796}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Objective #9272: Extract Slot System into Plugin Package**
+
+### Roadmap
+
+| Phase | Node | Description | Status | PR |
+|-------|------|-------------|--------|-----|
+| 1 | 1.1 | Create erk-slots workspace package | in_progress | #9273 |
+| 1 | 1.2 | Conditional plugin loading in cli.py | in_progress | #9273 |
+| 1 | 1.3 | Move slot CLI commands + common.py | in_progress | #9276 |
+| 1 | **1.4** | **Move branch checkout into slot checkout** | **pending** | |
+| 1 | 1.5 | Simplify branch create | pending | |
+| 1 | 1.6 | Decouple config | pending | |
+| 2 | 2.1 | Move navigation (slot up/down) | pending | |
+| 2 | 2.2 | Move pr teleport into erk_slots | pending | |
+| 2 | 2.3 | Move wt create-from and wt delete | pending | |
+| 2 | 2.4 | Simplify land | pending | |
+| 2 | 2.5 | Simplify remaining commands | pending | |
+| 2 | 2.6 | Move data layer (worktree_pool.py) | pending | |
+| 2 | 2.7 | Delete slot directory from core | pending | |</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1796" cache_read_input_tokens="29458" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1796}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0176xMma6mLqi86bNf2zdT7q">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1796" cache_read_input_tokens="29458" output_tokens="702" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1796, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0176xMma6mLqi86bNf2zdT7q">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01VqJsjHW3p5nBvQX7cCKWvF">
+    <param name="questions">[{'question': 'Which node should I create a plan for?', 'header': 'Node', 'options': [{'la...[truncated 419 chars]...nfig.py (DEFAULT_POOL_SIZE) — pool config internal to erk_slots'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2048" cache_read_input_tokens="31254" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2048, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VqJsjHW3p5nBvQX7cCKWvF">
+User has answered your questions: "Which node should I create a plan for?"="Node 1.4 (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Creating plan for **Node 1.4: Move branch checkout into slot checkout**.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3704" cache_read_input_tokens="33302" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3704}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01T53ibdY6ugB3YRp6yF6jbs">
+    <param name="skill">erk:system:objective-plan-node</param>
+    <param name="args">9272 --node 1.4</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3704" cache_read_input_tokens="33302" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3704, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T53ibdY6ugB3YRp6yF6jbs">
+Launching skill: erk:system:objective-plan-node
+  </tool_result>
+  <user># /erk:system:objective-plan-node
+
+Inner skill for creating an implementation plan when the objective issue and node ID are already known. Called by the outer `/erk:objective-plan` command or directly by `plan_cmd.py` via Claude launch.
+
+This skips interactive node selection (Steps 4-5 of the outer command) since the node is already determined.
+
+## Usage
+
+```bash
+/erk:system:objective-plan-node 3679 --node 2.1
+```
+
+Both `&lt;objective-number&gt;` and `--node &lt;node-id&gt;` are required.
+
+---
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Parse `9272 --node 1.4` to extract:
+
+- **Objective number**: The numeric objective reference (required)
+- **Node ID**: The `--node` value (required)
+
+If either is missing, STOP and report: "ERROR: Both objective number and --node are required. Usage: /erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;"
+
+### Step 2: Create Objective Context Marker
+
+Launch a Task agent to fetch objective data and create the context marker:
+
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"`:
+
+**Task Prompt:**
+
+```
+Fetch and validate objective #&lt;objective-number&gt; and return a structured summary.
+
+CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
+
+Instructions:
+1. Run: erk exec get-issue-body &lt;objective-number&gt;
+2. Validate this is an objective:
+   - Check for 'erk-objective' label
+   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
+   - If neither label: include warning but proceed
+3. Create objective context marker:
+   erk exec marker create --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2" --associated-objective &lt;objective-number&gt; objective-context
+4. Run: erk objective check &lt;objective-number&gt; --json-output --allow-legacy
+5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
+
+OBJECTIVE: #&lt;number&gt; — &lt;title&gt;
+STATUS: &lt;OPEN|CLOSED&gt;
+
+ROADMAP:
+| Node | Phase | Description | Status |
+| 1.1 | Phase 1 | &lt;description&gt; | done (PR #123) |
+| 1.2 | Phase 1 | &lt;description&gt; | pending |
+| 2.1 | Phase 2 | &lt;description&gt; | blocked |
+
+PENDING_NODES:
+- 1.2: &lt;description&gt;
+- 3.1: &lt;description&gt;
+
+RECOMMENDED: &lt;node-id or "none"&gt;
+
+WARNINGS: &lt;any warnings about labels, roadmap format, etc., or "none"&gt;
+
+Status mapping:
+- "pending" → "pending"
+- "done" → "done (PR #XXX)"
+- "in_progress" → "plan in progress (#XXX)"
+- "blocked" → "blocked"
+- "skipped" → "skipped"
+
+Only include nodes with status "pending" in PENDING_NODES section.
+Use the "next_step" field from check output as RECOMMENDED.
+```
+
+Replace `&lt;objective-number&gt;` with the parsed objective number.
+
+### Step 3: Verify Objective Context Marker
+
+```bash
+erk exec marker read --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2" objective-context
+```
+
+If this returns a value matching the objective issue number, proceed.
+If it fails or returns wrong value, STOP and report:
+"ERROR: objective-context marker not created. Re-run the marker command manually:
+erk exec marker create --session-id '157bafef-00db-4abb-9d6e-c9a1f9cf51a2' --associated-objective &lt;issue-number&gt; objective-context"
+
+### Step 4: Create Roadmap Node Marker and Mark as Planning
+
+Create the roadmap-step marker for the known node:
+
+```bash
+erk exec marker create --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2" \
+  --content "&lt;node-id&gt;" roadmap-step
+```
+
+Replace `&lt;node-id&gt;` with the node ID from arguments.
+
+Then mark the node as `planning` in the objective's roadmap (best-effort — may already be marked by the CLI):
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id&gt; --status planning
+```
+
+If this fails, continue with planning — the CLI may have already marked it.
+
+### Step 5: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 6: Gather Context
+
+Before entering plan mode, gather relevant context:
+
+1. **Objective context:** Goal, design decisions, implementation context
+2. **Node context:** What the specific node requires
+3. **Prior work:** Look at completed nodes and their PRs for patterns
+
+Use this context to inform the plan.
+
+### Step 7: Enter Plan Mode
+
+Enter plan mode to create the implementation plan:
+
+1. Use the EnterPlanMode tool
+2. Focus the plan on the specific node selected
+3. Reference the parent objective in the plan
+
+**Plan should include:**
+
+- Reference to objective: `Part of Objective #&lt;number&gt;, Node &lt;node-id&gt;`
+- Clear goal for this specific node
+- Implementation phases (typically 1-3 for a single node)
+- Files to modify
+- Test requirements
+
+### Step 8: Save Plan as PR (Always Save)
+
+After the plan is approved in plan mode, **always save as a PR** — do not offer direct implementation. When the `exit-plan-mode-hook` fires, proceed directly with `/erk:plan-save`. Objective node plans require PR tracking for the objective's roadmap status to work correctly.
+
+The objective-context marker created in Step 2 is automatically read by `/erk:plan-save`. Simply run `/erk:plan-save` and it will link the plan to the objective.
+
+**If the marker was not created (fallback):**
+Create it manually before saving:
+
+```bash
+erk exec marker create --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2" --associated-objective &lt;objective-number&gt; objective-context
+```
+
+Then run `/erk:plan-save`.
+
+### Step 9: Verify Objective Link
+
+After saving, the JSON output includes `objective_issue`. Check that it matches the expected objective number.
+
+If verification is needed:
+
+```bash
+erk exec get-plan-metadata &lt;new-plan-number&gt; objective_issue
+```
+
+Check that `value` matches the expected objective number.
+
+---
+
+## Output Format
+
+- **Start:** "Planning node &lt;node-id&gt; of objective #&lt;number&gt;..."
+- **After context:** Display node description and gathered context
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Missing objective number or node ID     | Report error with usage instructions                             |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| Node not found in roadmap               | Report error and list available nodes                            |
+| Marker creation fails                   | Report error with manual command                                 |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **This is an inner skill** — it expects the node to be pre-selected, not interactive
+- **Best-effort marking** — the `planning` status update may already be done by the CLI before Claude launches
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+</user>
+  <assistant>
+
+Planning node 1.4 of objective #9272...
+
+Let me gather the objective context and set up markers.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2123" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2123}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TNZCpyqYi4b7j3sEf9u7ox">
+    <param name="command">erk exec marker create --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2" --content "1.4" roadmap-step</param>
+    <param name="description">Create roadmap-step marker for node 1.4</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2123" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2123}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YXsp1sQGtTkUPUEGiX8kUA">
+    <param name="command">erk exec marker read --session-id "157bafef-00db-4abb-9d6e-c9a1f9cf51a2" objective-context</param>
+    <param name="description">Verify objective-context marker exists</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2123" cache_read_input_tokens="37006" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2123}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TNZCpyqYi4b7j3sEf9u7ox">
+{"success": true, "message": "Created marker: roadmap-step"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014tB5TinUw2NhqJ2Ktt4LnX">
+    <param name="command">erk exec update-objective-node 9272 --node 1.4 --status planning</param>
+    <param name="description">Mark node 1.4 as planning</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2123" cache_read_input_tokens="37006" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YXsp1sQGtTkUPUEGiX8kUA">
+9272
+  </tool_result>
+  <tool_result tool="toolu_014tB5TinUw2NhqJ2Ktt4LnX">
+{"success": true, "issue_number": 9272, "node_id": "1.4", "previous_pr": null, "new_pr": null, "url": "https://github.com/dagster-io/erk/issues/9272"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="39129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 708}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Markers set up. Now let me gather context about the current codebase state to inform the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="39129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 708}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WuAMjcuXo9T4TxdYG36YPS">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore branch checkout command</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1155 chars]...y in erk_slots package
+- The objective's design decisions and any relevant lessons learned</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="39129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 708}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0124bn9QpLxQZ5tZxitxRUXj">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore slot package and gateway</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1142 chars]...mmon.py module contents
+- What functions from worktree_pool.py are used by branch checkout</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="39129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 708}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016CMVbgdtm4f9UYDTeoy5Mh">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore prior PR patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1117 chars]...age imports or coupling patterns
+- The branch structure (are we stacking on top of #9276?)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="39129" output_tokens="1407" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 708, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WuAMjcuXo9T4TxdYG36YPS">
+Perfect. Now I have a comprehensive understanding. Let me create a detailed summary report:
+
+## Summary Report: Objective #9272 Node 1.4 - Understanding the Branch Checkout Migration
+
+Based on my analysis of the codebase, here's a comprehensive report on the current implementation and what needs to be migrated:
+
+---
+
+### Current State Overview
+
+**Objective Goal**: Move `erk branch checkout` command into erk-slots package as `erk slot checkout` with full slot-aware logic, removing the branch checkout implementation from core.
+
+**Status**: 
+- Nodes 1.1–1.2: Complete (PR #9273) - erk-slots package created with conditional loading
+- Node 1.3: In Progress (PR #9276) - Slot commands and common.py moved to erk-slots
+- Node 1.4: Planning - Branch checkout migration
+
+---
+
+### 1. Current `erk branch checkout` Implementation
+
+**Location**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/branch/checkout_cmd.py` (707 lines)
+
+**Key Functions**:
+
+| Function | Lines | Purpose |
+|----------|-------|---------|
+| `branch_checkout()` | 416-462 | Click command entry point with `@alias("co")` |
+| `_branch_checkout_impl()` | 465-707 | Main implementation logic (checks args, resolves branch, finds/creates worktree) |
+| `try_switch_root_worktree()` | 41-77 | "Takeover" behavior: switches clean root to trunk instead of creating new slot |
+
+... [243 lines omitted] ...
+
+| `script_error_handler()` | 47-75 | Context manager for --script error handling |
+- `test_slot_checkout_pool_full_no_force_fails()` - Non-TTY pool-full error
+  </tool_result>
+  <tool_result tool="toolu_016CMVbgdtm4f9UYDTeoy5Mh">
+Perfect. Now I have a comprehensive understanding. Let me provide a complete report:
+
+## Analysis Report: Prior Node Implementation Patterns (Objective #9272 Nodes 1.1-1.3)
+
+### Summary
+
+I've reviewed PR #9273 (nodes 1.1-1.2) and PR #9276 (nodes 1.3-1.4), examined the current codebase structure, and analyzed the implementation patterns. You're currently on branch `plnd/O9272-move-slot-cmds-check-03-20-1504` which has both nodes 1.1-1.3 already implemented.
+
+---
+
+### Key Implementation Patterns from Nodes 1.1-1.3
+
+#### **Node 1.1-1.2: Package Creation + Conditional Loading**
+
+**What was created:**
+- New workspace package at `packages/erk-slots/` with standard layout:
+  - `pyproject.toml` declaring `erk-slots` as a workspace member
+  - Dependency on `erk-shared` only (not on core erk to avoid circular deps)
+  - Version pinned to `0.9.11`
+- Initial `erk_slots/__init__.py` re-exported `slot_group` from `erk.cli.commands.slot` (thin wrapper)
+- Registered in root `pyproject.toml`:
+  - Added to `[tool.uv.workspace]` members
+  - Added to `[tool.uv.sources]` with `{ workspace = true }`
+  - Added `erk_slots` to `[tool.ruff.lint.isort]` known-first-party
+  - Added test paths to pytest config
+- Conditional loading in `cli.py` using simple `try/except ImportError` pattern (not `is_learned_docs_available`)
+
+**File**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/pyproject.toml`
+
+#### **Node 1.3: Move Files + Reorganize Package**
+
+... [167 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0124bn9QpLxQZ5tZxitxRUXj">
+Perfect! Now I have all the information I need. Let me create a comprehensive report:
+
+## Summary: erk-slots Package Structure and Gateway/Service Layer
+
+### 1. Complete erk-slots Package Structure
+
+**Location**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/`
+
+**Package Metadata**:
+- **pyproject.toml**: Version 0.9.11, requires Python 3.11+, depends on `click&gt;=8.1.7` and `erk-shared`
+- **Build**: Uses hatchling, packages `src/erk_slots`
+
+**Source Files** (`src/erk_slots/`):
+1. **`__init__.py`** (817B) - Defines the `slot_group()` Click command group and registers all slot commands:
+   - `slot_assign`
+   - `slot_checkout`
+   - `slot_init_pool`
+   - `slot_list`
+   - `slot_repair`
+   - `slot_unassign`
+
+2. **`common.py`** (754 lines, 24.5K) - Core utilities and the unified allocation algorithm:
+   - `extract_slot_number()` / `generate_slot_name()` - Slot naming helpers
+   - `get_placeholder_branch_name()` / `is_placeholder_branch()` - Placeholder branch management
+   - `get_pool_size()` - Read pool size from config or use default (4 slots)
+   - `find_next_available_slot()` - Fast path: find unassigned slot not on disk
+   - `find_inactive_slot()` - Reuse path: find worktree without staged/modified files
+   - `sync_pool_assignments()` - Reconcile pool.json with actual git state (handles manual `git checkout` / `gt create`)
+   - `find_branch_assignment()` / `find_assignment_by_worktree()` - Lookup functions
+   - `find_oldest_assignment()` - For LRU eviction
+
+... [248 lines omitted] ...
+
+**Lazy State Correction**: If user runs `git checkout` manually in a slot, pool silently corrects state on next allocation (no error)
+  </tool_result>
+  <usage input_tokens="3139" cache_creation_input_tokens="10212" cache_read_input_tokens="39837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10212}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the critical files to deepen my understanding before designing the plan.</assistant>
+  <usage input_tokens="3139" cache_creation_input_tokens="10212" cache_read_input_tokens="39837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10212}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014553Dv7yjwHpGb8XDfbThv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3139" cache_creation_input_tokens="10212" cache_read_input_tokens="39837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10212}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014553Dv7yjwHpGb8XDfbThv">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.commands.checkout_helpers import (
+    16→    display_sync_status,
+    17→    navigate_to_worktree,
+    18→    script_error_handler,
+    19→)
+    20→from erk.cli.commands.completions import complete_branch_names
+    21→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    22→from erk.cli.core import discover_repo_context
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.cli.graphite import find_worktrees_containing_branch
+    25→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    26→from erk.core.context import ErkContext
+    27→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    28→from erk.core.worktree_utils import compute_relative_path_in_worktree
+    29→from erk_shared.cli_alias import alias
+    30→from erk_shared.gateway.git.abc import WorktreeInfo
+
+... [677 lines omitted] ...
+
+    36→    PlanValidationFailed,
+   409→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   455→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   472→    """Implementation body for branch_checkout — separated for error wrapping."""
+   476→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   482→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   500→            raise click.ClickException(f"PR #{pr_number} not found")
+   504→        if isinstance(plan_result, PlanValidationFailed):
+   505→            user_output(f"Error: {plan_result.message}")
+   511→        for warning in setup.warnings:
+   512→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   521→            user_output("Error: Could not detect trunk branch.")
+   576→                            f"Error: Branch '{branch}' does not exist.\n"
+   694→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <tool_use name="Read" id="toolu_017KjKMq4aLRDVUynzKwv23y">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/src/erk_slots/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3139" cache_creation_input_tokens="10212" cache_read_input_tokens="39837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10212}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017KjKMq4aLRDVUynzKwv23y">
+     1→"""Slot checkout command - checkout a branch into a pool slot."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.core import discover_repo_context
+     6→from erk.core.context import ErkContext
+     7→from erk.core.repo_discovery import ensure_erk_metadata_dir
+     8→from erk.core.worktree_pool import load_pool_state
+     9→from erk_shared.output.output import user_output
+    10→from erk_slots.common import (
+    11→    allocate_slot_for_branch,
+    12→    find_current_slot_assignment,
+    13→    update_slot_assignment_tip,
+    14→)
+    15→
+    16→
+    17→@click.command("checkout")
+    18→@click.argument("branch", metavar="BRANCH")
+    19→@click.option(
+    20→    "--new-slot",
+    21→    is_flag=True,
+    22→    help="Allocate a new slot instead of stacking in place",
+    23→)
+    24→@click.option(
+    25→    "-f",
+    26→    "--force",
+    27→    is_flag=True,
+    28→    help="Auto-unassign oldest branch if pool is full",
+    29→)
+    30→@click.pass_obj
+
+... [80 lines omitted] ...
+
+    62→                f"Error: Branch '{branch}' does not exist.\n"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PVe2qLgrShXe6sRWqNC79J">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3139" cache_creation_input_tokens="10212" cache_read_input_tokens="39837" output_tokens="428" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PVe2qLgrShXe6sRWqNC79J">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.core import worktree_path_for
+    23→from erk.core.context import ErkContext
+    24→from erk.core.repo_discovery import RepoContext
+    25→from erk_shared.output.output import user_output
+    26→from erk_slots.common import allocate_slot_for_branch
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [299 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="19069" cache_read_input_tokens="50049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19069}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011zNWXdbH8HF5kBiRkVihWn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/src/erk_slots/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19069" cache_read_input_tokens="50049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19069}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011zNWXdbH8HF5kBiRkVihWn">
+     1→"""Worktree pool slot management plugin for erk."""
+     2→
+     3→import click
+     4→
+     5→from erk_shared.cli_alias import register_with_aliases
+     6→from erk_shared.cli_group import ErkCommandGroup
+     7→from erk_slots.assign_cmd import slot_assign
+     8→from erk_slots.checkout_cmd import slot_checkout
+     9→from erk_slots.init_pool_cmd import slot_init_pool
+    10→from erk_slots.list_cmd import slot_list
+    11→from erk_slots.repair_cmd import slot_repair
+    12→from erk_slots.unassign_cmd import slot_unassign
+    13→
+    14→
+    15→@click.group("slot", cls=ErkCommandGroup, grouped=False)
+    16→def slot_group() -&gt; None:
+    17→    """Manage worktree pool slots."""
+    18→    pass
+    19→
+    20→
+    21→slot_group.add_command(slot_assign)
+    22→slot_group.add_command(slot_checkout)
+    23→slot_group.add_command(slot_init_pool)
+    24→slot_group.add_command(slot_repair)
+    25→slot_group.add_command(slot_unassign)
+    26→register_with_aliases(slot_group, slot_list)
+    27→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YJKTPTm2K6M7ZJLbV8k8K2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/branch/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19069" cache_read_input_tokens="50049" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19069}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJKTPTm2K6M7ZJLbV8k8K2">
+     1→"""Branch management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.branch.checkout_cmd import branch_checkout
+     6→from erk.cli.commands.branch.create_cmd import branch_create
+     7→from erk.cli.commands.branch.delete_cmd import branch_delete
+     8→from erk.cli.commands.branch.list_cmd import branch_list
+     9→from erk_shared.cli_alias import alias, register_with_aliases
+    10→from erk_shared.cli_group import ErkCommandGroup
+    11→
+    12→
+    13→@alias("br")
+    14→@click.group("branch", cls=ErkCommandGroup, grouped=False)
+    15→def branch_group() -&gt; None:
+    16→    """Manage branches."""
+    17→    pass
+    18→
+    19→
+    20→# Register subcommands
+    21→branch_group.add_command(branch_create)
+    22→branch_group.add_command(branch_delete)
+    23→register_with_aliases(branch_group, branch_checkout)
+    24→register_with_aliases(branch_group, branch_list)
+    25→
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Hp9UfFxHUaMz25bQDSMRcR">
+    <param name="command">erk exec get-issue-body 9272 | head -200</param>
+    <param name="description">Get objective #9272 body for design decisions</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19069" cache_read_input_tokens="50049" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19069, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hp9UfFxHUaMz25bQDSMRcR">
+{"success": true, "issue_number": 9272, "title": "Objective: Extract Slot System into Plugin Package", "body": "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-03-20T14:20:11.429236+00:00'\ncreated_by: schrockn\nobjective_comment_id: 4100113739\nslug: extract-slots-plugin-package\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '4'\nnodes:\n- id: '1.1'\n  slug: create-slots-package\n  description: Create packages/erk-slots/ workspace package with pyproject.toml, src/erk_slots/\n    layout, and entry in uv workspace\n  status: done\n  pr: '#9273'\n- id: '1.2'\n  slug: conditional-loading\n  description: 'Conditional plugin loading in cli.py: importlib.util.find_spec(''erk_slots'')\n    check to register slot group if available, replacing hardcoded import'\n  status: in_progress\n  pr: '#9273'\n- id: '1.3'\n  slug: move-slot-commands\n  description: Move slot CLI commands and common.py into erk_slots package, update\n    internal imports\n  status: in_progress\n  pr: '#9276'\n- id: '1.4'\n  slug: move-branch-checkout\n  description: 'Move branch checkout into slot checkout: create erk slot checkout\n    in erk_slots with full slot-aware logic, remove branch checkout from core'\n  status: planning\n  pr: null\n- id: '1.5'\n  slug: simplify-branch-create\n  description: 'Simplify branch create: remove allocate_slot_for_branch and update_slot_assignment_tip,\n    create branch + direct worktree only'\n  status: pending\n  pr: null\n- id: '1.6'\n  slug: decouple-config\n  description: Remove slot imports from config.py (DEFAULT_POOL_SIZE) \u2014 pool config\n    internal to erk_slots\n  status: pending\n  pr: null\n- id: '2.1'\n  slug: move-navigation\n  description: 'Move navigation into erk_slots: slot up / slot down with slot-aware\n    worktree allocation'\n  status: pending\n  pr: null\n- id: '2.2'\n  slug: move-teleport\n  description: 'Move pr teleport into erk_slots: slot teleport with find_assignment_by_worktree\n    and update_slot_assignment_tip'\n  status: pending\n  pr: null\n- id: '2.3'\n  slug: move-wt-commands\n  description: 'Move wt create-from and wt delete into erk_slots: slot create-from\n    and slot delete'\n  status: pending\n  pr: null\n- id: '2.4'\n  slug: simplify-land\n  description: 'Simplify land: remove execute_unassign and pool state imports, rely\n    on implicit pool reuse'\n  status: pending\n  pr: null\n- id: '2.5'\n  slug: simplify-remaining\n  description: 'Simplify remaining: branch delete (remove unassign), branch/wt list\n    (remove is_placeholder_branch), reconcile_pipeline, stack consolidate'\n  status: pending\n  pr: null\n- id: '2.6'\n  slug: move-data-layer\n  description: Move worktree_pool.py and legacy_slot_naming health check into erk_slots\n    package\n  status: pending\n  pr: null\n- id: '2.7'\n  slug: delete-slot-from-core\n  description: Delete erk.cli.commands.slot/ directory from core package entirely\n  status: pending\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;", "state": "OPEN", "labels": ["erk-objective"], "url": "https://github.com/dagster-io/erk/issues/9272"}
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2342" cache_read_input_tokens="69118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2342}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019kDw2DQwU4yMFzGoX7nbWv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/docs/learned/cli/checkout-three-path-logic.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2342" cache_read_input_tokens="69118" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2342}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019kDw2DQwU4yMFzGoX7nbWv">
+     1→---
+     2→title: Checkout Three-Path Logic
+     3→category: cli
+     4→read_when:
+     5→  - "modifying erk br co"
+     6→  - "working with --for-plan flag"
+     7→  - "changing slot allocation behavior"
+     8→last_audited: "2026-03-05 00:00 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# Checkout Three-Path Logic
+    13→
+    14→`erk br co` uses a three-path decision tree when `--for-plan` is involved, implemented in `branch/checkout_cmd.py:614-717`.
+    15→
+    16→## Decision Tree
+    17→
+    18→### Path 1: Stack in Place (`current_assignment is not None`)
+    19→
+    20→The user is in a slot-assigned worktree and the branch has a current assignment.
+    21→
+    22→- Updates assignment to new tip
+    23→- Calls `_rebase_and_track_for_plan()` if setup exists
+    24→- Calls `_setup_impl_for_plan()` if setup exists
+    25→- Calls `_perform_checkout()` with `force_script_activation=True`
+    26→- Returns early
+    27→
+    28→### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)
+    29→
+    30→The user passed `--for-plan` (so `setup is not None`) but did NOT pass `--new-slot`.
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_012gbukn819M15QM2PduxHw3">
+    <param name="pattern">tests/unit/cli/commands/branch/test_checkout*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2342" cache_read_input_tokens="69118" output_tokens="189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2342, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012gbukn819M15QM2PduxHw3">
+No files found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1170" cache_read_input_tokens="71460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L6X8rv5UVb9eMR5c5vxNrt">
+    <param name="pattern">branch_checkout|_branch_checkout_impl</param>
+    <param name="glob">tests/**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1170" cache_read_input_tokens="71460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L6X8rv5UVb9eMR5c5vxNrt">
+Found 1 file
+tests/commands/branch/test_checkout_cmd.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YGVo5E6fJS5C4JhjuJaNAA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-slots/tests/unit/test_checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1170" cache_read_input_tokens="71460" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1170}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>
