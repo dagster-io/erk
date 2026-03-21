@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9344,
+  "sessions": [
+    {
+      "session_id": "4b287cf1-2743-4fb4-af35-9141d96cfcd6",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T13:08:31.116729+00:00",
+      "files": [
+        "impl-4b287cf1-2743-4fb4-af35-9141d96cfcd6-4b287cf1-2743-4fb4-af35-9141d96cfcd6-part1.xml",
+        "impl-4b287cf1-2743-4fb4-af35-9141d96cfcd6-4b287cf1-2743-4fb4-af35-9141d96cfcd6-part2.xml",
+        "impl-4b287cf1-2743-4fb4-af35-9141d96cfcd6-4b287cf1-2743-4fb4-af35-9141d96cfcd6-part3.xml",
+        "impl-4b287cf1-2743-4fb4-af35-9141d96cfcd6-4b287cf1-2743-4fb4-af35-9141d96cfcd6-part4.xml",
+        "impl-4b287cf1-2743-4fb4-af35-9141d96cfcd6-4b287cf1-2743-4fb4-af35-9141d96cfcd6-part5.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 13,
+      "raw_size_kb": 975,
+      "xml_size_kb": 181,
+      "git_branch": "plnd/O9272-decouple-pool-config-03-21-0852"
+    }
+  ]
+}
