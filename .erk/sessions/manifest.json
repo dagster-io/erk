@@ -29,6 +29,23 @@
       "raw_size_kb": 402,
       "xml_size_kb": 63,
       "git_branch": "plnd/address-interactive-launch-03-12-1405"
+    },
+    {
+      "session_id": "12a6aab8-5f7b-4947-9ea1-60195934a15f",
+      "stage": "address",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T11:23:31.386652+00:00",
+      "files": [
+        "address-12a6aab8-5f7b-4947-9ea1-60195934a15f-12a6aab8-5f7b-4947-9ea1-60195934a15f-part1.xml",
+        "address-12a6aab8-5f7b-4947-9ea1-60195934a15f-12a6aab8-5f7b-4947-9ea1-60195934a15f-part2.xml",
+        "address-12a6aab8-5f7b-4947-9ea1-60195934a15f-12a6aab8-5f7b-4947-9ea1-60195934a15f-part3.xml",
+        "address-12a6aab8-5f7b-4947-9ea1-60195934a15f-12a6aab8-5f7b-4947-9ea1-60195934a15f-part4.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 4,
+      "raw_size_kb": 109,
+      "xml_size_kb": 84,
+      "git_branch": "plnd/address-interactive-launch-03-12-1405"
     }
   ]
 }
