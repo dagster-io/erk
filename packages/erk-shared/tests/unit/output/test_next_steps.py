@@ -26,10 +26,16 @@ def test_plan_next_steps_view_returns_url() -> None:
     assert s.view == _URL
 
 
-def test_plan_next_steps_checkout_uses_branch_name() -> None:
-    """checkout uses erk slot co with branch_name."""
+def test_plan_next_steps_checkout_current_wt() -> None:
+    """checkout_current_wt uses git checkout with branch_name."""
     s = _steps()
-    assert s.checkout == "erk slot co plnd/my-feature"
+    assert s.checkout_current_wt == "git checkout plnd/my-feature"
+
+
+def test_plan_next_steps_checkout_new_wt() -> None:
+    """checkout_new_wt uses erk slot co with branch_name."""
+    s = _steps()
+    assert s.checkout_new_wt == "erk slot co plnd/my-feature"
 
 
 def test_plan_next_steps_dispatch_uses_plan_number() -> None:
@@ -38,38 +44,28 @@ def test_plan_next_steps_dispatch_uses_plan_number() -> None:
     assert s.dispatch == "erk pr dispatch 42"
 
 
-def test_plan_next_steps_checkout_new_slot() -> None:
-    """checkout_new_slot uses erk slot co with --new-slot."""
-    s = _steps()
-    assert s.checkout_new_slot == "erk slot co plnd/my-feature --new-slot"
-
-
 def test_plan_next_steps_implement_current_wt() -> None:
-    """implement_current_wt uses erk slot co with erk implement."""
+    """implement_current_wt uses git checkout with erk implement."""
     s = _steps()
-    assert s.implement_current_wt == "erk slot co plnd/my-feature && erk implement"
+    assert s.implement_current_wt == "git checkout plnd/my-feature && erk implement"
 
 
 def test_plan_next_steps_implement_current_wt_dangerous() -> None:
     """implement_current_wt_dangerous uses -d flag."""
     s = _steps()
-    assert s.implement_current_wt_dangerous == "erk slot co plnd/my-feature && erk implement -d"
+    assert s.implement_current_wt_dangerous == "git checkout plnd/my-feature && erk implement -d"
 
 
 def test_plan_next_steps_implement_new_wt() -> None:
-    """implement_new_wt uses erk slot co --new-slot with erk implement."""
+    """implement_new_wt uses erk slot co with erk implement."""
     s = _steps()
-    assert s.implement_new_wt == (
-        'source "$(erk slot co plnd/my-feature --new-slot --script)" && erk implement'
-    )
+    assert s.implement_new_wt == "erk slot co plnd/my-feature && erk implement"
 
 
 def test_plan_next_steps_implement_new_wt_dangerous() -> None:
-    """implement_new_wt_dangerous uses --new-slot with -d flag."""
+    """implement_new_wt_dangerous uses -d flag."""
     s = _steps()
-    assert s.implement_new_wt_dangerous == (
-        'source "$(erk slot co plnd/my-feature --new-slot --script)" && erk implement -d'
-    )
+    assert s.implement_new_wt_dangerous == "erk slot co plnd/my-feature && erk implement -d"
 
 
 def test_format_pr_next_steps_plain_hierarchical_format() -> None:
@@ -94,12 +90,6 @@ def test_format_pr_next_steps_plain_contains_slot_co_command() -> None:
     """format_pr_next_steps_plain includes erk slot co command."""
     output = format_pr_next_steps_plain(42, url=_URL, branch_name=_BRANCH)
     assert "erk slot co plnd/my-feature" in output
-
-
-def test_format_pr_next_steps_plain_contains_checkout_new_slot() -> None:
-    """format_pr_next_steps_plain includes checkout new slot command."""
-    output = format_pr_next_steps_plain(42, url=_URL, branch_name=_BRANCH)
-    assert "erk slot co plnd/my-feature --new-slot" in output
 
 
 def test_format_pr_next_steps_plain_contains_dispatch() -> None:
