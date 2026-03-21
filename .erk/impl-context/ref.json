@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Consolidated Learn Documentation Update"
+  "pr_id": "9332",
+  "url": "https://github.com/dagster-io/erk/pull/9332",
+  "created_at": "2026-03-21T07:52:46.095274",
+  "synced_at": "2026-03-21T07:52:46.095274",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
