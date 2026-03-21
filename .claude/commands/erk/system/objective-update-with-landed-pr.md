@@ -60,6 +60,8 @@ If this returns `success: false`, display the error and stop.
 
 ### Step 2: Prose Reconciliation
 
+**Context constraint:** The JSON from Step 1 is self-contained — it includes all objective prose, PR details, and roadmap data needed for reconciliation. Work exclusively from this data. Do NOT read additional files, run `cat`, or fetch context from `~/.claude/` paths.
+
 Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against what the PR actually did.
 
 If `objective_content` is null, skip prose reconciliation entirely (objective has no prose comment).

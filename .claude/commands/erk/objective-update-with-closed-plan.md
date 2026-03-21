@@ -64,6 +64,8 @@ The `--include-body` flag returns the fully-mutated body as `updated_body` — u
 
 ### Step 3: Perform Prose Reconciliation
 
+**Context constraint:** The JSON from Step 1 is self-contained — it includes all objective prose, plan details, and roadmap data needed for reconciliation. Work exclusively from this data. Do NOT read additional files, run `cat`, or fetch context from `~/.claude/` paths.
+
 Compare `objective.objective_content` (the prose from the first comment's `objective-body` block) against the closed plan's body. Check for stale references that should be updated now that the plan has been abandoned.
 
 If `objective_content` is null, skip prose reconciliation entirely (objective has no prose comment).

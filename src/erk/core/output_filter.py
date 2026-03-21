@@ -73,6 +73,12 @@ def summarize_tool_use(tool_use: dict, worktree_path: Path) -> str | None:
         if not isinstance(command, str):
             return None
 
+        # Suppress cat of internal Claude paths
+        if command.lstrip().startswith("cat ") and (
+            "/.claude/" in command or ".claude/projects/" in command
+        ):
+            return None
+
         # Check for pytest
         if "pytest" in command:
             return "Running tests..."

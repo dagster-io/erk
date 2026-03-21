@@ -1,8 +1,9 @@
 """Tests for output_filter module."""
 
 import json
+from pathlib import Path
 
-from erk.core.output_filter import extract_pr_metadata, extract_pr_url
+from erk.core.output_filter import extract_pr_metadata, extract_pr_url, summarize_tool_use
 
 
 def test_extract_pr_url_returns_url_when_present() -> None:
@@ -86,3 +87,24 @@ def test_extract_pr_metadata_handles_empty_string() -> None:
     content = ""
     result = extract_pr_metadata(content)
     assert result == {"pr_url": None, "pr_number": None, "pr_title": None}
+
+
+def test_summarize_tool_use_suppresses_cat_of_claude_paths() -> None:
+    worktree = Path("/repo")
+    cmd = "cat /Users/someone/.claude/projects/-Users-someo/file.json"
+    tool = {"name": "Bash", "input": {"command": cmd}}
+    assert summarize_tool_use(tool, worktree) is None
+
+
+def test_summarize_tool_use_suppresses_cat_of_claude_projects_paths() -> None:
+    worktree = Path("/repo")
+    tool = {"name": "Bash", "input": {"command": "cat .claude/projects/foo/bar.json"}}
+    assert summarize_tool_use(tool, worktree) is None
+
+
+def test_summarize_tool_use_allows_cat_of_normal_paths() -> None:
+    worktree = Path("/repo")
+    tool = {"name": "Bash", "input": {"command": "cat /repo/src/main.py"}}
+    result = summarize_tool_use(tool, worktree)
+    assert result is not None
+    assert "cat /repo/src/main.py" in result
