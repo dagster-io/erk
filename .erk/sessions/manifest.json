@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9378,
+  "sessions": [
+    {
+      "session_id": "740203e1-d860-4f7b-84ff-cde1f80ed5a9",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T16:36:26.471344+00:00",
+      "files": [
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part1.xml",
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part2.xml",
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part3.xml",
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part4.xml",
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part5.xml",
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part6.xml",
+        "impl-740203e1-d860-4f7b-84ff-cde1f80ed5a9-740203e1-d860-4f7b-84ff-cde1f80ed5a9-part7.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 11,
+      "raw_size_kb": 961,
+      "xml_size_kb": 188,
+      "git_branch": "plnd/merge-create-from-into-cre-03-21-1623"
+    }
+  ]
+}
