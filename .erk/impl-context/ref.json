@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Move navigation into erk_slots (Node 2.1, Objective #9272)",
+  "objective_id": 9272,
+  "node_ids": [
+    "2.1"
+  ]
+}
