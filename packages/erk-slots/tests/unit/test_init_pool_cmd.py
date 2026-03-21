@@ -30,7 +30,7 @@ def test_init_pool_dry_run_does_not_create_worktrees() -> None:
         # Wrap in DryRunGit to simulate dry-run behavior
         dry_run_git = DryRunGit(git_ops)
 
-        local_config = LoadedConfig.test(pool_size=2)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(
             git=dry_run_git,
             repo=env.repo,
@@ -74,7 +74,7 @@ def test_init_pool_dry_run_shows_slot_count() -> None:
 
         dry_run_git = DryRunGit(git_ops)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(
             git=dry_run_git,
             repo=env.repo,
@@ -117,7 +117,7 @@ def test_init_pool_creates_worktrees_without_dry_run() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         test_ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
 
         # Ensure worktrees directory exists

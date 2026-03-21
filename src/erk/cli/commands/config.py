@@ -21,7 +21,6 @@ from erk_shared.config.schema import (
 )
 from erk_shared.context.types import GlobalConfig
 from erk_shared.output.output import machine_output, user_output
-from erk_shared.slots.naming import DEFAULT_POOL_SIZE
 
 # Maps CLI key prefix to GlobalConfig attribute name.
 # User-facing keys use "interactive_claude.*" but GlobalConfig attribute is "interactive_agent".
@@ -259,17 +258,6 @@ def config_list(ctx: ErkContext) -> None:
         if trunk_branch:
             user_output(f"  trunk-branch={trunk_branch}")
 
-        # pool.max_slots with source annotation
-        if cfg.pool_size is not None:
-            pool_source = (
-                " (local)"
-                if local_only_config.pool_size is not None
-                else (" (repo)" if repo_only_config.pool_size is not None else "")
-            )
-            user_output(f"  pool.max_slots={cfg.pool_size}{pool_source}")
-        else:
-            user_output(f"  pool.max_slots={DEFAULT_POOL_SIZE} (default)")
-
         # env with source annotations
         if cfg.env:
             for env_key, value in cfg.env.items():
@@ -289,20 +277,6 @@ def config_list(ctx: ErkContext) -> None:
             cmds_source = " (includes local)" if has_local_commands else ""
             user_output(f"  post_create.commands={cfg.post_create_commands}{cmds_source}")
 
-        # pool.checkout.shell with source annotation
-        if cfg.pool_checkout_shell:
-            user_output(
-                f"  pool.checkout.shell={cfg.pool_checkout_shell}"
-                f"{' (local)' if local_only_config.pool_checkout_shell is not None else ''}"
-            )
-
-        # pool.checkout.commands with source annotation
-        if cfg.pool_checkout_commands:
-            user_output(
-                f"  pool.checkout.commands={cfg.pool_checkout_commands}"
-                f"{' (includes local)' if local_only_config.pool_checkout_commands else ''}"
-            )
-
         # github.repo with source annotation
         if cfg.github_repo:
             user_output(
@@ -312,12 +286,9 @@ def config_list(ctx: ErkContext) -> None:
 
         has_no_custom_config = (
             not trunk_branch
-            and cfg.pool_size is None
             and not cfg.env
             and not cfg.post_create_shell
             and not cfg.post_create_commands
-            and not cfg.pool_checkout_shell
-            and not cfg.pool_checkout_commands
             and not cfg.github_repo
         )
         if has_no_custom_config:
@@ -376,13 +347,6 @@ def config_get(ctx: ErkContext, key: str) -> None:
 
     if parts[0] == "post_create":
         _get_post_create_value(cfg, parts, key)
-        return
-
-    if parts[0] == "pool" and len(parts) == 2 and parts[1] == "max_slots":
-        if cfg.pool_size is not None:
-            machine_output(str(cfg.pool_size))
-        else:
-            machine_output(f"{DEFAULT_POOL_SIZE} (default)")
         return
 
     if parts == ["github", "repo"]:
@@ -532,21 +496,10 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
     # Handle repo config keys with match
     transformed: object
     match parts:
-        case (
-            ["env", _]
-            | ["post_create", "shell"]
-            | ["pool", "checkout", "shell"]
-            | ["github", "repo"]
-        ):
+        case ["env", _] | ["post_create", "shell"] | ["github", "repo"]:
             transformed = value
-        case ["post_create", "commands"] | ["pool", "checkout", "commands"]:
+        case ["post_create", "commands"]:
             transformed = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
-        case ["pool", "max_slots"]:
-            Ensure.invariant(
-                value.isdigit() and int(value) >= 1,
-                f"Invalid value: {value}. pool.max_slots must be a positive integer.",
-            )
-            transformed = int(value)
         case _:
             user_output(f"Invalid key: {key}")
             raise SystemExit(1)

@@ -690,7 +690,7 @@ def test_pr_checkout_force_unassigns_oldest() -> None:
         )
         save_pool_state(env.repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         ctx = build_workspace_test_context(env, git=git, github=github, local_config=local_config)
 
         with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
@@ -765,7 +765,7 @@ def test_pr_checkout_pool_full_no_force_fails() -> None:
         )
         save_pool_state(env.repo.pool_json_path, full_state)
 
-        local_config = LoadedConfig.test(pool_size=1)
+        local_config = LoadedConfig.test()
         ctx = build_workspace_test_context(env, git=git, github=github, local_config=local_config)
 
         # CliRunner runs in non-interactive mode by default

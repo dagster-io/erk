@@ -6,8 +6,6 @@ Only dependency: the standard library ``re`` module.
 
 import re
 
-# Default pool configuration
-DEFAULT_POOL_SIZE = 4
 SLOT_NAME_PREFIX = "erk-slot"
 
 

@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from erk.cli.config import LoadedConfig
 from erk.core.worktree_pool import (
     PoolState,
     SlotAssignment,
@@ -10,9 +9,9 @@ from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
 )
+from erk_shared.context.types import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_slots.common import (
-    DEFAULT_POOL_SIZE,
     find_assignment_by_worktree,
     find_current_slot_assignment,
     find_inactive_slot,
@@ -22,6 +21,7 @@ from erk_slots.common import (
     is_slot_initialized,
     sync_pool_assignments,
 )
+from erk_slots.config import DEFAULT_POOL_SIZE
 from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.test_context import context_for_test
 
@@ -29,33 +29,78 @@ from tests.test_utils.test_context import context_for_test
 class TestGetPoolSize:
     """Tests for get_pool_size function."""
 
-    def test_returns_default_when_no_config(self) -> None:
-        """Returns DEFAULT_POOL_SIZE when local_config is None."""
-        ctx = context_for_test(local_config=None)
+    def test_returns_default_when_no_config(self, tmp_path: Path) -> None:
+        """Returns DEFAULT_POOL_SIZE when no .erk/config.toml exists."""
+        repo = RepoContext(
+            root=tmp_path,
+            repo_name="test-repo",
+            repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+            worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+            pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+        )
+        ctx = context_for_test(repo=repo)
 
         result = get_pool_size(ctx)
 
         assert result == DEFAULT_POOL_SIZE
 
-    def test_returns_default_when_pool_size_not_set(self) -> None:
-        """Returns DEFAULT_POOL_SIZE when pool_size is None in config."""
-        ctx = context_for_test(local_config=LoadedConfig.test())
+    def test_returns_default_when_pool_size_not_set(self, tmp_path: Path) -> None:
+        """Returns DEFAULT_POOL_SIZE when config exists but pool section is missing."""
+        config_dir = tmp_path / ".erk"
+        config_dir.mkdir(parents=True)
+        config_file = config_dir / "config.toml"
+        config_file.write_text('[env]\nFOO = "bar"\n', encoding="utf-8")
+
+        repo = RepoContext(
+            root=tmp_path,
+            repo_name="test-repo",
+            repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+            worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+            pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+        )
+        ctx = context_for_test(repo=repo)
 
         result = get_pool_size(ctx)
 
         assert result == DEFAULT_POOL_SIZE
 
-    def test_returns_configured_pool_size(self) -> None:
+    def test_returns_configured_pool_size(self, tmp_path: Path) -> None:
         """Returns configured pool_size when set."""
-        ctx = context_for_test(local_config=LoadedConfig.test(pool_size=8))
+        # Create config file with pool size
+        config_dir = tmp_path / ".erk"
+        config_dir.mkdir(parents=True)
+        config_file = config_dir / "config.toml"
+        config_file.write_text("[pool]\nmax_slots = 8\n", encoding="utf-8")
+
+        repo = RepoContext(
+            root=tmp_path,
+            repo_name="test-repo",
+            repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+            worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+            pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+        )
+        ctx = context_for_test(repo=repo)
 
         result = get_pool_size(ctx)
 
         assert result == 8
 
-    def test_returns_small_pool_size(self) -> None:
+    def test_returns_small_pool_size(self, tmp_path: Path) -> None:
         """Returns small configured pool_size."""
-        ctx = context_for_test(local_config=LoadedConfig.test(pool_size=2))
+        # Create config file with pool size
+        config_dir = tmp_path / ".erk"
+        config_dir.mkdir(parents=True)
+        config_file = config_dir / "config.toml"
+        config_file.write_text("[pool]\nmax_slots = 2\n", encoding="utf-8")
+
+        repo = RepoContext(
+            root=tmp_path,
+            repo_name="test-repo",
+            repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+            worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+            pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+        )
+        ctx = context_for_test(repo=repo)
 
         result = get_pool_size(ctx)
 
