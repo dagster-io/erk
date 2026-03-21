@@ -156,6 +156,7 @@ class ObjectiveNodesScreen(ModalScreen):
         Binding("down", "cursor_down", "Down", show=False, priority=True),
         Binding("up", "cursor_up", "Up", show=False, priority=True),
         Binding("p", "open_pr", "Open PR", show=False),
+        Binding("n", "open_run", "Run", show=False),
         Binding("o", "open_objective", "Objective", show=False),
         Binding("enter", "open_detail", "Detail", show=False),
         Binding("l", "launch", "Launch", show=False),
@@ -281,7 +282,7 @@ class ObjectiveNodesScreen(ModalScreen):
                 yield Label("Loading nodes...", id="nodes-loading")
 
             yield Label(
-                "p: PR  o: objective  l: launch  Enter: detail  Ctrl+P: commands  Esc: close",
+                "p: PR  n: run  o: obj  l: launch  Enter: detail  Ctrl+P: cmds  Esc: close",
                 id="nodes-footer",
             )
 
@@ -391,6 +392,16 @@ class ObjectiveNodesScreen(ModalScreen):
         if row is None:
             return
         url = row.pr_url
+        if url is None:
+            return
+        self._service.browser.launch(url)
+
+    def action_open_run(self) -> None:
+        """Open selected node's workflow run in browser."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        url = row.run_url
         if url is None:
             return
         self._service.browser.launch(url)
