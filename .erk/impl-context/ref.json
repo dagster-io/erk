@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Refactor teleport dry-run from boolean threading to action plan pattern"
-}
