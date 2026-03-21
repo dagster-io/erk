@@ -2516,6 +2516,19 @@ class RealLocalGitHub(LocalGitHub):
         body
         state
         url
+        isDraft
+        headRefName
+        baseRefName
+        statusCheckRollup {{
+          state
+          contexts(last: 1) {{
+            totalCount
+            checkRunCountsByState {{ state count }}
+            statusContextCountsByState {{ state count }}
+          }}
+        }}
+        mergeable
+        reviewDecision
         author {{ login }}
         labels(first: 100) {{ nodes {{ name }} }}
         assignees(first: 100) {{ nodes {{ login }} }}
@@ -2581,6 +2594,30 @@ query {{
                 if prs_with_timestamps:
                     prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
                     pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
+
+            # Create self-linkage for PullRequest nodes (isDraft only present on PRs)
+            elif "isDraft" in node:
+                checks_passing, checks_counts = parse_status_rollup(
+                    node.get("statusCheckRollup")
+                )
+                has_conflicts = parse_mergeable_status(node.get("mergeable"))
+                pr_linkages[issue.number] = [
+                    PullRequestInfo(
+                        number=issue.number,
+                        state=node.get("state", "OPEN"),
+                        url=node.get("url", ""),
+                        is_draft=node.get("isDraft", False),
+                        title=node.get("title"),
+                        checks_passing=checks_passing,
+                        owner=repo_id.owner,
+                        repo=repo_id.repo,
+                        has_conflicts=has_conflicts,
+                        checks_counts=checks_counts,
+                        head_branch=node.get("headRefName"),
+                        review_decision=node.get("reviewDecision"),
+                        base_ref_name=node.get("baseRefName"),
+                    )
+                ]
 
         return (issues, pr_linkages)
 

@@ -8,6 +8,7 @@ from erk.tui.data.types import PrRowData
 from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen, _build_table_rows
 from erk_shared.gateway.github.metadata.dependency_graph import ObjectiveNode
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
+from tests.fakes.gateway.browser import FakeBrowserLauncher
 from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
 from tests.fakes.gateway.pr_service import FakePrService
 
@@ -523,6 +524,24 @@ class TestActionCmuxCheckout:
         row = make_pr_row(123, "Test")  # No pr_head_branch
         # Should not raise
         screen._action_cmux_checkout("cmux_checkout", row)
+
+
+class TestActionOpenRun:
+    """Tests for action_open_run guard conditions."""
+
+    def test_returns_early_without_selected_row(self) -> None:
+        """action_open_run does nothing when no row is selected (unmounted screen)."""
+        browser = FakeBrowserLauncher()
+        screen = ObjectiveNodesScreen(
+            provider=FakePrDataProvider(),
+            service=FakePrService(browser=browser),
+            pr_number=123,
+            pr_body="",
+            full_title="Test Objective",
+        )
+        # On unmounted screen, _get_selected_row() returns None → early return
+        screen.action_open_run()
+        assert browser.launch_calls == []
 
 
 class TestExecuteActionCommand:
