@@ -48,6 +48,8 @@ Rules triggered by matching actions in code.
 
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
 
+**constructing RealRemoteGitHub in tests** → Read [Remote Paths Testing](remote-paths-testing.md) first. Use FakeRemoteGitHub injected via context_for_test(remote_github=...). Never instantiate RealRemoteGitHub in tests. See remote-paths-testing.md.
+
 **creating ErkPackageInfo directly in production code** → Read [ErkPackageInfo Value Object](erk-package-info-pattern.md) first. Use ErkPackageInfo.from_project_dir(). Direct construction is for tests only.
 
 **creating FakeSessionData without gitBranch JSONL** → Read [Testing with FakeClaudeInstallation](session-store-testing.md) first. Missing `gitBranch` field causes silent empty results from branch-filtered discovery. Always include gitBranch in fake session data.

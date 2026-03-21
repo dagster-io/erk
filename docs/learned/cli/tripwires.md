@@ -82,6 +82,8 @@ Rules triggered by matching actions in code.
 
 **committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed.
 
+**constructing RealRemoteGitHub directly in a command** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use get_remote_github(ctx) instead. It handles test injection via ctx.remote_github and falls back to RealRemoteGitHub. See repo-resolution-pattern.md.
+
 **creating a result dataclass without to_json_dict() method** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Result dataclasses should implement to_json_dict() for custom serialization. Without it, the serializer falls back to dataclasses.asdict() which may not handle complex types correctly.
 
 **creating an MCP tool that parses human-readable CLI output** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. MCP tools must call CLI commands with --json flag and parse structured JSON. Never parse human-readable text output.
@@ -142,6 +144,8 @@ Rules triggered by matching actions in code.
 
 **manually deleting branches that were merged via GitHub web UI** → Read [erk reconcile Command](commands/reconcile.md) first. Use erk reconcile instead. It handles the full lifecycle: learn PR creation, objective updates, slot cleanup, branch deletion, and worktree removal.
 
+**manually parsing --repo owner/repo in a command handler** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use resolved_repo_option decorator instead. It handles parsing, validation, and injection of GitHubRepoId. See repo-resolution-pattern.md.
+
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
 
 **modifying teleport in-place without updating slot assignment** → Read [Teleport Slot Awareness](teleport-slot-awareness.md) first. When teleporting in-place, the current worktree's slot assignment must be updated to track the new branch. Missing this breaks the slot pool's branch tracking. See `_teleport_in_place()` in teleport_cmd.py.
@@ -181,6 +185,8 @@ Rules triggered by matching actions in code.
 **renaming a CLI command without checking downstream packages** → Read [Command Rename Checklist](command-rename-checklist.md) first. CLI command renames in src/erk/cli/ may break downstream packages. Grep: rg --type py 'CliRunner.*invoke.*cli' packages/
 
 **renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
+
+**resolving --ref and --ref-current manually in a command handler** → Read [Ref Resolution Patterns](ref-resolution-patterns.md) first. Use resolve_dispatch_ref() from ref_resolution.py. It handles mutual exclusivity, detached HEAD detection, and config fallback. See ref-resolution-patterns.md.
 
 **retrieving dependencies in Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
 

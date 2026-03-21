@@ -43,11 +43,40 @@ REST API-based GitHub operations without a local git or `gh` CLI dependency. Ena
 
 ### Pull Requests
 
-| Method                                                             | Returns | Description    |
-| ------------------------------------------------------------------ | ------- | -------------- |
-| `create_pull_request(owner, repo, head, base, title, body, draft)` | `int`   | PR number      |
-| `update_pull_request_body(owner, repo, pr_number, body)`           | `None`  | Update PR body |
-| `close_pr(owner, repo, number)`                                    | `None`  | Close a PR     |
+| Method                                                             | Returns                            | Description        |
+| ------------------------------------------------------------------ | ---------------------------------- | ------------------ |
+| `get_pr(owner, repo, number)`                                      | `RemotePRInfo \| RemotePRNotFound` | Fetch PR by number |
+| `create_pull_request(owner, repo, head, base, title, body, draft)` | `int`                              | PR number          |
+| `update_pull_request_body(owner, repo, pr_number, body)`           | `None`                             | Update PR body     |
+| `close_pr(owner, repo, number)`                                    | `None`                             | Close a PR         |
+
+## PR Types
+
+Defined in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
+
+### `RemotePRInfo`
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/remote_github/types.py, RemotePRInfo -->
+
+See `RemotePRInfo` in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
+
+This frozen dataclass holds complete PR metadata: number, title, state (uppercase strings like `"OPEN"`, `"CLOSED"`, `"MERGED"` from GitHub REST API), URL, source and target branch names, repository owner and name, and a guaranteed list of label strings.
+
+### `RemotePRNotFound`
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/remote_github/types.py, RemotePRNotFound -->
+
+See `RemotePRNotFound` in `packages/erk-shared/src/erk_shared/gateway/remote_github/types.py`.
+
+Sentinel frozen dataclass used in discriminated union returns from `get_pr()` to indicate that a pull request with the requested number does not exist. The `pr_number` field stores the number that was queried.
+
+### LBYL Pattern for PR Lookup
+
+<!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
+
+See the LBYL lookup pattern in `src/erk/cli/commands/launch_cmd.py`, `launch` command. Cross-reference [discriminated-union-error-handling.md](discriminated-union-error-handling.md) for the complete error handling pattern.
+
+The pattern checks the discriminated union return value using `isinstance()` before accessing PR fields, ensuring type safety when a PR lookup may fail.
 
 ### Issues
 

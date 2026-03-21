@@ -43,9 +43,16 @@ The `plan-implement.yml` workflow's "Checkout implementation branch" step (line 
 
 ## Branch Handling
 
-Uses the same [checked-out branch handling pattern](../architecture/checked-out-branch-handling.md) as regular dispatch — detects whether the target branch is checked out in a worktree and uses `update_local_ref()` instead of `create_branch()` when needed.
+Uses `sync_branch_to_sha()` at `incremental_dispatch.py:113` to sync the target branch to a known remote SHA before committing impl-context files. This is a separate code path from `dispatch_cmd.py` (both call the same function but in different contexts).
+
+`sync_branch_to_sha` detects whether the target branch is checked out in a worktree:
+
+- Not checked out: uses `update_local_ref()` directly
+- Checked out: uses `reset_hard()` (rejects dirty worktrees with `SystemExit(1)`)
+
+See [sync-branch-to-sha-pattern.md](../architecture/sync-branch-to-sha-pattern.md) for full details.
 
 ## Related Topics
 
-- [Checked-Out Branch Handling](../architecture/checked-out-branch-handling.md) — shared branch sync pattern
+- [sync_branch_to_sha Pattern](../architecture/sync-branch-to-sha-pattern.md) — branch sync used at incremental_dispatch.py:113
 - [Planned PR Lifecycle](planned-pr-lifecycle.md) — full plan lifecycle documentation

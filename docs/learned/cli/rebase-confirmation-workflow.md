@@ -40,6 +40,10 @@ erk pr resolve-conflicts
 
 The command is deliberately scoped to conflict resolution only — it does not call `gt restack` or `git rebase` internally.
 
+Detects an existing rebase in progress via `is_rebase_in_progress()` at `resolve_conflicts_cmd.py:61`. Displays "Rebase in progress" message and falls through to confirmation.
+
+**Important:** When `is_rebase_in_progress()` returns true, the **entire rebase state validation is skipped** — not just a tracking check. No branch tracking validation, upstream check, or other preconditions are verified. Reason: in-progress rebases may have detached HEAD (different git state model), making tracking-based checks unreliable. The sole precondition is confirming a rebase is actually in progress.
+
 ## Confirmation Pattern
 
 After detecting a rebase in progress, the command:

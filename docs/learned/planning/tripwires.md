@@ -16,6 +16,8 @@ Rules triggered by matching actions in code.
 
 **adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
 
+**adding a LLM-generated slug to the consolidate-learn-plans branch name** → Read [Consolidate Learn Plans Workflow](consolidate-learn-plans-workflow.md) first. Branch name uses format_branch_timestamp_suffix() only — no LLM slug. Format: consolidate-learn-plans-{MM-DD-HHMM}. See consolidate-learn-plans-workflow.md.
+
 **adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from PR lookup. The entire PR comment block is gated on pr_result not being None.
 
 **adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
@@ -85,6 +87,8 @@ Rules triggered by matching actions in code.
 **changing branch naming convention (plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The plnd/ prefix (planned-PR) is a cross-cutting contract used by branch creation, extraction functions, and PR recovery. Changing the prefix format requires updating all consumers. The legacy P{issue}- prefix has been fully removed.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
+
+**changing the prompt for consolidate-learn-plans to be config-driven** → Read [Consolidate Learn Plans Workflow](consolidate-learn-plans-workflow.md) first. The prompt is hardcoded (static). See consolidate_learn_plans_dispatch.py lines 123-126. The purpose is fixed; no LLM slug or config needed. See consolidate-learn-plans-workflow.md.
 
 **checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture.
 
