@@ -1,0 +1,1024 @@
+<session>
+  <meta branch="plnd/O9318-plan-to-pr-file-rena-03-21-1416" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Bash" id="toolu_01X4yGziWLkhUWYyeBkNK1fp">
+    <param name="command">sed -i 's/class PlanContextProvider/class PrContextProvider/g' src/erk/core/pr_context_pro...[truncated 721 chars]... -i 's/PlanContextProvider/PrContextProvider/g' "$file"
+done &amp;&amp; echo "Updated all imports"</param>
+    <param name="description">Rename PlanContextProvider class and all imports</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="207" cache_read_input_tokens="64036" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X4yGziWLkhUWYyeBkNK1fp">
+Updated all imports
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01W2pjPf3KDJaVGuWteaChLa">
+    <param name="todos">[{'content': 'Consolidate extract_title_from_plan and rename plan_utils.py (Node 2.7)', 's...[truncated 1304 chars]...ragglers', 'status': 'pending', 'activeForm': 'Verifying with ruff, ty, tests, and grep'}]</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="416" cache_read_input_tokens="64243" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W2pjPf3KDJaVGuWteaChLa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 5 complete**: Renamed `plan_context_provider.py` → `pr_context_provider.py`.
+
+Now **Step 6** - Rename `plan_list_service.py` (2 locations + tests):</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="586" cache_read_input_tokens="64659" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BRNiuzEZVRuLV62BdneS5M">
+    <param name="command">git mv packages/erk-shared/src/erk_shared/core/plan_list_service.py packages/erk-shared/sr...[truncated 294 chars]...ckages/erk-shared/tests/unit/services/test_pr_list_service_http.py &amp;&amp; echo "Files renamed"</param>
+    <param name="description">Rename list service files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="586" cache_read_input_tokens="64659" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BRNiuzEZVRuLV62BdneS5M">
+Exit code 128
+fatal: bad source, source=packages/erk-shared/tests/unit/services/test_plan_list_service_http.py, destination=packages/erk-shared/tests/unit/services/test_pr_list_service_http.py
+  </tool_result>
+  <assistant>Let me check what test files exist:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="65245" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FKod8UoyzZJ6Ygeg7W3JBs">
+    <param name="command">find . -name "*plan_list_service*" -type f</param>
+    <param name="description">Find plan_list_service files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="65245" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FKod8UoyzZJ6Ygeg7W3JBs">
+./tests/unit/services/test_plan_list_service_http.py
+./packages/erk-shared/src/erk_shared/core/__pycache__/plan_list_service.cpython-312.pyc
+./src/erk/core/services/__pycache__/plan_list_service.cpython-312.pyc
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NYgCNW8y84cEjvpNKKwxQz">
+    <param name="command">git mv packages/erk-shared/src/erk_shared/core/plan_list_service.py packages/erk-shared/sr...[truncated 154 chars]...t_service_http.py tests/unit/services/test_pr_list_service_http.py &amp;&amp; echo "Files renamed"</param>
+    <param name="description">Rename list service files (corrected)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="194" cache_read_input_tokens="65627" cache_creation="{'ephemeral_5m_input_tokens': 194, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NYgCNW8y84cEjvpNKKwxQz">
+Exit code 128
+fatal: bad source, source=packages/erk-shared/src/erk_shared/core/plan_list_service.py, destination=packages/erk-shared/src/erk_shared/core/pr_list_service.py
+  </tool_result>
+  <assistant>The files were already moved. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="65821" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YbxobsgtDpkiDewfjrb1uP">
+    <param name="command">ls packages/erk-shared/src/erk_shared/core/*list_service* src/erk/core/services/*list_service* 2&gt;/dev/null</param>
+    <param name="description">Check list service files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="65821" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YbxobsgtDpkiDewfjrb1uP">
+packages/erk-shared/src/erk_shared/core/objective_list_service.py
+packages/erk-shared/src/erk_shared/core/pr_list_service.py
+src/erk/core/services/objective_list_service.py
+src/erk/core/services/pr_list_service.py
+  </tool_result>
+  <assistant>Good, the files were already renamed in a previous step. Let me check the test files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="575" cache_read_input_tokens="66102" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CXWM1HfpKwezaXuz25R1PN">
+    <param name="command">ls tests/unit/services/*list_service* 2&gt;/dev/null</param>
+    <param name="description">Check test files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="575" cache_read_input_tokens="66102" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CXWM1HfpKwezaXuz25R1PN">
+tests/unit/services/test_objective_list_service.py
+tests/unit/services/test_plan_list_service_http.py
+tests/unit/services/test_pr_list_service.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015Nuaq3Xkcr8pfYzU5UNTMv">
+    <param name="command">git mv tests/unit/services/test_plan_list_service_http.py tests/unit/services/test_pr_list_service_http.py &amp;&amp; echo "Test file renamed"</param>
+    <param name="description">Rename test file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="168" cache_read_input_tokens="66677" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Nuaq3Xkcr8pfYzU5UNTMv">
+Test file renamed
+  </tool_result>
+  <assistant>Now update all imports. Let me find all files importing from plan_list_service:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="488" cache_read_input_tokens="66845" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MSQuzUmm4fP4t1QqzKcNS6">
+    <param name="command">grep -r "plan_list_service" --include="*.py" packages/erk-shared/src/ src/ packages/erk-shared/tests/ tests/ | grep -v "^Binary" | grep -v "__pycache__" | cut -d: -f1 | sort -u</param>
+    <param name="description">Find files importing plan_list_service</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="488" cache_read_input_tokens="66845" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MSQuzUmm4fP4t1QqzKcNS6">
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/core/__init__.py
+packages/erk-shared/src/erk_shared/core/objective_list_service.py
+packages/erk-shared/src/erk_shared/core/pr_list_service.py
+src/erk/cli/commands/pr/duplicate_check_cmd.py
+src/erk/core/context.py
+src/erk/core/services/objective_list_service.py
+src/erk/core/services/pr_list_service.py
+src/erk/tui/data/real_provider.py
+tests/commands/dash/test_action_state.py
+tests/commands/dash/test_filtering.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/dash/test_pr_columns.py
+tests/commands/dash/test_workflow_run_state.py
+tests/commands/pr/test_duplicate_check.py
+tests/commands/pr/test_list.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/test_dash_workflow_runs.py
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+tests/fakes/gateway/core.py
+tests/fakes/tests/shared_context.py
+tests/test_utils/context_builders.py
+tests/test_utils/test_context.py
+tests/unit/services/test_pr_list_service.py
+tests/unit/services/test_pr_list_service_http.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015fvaP3dw8NNFWpbFtDNUUL">
+    <param name="command">for file in packages/erk-shared/src/erk_shared/context/context.py packages/erk-shared/src/...[truncated 900 chars]... sed -i 's/plan_list_service/pr_list_service/g' "$file"
+done &amp;&amp; echo "Updated all imports"</param>
+    <param name="description">Update all plan_list_service imports</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="571" cache_read_input_tokens="67333" cache_creation="{'ephemeral_5m_input_tokens': 571, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015fvaP3dw8NNFWpbFtDNUUL">
+Updated all imports
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01MohF2mE2Ar11yAFDCGDRQR">
+    <param name="todos">[{'content': 'Consolidate extract_title_from_plan and rename plan_utils.py (Node 2.7)', 's...[truncated 1306 chars]...ragglers', 'status': 'pending', 'activeForm': 'Verifying with ruff, ty, tests, and grep'}]</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="832" cache_read_input_tokens="67904" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MohF2mE2Ar11yAFDCGDRQR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 6 complete**: Renamed `plan_list_service.py` → `pr_list_service.py`.
+
+Now **Step 7** - Rename `plan_store` package → `pr_store` using `rename-swarm`. This is the big one with ~130 files:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="586" cache_read_input_tokens="68736" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Da35HSVxfwrw1JNbpUvDBj">
+    <param name="skill">rename-swarm</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="586" cache_read_input_tokens="68736" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Da35HSVxfwrw1JNbpUvDBj">
+Launching skill: rename-swarm
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/rename-swarm
+
+You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+
+## When to Use
+
+- Renaming an identifier, parameter, key, or variable across **5+ files**
+- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+- Files are **independent** — editing file A doesn't affect what needs to change in file B
+- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+
+## When NOT to Use
+
+- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+- **Complex AST transforms** — use `libcst-refactor` agent instead
+
+## The Pattern
+
+### Step 1: Identify All Files
+
+Use Grep to find every file containing the target identifier:
+
+```
+Grep(pattern="old_name", output_mode="files_with_matches")
+```
+
+Partition files into two groups:
+
+- **Source files** (`src/` or library code)
+- **Test files** (`tests/`)
+
+### Step 2: Launch Source File Agents in Parallel
+
+Launch one `Task` agent per file (or per small group of 2-3 closely related files):
+
+```python
+Task(
+    subagent_type='general-purpose',
+    model='haiku',
+    description='Rename old_name in path/to/file.py',
+    prompt="""..."""  # See agent prompt template below
+)
+```
+
+**Launch ALL source file agents in a single message** so they run concurrently.
+
+### Step 3: Wait for Source Agents to Complete
+
+Collect results from all source file agents. Review for errors.
+
+### Step 4: Launch Test File Agents in Parallel
+
+Same pattern as Step 2, but for test files. This second wave runs after source files because tests import from source — if source renames fail, test renames would be wrong.
+
+### Step 5: Verify
+
+After all agents complete:
+
+1. **Grep check**: Confirm old name no longer appears (except intentional exceptions)
+2. **Run CI**: Use devrun agent to run tests, type checking, and linting
+
+## Agent Prompt Template
+
+Each agent receives a focused, self-contained prompt:
+
+```
+In the file `{file_path}`:
+
+Rename all occurrences of `{old_name}` to `{new_name}`.
+
+This includes:
+- Variable names and assignments
+- Function/method parameter names
+- Dictionary keys (both definition and access)
+- String literals that reference the identifier programmatically
+- Type annotations
+- Comments that reference the identifier by name
+
+DO NOT rename:
+- {boundary_constraints}
+
+Read the file first, then apply all renames using the Edit tool.
+```
+
+### Boundary Constraints
+
+Boundary constraints are critical for partial renames. Always specify what should NOT be renamed. Examples:
+
+- `"Do not rename occurrences inside string literals that are user-facing messages"`
+- `"Do not rename the GitHub API field 'issue_number' — only rename internal references"`
+- `"Do not rename imports from external packages"`
+
+If there are no exceptions, state: `"No exceptions — rename ALL occurrences."`
+
+## Batching Strategy
+
+| Wave | Files                 | Rationale                                                    |
+| ---- | --------------------- | ------------------------------------------------------------ |
+| 1    | Source files (`src/`) | Core renames, no dependencies on other waves                 |
+| 2    | Test files (`tests/`) | Tests import from source; must run after source renames land |
+
+Within each wave, all agents run in parallel. Between waves, wait for completion.
+
+For very large renames (30+ files), consider sub-batching into groups of ~10-15 agents per message to avoid overwhelming the system.
+
+## Key Design Decisions
+
+- **Model: haiku** — mechanical edits need speed, not deep reasoning. Haiku is 10x cheaper and sufficient for find-and-replace tasks.
+- **One agent per file** — keeps prompts focused, avoids cross-file edit conflicts, makes failures isolated and retriable.
+- **Two waves (source then test)** — tests depend on source; parallel within each wave, sequential between waves.
+- **Explicit boundary constraints** — every agent prompt MUST specify what not to rename. Omitting this causes over-eager renames (e.g., renaming API field names that must stay as-is).
+
+## Example: Renaming `issue_number` to `pr_number`
+
+1. Grep found 16 source files and 12 test files containing `issue_number`
+2. Wave 1: Launched 16 haiku agents for source files — completed in ~25 seconds
+3. Wave 2: Launched 12 haiku agents for test files — completed in ~20 seconds
+4. Verification: `Grep(pattern="issue_number")` confirmed only intentional GitHub API references remained
+5. CI: All tests passed, type checker clean
+
+Total wall time: ~60 seconds for 28 files, vs ~10+ minutes for sequential edits.
+</user>
+  <assistant>I'll orchestrate a rename swarm to rename `plan_store` to `pr_store` across the codebase. Let me start by finding all affected files.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1447" cache_read_input_tokens="69322" cache_creation="{'ephemeral_5m_input_tokens': 1447, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Soey472Ymfh7KkXiHYiXwf">
+    <param name="pattern">erk_shared\.plan_store</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1447" cache_read_input_tokens="69322" cache_creation="{'ephemeral_5m_input_tokens': 1447, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Soey472Ymfh7KkXiHYiXwf">
+Found 125 files
+tests/test_utils/test_context.py
+tests/test_utils/context_builders.py
+tests/fakes/tests/shared_context.py
+tests/fakes/gateway/core.py
+tests/commands/test_dash_workflow_runs.py
+tests/commands/pr/test_remote_paths.py
+tests/commands/pr/test_list.py
+tests/commands/pr/test_duplicate_check.py
+tests/commands/dash/test_workflow_run_state.py
+tests/commands/dash/test_pr_columns.py
+tests/commands/dash/test_impl_columns.py
+tests/commands/dash/test_filtering.py
+tests/commands/dash/test_action_state.py
+src/erk/tui/data/real_provider.py
+src/erk/core/services/objective_list_service.py
+src/erk/core/context.py
+packages/erk-shared/src/erk_shared/context/context.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/core/test_pr_context_provider.py
+src/erk/cli/commands/pr/shared.py
+src/erk/core/pr_context_provider.py
+tests/core/test_pr_duplicate_checker.py
+src/erk/core/pr_duplicate_checker.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+src/erk/cli/commands/pr/create_cmd.py
+src/erk/cli/commands/exec/scripts/plan_update.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+packages/erk-shared/src/erk_shared/plan_store/create_plan_draft_pr.py
+
+... [96 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me also rename the actual directory and find files that reference the directory path or package name:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2404" cache_read_input_tokens="70769" cache_creation="{'ephemeral_5m_input_tokens': 2404, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01C81p6Fb99JCKt1FiuuEWuR">
+    <param name="command">git mv packages/erk-shared/src/erk_shared/plan_store packages/erk-shared/src/erk_shared/pr_store &amp;&amp; echo "Directory renamed"</param>
+    <param name="description">Rename plan_store directory to pr_store</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2404" cache_read_input_tokens="70769" cache_creation="{'ephemeral_5m_input_tokens': 2404, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C81p6Fb99JCKt1FiuuEWuR">
+Directory renamed
+  </tool_result>
+  <assistant>Now rename test directories:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="514" cache_read_input_tokens="73173" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01A5G4i9BYUuUX8M5tFVnEo1">
+    <param name="command">git mv packages/erk-shared/tests/unit/plan_store packages/erk-shared/tests/unit/pr_store 2...[truncated 56 chars].../integration/plan_store tests/integration/pr_store 2&gt;&amp;1 &amp;&amp; echo "Test directories renamed"</param>
+    <param name="description">Rename test directories</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="514" cache_read_input_tokens="73173" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A5G4i9BYUuUX8M5tFVnEo1">
+Test directories renamed
+  </tool_result>
+  <assistant>Now I'll use sed to bulk replace all imports. This is more efficient than launching 125 agents:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="178" cache_read_input_tokens="73687" cache_creation="{'ephemeral_5m_input_tokens': 178, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DShdFJj3RePq27ZKVWVSZR">
+    <param name="command">find packages/erk-shared/src packages/erk-shared/tests src tests docs -name "*.py" -o -name "*.md" | xargs sed -i 's/erk_shared\.plan_store/erk_shared.pr_store/g' &amp;&amp; echo "Bulk replaced all imports"</param>
+    <param name="description">Bulk replace plan_store imports</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="178" cache_read_input_tokens="73687" cache_creation="{'ephemeral_5m_input_tokens': 178, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DShdFJj3RePq27ZKVWVSZR">
+Bulk replaced all imports
+  </tool_result>
+  <assistant>Now update __init__.py docstrings and internal references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="73865" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LwGuUVLdg1Nbwae54qkz3y">
+    <param name="command">find packages/erk-shared/src/erk_shared/pr_store packages/erk-shared/tests/unit/pr_store t...[truncated 49 chars]...l | xargs sed -i 's/plan_store/pr_store/g' 2&gt;/dev/null; echo "Updated internal references"</param>
+    <param name="description">Update internal package references</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="73865" cache_creation="{'ephemeral_5m_input_tokens': 546, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LwGuUVLdg1Nbwae54qkz3y">
+Updated internal references
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018Mr3FR5oFX1HzA5kd1Q92e">
+    <param name="todos">[{'content': 'Consolidate extract_title_from_plan and rename plan_utils.py (Node 2.7)', 's...[truncated 1308 chars]...ragglers', 'status': 'pending', 'activeForm': 'Verifying with ruff, ty, tests, and grep'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="74411" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="544" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018Mr3FR5oFX1HzA5kd1Q92e">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 7 complete**: Renamed `plan_store` package to `pr_store` across ~130 files.
+
+Now **Step 8** - Update docs/learned references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="586" cache_read_input_tokens="74601" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KCps59xCRafhbTbR5F9kkh">
+    <param name="pattern">PlanDuplicateChecker|PlanContextProvider|PlanRelevanceChecker|plan_context_provider|plan_list_service|plan_duplicate_checker|plan_relevance_checker|plan_utils</param>
+    <param name="path">docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="586" cache_read_input_tokens="74601" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KCps59xCRafhbTbR5F9kkh">
+Found 14 files
+docs/learned/pr-operations/commit-message-generation.md
+docs/learned/pr-operations/plan-embedding-in-pr.md
+docs/learned/pr-operations/pr-submit-phases.md
+docs/learned/reference/llm-json-parsing.md
+docs/learned/architecture/plan-context-integration.md
+docs/learned/architecture/http-accelerated-plan-refresh.md
+docs/learned/architecture/index.md
+docs/learned/architecture/tripwires.md
+docs/learned/planning/plan-creation-pathways.md
+docs/learned/planning/plan-title-prefix-system.md
+docs/learned/planning/planned-pr-backend.md
+docs/learned/cli/commands/pr-summarize.md
+docs/learned/cli/exec-script-performance.md
+docs/learned/documentation/source-pointer-best-practices.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01R1ZStnnMqaeToUsJ3hfTM3">
+    <param name="command">for file in docs/learned/pr-operations/commit-message-generation.md docs/learned/pr-operat...[truncated 1020 chars]...
+  sed -i 's/plan_utils/pr_utils/g' "$file"
+done &amp;&amp; echo "Updated docs/learned references"</param>
+    <param name="description">Update stale references in docs/learned</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="75187" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R1ZStnnMqaeToUsJ3hfTM3">
+Updated docs/learned references
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_018uGAm6bWxnbkUW88vGtNkM">
+    <param name="todos">[{'content': 'Consolidate extract_title_from_plan and rename plan_utils.py (Node 2.7)', 's...[truncated 1310 chars]...lers', 'status': 'in_progress', 'activeForm': 'Verifying with ruff, ty, tests, and grep'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="508" cache_read_input_tokens="75597" cache_creation="{'ephemeral_5m_input_tokens': 508, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018uGAm6bWxnbkUW88vGtNkM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 8 complete**: Updated docs/learned references.
+
+Now **Step 9** - Verification with devrun agent:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="586" cache_read_input_tokens="76105" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Ur4kWZbnEEYTwDF91eKU9v">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run ruff check --fix</param>
+    <param name="prompt">Run `ruff check --fix .` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="586" cache_read_input_tokens="76105" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ur4kWZbnEEYTwDF91eKU9v">
+ruff check passed: 6 errors fixed, 0 remaining.
+
+The ruff check executed successfully. The output shows that ruff found 6 violations and automatically fixed all of them with the `--fix` flag. There are no remaining violations in the codebase.
+
+**Summary:**
+- Found 6 errors
+- Fixed 6 errors
+- 0 remaining violations
+- Status: Clean
+agentId: a894053 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Good! Now run type checking:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="291" cache_read_input_tokens="76691" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01HiiFsAw4MhcfX9ZNuLW6Qn">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run make ty for type checking</param>
+    <param name="prompt">Run `make ty` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="291" cache_read_input_tokens="76691" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HiiFsAw4MhcfX9ZNuLW6Qn">
+ty failed: 2 unresolved import errors
+
+The type checker found 2 import resolution errors in `/home/runner/work/erk/erk/src/erk/core/services/pr_list_service.py`:
+
+**File: `/home/runner/work/erk/erk/src/erk/core/services/pr_list_service.py`**
+
+1. **Line 16, Column 6** - Cannot resolve imported module `erk_shared.core.plan_list_service`
+   - Import: `from erk_shared.core.plan_list_service import PrListData as PrListData`
+   
+2. **Line 17, Column 6** - Cannot resolve imported module `erk_shared.core.plan_list_service`
+   - Import: `from erk_shared.core.plan_list_service import PrListService`
+
+**Root cause**: The module `erk_shared.core.plan_list_service` cannot be found in the search paths:
+- `/home/runner/work/erk/erk/src` (first-party code)
+- `/home/runner/work/erk/erk` (first-party code)
+- stdlib typeshed stubs
+- `/home/runner/work/erk/erk/.venv/lib/python3.13/site-packages` (site-packages)
+- `/home/runner/work/erk/erk/packages/erk-dev/src` (editable install)
+
+The imports appear to reference a module that doesn't exist in the configured environment or has been moved/renamed.
+agentId: aca8f39 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>I need to fix the import in that file - it should be `pr_list_service` not `plan_list_service`:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="550" cache_read_input_tokens="76982" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014WkeQnMNhqqxRCggvH3LYY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/services/pr_list_service.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="550" cache_read_input_tokens="76982" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014WkeQnMNhqqxRCggvH3LYY">
+     1→"""Service for efficiently fetching PR list data via batched API calls.
+     2→
+     3→Uses GraphQL nodes(ids: [...]) for O(1) batch lookup of workflow runs (~200ms for any N).
+     4→All PRs store last_dispatched_node_id in the plan-header metadata block.
+     5→
+     6→Performance optimization: When PR linkages are needed, uses unified GraphQL query via
+     7→get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call (~600ms),
+     8→instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→from typing import TYPE_CHECKING, Any
+    15→
+    16→from erk_shared.core.plan_list_service import PrListData as PrListData
+    17→from erk_shared.core.plan_list_service import PrListService
+    18→from erk_shared.gateway.github.abc import LocalGitHub
+    19→from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+    20→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    21→from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
+    22→from erk_shared.gateway.github.pr_data_parsing import (
+    23→    merge_rest_graphql_pr_data,
+    24→    parse_workflow_runs_nodes_response,
+    25→)
+    26→from erk_shared.gateway.github.types import (
+    27→    GitHubRepoLocation,
+    28→    IssueFilterState,
+    29→    WorkflowRun,
+    30→)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U7u8RJmHQZ3xWLTTRXMP2s">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/services/pr_list_service.py</param>
+    <param name="old_string">from erk_shared.core.plan_list_service import PrListData as PrListData
+from erk_shared.core.plan_list_service import PrListService</param>
+    <param name="new_string">from erk_shared.core.pr_list_service import PrListData as PrListData
+from erk_shared.core.pr_list_service import PrListService</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1047" cache_read_input_tokens="77532" cache_creation="{'ephemeral_5m_input_tokens': 1047, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U7u8RJmHQZ3xWLTTRXMP2s">
+The file /home/runner/work/erk/erk/src/erk/core/services/pr_list_service.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run type checking again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="248" cache_read_input_tokens="78579" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_016okQFkHKBKMUTz9Tg3FDDk">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run make ty again</param>
+    <param name="prompt">Run `make ty` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="248" cache_read_input_tokens="78579" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016okQFkHKBKMUTz9Tg3FDDk">
+ty passed: All checks passed!
+
+The type checker completed successfully with no errors or warnings. The Python codebase passes all static type analysis checks via pyright.
+agentId: ad69f58 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Excellent! Type checking passes. Now let me grep for any remaining stale references:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="78827" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EtxZjVrMU2nAQkadi2oktK">
+    <param name="command">grep -r "plan_store\|plan_utils\|plan_duplicate_checker\|plan_relevance_checker\|plan_cont...[truncated 34 chars]... packages/erk-shared/src/ 2&gt;/dev/null | grep -v "__pycache__" | grep -v "\.pyc" | head -20</param>
+    <param name="description">Grep for stale references in Python files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="78827" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EtxZjVrMU2nAQkadi2oktK">
+src/erk/cli/commands/implement.py:    result = ctx.plan_store.get_managed_pr(repo.root, pr_number)
+src/erk/cli/commands/implement.py:    provider_name = ctx.plan_store.get_provider_name()
+src/erk/cli/commands/wt/create_cmd.py:        # Fetch plan using plan_store
+src/erk/cli/commands/wt/create_cmd.py:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number_parsed))
+src/erk/cli/commands/wt/delete_cmd.py:    plans = ctx.plan_store.list_managed_prs(repo_root, query)
+src/erk/cli/commands/wt/delete_cmd.py:    ctx.plan_store.close_managed_pr(repo_root, str(pr_number))
+src/erk/cli/commands/objective/plan_cmd.py:        ctx: ErkContext with git, issues, and plan_store
+src/erk/cli/commands/objective/plan_cmd.py:        ctx: ErkContext with git, issues, and plan_store
+src/erk/cli/commands/objective_helpers.py:    result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/objective_helpers.py:    ctx.plan_store.close_managed_pr(repo_root, pr_id)
+src/erk/cli/commands/branch/checkout_cmd.py:        result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/dispatch_cmd.py:    result = ctx.plan_store.get_managed_pr(repo.root, str(pr_number))
+src/erk/cli/commands/pr/close_cmd.py:        result = ctx.plan_store.get_managed_pr(repo_root, str(number))
+src/erk/cli/commands/pr/close_cmd.py:        ctx.plan_store.close_managed_pr(repo_root, identifier)
+src/erk/cli/commands/land_learn.py:    plan_result = ctx.plan_store.get_managed_pr(repo_root, pr_id)
+src/erk/core/context.py:    plan_store: ManagedPrBackend = ManagedGitHubPrBackend(github, issues, time=RealTime())
+src/erk/core/context.py:        plan_store=plan_store,
+packages/erk-shared/src/erk_shared/context/context.py:    plan_store: ManagedPrBackend
+packages/erk-shared/src/erk_shared/context/context.py:        """Access plan_store as ManagedPrBackend (read/write interface).
+packages/erk-shared/src/erk_shared/context/context.py:        Since plan_store is typed as ManagedPrBackend, this is a direct alias.
+  </tool_result>
+  <assistant>I see - these are **field names and comments** that reference `plan_store` as a field in the context object. According to the plan, these are out of scope for Phase 2. The plan explicitly states:
+
+&gt; **Out of scope:** Internal filenames within pr_store/ (e.g., `planned_pr.py`, `create_plan_draft_pr.py`) — these describe "planned PR" concepts and belong to later phases.
+
+Let me verify there are no stale **import** references:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="948" cache_read_input_tokens="79397" cache_creation="{'ephemeral_5m_input_tokens': 948, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0197LUf6vFhfMs78QkyTLMkV">
+    <param name="command">grep -r "from.*plan_store import\|from.*plan_utils import\|from.*plan_duplicate_checker im...[truncated 83 chars]...import" --include="*.py" src/ packages/erk-shared/src/ 2&gt;/dev/null | grep -v "__pycache__"</param>
+    <param name="description">Check for stale imports</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="948" cache_read_input_tokens="79397" cache_creation="{'ephemeral_5m_input_tokens': 948, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197LUf6vFhfMs78QkyTLMkV">
+
+  </tool_result>
+  <assistant>Perfect! No stale imports. Now let's run a subset of tests to verify everything works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="80345" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01SQNGx22xp3EuvABmurvNEh">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run unit tests for renamed modules</param>
+    <param name="prompt">Run `pytest tests/unit/pr_store/ tests/core/test_pr_duplicate_checker.py tests/core/test_p...[truncated 72 chars].../test_pr_utils.py -v` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="648" cache_read_input_tokens="80345" cache_creation="{'ephemeral_5m_input_tokens': 648, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SQNGx22xp3EuvABmurvNEh">
+Perfect! Here are the test results:
+
+**pytest passed: 199 passed in 0.31s**
+
+**Summary:**
+
+All tests in the specified test paths passed successfully:
+
+- **tests/unit/pr_store/** - 137 tests passed
+  - test_conversion.py: 27 passed
+  - test_lifecycle_display.py: 26 passed
+  - test_plan_backend_interface.py: 29 passed
+  - test_planned_pr_backend.py: 20 passed
+  - test_planned_pr_lifecycle.py: 13 passed
+  - (2 additional test files: 22 passed)
+
+- **tests/core/test_pr_duplicate_checker.py** - 12 passed
+- **tests/core/test_pr_relevance_checker.py** - 9 passed
+- **tests/core/test_pr_context_provider.py** - 9 passed
+
+**Note on excluded file:**
+
+**packages/erk-shared/tests/unit/test_pr_utils.py** could not be collected due to an import error:
+- Error: `ModuleNotFoundError: No module named 'tests.unit.test_pr_utils'`
+- Location: Line 12 imports `from tests.fakes.gateway.claude_installation import FakeClaudeInstallation`
+
+This file has a structural import issue but was excluded from the test run. The 199 tests that could be collected all passed successfully.
+agentId: ae57b36 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me run the test from the correct location:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="598" cache_read_input_tokens="80993" cache_creation="{'ephemeral_5m_input_tokens': 598, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01Q53tNBMj8mwsKT4jRnBxLg">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run pr_utils tests from packages directory</param>
+    <param name="prompt">Run `pytest packages/erk-shared/tests/unit/test_pr_utils.py -v` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="598" cache_read_input_tokens="80993" cache_creation="{'ephemeral_5m_input_tokens': 598, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q53tNBMj8mwsKT4jRnBxLg">
+pytest failed: Import error - ModuleNotFoundError
+
+The test file cannot be collected due to a module import issue:
+
+**Error Details:**
+- File: `/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_pr_utils.py`
+- Line 12: `from tests.fakes.gateway.claude_installation import FakeClaudeInstallation`
+- Issue: `ModuleNotFoundError: No module named 'tests.fakes'`
+
+**Root Cause:**
+The test module is trying to import from `tests.fakes` but that module is not available in the current Python environment. This is likely a path configuration issue where the test is located in a subdirectory (`packages/erk-shared/tests/`) but trying to import from the root `tests/` directory.
+
+**Suggested Actions:**
+The test file at `/home/runner/work/erk/erk/packages/erk-shared/tests/unit/test_pr_utils.py` needs its imports corrected to reference the proper location of the fakes module, or the test needs to be run from a different working directory with proper PYTHONPATH configuration.
+agentId: ae8e43a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>This is a pre-existing test setup issue, not related to our renames. Let me run the full test suite to verify our changes work:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="832" cache_read_input_tokens="81591" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_019g2y1HK8ysPJ4R1PrpgHgL">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run make test</param>
+    <param name="prompt">Run `make test` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="832" cache_read_input_tokens="81591" cache_creation="{'ephemeral_5m_input_tokens': 832, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019g2y1HK8ysPJ4R1PrpgHgL">
+## Test Results Summary
+
+**Status:** Failed - 2 failures + 1 import error
+
+### Failures (2)
+
+1. **test_planned_pr_rejects_untitled_plan_json** — `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:556`
+   - Expected exit code 2, got 1
+   
+2. **test_planned_pr_rejects_untitled_plan_display** — `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py:595`
+   - Expected exit code 2, got 1
+
+### Import Error (1)
+
+3. **ERROR collecting tests/unit/services/test_pr_list_service.py**
+   - Missing module: `erk.core.services.plan_list_service`
+   - This file references a module that no longer exists (likely related to recent renames from "plan" to "pr")
+
+### Overall Results
+
+- **5885 passed**
+- **2 failed** 
+- **1 error** (import-time)
+
+The test failures appear related to exit code expectations in the plan save validation, and the import error suggests incomplete refactoring (module was renamed but references weren't updated).
+agentId: a20ad29 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Let me fix these issues. First, the import error in test_pr_list_service.py:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="501" cache_read_input_tokens="82423" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A4BtAW2GBgiPbcDWxi4cGZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/services/test_pr_list_service.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="501" cache_read_input_tokens="82423" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A4BtAW2GBgiPbcDWxi4cGZ">
+     1→"""Tests for PrListService."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.core.services.plan_list_service import (
+     9→    ManagedPrListService,
+    10→    PrListData,
+    11→    RealPrListService,
+    12→)
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.gateway.github.types import (
+    15→    GitHubRepoId,
+    16→    GitHubRepoLocation,
+    17→    PullRequestInfo,
+    18→    WorkflowRun,
+    19→)
+    20→from erk_shared.pr_store.types import Plan, PlanState
+    21→from tests.fakes.gateway.github import FakeLocalGitHub
+    22→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    23→from tests.fakes.gateway.http import FakeHttpClient
+    24→from tests.fakes.gateway.time import FakeTime
+    25→
+    26→TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))
+    27→
+    28→
+    29→class TestPrListData:
+    30→    """Tests for PrListData dataclass."""
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BP6Q3PTNMdbjSSudfzkr7P">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/services/test_pr_list_service.py</param>
+    <param name="old_string">from erk.core.services.plan_list_service import (
+    ManagedPrListService,
+    PrListData,
+    RealPrListService,
+)</param>
+    <param name="new_string">from erk.core.services.pr_list_service import (
+    ManagedPrListService,
+    PrListData,
+    RealPrListService,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="945" cache_read_input_tokens="82924" cache_creation="{'ephemeral_5m_input_tokens': 945, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BP6Q3PTNMdbjSSudfzkr7P">
+The file /home/runner/work/erk/erk/tests/unit/services/test_pr_list_service.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check the test failures in test_plan_save.py. The plan mentioned that "Untitled Plan" changes to "Implementation Plan":</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="247" cache_read_input_tokens="83869" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T2BricBQzVMjTqV1hde8Xu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">550</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="247" cache_read_input_tokens="83869" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T2BricBQzVMjTqV1hde8Xu">
+   550→        monkeypatch=monkeypatch,
+   551→    )
+   552→    runner = CliRunner()
+   553→
+   554→    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+   555→
+   556→    assert result.exit_code == 2
+   557→    output = json.loads(result.output)
+   558→    assert output["success"] is False
+   559→    assert output["error_type"] == "validation_failed"
+   560→    assert "agent_guidance" in output
+   561→
+   562→
+   563→def test_planned_pr_rejects_emoji_only_title(
+   564→    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+   565→) -&gt; None:
+   566→    """Planned-PR save rejects plan with emoji-only title."""
+   567→    ctx = _planned_pr_context(
+   568→        tmp_path=tmp_path,
+   569→        fake_claude=FakeClaudeInstallation.for_test(plans={"emoji": _EMOJI_ONLY_TITLE_PLAN}),
+   570→        monkeypatch=monkeypatch,
+   571→    )
+   572→    runner = CliRunner()
+   573→
+   574→    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+   575→
+   576→    assert result.exit_code == 2
+   577→    output = json.loads(result.output)
+   578→    assert output["success"] is False
+   579→    assert output["error_type"] == "validation_failed"
+
+... [35 lines omitted] ...
+
+   585→    """Planned-PR save shows error message for invalid title in display format."""
+  </tool_result>
+  <assistant>Let me check what _UNTITLED_PLAN_CONTENT is and what the naming.py validation expects:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1430" cache_read_input_tokens="84116" cache_creation="{'ephemeral_5m_input_tokens': 1430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0129v3jnCPg6fKWyreDSJ4NA">
+    <param name="command">grep -A5 "_UNTITLED_PLAN_CONTENT\|_EMOJI_ONLY_TITLE_PLAN" tests/unit/cli/commands/exec/scripts/test_plan_save.py | head -20</param>
+    <param name="description">Find test plan content definitions</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1430" cache_read_input_tokens="84116" cache_creation="{'ephemeral_5m_input_tokens': 1430, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0129v3jnCPg6fKWyreDSJ4NA">
+_UNTITLED_PLAN_CONTENT = (
+    "This plan has no heading so extract_title_from_pr"
+    ' returns "Untitled Plan".\n\n'
+    "- Step 1: Set up the environment\n"
+    "- Step 2: Implement the core logic\n"
+    "- Step 3: Add tests and documentation\n"
+--
+_EMOJI_ONLY_TITLE_PLAN = """# 🚀🎉
+
+This plan has an emoji-only title which should fail validation.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+--
+        fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
+        monkeypatch=monkeypatch,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+  </tool_result>
+  <assistant>The test comment says it should return "Untitled Plan", but after the consolidation, the function now returns "Implementation Plan" as the fallback. Let me check the naming.py to see what titles are considered invalid:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="396" cache_read_input_tokens="85546" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018PKCaCctMnMEa8HE8PTs9v">
+    <param name="command">grep -A10 "_FALLBACK_PLAN_TITLES\|FALLBACK_PLAN_TITLES" packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="description">Check fallback plan titles</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="396" cache_read_input_tokens="85546" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018PKCaCctMnMEa8HE8PTs9v">
+_FALLBACK_PLAN_TITLES = {"Untitled Plan", "Implementation Plan"}
+
+
+def has_timestamp_suffix(name: str) -&gt; bool:
+    """Check if a name already ends with a timestamp suffix (-MM-DD-HHMM).
+
+    Args:
+        name: Branch or worktree name to check
+
+    Returns:
+        True if name ends with timestamp suffix pattern, False otherwise
+--
+    if stripped in _FALLBACK_PLAN_TITLES:
+        return InvalidPrTitle(
+            raw_title=title,
+            reason=f"'{stripped}' is a default fallback title, not a descriptive plan title",
+        )
+
+    # Check that sanitization retains meaningful content.
+    # generate_filename_from_title strips emojis, accents, and special chars.
+    # If the result is "plan.md" (the fallback), the title has no usable content.
+    filename = generate_filename_from_title(stripped)
+    if filename == "plan.md":
+  </tool_result>
+  <assistant>Perfect! The validation correctly includes both "Untitled Plan" and "Implementation Plan" in the fallback titles set. The test should still fail validation. The issue is that the test now expects exit code 2 (validation failed), but it's getting exit code 1. Let me update the test comment to reflect the new behavior:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="771" cache_read_input_tokens="85942" cache_creation="{'ephemeral_5m_input_tokens': 771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017EWwD5tHia1PrhscFavxeJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">540</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="771" cache_read_input_tokens="85942" cache_creation="{'ephemeral_5m_input_tokens': 771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017EWwD5tHia1PrhscFavxeJ">
+   540→- Step 3: Add tests and documentation"""
+   541→
+   542→
+   543→def test_planned_pr_rejects_untitled_plan_json(
+   544→    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+   545→) -&gt; None:
+   546→    """Planned-PR save rejects plan with fallback title 'Untitled Plan'."""
+   547→    ctx = _planned_pr_context(
+   548→        tmp_path=tmp_path,
+   549→        fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
+   550→        monkeypatch=monkeypatch,
+   551→    )
+   552→    runner = CliRunner()
+   553→
+   554→    result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
+   555→
+   556→    assert result.exit_code == 2
+   557→    output = json.loads(result.output)
+   558→    assert output["success"] is False
+   559→    assert output["error_type"] == "validation_failed"
+   560→    assert "agent_guidance" in output
+   561→
+   562→
+   563→def test_planned_pr_rejects_emoji_only_title(
+   564→    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+   565→) -&gt; None:
+   566→    """Planned-PR save rejects plan with emoji-only title."""
+   567→    ctx = _planned_pr_context(
+   568→        tmp_path=tmp_path,
+   569→        fake_claude=FakeClaudeInstallation.for_test(plans={"emoji": _EMOJI_ONLY_TITLE_PLAN}),
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now the test comment says "Untitled Plan" but since we've consolidated the functions, `extract_title_from_pr` now returns "Implementation Plan" for content without headings. The validation should still reject it since both are in `_FALLBACK_PLAN_TITLES`. But the issue is the exit code. Let me check what the actual behavior is by looking at line 533:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="732" cache_read_input_tokens="86713" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A8EBGSsUFPpYi4st34qevZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">530</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="732" cache_read_input_tokens="86713" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A8EBGSsUFPpYi4st34qevZ">
+   530→    "- Step 4: More content to pass length validation"
+   531→)
+   532→
+   533→
+   534→_EMOJI_ONLY_TITLE_PLAN = """# 🚀🎉
+   535→
+   536→This plan has an emoji-only title which should fail validation.
+   537→
+   538→- Step 1: Set up the environment
+   539→- Step 2: Implement the core logic
+   540→- Step 3: Add tests and documentation"""
+   541→
+   542→
+   543→def test_planned_pr_rejects_untitled_plan_json(
+   544→    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Let me check around line 520 to see the actual _UNTITLED_PLAN_CONTENT definition:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="827" cache_read_input_tokens="87445" cache_creation="{'ephemeral_5m_input_tokens': 827, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GZ7EaLShDWkA2r6i6toY8y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="offset">515</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="827" cache_read_input_tokens="87445" cache_creation="{'ephemeral_5m_input_tokens': 827, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GZ7EaLShDWkA2r6i6toY8y">
+   515→    assert result.exit_code == 0, f"Failed: {result.output}"
+   516→    # PR base should be trunk (master), not the ephemeral learn branch
+   517→    assert len(fake_github.created_prs) == 1
+   518→    assert fake_github.created_prs[0][3] == "master"
+   519→
+   520→
+   521→# --- Title validation rejection tests (planned-PR path) ---
+   522→
+   523→# Plan content with no H1 heading → extract_title_from_pr returns "Untitled Plan"
+   524→_UNTITLED_PLAN_CONTENT = (
+   525→    "This plan has no heading so extract_title_from_pr"
+   526→    ' returns "Untitled Plan".\n\n'
+   527→    "- Step 1: Set up the environment\n"
+   528→    "- Step 2: Implement the core logic\n"
+   529→    "- Step 3: Add tests and documentation\n"
+   530→    "- Step 4: More content to pass length validation"
+   531→)
+   532→
+   533→
+   534→_EMOJI_ONLY_TITLE_PLAN = """# 🚀🎉
+   535→
+   536→This plan has an emoji-only title which should fail validation.
+   537→
+   538→- Step 1: Set up the environment
+   539→- Step 2: Implement the core logic
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The comment in line 523 is now stale. After consolidation, `extract_title_from_pr` returns "Implementation Plan" (not "Untitled Plan") for content without headings. Let me update the comment and test docstrings to reflect the correct behavior:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="597" cache_read_input_tokens="88272" cache_creation="{'ephemeral_5m_input_tokens': 597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013BAmrVGwX5PTjTfu123eia">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string"># --- Title validation rejection tests (planned-PR path) ---
+
+# Plan content with no H1 he...[truncated 249 chars]...3: Add tests and documentation\n"
+    "- Step 4: More content to pass length validation"
+)</param>
+    <param name="new_string"># --- Title validation rejection tests (planned-PR path) ---
+
+# Plan content with no H1 he...[truncated 261 chars]...3: Add tests and documentation\n"
+    "- Step 4: More content to pass length validation"
+)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="597" cache_read_input_tokens="88272" cache_creation="{'ephemeral_5m_input_tokens': 597, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013BAmrVGwX5PTjTfu123eia">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NfLCRiDtFB2ibenw21JU3S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="old_string">def test_planned_pr_rejects_untitled_plan_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -&gt; None:
+    """Planned-PR save rejects plan with fallback title 'Untitled Plan'."""</param>
+    <param name="new_string">def test_planned_pr_rejects_untitled_plan_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -&gt; None:
+    """Planned-PR save rejects plan with fallback title 'Implementation Plan'."""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="877" cache_read_input_tokens="88869" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NfLCRiDtFB2ibenw21JU3S">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_plan_save.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run the failing tests again to see if they pass:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="298" cache_read_input_tokens="89746" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01EAKfm1tnvJu7r8x9bJd7nj">
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+    <param name="description">Run the failing tests</param>
+    <param name="prompt">Run `pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_planned_pr_reject...[truncated 85 chars]...tled_plan_display -v` and report results. This is a READ-ONLY check - do not modify files.</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="298" cache_read_input_tokens="89746" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EAKfm1tnvJu7r8x9bJd7nj">
+pytest failed: 2 issues found
+
+**Test Results:**
+
+Both tests failed with exit code mismatches:
+
+1. **test_planned_pr_rejects_untitled_plan_json** (file: `tests/unit/cli/commands/exec/scripts/test_plan_save.py`)
+   - Expected exit code: 2
+   - Actual exit code: 1
+   - Location: Line 556
+
+2. **test_planned_pr_rejects_untitled_plan_display** (file: `tests/unit/cli/commands/exec/scripts/test_plan_save.py`)
+   - Expected exit code: 2
+   - Actual exit code: 1
+   - Location: Line 595
+
+**Summary:** Both tests expect the `plan_save` command to exit with code 2 when rejecting an untitled plan (fallback title "Implementation Plan"), but the command is currently exiting with code 1 instead.
+agentId: afa1647 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The exit code difference suggests a different code path is being taken. Let me look at how the validation works to understand why we're getting exit code 1 instead of 2:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="829" cache_read_input_tokens="90044" cache_creation="{'ephemeral_5m_input_tokens': 829, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YJ5QCo2apw7estA59iHei1">
+    <param name="command">pytest tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_planned_pr_rejects_untitled_plan_json -v -s 2&gt;&amp;1 | tail -50</param>
+    <param name="description">Run test with output to see error</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="829" cache_read_input_tokens="90044" cache_creation="{'ephemeral_5m_input_tokens': 829, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YJ5QCo2apw7estA59iHei1">
+/bin/bash: line 1: pytest: command not found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SZVXDEBiGHtmdzPPGgB15m">
+    <param name="command">make test PYTEST_ARGS="tests/unit/cli/commands/exec/scripts/test_plan_save.py::test_planned_pr_rejects_untitled_plan_json -v -s" 2&gt;&amp;1 | tail -80</param>
+    <param name="description">Run specific test through make</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="183" cache_read_input_tokens="90873" cache_creation="{'ephemeral_5m_input_tokens': 183, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+</session>
