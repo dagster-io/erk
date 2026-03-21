@@ -1,8 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Rename plan-oriented types to PR terminology (Nodes 1.1\u20131.4)",
-  "objective_id": 9318,
-  "node_ids": [
-    "1.1"
-  ]
-}
