@@ -396,8 +396,6 @@ repo = "owner/github-repo"
         assert result.env == {"MY_VAR": "my_value"}
 
 
-
-
 class TestMergeConfigsWithLocal:
     """Tests for merge_configs_with_local function."""
 
