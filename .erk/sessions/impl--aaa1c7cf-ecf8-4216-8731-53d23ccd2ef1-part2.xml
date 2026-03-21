@@ -1,0 +1,995 @@
+<session>
+  <meta branch="plnd/O9324-submit-stack-discrim-03-21-1132" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_014gixZxxC8N2m44ZjvhJFBd">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import ERK_PR_LABEL, PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.cli.repo_resolution import get_remote_github
+    30→from erk.core.commit_message_generator import CommitMessageGenerator
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012wZscDKYFHhd6D2XUXLctZ">
+    <param name="pattern">from erk_shared</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="801" cache_read_input_tokens="72591" cache_creation="{'ephemeral_5m_input_tokens': 801, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012wZscDKYFHhd6D2XUXLctZ">
+33:from erk_shared.gateway.git.abc import BranchDivergence
+34:from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+35:from erk_shared.gateway.github.issues.types import IssueNotFound
+36:from erk_shared.gateway.github.label_ops import add_labels_resilient
+37:from erk_shared.gateway.github.metadata.core import (
+43:from erk_shared.gateway.github.metadata.roadmap import (
+48:from erk_shared.gateway.github.metadata.types import BlockKeys
+49:from erk_shared.gateway.github.parsing import parse_git_remote_url
+50:from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+51:from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
+52:from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
+53:from erk_shared.gateway.gt.prompts import truncate_diff
+54:from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
+55:from erk_shared.impl_context import impl_context_exists, remove_impl_context
+56:from erk_shared.impl_folder import (
+63:from erk_shared.scratch.scratch import write_scratch_file
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CN7fXbtToTpn9E4egxYgzc">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">from erk_shared.gateway.git.abc import BranchDivergence
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError</param>
+    <param name="new_string">from erk_shared.gateway.git.abc import BranchDivergence
+from erk_shared.gateway.git.remote...[truncated 70 chars]... (
+    SubmitStackError,
+    SubmitStackNothingToSubmit,
+    SubmitStackRestackRequired,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="73392" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CN7fXbtToTpn9E4egxYgzc">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update call site 1 (`push_and_create_pr`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="73884" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KJkE4jKSPWX6E3BrUiXRhw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    if not state.quiet:
+        click.echo(click.style("   Running gt submit...", dim=True...[truncated 944 chars]...=f"Graphite submit failed: {e}",
+            details={},
+        )
+    if not state.quiet:</param>
+    <param name="new_string">    if not state.quiet:
+        click.echo(click.style("   Running gt submit...", dim=True...[truncated 1015 chars]...ror) else 'Nothing to submit'}",
+            details={},
+        )
+    if not state.quiet:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="73884" cache_creation="{'ephemeral_5m_input_tokens': 301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJkE4jKSPWX6E3BrUiXRhw">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update call site 2 (`enhance_with_graphite`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1036" cache_read_input_tokens="74185" cache_creation="{'ephemeral_5m_input_tokens': 1036, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Uv18jVeJh7FGzCpXj2ekxV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    # Run gt submit
+    sys.stdout.flush()
+    try:
+        ctx.graphite.submit_stack(
+   ...[truncated 527 chars]...            message=f"Graphite enhancement failed: {e}",
+            details={},
+        )</param>
+    <param name="new_string">    # Run gt submit
+    sys.stdout.flush()
+    enhance_result = ctx.graphite.submit_stack(...[truncated 523 chars]..."Graphite enhancement failed: {enhance_result.message}",
+            details={},
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1036" cache_read_input_tokens="74185" cache_creation="{'ephemeral_5m_input_tokens': 1036, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uv18jVeJh7FGzCpXj2ekxV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `branch_manager/graphite.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="75221" cache_creation="{'ephemeral_5m_input_tokens': 585, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019jRA54pahJfTqLCwhV4Kq2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="585" cache_read_input_tokens="75221" cache_creation="{'ephemeral_5m_input_tokens': 585, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019jRA54pahJfTqLCwhV4Kq2">
+     1→"""Graphite-based BranchManager implementation."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.branch_manager.abc import BranchManager
+     9→from erk_shared.gateway.branch_manager.types import PrInfo, SubmitBranchError, SubmitBranchResult
+    10→from erk_shared.gateway.git.abc import Git
+    11→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    12→from erk_shared.gateway.github.abc import LocalGitHub
+    13→from erk_shared.gateway.github.types import PRNotFound
+    14→from erk_shared.gateway.graphite.abc import Graphite
+    15→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class GraphiteBranchManager(BranchManager):
+    20→    """BranchManager implementation using Graphite.
+    21→
+    22→    Uses Graphite's local cache for fast PR lookups and `gt create`
+    23→    for branch creation with parent tracking. Falls back to GitHub API
+    24→    when PR info is not in Graphite cache.
+    25→    """
+    26→
+    27→    git: Git
+    28→    graphite: Graphite
+    29→    graphite_branch_ops: GraphiteBranchOps
+    30→    github: LocalGitHub
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DgBFrHGVqeKWDvUiDgJnGJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="old_string">from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps</param>
+    <param name="new_string">from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+from erk_shared.gateway.graphite.types import SubmitStackResult</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="868" cache_read_input_tokens="75806" cache_creation="{'ephemeral_5m_input_tokens': 868, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DgBFrHGVqeKWDvUiDgJnGJ">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016eLhwjuPFb451epmsriMbE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="old_string">        # submit_stack is a subprocess call (gt submit) — no LBYL alternative exists
+     ...[truncated 154 chars]...:
+            return SubmitBranchError(message=str(e))
+        return SubmitBranchResult()</param>
+    <param name="new_string">        result = self.graphite.submit_stack(
+            repo_root, publish=False, restack...[truncated 128 chars]...bmitBranchError(message=result.message if hasattr(result, "message") else "Unknown error")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="281" cache_read_input_tokens="76674" cache_creation="{'ephemeral_5m_input_tokens': 281, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016eLhwjuPFb451epmsriMbE">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01KAZjF56VnXwLuyDs5xSFr1">
+    <param name="todos">[{'content': 'Node 1.1: Define discriminated union types in types.py', 'status': 'complete...[truncated 556 chars]...ts and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="76955" cache_creation="{'ephemeral_5m_input_tokens': 368, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KAZjF56VnXwLuyDs5xSFr1">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update the test files. First let me look at all the test files that use `submit_stack_raises`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="77323" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HKJSfoJZdfsDUyq8wQWNA3">
+    <param name="pattern">submit_stack_raises</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="77323" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HKJSfoJZdfsDUyq8wQWNA3">
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:94:        submit_stack_raises=RuntimeError("gt submit failed"),
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:118:        submit_stack_raises=RuntimeError(
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:151:        submit_stack_raises=RuntimeError("network timeout"),
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:214:        submit_stack_raises=RuntimeError("nothing to submit"),
+tests/unit/gateways/gt/fake_ops.py:531:            submit_stack_raises=error,
+tests/unit/gateways/gt/fake_ops.py:640:            submit_stack_raises=error,
+tests/unit/gateways/graphite/test_graphite_disabled.py:136:def test_submit_stack_raises_error(tmp_path: Path) -&gt; None:
+  </tool_result>
+  <assistant>Now let me look at the full relevant sections of `test_graphite_first_flow.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="77631" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HYCXv4k3ik3JWAJkPc6esb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="77631" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017ZrGyZHXaAn4hE69T39TwP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="77631" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HYCXv4k3ik3JWAJkPc6esb">
+     1→"""Unit tests for _graphite_first_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _graphite_first_flow,
+     9→)
+    10→from erk_shared.context.types import GlobalConfig
+    11→from erk_shared.gateway.git.abc import BranchDivergence
+    12→from erk_shared.gateway.github.types import PRDetails
+    13→from tests.fakes.gateway.git import FakeGit
+    14→from tests.fakes.gateway.github import FakeLocalGitHub
+    15→from tests.fakes.gateway.graphite import FakeGraphite
+    16→from tests.test_utils.test_context import context_for_test
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_017ZrGyZHXaAn4hE69T39TwP">
+     1→"""Unit tests for enhance_with_graphite pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    enhance_with_graphite,
+     9→)
+    10→from erk_shared.context.types import GlobalConfig
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→from tests.fakes.gateway.git import FakeGit
+    13→from tests.fakes.gateway.graphite import FakeGraphite
+    14→from tests.test_utils.test_context import context_for_test
+    15→
+    16→
+    17→def _make_state(
+    18→    *,
+    19→    cwd: Path,
+    20→    repo_root: Path | None = None,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now update `test_graphite_first_flow.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="78031" cache_creation="{'ephemeral_5m_input_tokens': 955, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VrdMY1TyDmKEpB1uUvEx1z">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="old_string">from tests.fakes.gateway.graphite import FakeGraphite</param>
+    <param name="new_string">from erk_shared.gateway.graphite.types import SubmitStackError, SubmitStackRestackRequired
+from tests.fakes.gateway.graphite import FakeGraphite</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="78031" cache_creation="{'ephemeral_5m_input_tokens': 955, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VrdMY1TyDmKEpB1uUvEx1z">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01R7RUM1QVrpsXwyFR27qCGB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="old_string">def test_submit_failure_returns_error(tmp_path: Path) -&gt; None:
+    """SubmitError(error_ty...[truncated 40 chars]...aphite = FakeGraphite(
+        submit_stack_raises=RuntimeError("gt submit failed"),
+    )</param>
+    <param name="new_string">def test_submit_failure_returns_error(tmp_path: Path) -&gt; None:
+    """SubmitError(error_ty...[truncated 56 chars]...eGraphite(
+        submit_stack_result=SubmitStackError(message="gt submit failed"),
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="484" cache_read_input_tokens="78986" cache_creation="{'ephemeral_5m_input_tokens': 484, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R7RUM1QVrpsXwyFR27qCGB">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WDNzWvrWQjUcwkRdF8KH73">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="old_string">def test_restack_error_returns_actionable_message(tmp_path: Path) -&gt; None:
+    """SubmitEr...[truncated 192 chars]...ou must restack and resolve conflicts with gt restack before submitting."
+        ),
+    )</param>
+    <param name="new_string">def test_restack_error_returns_actionable_message(tmp_path: Path) -&gt; None:
+    """SubmitEr...[truncated 214 chars]...ou must restack and resolve conflicts with gt restack before submitting."
+        ),
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="79470" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WDNzWvrWQjUcwkRdF8KH73">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_enhance_with_graphite.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="79804" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DtLGB1XasSq8Humrd5mXd3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="old_string">from erk_shared.gateway.graphite.types import BranchMetadata</param>
+    <param name="new_string">from erk_shared.gateway.graphite.types import BranchMetadata, SubmitStackError, SubmitStackNothingToSubmit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="79804" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DtLGB1XasSq8Humrd5mXd3">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GXEgshAoGab8g7UD7agoAn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="old_string">        submit_stack_raises=RuntimeError("network timeout"),</param>
+    <param name="new_string">        submit_stack_result=SubmitStackError(message="network timeout"),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="80212" cache_creation="{'ephemeral_5m_input_tokens': 480, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GXEgshAoGab8g7UD7agoAn">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01486PcCHxM4hsdqCMfjCarY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="old_string">        submit_stack_raises=RuntimeError("nothing to submit"),</param>
+    <param name="new_string">        submit_stack_result=SubmitStackNothingToSubmit(),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="80692" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01486PcCHxM4hsdqCMfjCarY">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `fake_ops.py` in `tests/unit/gateways/gt/`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="80903" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WgmYJXfcsyiAqp1ymaT9bi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py</param>
+    <param name="offset">510</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="80903" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WgmYJXfcsyiAqp1ymaT9bi">
+   510→            current_branch = self._git_current_branches.get(Path(self._repo_root)) or "main"
+   511→            for child in children:
+   512→                self._main_graphite.set_branch_parent(child, current_branch)
+   513→
+   514→        return self
+   515→
+   516→    def with_submit_failure(self, stderr: str = "") -&gt; FakeGtKitOps:
+   517→        """Configure submit_stack to fail via main_graphite.
+   518→
+   519→        Args:
+   520→            stderr: Error message to include
+   521→
+   522→        Returns:
+   523→            Self for chaining
+   524→        """
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_018pmhE9oXaZgEe8eigPfeA4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="632" cache_read_input_tokens="81115" cache_creation="{'ephemeral_5m_input_tokens': 632, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018pmhE9oXaZgEe8eigPfeA4">
+     1→"""In-memory fake implementations of GT kit operations for testing.
+     2→
+     3→This module provides fake implementations with declarative setup methods that
+     4→eliminate the need for extensive subprocess mocking in tests.
+     5→
+     6→Design:
+     7→- Immutable state using frozen dataclasses
+     8→- Declarative setup methods (with_branch, with_uncommitted_files, etc.)
+     9→- Automatic state transitions (commit clears uncommitted files)
+    10→- LBYL pattern: methods check state before operations
+    11→- Returns match interface contracts exactly
+    12→- Satisfies GtKit Protocol through structural typing
+    13→"""
+    14→
+    15→from __future__ import annotations
+    16→
+    17→from dataclasses import dataclass, field
+    18→from pathlib import Path
+    19→
+    20→from erk_shared.gateway.branch_manager.abc import BranchManager
+    21→from erk_shared.gateway.branch_manager.git import GitBranchManager
+    22→from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
+    23→from erk_shared.gateway.git.abc import Git
+    24→from erk_shared.gateway.github.abc import LocalGitHub
+    25→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    26→from erk_shared.gateway.graphite.abc import Graphite
+    27→from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+    28→from erk_shared.gateway.graphite.types import BranchMetadata
+    29→from erk_shared.gateway.time.abc import Time
+    30→from tests.fakes.gateway.git import FakeGit
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TodWXFgqNgVwPBFFvBhn2L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py</param>
+    <param name="old_string">from erk_shared.gateway.graphite.types import BranchMetadata</param>
+    <param name="new_string">from erk_shared.gateway.graphite.types import BranchMetadata, SubmitStackError, SubmitStackNothingToSubmit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1133" cache_read_input_tokens="81253" cache_creation="{'ephemeral_5m_input_tokens': 1133, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TodWXFgqNgVwPBFFvBhn2L">
+The file /home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the two `with_submit_failure` and `with_nothing_to_submit` methods in `fake_ops.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="82386" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KCMU4g2SGwEL1B3XkrvaNd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py</param>
+    <param name="old_string">        # Configure main_graphite to raise RuntimeError for submit_stack
+        existing_...[truncated 263 chars]..._stack_raises=error,
+            branches=existing_branches,
+        )
+        return self</param>
+    <param name="new_string">        # Configure main_graphite to return SubmitStackError for submit_stack
+        exis...[truncated 258 chars]... failed: {stderr}"),
+            branches=existing_branches,
+        )
+        return self</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="82386" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KCMU4g2SGwEL1B3XkrvaNd">
+The file /home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ka63NqHLEVGSGwDTfqfPA2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py</param>
+    <param name="offset">615</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="666" cache_read_input_tokens="82601" cache_creation="{'ephemeral_5m_input_tokens': 666, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ka63NqHLEVGSGwDTfqfPA2">
+   615→        self._github_builder_state.pr_update_should_succeed = False
+   616→        # Reset cached instance since state changed
+   617→        self._github_instance = None
+   618→        return self
+   619→
+   620→    def with_submit_success_but_nothing_submitted(self) -&gt; FakeGtKitOps:
+   621→        """Configure submit_stack to fail with 'Nothing to submit!' error.
+   622→
+   623→        Simulates the case where a parent branch is empty/already merged.
+   624→
+   625→        Returns:
+   626→            Self for chaining
+   627→        """
+   628→        # Configure main_graphite to raise RuntimeError with nothing submitted message
+   629→        existing_branches: dict[str, BranchMetadata] = {}
+   630→        if isinstance(self._main_graphite, FakeGraphite):
+   631→            existing_branches = self._main_graphite._branches
+   632→        error = RuntimeError(
+   633→            "gt submit failed: WARNING: This branch does not introduce any changes:\n"
+   634→            "▸ stale-parent-branch\n"
+   635→            "WARNING: This branch and any dependent branches will not be submitted.\n"
+   636→            "Nothing to submit!"
+   637→        )
+   638→        self._main_graphite = FakeGraphite(
+   639→            submit_stack_raises=error,
+   640→            branches=existing_branches,
+   641→        )
+   642→        return self
+   643→
+   644→    def with_gt_unauthenticated(self) -&gt; FakeGtKitOps:
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011KWcyWimUFBf6JkKuQqk6y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py</param>
+    <param name="old_string">        # Configure main_graphite to raise RuntimeError with nothing submitted message
+   ...[truncated 502 chars]..._stack_raises=error,
+            branches=existing_branches,
+        )
+        return self</param>
+    <param name="new_string">        # Configure main_graphite to return SubmitStackNothingToSubmit
+        existing_br...[truncated 224 chars]...ckNothingToSubmit(),
+            branches=existing_branches,
+        )
+        return self</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="83267" cache_creation="{'ephemeral_5m_input_tokens': 653, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011KWcyWimUFBf6JkKuQqk6y">
+The file /home/runner/work/erk/erk/tests/unit/gateways/gt/fake_ops.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `test_graphite_disabled.py` tests — the `submit_stack` test now needs to check for `SubmitStackError` instead of `GraphiteDisabledError`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="83920" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NoydDQsfNBgxd1V4x6ViGD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import GitHubRepoId
+from erk_shared.gateway.graphite....[truncated 30 chars]...teDisabledError,
+    GraphiteDisabledReason,
+)
+from tests.fakes.gateway.git import FakeGit</param>
+    <param name="new_string">from erk_shared.gateway.github.types import GitHubRepoId
+from erk_shared.gateway.graphite....[truncated 93 chars]...gateway.graphite.types import SubmitStackError
+from tests.fakes.gateway.git import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="83920" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NoydDQsfNBgxd1V4x6ViGD">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read it above. Let me write it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="84370" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013KobsRJPmTGNLYhrRamuDi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py</param>
+    <param name="old_string">import pytest
+
+from erk_shared.gateway.github.types import GitHubRepoId
+from erk_shared.ga...[truncated 45 chars]...teDisabledError,
+    GraphiteDisabledReason,
+)
+from tests.fakes.gateway.git import FakeGit</param>
+    <param name="new_string">import pytest
+
+from erk_shared.gateway.github.types import GitHubRepoId
+from erk_shared.ga...[truncated 108 chars]...gateway.graphite.types import SubmitStackError
+from tests.fakes.gateway.git import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="84370" cache_creation="{'ephemeral_5m_input_tokens': 614, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013KobsRJPmTGNLYhrRamuDi">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_011XeDiG4sHuS1R98jXp4XMC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py</param>
+    <param name="offset">1</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="84984" cache_creation="{'ephemeral_5m_input_tokens': 355, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011XeDiG4sHuS1R98jXp4XMC">
+     1→"""Tests for GraphiteDisabled sentinel implementation.
+     2→
+     3→These tests verify that the GraphiteDisabled sentinel properly implements
+     4→the graceful degradation pattern: read-only methods return empty results,
+     5→mutating methods raise GraphiteDisabledError with helpful messages.
+     6→"""
+     7→
+     8→from pathlib import Path
+     9→
+    10→import pytest
+    11→
+    12→from erk_shared.gateway.github.types import GitHubRepoId
+    13→from erk_shared.gateway.graphite.disabled import (
+    14→    GraphiteDisabled,
+    15→    GraphiteDisabledError,
+    16→    GraphiteDisabledReason,
+    17→)
+    18→from tests.fakes.gateway.git import FakeGit
+    19→
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016Zt77peSL2rjsGEyVUVdBp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py</param>
+    <param name="old_string">from erk_shared.gateway.graphite.disabled import (
+    GraphiteDisabled,
+    GraphiteDisabledError,
+    GraphiteDisabledReason,
+)
+from tests.fakes.gateway.git import FakeGit</param>
+    <param name="new_string">from erk_shared.gateway.graphite.disabled import (
+    GraphiteDisabled,
+    GraphiteDisab...[truncated 36 chars]...gateway.graphite.types import SubmitStackError
+from tests.fakes.gateway.git import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="85339" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Zt77peSL2rjsGEyVUVdBp">
+The file /home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `test_submit_stack_raises_error` test — `submit_stack` now returns `SubmitStackError` instead of raising:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="85986" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JDJV37R9HaZGjXGaeutEjr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py</param>
+    <param name="old_string">def test_submit_stack_raises_error(tmp_path: Path) -&gt; None:
+    """submit_stack raises Gra...[truncated 135 chars]...   sentinel.submit_stack(tmp_path, publish=False, restack=False, quiet=False, force=False)</param>
+    <param name="new_string">def test_submit_stack_returns_error(tmp_path: Path) -&gt; None:
+    """submit_stack returns S...[truncated 216 chars]...e(result, SubmitStackError)
+    assert "requires Graphite to be enabled" in result.message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="85986" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JDJV37R9HaZGjXGaeutEjr">
+The file /home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if there's a `pytest.raises(GraphiteDisabledError)` for restack in that file that also needs updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="86289" cache_creation="{'ephemeral_5m_input_tokens': 656, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01V8CUnWh7synardbSBNUe6e">
+    <param name="pattern">GraphiteDisabledError</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/gateways/graphite/test_graphite_disabled.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="86289" cache_creation="{'ephemeral_5m_input_tokens': 656, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V8CUnWh7synardbSBNUe6e">
+5:mutating methods raise GraphiteDisabledError with helpful messages.
+15:    GraphiteDisabledError,
+126:# Mutating methods raise GraphiteDisabledError
+130:    """squash_branch raises GraphiteDisabledError."""
+133:    with pytest.raises(GraphiteDisabledError):
+152:    error = GraphiteDisabledError(GraphiteDisabledReason.CONFIG_DISABLED)
+162:    error = GraphiteDisabledError(GraphiteDisabledReason.NOT_INSTALLED)
+  </tool_result>
+  <assistant>The `squash_branch` still raises `GraphiteDisabledError` — we're not changing that. Let me also verify there are no other callers of `submit_stack` that catch `RuntimeError` or `GraphiteDisabledError`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="86945" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VWfYdKMV3SrGttE33qYiSV">
+    <param name="pattern">submit_stack</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="86945" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VWfYdKMV3SrGttE33qYiSV">
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:95:        submit_stack_result=SubmitStackError(message="gt submit failed"),
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py:119:        submit_stack_result=SubmitStackRestackRequired(
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:117:    assert len(fake_graphite.submit_stack_calls) == 0
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:136:    assert len(fake_graphite.submit_stack_calls) == 0
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:140:    """Non-benign RuntimeError from submit_stack =&gt; SubmitError."""
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:151:        submit_stack_result=SubmitStackError(message="network timeout"),
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:199:    assert len(fake_graphite.submit_stack_calls) == 1
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py:214:        submit_stack_result=SubmitStackNothingToSubmit(),
+tests/unit/gateways/gt/test_quick_submit.py:168:    def test_quick_submit_calls_submit_stack(self, tmp_repo: Path) -&gt; None:
+tests/unit/gateways/gt/test_quick_submit.py:169:        """Test that quick-submit calls graphite submit_stack."""
+tests/unit/gateways/gt/test_quick_submit.py:179:        # Verify submit_stack was called
+tests/unit/gateways/gt/test_quick_submit.py:182:        assert len(graphite.submit_stack_calls) == 1
+tests/unit/gateways/gt/test_quick_submit.py:184:        call = graphite.submit_stack_calls[0]
+tests/unit/gateways/gt/fake_ops.py:517:        """Configure submit_stack to fail via main_graphite.
+tests/unit/gateways/gt/fake_ops.py:525:        # Configure main_graphite to return SubmitStackError for submit_stack
+tests/unit/gateways/gt/fake_ops.py:530:            submit_stack_result=SubmitStackError(message=f"gt submit failed: {stderr}"),
+tests/unit/gateways/gt/fake_ops.py:621:        """Configure submit_stack to fail with 'Nothing to submit!' error.
+tests/unit/gateways/gt/fake_ops.py:633:            submit_stack_result=SubmitStackNothingToSubmit(),
+tests/unit/gateways/graphite/test_graphite_disabled.py:137:def test_submit_stack_returns_error(tmp_path: Path) -&gt; None:
+tests/unit/gateways/graphite/test_graphite_disabled.py:138:    """submit_stack returns SubmitStackError when disabled."""
+tests/unit/gateways/graphite/test_graphite_disabled.py:141:    result = sentinel.submit_stack(tmp_path, publish=False, restack=False, quiet=False, force=False)
+tests/commands/pr/test_rewrite.py:143:        # Verify branch was pushed (Graphite submit_stack was called)
+tests/commands/pr/test_submit.py:1755:        assert len(graphite.submit_stack_calls) == 0
+tests/commands/pr/test_submit.py:1852:        assert len(graphite.submit_stack_calls) == 1
+tests/commands/pr/test_submit.py:1948:        assert len(graphite.submit_stack_calls) == 1
+tests/real/test_real_graphite.py:63:def test_submit_stack_invalidates_branches_cache() -&gt; None:
+tests/real/test_real_graphite.py:64:    """Verify submit_stack() invalidates the branches cache.
+tests/real/test_real_graphite.py:77:        ops.submit_stack(Path("/test"), publish=False, restack=False, quiet=False, force=False)
+tests/real/test_real_graphite.py:79:        # Cache should be invalidated after submit_stack
+tests/fakes/gateway/graphite.py:39:        submit_stack_result: SubmitStackOutcome | None = None,
+
+... [22 lines omitted] ...
+
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:93:        """Return error - submit_stack is a mutating operation."""
+packages/erk-shared/src/erk_shared/gateway/graphite/types.py:34:    """Generic submit_stack failure (timeout, exit code, etc.)."""
+  </tool_result>
+  <assistant>Let me check `tests/commands/pr/test_submit.py` and `test_quick_submit.py` for any submit_stack_raises usage:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2298" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 2298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01J3aAWMFgNSpff2rK5fUtGV">
+    <param name="pattern">submit_stack_raises</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2298" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 2298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018qSpMvZL2WcS2DG9HY3FKd">
+    <param name="pattern">submit_stack_raises</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/gateways/gt/test_quick_submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2298" cache_read_input_tokens="87238" cache_creation="{'ephemeral_5m_input_tokens': 2298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018qSpMvZL2WcS2DG9HY3FKd">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01J3aAWMFgNSpff2rK5fUtGV">
+No matches found
+  </tool_result>
+  <assistant>Also check the `test_enhance_with_graphite.py` docstring that mentions "RuntimeError" and update it:</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="520" cache_read_input_tokens="89536" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ALBc4y8gXDbPYvRwa7ep3o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="offset">138</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="520" cache_read_input_tokens="89536" cache_creation="{'ephemeral_5m_input_tokens': 520, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ALBc4y8gXDbPYvRwa7ep3o">
+   138→
+   139→def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -&gt; None:
+   140→    """Non-benign RuntimeError from submit_stack =&gt; SubmitError."""
+   141→    fake_graphite = FakeGraphite(
+   142→        branches={
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WmmBHQFibePMiADDtrCgRw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="old_string">def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -&gt; None:
+    """Non-benign RuntimeError from submit_stack =&gt; SubmitError."""</param>
+    <param name="new_string">def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -&gt; None:
+    """SubmitStackError from submit_stack =&gt; SubmitError."""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="90056" cache_creation="{'ephemeral_5m_input_tokens': 356, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WmmBHQFibePMiADDtrCgRw">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py has been updated successfully.
+  </tool_result>
+  <assistant>Also check the real graphite test to see if it's affected:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="90412" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012F4kFBv6jdv5zdy8NVFdhw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/real/test_real_graphite.py</param>
+    <param name="offset">60</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="90412" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012F4kFBv6jdv5zdy8NVFdhw">
+    60→        )
+    61→
+    62→
+    63→def test_submit_stack_invalidates_branches_cache() -&gt; None:
+    64→    """Verify submit_stack() invalidates the branches cache.
+    65→
+    66→    This is a regression test for a bug where gt ls showed no branches
+    67→    immediately after erk pr dispatch, because _branches_cache wasn't
+    68→    invalidated after gt submit updated .graphite_cache_persist.
+    69→    """
+    70→    with patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run:
+    71→        mock_run.return_value = MagicMock(returncode=0, stderr="")
+    72→
+    73→        ops = RealGraphite()
+    74→        # Pre-populate cache with stale data
+    75→        ops._branches_cache = {"stale": "data"}  # type: ignore[assignment]
+    76→
+    77→        ops.submit_stack(Path("/test"), publish=False, restack=False, quiet=False, force=False)
+    78→
+    79→        # Cache should be invalidated after submit_stack
+    80→        assert ops._branches_cache is None
+    81→
+    82→
+    83→def test_real_graphite_check_auth_status_returns_false_on_timeout() -&gt; None:
+    84→    """Test check_auth_status returns (False, None, None) and warns when subprocess times out."""
+    85→    with (
+    86→        patch("erk_shared.gateway.graphite.real.subprocess.run") as mock_run,
+    87→        patch("erk_shared.gateway.graphite.real.user_output") as mock_output,
+    88→    ):
+    89→        mock_run.side_effect = subprocess.TimeoutExpired(cmd=["gt", "auth"], timeout=15)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>This test mocks `subprocess.run` to return success (returncode=0), which now returns `SubmitStackResult()` and then clears the cache. The test checks that `ops._branches_cache is None` — the cache invalidation still happens in the success path. This test should still pass.
+
+Now let me mark the call site migration done and update test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="90919" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01SckNaWKYPvTJoQj3JAkKgU">
+    <param name="todos">[{'content': 'Node 1.1: Define discriminated union types in types.py', 'status': 'complete...[truncated 442 chars]...ts and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="682" cache_read_input_tokens="90919" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="313" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SckNaWKYPvTJoQj3JAkKgU">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01WNM4VffqK5Saohv7LhSjiQ">
+    <param name="description">Run submit pipeline tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following test suites and report all results (pass/fail, any errors):
+
+1. `uv run ...[truncated 162 chars].../home/runner/work/erk/erk
+
+Report the full output for any failures. Do NOT fix any errors.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="91601" cache_creation="{'ephemeral_5m_input_tokens': 355, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WNM4VffqK5Saohv7LhSjiQ">
+## Test Results
+
+All three test suites **passed successfully**:
+
+### 1. `uv run pytest tests/unit/cli/commands/pr/submit_pipeline/ -x -q`
+**Status: PASSED**
+- **81 tests passed in 1.08s**
+- All test files in the submit_pipeline directory passed:
+  - test_capture_existing_pr_body.py (3 tests)
+  - test_cleanup_impl_for_submit.py (4 tests)
+  - test_commit_wip.py (2 tests)
+  - test_core_submit_flow.py (10 tests)
+  - test_enhance_with_graphite.py (7 tests)
+  - test_extract_diff.py (3 tests)
+  - test_extract_diff_and_fetch_plan_context.py (3 tests)
+  - test_fetch_plan_context.py (1 test)
+  - test_finalize_pr.py (16 tests)
+  - test_generate_description.py (1 test)
+  - test_graphite_first_flow.py (10 tests)
+  - test_label_code_pr.py (3 tests)
+  - test_link_pr_to_objective_nodes.py (7 tests)
+  - test_prepare_state.py (7 tests)
+  - test_run_pipeline.py (4 tests)
+
+### 2. `uv run pytest tests/unit/gateways/graphite/ -x -q`
+**Status: PASSED**
+- **14 tests passed in 0.06s**
+- test_graphite_disabled.py (14 tests)
+
+### 3. `uv run pytest tests/unit/gateways/gt/ -x -q`
+
+... [7 lines omitted] ...
+
+**Summary: 108/108 tests passed. No failures or errors.**
+  </tool_result>
+  <assistant>All 108 tests pass. Now run the type checker and linter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="91956" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Task" id="toolu_01L3Qp2bMGVTvEngVB38ReCx">
+    <param name="description">Run ty and ruff checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the following checks and report all results:
+
+1. `uv run ty check packages/erk-shared/...[truncated 638 chars]...tory: /home/runner/work/erk/erk
+
+Report full output for any errors. Do NOT fix any errors.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="91956" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L3Qp2bMGVTvEngVB38ReCx">
+## Results
+
+### 1. Type Check (ty)
+
+**ty failed: 1 diagnostic found**
+
+**Error Details:**
+
+File: `packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:190`
+
+```
+error[invalid-argument-type]: Argument is incorrect
+   --&gt; packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:190:34
+    |
+188 |         if isinstance(result, SubmitStackResult):
+189 |             return SubmitBranchResult()
+190 |         return SubmitBranchError(message=result.message if hasattr(result, "message") else "Unknown error")
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Expected `str`, found `object`
+```
+
+The issue is that the conditional expression `result.message if hasattr(result, "message") else "Unknown error"` is typed as `object` instead of `str`. The type checker cannot narrow the type based on the `hasattr()` check within the conditional expression. This requires an explicit type guard or type narrowing.
+
+---
+
+### 2. Lint Check (ruff)
+
+**ruff failed: 9 errors found (4 fixable)**
+
+**Error Summary:**
+
+
+... [19 lines omitted] ...
+  </tool_result>
+  <assistant>Let me fix all these issues:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="92693" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sq4JyiWkGMZCpyJV4aaik8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="offset">183</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1161" cache_read_input_tokens="92693" cache_creation="{'ephemeral_5m_input_tokens': 1161, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sq4JyiWkGMZCpyJV4aaik8">
+   183→            SubmitBranchResult on success, SubmitBranchError on failure.
+   184→        """
+   185→        result = self.graphite.submit_stack(
+   186→            repo_root, publish=False, restack=False, quiet=True, force=True
+   187→        )
+   188→        if isinstance(result, SubmitStackResult):
+   189→            return SubmitBranchResult()
+   190→        return SubmitBranchError(message=result.message if hasattr(result, "message") else "Unknown error")
+   191→
+   192→    def commit(self, repo_root: Path, message: str) -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The issue is that `SubmitStackNothingToSubmit` has no `message` field — I need to handle it explicitly. Let me check the `SubmitStackOutcome` types again. `SubmitStackNothingToSubmit` doesn't have `message`. The plan says to use `result.message if hasattr(result, 'message') else "Unknown error"` but the type checker can't narrow that. Instead, use `isinstance` checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="93854" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01McNdG7yohfSacmXWHiUHmH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="old_string">from erk_shared.gateway.graphite.types import SubmitStackResult</param>
+    <param name="new_string">from erk_shared.gateway.graphite.types import SubmitStackNothingToSubmit, SubmitStackResult</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="93854" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01McNdG7yohfSacmXWHiUHmH">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JYwjVCMWH74R9epjoegN6a">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="old_string">        result = self.graphite.submit_stack(
+            repo_root, publish=False, restack...[truncated 128 chars]...bmitBranchError(message=result.message if hasattr(result, "message") else "Unknown error")</param>
+    <param name="new_string">        result = self.graphite.submit_stack(
+            repo_root, publish=False, restack...[truncated 202 chars]...rror(message="Nothing to submit")
+        return SubmitBranchError(message=result.message)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="541" cache_read_input_tokens="94244" cache_creation="{'ephemeral_5m_input_tokens': 541, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JYwjVCMWH74R9epjoegN6a">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the line length issues. First `real.py:272`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="94785" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QHs2L1qG4xdAxtD4AdX9gD">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py</param>
+    <param name="offset">268</param>
+    <param name="limit">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="94785" cache_creation="{'ephemeral_5m_input_tokens': 383, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QHs2L1qG4xdAxtD4AdX9gD">
+   268→            if not quiet and e.stdout:
+   269→                stdout = e.stdout if isinstance(e.stdout, str) else e.stdout.decode()
+   270→                user_output(stdout, nl=False)
+   271→            return SubmitStackError(
+   272→                message="gt submit timed out after 90 seconds. Check network connectivity and try again."
+   273→            )
+   274→        except subprocess.CalledProcessError as e:
+   275→            if not quiet and e.stdout:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013k1NYQENKiNo7c2bz5DFDr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py</param>
+    <param name="old_string">            return SubmitStackError(
+                message="gt submit timed out after 90 seconds. Check network connectivity and try again."
+            )</param>
+    <param name="new_string">            return SubmitStackError(
+                message=(
+                    "gt submit timed out after 90 seconds. Check network connectivity and try again."
+                )
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="95168" cache_creation="{'ephemeral_5m_input_tokens': 558, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013k1NYQENKiNo7c2bz5DFDr">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix `submit_pipeline.py:351`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="95726" cache_creation="{'ephemeral_5m_input_tokens': 249, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XkD4wbMSXSyJq5at2V5YnX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">344</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="95726" cache_creation="{'ephemeral_5m_input_tokens': 249, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XkD4wbMSXSyJq5at2V5YnX">
+   344→            ),
+   345→            details={},
+   346→        )
+   347→    if isinstance(submit_result, (SubmitStackError, SubmitStackNothingToSubmit)):
+   348→        return SubmitError(
+   349→            phase="push_and_create_pr",
+   350→            error_type="graphite_submit_failed",
+   351→            message=f"Graphite submit failed: {submit_result.message if isinstance(submit_result, SubmitStackError) else 'Nothing to submit'}",
+   352→            details={},
+   353→        )
+   354→    if not state.quiet:
+   355→        click.echo(click.style("   Graphite submit completed", fg="green"))
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The inline ternary in the message is getting long and also slightly wrong — if `SubmitStackNothingToSubmit` hits the `push_and_create_pr` path that's a logical issue. Looking at the plan, in `push_and_create_pr`, `SubmitStackNothingToSubmit` should be treated as an error (not benign). Let me simplify this by splitting the branches:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="95975" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JYrUR8iZunwavDiBxETH9m">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    if isinstance(submit_result, (SubmitStackError, SubmitStackNothingToSubmit)):
+        ...[truncated 176 chars]...it_result, SubmitStackError) else 'Nothing to submit'}",
+            details={},
+        )</param>
+    <param name="new_string">    if isinstance(submit_result, SubmitStackNothingToSubmit):
+        return SubmitError(
+...[truncated 352 chars]...sage=f"Graphite submit failed: {submit_result.message}",
+            details={},
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="606" cache_read_input_tokens="95975" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JYrUR8iZunwavDiBxETH9m">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the import ordering issues. Let me run `ruff --fix` via devrun:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="96581" cache_creation="{'ephemeral_5m_input_tokens': 516, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

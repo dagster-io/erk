@@ -16,6 +16,27 @@
       "raw_size_kb": 613,
       "xml_size_kb": 76,
       "git_branch": "master"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T11:45:49.218398+00:00",
+      "files": [
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part1.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part2.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part3.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part4.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part5.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part6.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part7.xml",
+        "impl--aaa1c7cf-ecf8-4216-8731-53d23ccd2ef1-part8.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 9,
+      "raw_size_kb": 1098,
+      "xml_size_kb": 245,
+      "git_branch": "plnd/O9324-submit-stack-discrim-03-21-1132"
     }
   ]
 }
