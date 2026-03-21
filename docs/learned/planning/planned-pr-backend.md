@@ -95,7 +95,7 @@ Planned PR titles are prefixed with a label-based tag via `get_title_tag_from_la
 
 <!-- Source: packages/erk-shared/src/erk_shared/pr_utils.py:178-190, get_title_tag_from_labels -->
 
-The function returns `"[erk-learn]"` if `"erk-learn"` is in the labels list, otherwise `"[erk-plan]"`. The prefix is prepended to the plan title during PR creation (e.g., `[erk-plan] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
+The function returns `"[erk-learn]"` if `"erk-learn"` is in the labels list, otherwise `"[erk-pr]"`. The prefix is prepended to the plan title during PR creation (e.g., `[erk-pr] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
 
 ## GraphQL Refactor: `list_plan_prs_with_details()`
 
