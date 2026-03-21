@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9346,
+  "sessions": [
+    {
+      "session_id": "0d22e364-a855-4388-bb9d-58a17c18473a",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-21T14:12:19.000450+00:00",
+      "files": [
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part1.xml",
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part2.xml",
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part3.xml",
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part4.xml",
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part5.xml",
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part6.xml",
+        "impl-0d22e364-a855-4388-bb9d-58a17c18473a-0d22e364-a855-4388-bb9d-58a17c18473a-part7.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 14,
+      "raw_size_kb": 837,
+      "xml_size_kb": 206,
+      "git_branch": "plnd/classify-pr-feedback-pushd-03-21-0955"
+    }
+  ]
+}
