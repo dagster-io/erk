@@ -276,7 +276,7 @@ Rules triggered by matching actions in code.
 
 **proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.
 
-**querying plans by base label erk-prned-pr instead of type-specific labels** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by type-specific labels (erk-pr, erk-learn) not base label. AND semantics means querying erk-prned-pr + erk-pr returns only items with both, which may silently exclude items.
+**querying plans by combining multiple type-specific labels in a single query** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by ONE type-specific label per query (erk-pr, erk-learn). AND semantics means querying labels=['erk-pr', 'erk-learn'] returns only items with BOTH labels, which may silently exclude items.
 
 **re-exporting symbols from **init**.py after splitting a module** → Read [Monolith-to-Subpackage Refactoring Pattern](monolith-to-subpackage-pattern.md) first. No re-exports. Each submodule has a canonical import path. The **init**.py is an orchestrator, not a facade.
 

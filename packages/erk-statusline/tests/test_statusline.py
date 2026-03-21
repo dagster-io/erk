@@ -731,6 +731,23 @@ erk_plan: true
             assert result is not None
             assert result == "add-lorem-ipsum-impl.md"
 
+    def test_finds_file_with_erk_pr_frontmatter(self) -> None:
+        """Should find plan file with erk_pr: true (primary key)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            plan_file = Path(tmpdir) / "add-lorem-ipsum-impl.md"
+            plan_file.write_text(
+                """---
+erk_pr: true
+---
+
+## Implementation Plan
+"""
+            )
+
+            result = find_new_plan_file(tmpdir)
+            assert result is not None
+            assert result == "add-lorem-ipsum-impl.md"
+
     def test_returns_none_when_no_plan_files_exist(self) -> None:
         """Should return None when no plan files exist."""
         with tempfile.TemporaryDirectory() as tmpdir:

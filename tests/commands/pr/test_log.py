@@ -339,6 +339,63 @@ def test_log_with_all_event_types() -> None:
         assert "Implementation in progress" in result.output
 
 
+def test_log_backward_compat_erk_plan_key() -> None:
+    """Test that metadata blocks with old 'erk-plan' key are parsed as plan-created events."""
+    # Arrange: Create a comment body using the old 'erk-plan' key format
+    plan = Plan(
+        pr_identifier="42",
+        title="Test Plan",
+        body="Implementation plan",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-pr"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    # Create a plan block and render it, then replace erk-pr with erk-plan
+    # to simulate comments written before the rename
+    plan_block = create_plan_block(
+        pr_number=42,
+        worktree_name="test-plan",
+        timestamp="2024-01-15T12:30:00Z",
+    )
+    comment = render_metadata_block(plan_block).replace("erk-pr", "erk-plan")
+
+    issue = _make_issue_info(plan)
+    fake_issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: [comment]},
+    )
+    fake_github = FakeLocalGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        ctx = build_workspace_test_context(
+            env,
+            plan_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, [comment]),
+        )
+
+        # Act: Use JSON output to verify the event was extracted
+        result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
+
+        # Assert: The old erk-plan key should produce a plan-created event
+        assert result.exit_code == 0
+        events = json.loads(result.output)
+        assert len(events) == 1
+        assert events[0]["event_type"] == "plan-created"
+        assert events[0]["timestamp"] == "2024-01-15T12:30:00Z"
+
+
 def test_log_with_invalid_plan_identifier() -> None:
     """Test log command with non-existent plan identifier."""
     # Arrange

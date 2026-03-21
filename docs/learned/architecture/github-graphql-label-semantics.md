@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "passing multiple labels to a GitHub GraphQL label filter expecting OR semantics"
     warning: "GitHub GraphQL uses AND semantics for label filters. Passing labels=['erk-pr', 'erk-learn'] returns only items with BOTH labels, not either. Query by type-specific labels separately."
-  - action: "querying plans by base label erk-prned-pr instead of type-specific labels"
-    warning: "Query by type-specific labels (erk-pr, erk-learn) not base label. AND semantics means querying erk-prned-pr + erk-pr returns only items with both, which may silently exclude items."
+  - action: "querying plans by combining multiple type-specific labels in a single query"
+    warning: "Query by ONE type-specific label per query (erk-pr, erk-learn). AND semantics means querying labels=['erk-pr', 'erk-learn'] returns only items with BOTH labels, which may silently exclude items."
 ---
 
 # GitHub GraphQL Label Semantics
@@ -33,8 +33,8 @@ Because of AND semantics, erk queries by **type-specific** labels only:
 
 | View       | Query Label     | NOT base label     |
 | ---------- | --------------- | ------------------ |
-| Plans      | `erk-pr`        | Not `erk-prned-pr` |
-| Learn      | `erk-learn`     | Not `erk-prned-pr` |
+| Plans      | `erk-pr`        | —                  |
+| Learn      | `erk-learn`     | —                  |
 | Objectives | `erk-objective` | N/A                |
 
 ## Impact

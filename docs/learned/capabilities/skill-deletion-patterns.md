@@ -3,7 +3,7 @@ title: Skill Deletion Patterns
 read_when:
   - "deleting a skill from erk"
   - "understanding tombstone pattern for skills"
-  - "working with erk-prning tombstone"
+  - "working with erk-planning tombstone"
   - "removing a skill from bundled_skills registry"
 tripwires:
   - action: "completely removing a skill's SKILL.md without leaving a tombstone"
@@ -36,11 +36,11 @@ This skill has been removed. Use the following instead:
 - `AGENTS.md` — where the documentation moved
 ```
 
-**Example**: `.claude/skills/erk-prning/SKILL.md` (12 lines):
+**Example**: `.claude/skills/erk-planning/SKILL.md` (12 lines):
 
 ```markdown
 ---
-name: erk-prning
+name: erk-planning
 description: "[REMOVED] This skill has been deleted. Plan management is now handled by slash commands and AGENTS.md."
 ---
 
@@ -90,7 +90,7 @@ Complex skill deletions often happen in two phases:
 1. **Phase 1 (deletion)**: Remove skill functionality, update all internal references, add tombstone SKILL.md
 2. **Phase 2 (tombstone dist)**: Ensure tombstone is in `bundled_skills()` so it distributes on next sync
 
-**Example**: `erk-prning` deletion:
+**Example**: `erk-planning` deletion:
 
 - PR #9223 (phase 1): Deleted planning logic, replaced with slash commands
 - PR #9228 (phase 2): Added tombstone to ensure external repos get the deletion
