@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9332,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-21T11:58:44.284478+00:00",
+      "files": [
+        "impl--6a7ebdc9-27ea-42fe-84a5-1aebe6a7851f-part1.xml",
+        "impl--6a7ebdc9-27ea-42fe-84a5-1aebe6a7851f-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 5,
+      "raw_size_kb": 543,
+      "xml_size_kb": 106,
+      "git_branch": "plnd/consolidate-learn-docs-03-21-1130"
+    }
+  ]
+}

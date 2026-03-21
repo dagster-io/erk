@@ -1,0 +1,311 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-21-1130" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01KMHvYFsEvUuzxVxSC3ap3u">
+     1→---
+     2→title: Objectives Tripwires
+     3→read_when:
+     4→  - "working on objectives code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from objectives/*.md frontmatter --&gt;
+    10→
+    11→# Objectives Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**accessing node_id on a RoadmapNode** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. The field is named 'id', not 'node_id'. This is a common mistake — check the actual dataclass definition.
+    16→
+    17→**accessing phase names from graph operations without calling enrich_phase_names()** → Read [Phase Name Enrichment](phase-name-enrichment.md) first. Phase names come from markdown headers, not from the parser. After graph_from_phases(), call enrich_phase_names(graph, issue_body) to populate phase names. Without enrichment, phase.name is None.
+    18→
+    19→**adding a new exec command without registering in the exec group** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. New exec scripts must be registered in the Click exec command group and follow the existing pattern: Click command with typed options, LBYL validation, structured result TypedDict.
+    20→
+    21→**adding a new roadmap mutation site without updating this document** → Read [Objective Lifecycle](objective-lifecycle.md) first. All roadmap mutation sites must be documented in objective-lifecycle.md
+    22→
+    23→**adding a new validation check** → Read [Roadmap Validation Architecture](roadmap-validation.md) first. Structural checks go in parse_roadmap() and return warnings alongside data. Semantic checks go in validate_objective() and produce pass/fail results. Don't mix levels.
+    24→
+    25→**adding a required parameter to objective-apply-landed-update without fallback discovery** → Read [Objective Exec Command Consolidation](exec-command-consolidation.md) first. The script auto-fills missing parameters from git/plan state. New parameters should follow the same pattern: explicit flag first, then auto-discovery fallback.
+    26→
+    27→**adding columns to the roadmap table format** → Read [Roadmap Format Versioning](roadmap-format-versioning.md) first. Read this doc to understand the header-based detection and rendering strategy before adding columns.
+    28→
+    29→**adding structural validation to check_cmd.py** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. Structural validation (phase headers, table format) belongs in roadmap.py (packages/erk-shared). check_cmd.py handles semantic validation only.
+    30→
+
+... [83 lines omitted] ...
+
+    73→**raising exceptions from validate_objective()** → Read [Objective Check Command — Semantic Validation](objective-roadmap-check.md) first. validate_objective() returns discriminated unions, never raises. Only CLI presentation functions (\_output_json, \_output_human) raise SystemExit.
+   101→**using parse_roadmap() when strict v2 validation is needed** → Read [Roadmap Shared Parser Architecture](roadmap-parser-api.md) first. Use parse_v2_roadmap() for commands that should reject legacy format. parse_roadmap() returns a legacy error string; parse_v2_roadmap() returns None for non-v2 content.
+  </tool_result>
+  <assistant>Now add the tripwire for `escape_md_table_cell()`. It fits alphabetically after "directly mutating..." and before "expecting status...":</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3762" cache_read_input_tokens="62738" cache_creation="{'ephemeral_5m_input_tokens': 3762, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017GNZnNeVmjZ3tD97UJ3um4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/objectives/tripwires.md</param>
+    <param name="old_string">**directly mutating issue body markdown without using either command** → Read [Roadmap Mut...[truncated 185 chars]...ation-semantics.md.
+
+**expecting status to auto-update when PR column is edited manually**</param>
+    <param name="new_string">**directly mutating issue body markdown without using either command** → Read [Roadmap Mut...[truncated 486 chars]...wn table rendering.
+
+**expecting status to auto-update when PR column is edited manually**</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3762" cache_read_input_tokens="62738" cache_creation="{'ephemeral_5m_input_tokens': 3762, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017GNZnNeVmjZ3tD97UJ3um4">
+The file /home/runner/work/erk/erk/docs/learned/objectives/tripwires.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01YKsVWRuygGfgnCzP3mBjfG">
+    <param name="todos">[{'content': 'Fix next-steps-output.md (PR terminology, branch_name param, slot co command...[truncated 913 chars]...firm all changes correct', 'status': 'in_progress', 'activeForm': 'Running verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="725" cache_read_input_tokens="66500" cache_creation="{'ephemeral_5m_input_tokens': 725, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YKsVWRuygGfgnCzP3mBjfG">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run all the verification checks from the plan:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="67225" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KcDReEbDsFkooyiqGfWKcw">
+    <param name="command">echo "=== 1. Check for PlanNextSteps in docs/learned/ ===" &amp;&amp; grep -r "PlanNextSteps" /hom...[truncated 481 chars]..."get-pr-for-plan" /home/runner/work/erk/erk/docs/learned/ 2&gt;&amp;1 || echo "NONE FOUND (good)"</param>
+    <param name="description">Run plan verification checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="405" cache_read_input_tokens="67225" cache_creation="{'ephemeral_5m_input_tokens': 405, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KcDReEbDsFkooyiqGfWKcw">
+=== 1. Check for PlanNextSteps in docs/learned/ ===
+/home/runner/work/erk/erk/docs/learned/planning/tripwires.md:**hardcoding next-steps command strings instead of using the dataclass properties** → Read [Next Steps Output Formatting](next-steps-output.md) first. Use PlanNextSteps dataclass from erk_shared.output.next_steps. It is the single source of truth for command formatting.
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md:| `IssueNextSteps` + `PlannedPRNextSteps` | `PlanNextSteps`                  |
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md:&lt;!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps --&gt;
+/home/runner/work/erk/erk/docs/learned/planning/index.md:- **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output
+
+=== 2. Check for old slot path in docs/learned/ ===
+/home/runner/work/erk/erk/docs/learned/erk/slot-pool-architecture.md:- [`src/erk/core/slot_allocation.py`](../../../src/erk/core/slot_allocation.py) - Allocation algorithm (moved from `src/erk/cli/commands/slot/common.py`)
+/home/runner/work/erk/erk/docs/learned/erk/placeholder-branches.md:&lt;!-- Source: src/erk/cli/commands/slot/common.py, is_placeholder_branch --&gt;
+/home/runner/work/erk/erk/docs/learned/architecture/slot-pool-state-sync.md:&lt;!-- Source: src/erk/cli/commands/slot/common.py:609, allocate_slot_for_branch --&gt;
+/home/runner/work/erk/erk/docs/learned/architecture/slot-pool-state-sync.md:&lt;!-- Source: src/erk/cli/commands/slot/common.py:223-287, sync_pool_assignments --&gt;
+/home/runner/work/erk/erk/docs/learned/architecture/slot-pool-state-sync.md:When `synced_count == 0`, the function returns early with the original state, skipping `save_pool_state()` entirely. Only when at least one assignment was corrected does the function write the updated state to disk. See `sync_pool_assignments()` in [`common.py`](../../../src/erk/cli/commands/slot/common.py) for the implementation.
+/home/runner/work/erk/erk/docs/learned/architecture/slot-pool-state-sync.md:- [`src/erk/cli/commands/slot/common.py`](../../../src/erk/cli/commands/slot/common.py) — `sync_pool_assignments()` (lines 223-287), called from `allocate_slot_for_branch()` (line 609)
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md:&lt;!-- Source: src/erk/cli/commands/slot/common.py, get_placeholder_branch_name --&gt;
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md:See `get_placeholder_branch_name()` in `src/erk/cli/commands/slot/common.py` for the placeholder naming convention, and `execute_unassign()` in `src/erk/cli/commands/slot/unassign_cmd.py` for the create-or-get pattern before checking out placeholder branches.
+
+=== 3. Check for --new-slot in docs/learned/ ===
+/home/runner/work/erk/erk/docs/learned/cli/teleport-slot-awareness.md:When `--new-slot` is used, `ensure_branch_has_worktree()` handles slot assignment creation as part of the worktree creation process. No additional slot update is needed.
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md:erk pr teleport &lt;PR_NUMBER&gt; [--new-slot] [-f/--force] [--sync] [--script]
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md:- Two modes: in-place (default) or `--new-slot` for fresh worktree
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md:2. **Worktree pool integration**: With `--new-slot`, navigates to existing worktrees, creates a slot, and updates pool assignments
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md:- `--mode teleport`: heavyweight, runs `erk pr teleport {pr} --new-slot --script --sync`
+/home/runner/work/erk/erk/docs/learned/cli/checkout-teleport-split.md:| Fresh worktree with Graphite sync | `teleport --new-slot --sync`   |
+/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md:The user passed `--for-pr` (so `setup is not None`) but did NOT pass `--new-slot`.
+/home/runner/work/erk/erk/docs/learned/cli/checkout-three-path-logic.md:- `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)
+
+=== 4. Check for get-pr-for-plan in docs/learned/ ===
+NONE FOUND (good)
+  </tool_result>
+  <assistant>The verification shows:
+1. **`PlanNextSteps`** still appears in 3 places outside the file I edited:
+   - `docs/learned/planning/tripwires.md` — auto-generated from frontmatter, references old class name
+   - `docs/learned/planning/planned-pr-lifecycle.md` — separate doc with old references
+   - `docs/learned/planning/index.md` — auto-generated index
+
+2. **Old slot path** — appears in other docs (`slot-pool-state-sync.md`, `placeholder-branches.md`, `branch-manager-decision-tree.md`) — these weren't part of the plan's scope
+
+3. **`--new-slot`** — appears in other docs but not in the removed section (which was about `erk branch create --new-slot` vs the valid teleport `--new-slot`). This is fine.
+
+4. **`get-pr-for-plan`** — none found (good).
+
+I need to address the `PlanNextSteps` in the planning tripwires.md and index.md, plus the `planned-pr-lifecycle.md` reference. Let me check these:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1841" cache_read_input_tokens="67630" cache_creation="{'ephemeral_5m_input_tokens': 1841, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0159CGbWiuAzLwYb2Gd7LEgr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1841" cache_read_input_tokens="67630" cache_creation="{'ephemeral_5m_input_tokens': 1841, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CdVgoXSNowLH9sYiF9rJDc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1841" cache_read_input_tokens="67630" cache_creation="{'ephemeral_5m_input_tokens': 1841, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0159CGbWiuAzLwYb2Gd7LEgr">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a LLM-generated slug to the consolidate-learn-plans branch name** → Read [Consolidate Learn Plans Workflow](consolidate-learn-plans-workflow.md) first. Branch name uses format_branch_timestamp_suffix() only — no LLM slug. Format: consolidate-learn-plans-{MM-DD-HHMM}. See consolidate-learn-plans-workflow.md.
+    20→
+    21→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from PR lookup. The entire PR comment block is gated on pr_result not being None.
+    22→
+    23→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    24→
+    25→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md.
+    26→
+    27→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    28→
+    29→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    30→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CdVgoXSNowLH9sYiF9rJDc">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Planning Documentation
+     5→
+     6→- **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+     7→- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
+     8→- **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
+     9→- **[agent-output-routing-strategies.md](agent-output-routing-strategies.md)** — deciding how agents should receive and produce outputs, designing multi-agent orchestration prompts, choosing between embedded-prompt and agent-file routing
+    10→- **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
+    11→- **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plans, implementing PR lookup from plans, modifying branch creation or naming conventions
+    12→- **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
+    13→- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan as complete, creating a consolidation plan from multiple PRs
+    14→- **[consolidate-learn-plans-workflow.md](consolidate-learn-plans-workflow.md)** — working with consolidate-learn-plans dispatch, adding or modifying the consolidate-learn-plans workflow, understanding how learn plan consolidation branches are named, working with erk launch consolidate-learn-plans
+    15→- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+    16→- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+    17→- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+    18→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    19→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+    20→- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [github] repo in config.toml, understanding cross-repo plan closing syntax
+    21→- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
+    22→- **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
+    23→- **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
+    24→- **[impl-context.md](impl-context.md)** — working with .erk/impl-context/ files, debugging plan content missing from a draft-PR implementation, reviewing a PR that contains .erk/impl-context/ files, understanding how draft-PR plans transfer content to .erk/impl-context/
+    25→- **[incremental-dispatch.md](incremental-dispatch.md)** — dispatching implementation against an existing PR, adding a local plan to an existing PR for remote implementation, working with incremental-dispatch exec script or slash command
+    26→- **[label-scheme.md](label-scheme.md)** — understanding how plans and learn issues are labeled, working with erk-pr or erk-learn labels, debugging label filtering in TUI or CLI views
+    27→- **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — debugging why learn materials are missing or malformed, understanding data flow from sessions to documentation plan, choosing between local learn and async learn modes, adding a new stage to the learn pipeline
+    28→- **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
+    29→- **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
+    30→- **[learn-session-embedding.md](learn-session-embedding.md)** — embedding session XML files in learn plan PRs, working with session preprocessing in the land or plan-save pipeline, debugging missing session XML in learn plan diffs
+
+... [54 lines omitted] ...
+
+    32→- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures where PR data is missing, implementing new learn pipeline steps that consume PR context, understanding why learn output lacks review feedback
+    36→- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+    40→- **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
+    42→- **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures, integrating objectives with one-shot dispatch
+    44→- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
+    48→- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a pr_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+    51→- **[plan-schema.md](plan-schema.md)** — understanding plan structure, debugging plan validation errors, working with plan-header or plan-body blocks
+    61→- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs plan number distinction
+    69→- **[session-preprocessing.md](session-preprocessing.md)** — modifying session preprocessing or compression pipeline, understanding why there are two preprocessing implementations, linking sessions to plans for learn workflow, debugging preprocessing failures or empty session output
+    70→- **[stacked-plan-branch-rebase.md](stacked-plan-branch-rebase.md)** — working with stacked plans that have non-trunk parents, debugging gt track failures for plan branches, understanding how plan branches integrate with Graphite stacking
+    71→- **[sub-agent-context-limitations.md](sub-agent-context-limitations.md)** — delegating session-dependent commands to Task tool sub-agents, debugging impl-signal or plan-save failures with empty session IDs, designing workflows that split work between root agent and sub-agents
+  </tool_result>
+  <assistant>I see:
+1. `docs/learned/planning/index.md` line 39: still says "understanding PlanNextSteps" — this is auto-generated from the `next-steps-output.md` frontmatter, which I already updated to say "understanding PrNextSteps". The index is auto-generated via `erk docs sync`. Since I updated the frontmatter of `next-steps-output.md`, the index entry is currently stale. I should update it manually too.
+
+2. `docs/learned/planning/tripwires.md` — also auto-generated, has the old tripwire text saying "Use PlanNextSteps dataclass". Again, I updated the source doc's frontmatter. But the current tripwires.md still has the old text.
+
+3. `docs/learned/planning/planned-pr-lifecycle.md` — has legitimate historical references to `PlanNextSteps` (migration table showing old vs new) — these are accurate history, not stale.
+
+Let me update the auto-generated planning index and tripwires to match the updated frontmatter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5642" cache_read_input_tokens="69471" cache_creation="{'ephemeral_5m_input_tokens': 5642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WXzyK6nrVAkTPNzkbofuTA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="old_string">- **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output</param>
+    <param name="new_string">- **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PrNextSteps, adding new next-steps commands to plan output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5642" cache_read_input_tokens="69471" cache_creation="{'ephemeral_5m_input_tokens': 5642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WXzyK6nrVAkTPNzkbofuTA">
+The file /home/runner/work/erk/erk/docs/learned/planning/index.md has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the planning tripwires.md — find the exact tripwire text to update:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="75113" cache_creation="{'ephemeral_5m_input_tokens': 788, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LcZqYKcyN8ivDdvncobGVP">
+    <param name="pattern">PlanNextSteps</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="75113" cache_creation="{'ephemeral_5m_input_tokens': 788, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LcZqYKcyN8ivDdvncobGVP">
+147:**hardcoding next-steps command strings instead of using the dataclass properties** → Read [Next Steps Output Formatting](next-steps-output.md) first. Use PlanNextSteps dataclass from erk_shared.output.next_steps. It is the single source of truth for command formatting.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Pj2Pi6p5t9iugQiDZ6AEvt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">**hardcoding next-steps command strings instead of using the dataclass properties** → Read...[truncated 70 chars]...rom erk_shared.output.next_steps. It is the single source of truth for command formatting.</param>
+    <param name="new_string">**hardcoding next-steps command strings instead of using the dataclass properties** → Read...[truncated 68 chars]...rom erk_shared.output.next_steps. It is the single source of truth for command formatting.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="75901" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pj2Pi6p5t9iugQiDZ6AEvt">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated successfully.
+  </tool_result>
+  <assistant>Now re-run the verification checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="577" cache_read_input_tokens="76116" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NhCcvkHu9CXjyc5hgW9Xic">
+    <param name="command">echo "=== 1. Check for PlanNextSteps in docs/learned/ ===" &amp;&amp; grep -rn "PlanNextSteps" /ho...[truncated 1142 chars]... "markdown-table-escaping" /home/runner/work/erk/erk/docs/learned/objectives/index.md 2&gt;&amp;1</param>
+    <param name="description">Run final verification checks from plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="577" cache_read_input_tokens="76116" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NhCcvkHu9CXjyc5hgW9Xic">
+=== 1. Check for PlanNextSteps in docs/learned/ ===
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md:156:| `IssueNextSteps` + `PlannedPRNextSteps` | `PlanNextSteps`                  |
+/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md:162:&lt;!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps --&gt;
+
+=== 2. Check for old slot path (slot/common.py) in docs/learned/ (scoped to slot-pool-architecture.md) ===
+/home/runner/work/erk/erk/docs/learned/erk/slot-pool-architecture.md:190:- [`src/erk/core/slot_allocation.py`](../../../src/erk/core/slot_allocation.py) - Allocation algorithm (moved from `src/erk/cli/commands/slot/common.py`)
+/home/runner/work/erk/erk/docs/learned/erk/placeholder-branches.md:60:&lt;!-- Source: src/erk/cli/commands/slot/common.py, is_placeholder_branch --&gt;
+
+=== 3. Check for --new-slot in slot-pool-architecture.md specifically ===
+
+=== 4. Check for get-pr-for-plan in docs/learned/ ===
+NONE FOUND (good)
+
+=== 5. Verify referenced source files exist ===
+/home/runner/work/erk/erk/src/erk/core/slot_allocation.py
+README.md
+pyproject.toml
+src
+tests
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/slots/naming.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/cli_alias.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/cli_group.py
+
+=== 6. Verify new markdown-table-escaping.md in objectives index ===
+- **[markdown-table-escaping.md](markdown-table-escaping.md)** — rendering user-provided text in markdown tables, working with objective roadmap table cell content, using escape_md_table_cell or roadmap.py rendering
+  </tool_result>
+  <assistant>All checks pass. The remaining `PlanNextSteps` references in `planned-pr-lifecycle.md` are in a historical migration table (showing what old name mapped to what new name) — these are intentionally historical references, not stale documentation.
+
+Verification summary:
+1. **`PlanNextSteps`** — Only in `planned-pr-lifecycle.md` historical migration table (correct, not stale)
+2. **Old slot path** — Only in `slot-pool-architecture.md` as a parenthetical `(moved from ...)` note and in `placeholder-branches.md` (which was out of scope)
+3. **`--new-slot` in slot-pool-architecture.md** — Zero matches (removed)
+4. **`get-pr-for-plan`** — Zero matches (good)
+5. **Source files** — All exist
+6. **New doc in index** — Entry present</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1235" cache_read_input_tokens="76693" cache_creation="{'ephemeral_5m_input_tokens': 1235, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01H8dmUdke8EZwoAk68EUQtg">
+    <param name="todos">[{'content': 'Fix next-steps-output.md (PR terminology, branch_name param, slot co command...[truncated 911 chars]...onfirm all changes correct', 'status': 'completed', 'activeForm': 'Running verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1235" cache_read_input_tokens="76693" cache_creation="{'ephemeral_5m_input_tokens': 1235, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H8dmUdke8EZwoAk68EUQtg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="77928" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L3BNTAhZXwESwoxKXYve7z">
+    <param name="command">erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="77928" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017xAp91JzzeKMdi9VDCsqoR">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="77928" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L3BNTAhZXwESwoxKXYve7z">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9332
+}
+  </tool_result>
+</session>
