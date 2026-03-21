@@ -26,19 +26,17 @@ Uses `Path.resolve()` on both sides to normalize symlinks and relative paths. Ne
 
 ## Call Sites
 
-The detection pattern is used at 5 locations:
+The detection pattern is used at 4 locations:
 
 <!-- Source: src/erk/cli/commands/wt/checkout_cmd.py:123 -->
-<!-- Source: src/erk/cli/commands/wt/create_cmd.py (--from-branch path) -->
-<!-- Source: src/erk/cli/commands/navigation_helpers.py:359 -->
-<!-- Source: src/erk/cli/commands/navigation_helpers.py:904 -->
-<!-- Source: src/erk/cli/commands/branch/checkout_cmd.py:256 -->
+<!-- Source: src/erk/cli/commands/wt/create_cmd.py:908 (--from-branch path) -->
+<!-- Source: src/erk/cli/commands/navigation_helpers.py:243 -->
+<!-- Source: src/erk/cli/commands/branch/checkout_cmd.py:251 -->
 
 1. `wt/checkout_cmd.py` — worktree checkout
 2. `wt/create_cmd.py` — `--from-branch` slot allocation path
-3. `navigation_helpers.py` — `navigate_up()` helper
-4. `navigation_helpers.py` — `navigate_down_with_delete()` helper
-5. `branch/checkout_cmd.py` — branch checkout
+3. `navigation_helpers.py` — `activate_target()` helper
+4. `branch/checkout_cmd.py` — branch checkout
 
 Several other call sites pass `same_worktree=False` statically (e.g., `wt/create_cmd.py` for new worktree paths, `branch/create_cmd.py`, `pr/checkout_cmd.py`) because creation always targets a new worktree.
 
@@ -61,9 +59,7 @@ Several other call sites pass `same_worktree=False` statically (e.g., `wt/create
 
 ## Deletion in Same-Worktree Scenarios
 
-<!-- Source: src/erk/cli/commands/navigation_helpers.py:931-939 -->
-
-When `erk down -d` navigates to a worktree the user is already in (`shared_worktree=True`), the deletion commands are shown differently:
+When `erk down -d` navigates to a worktree the user is already in (`same_worktree=True`), the deletion commands are shown differently:
 
 - Shows the actual `gt delete` commands directly instead of suggesting `erk br delete` (which would incorrectly try to delete the shared worktree)
 - Filters out `git worktree remove` and `erk slot unassign` commands
