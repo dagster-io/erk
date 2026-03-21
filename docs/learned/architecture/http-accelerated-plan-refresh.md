@@ -8,10 +8,10 @@ read_when:
 tripwires:
   - action: "adding a new method to HttpClient ABC without implementing in all providers"
     warning: "HttpClient follows the gateway pattern. New methods must be added to abc.py, real.py, and fake.py at minimum."
-  - action: "bypassing PlanListService for direct GitHub API plan queries"
-    warning: "PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling."
+  - action: "bypassing PrListService for direct GitHub API plan queries"
+    warning: "PrListService handles HTTP API calls. Direct API calls bypass caching and error handling."
   - action: "passing None for http_client in service methods"
-    warning: "http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point."
+    warning: "http_client is a required parameter (not optional) in PrListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point."
   - action: "adding a new CLI entry point that calls plan or objective services"
     warning: "Must validate ctx.http_client is not None before calling service methods. Follow the pattern in existing entry points (pr list, pr duplicate-check, objective list, exec dash-data)."
 ---
@@ -50,7 +50,7 @@ HttpClient follows the standard gateway pattern:
 <!-- Source: packages/erk-shared/src/erk_shared/core/pr_list_service.py -->
 <!-- Source: packages/erk-shared/src/erk_shared/core/objective_list_service.py -->
 
-Service methods require `http_client: HttpClient` as a keyword argument (not optional). Both `PlanListService.get_plan_list_data()` and `ObjectiveListService.get_objective_list_data()` take `http_client` as a required parameter and return `PlanListData`.
+Service methods require `http_client: HttpClient` as a keyword argument (not optional). Both `PrListService.get_pr_list_data()` and `ObjectiveListService.get_objective_list_data()` take `http_client` as a required parameter and return `PrListData`.
 
 ## CLI Auth Validation Pattern
 
@@ -74,7 +74,7 @@ PR data parsing is extracted to a shared module to avoid duplication. Both plan 
 
 ## Source Code
 
-- `packages/erk-shared/src/erk_shared/core/pr_list_service.py` — Plan list service (ABC)
+- `packages/erk-shared/src/erk_shared/core/pr_list_service.py` — PR list service (ABC)
 - `packages/erk-shared/src/erk_shared/core/objective_list_service.py` — Objective list service (ABC)
 - `packages/erk-shared/src/erk_shared/gateway/http/abc.py` — HttpClient ABC
 

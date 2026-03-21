@@ -73,11 +73,11 @@ else:
     use_commit_messages_only()
 ```
 
-## PlanContext Data Structure
+## PrContext Data Structure
 
-<!-- Source: src/erk/core/pr_context_provider.py, PlanContext -->
+<!-- Source: src/erk/core/pr_context_provider.py, PrContext -->
 
-When extraction succeeds, the provider returns a `PlanContext` frozen dataclass. See `PlanContext` in `src/erk/core/pr_context_provider.py`. Key fields: `plan_id` (str), `plan_content` (str), `objective_summary` (str | None).
+When extraction succeeds, the provider returns a `PrContext` frozen dataclass. See `PrContext` in `src/erk/core/pr_context_provider.py`. Key fields: `pr_id` (str), `plan_content` (str), `objective_summary` (str | None).
 
 ## Usage in PR Generation
 
