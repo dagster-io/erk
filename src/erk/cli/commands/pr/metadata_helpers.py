@@ -1,7 +1,7 @@
 """Helpers for PR dispatch metadata updates.
 
 This module extracts shared logic for updating PR dispatch metadata
-when triggering remote workflows on branches that follow the P{plan}-pattern.
+when triggering remote workflows on branches that follow the plnd/ prefix pattern.
 """
 
 from __future__ import annotations
