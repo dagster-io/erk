@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "pr_number": 9391,
+  "sessions": [
+    {
+      "session_id": "ee0a5373-adbc-48b2-a9ed-c8c239692d2f",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-22T14:56:32.031773+00:00",
+      "files": [
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part1.xml",
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part2.xml",
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part3.xml",
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part4.xml",
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part5.xml",
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part6.xml",
+        "impl-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-ee0a5373-adbc-48b2-a9ed-c8c239692d2f-part7.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 9,
+      "raw_size_kb": 622,
+      "xml_size_kb": 149,
+      "git_branch": "plnd/fix-frontier-sparkline-03-22-1043"
+    }
+  ]
+}
