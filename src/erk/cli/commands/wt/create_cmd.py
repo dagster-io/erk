@@ -8,9 +8,11 @@ import click
 
 from erk.cli.activation import (
     activation_config_activate_only,
+    ensure_worktree_activate_script,
     print_activation_instructions,
     write_worktree_activate_script,
 )
+from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure, UserFacingCliError
@@ -43,6 +45,7 @@ from erk_shared.plan_workflow import (
     prepare_plan_for_worktree,
 )
 from erk_shared.pr_store.types import Plan, PrNotFound
+from erk_slots.common import allocate_slot_for_branch
 
 
 def run_post_worktree_setup(
@@ -489,6 +492,12 @@ def _create_json_response(
     default=None,
     help=("Create worktree from an existing branch. NAME defaults to the branch name."),
 )
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Auto-unassign oldest branch if pool is full (only used with --from-branch).",
+)
 @script_option
 @click.option(
     "--json",
@@ -521,6 +530,7 @@ def create_wt(
     copy_pr: bool,
     from_current_branch: bool,
     from_branch: str | None,
+    force: bool,
     script: bool,
     output_json: bool,
     stay: bool,
@@ -534,7 +544,8 @@ def create_wt(
     If --from-pr is provided, fetches the plan, validates the erk-pr label,
     derives name from the plan title, and creates an impl folder with plan-ref.json metadata.
     If --from-current-branch is provided, moves the current branch to the new worktree.
-    If --from-branch is provided, creates a worktree from an existing branch.
+    If --from-branch is provided, allocates a pool slot for an existing branch.
+    Use --force with --from-branch to auto-unassign the oldest slot when the pool is full.
 
     By default, the command checks if a branch with the same name already exists on
     the 'origin' remote. If a conflict is detected, the command fails with an error.
@@ -553,6 +564,12 @@ def create_wt(
     Ensure.invariant(
         flags_set <= 1,
         "Cannot use multiple of: --from-current-branch, --from-branch, --from-pr-file, --from-pr",
+    )
+
+    # Validate --force requires --from-branch
+    Ensure.invariant(
+        not force or from_branch is not None,
+        "--force requires --from-branch",
     )
 
     # Validate --json and --script are mutually exclusive
@@ -812,6 +829,9 @@ def create_wt(
             skip_remote_check=skip_remote_check,
         )
     elif from_branch:
+        # branch was set to from_branch (a str) in the early handling block
+        assert branch is not None
+
         # Validate that we're not trying to create worktree for trunk branch
         Ensure.invariant(
             branch != trunk_branch,
@@ -821,17 +841,81 @@ def create_wt(
             f"  erk slot co root",
         )
 
-        # Create worktree with existing branch
-        add_worktree(
+        # Ensure branch exists locally (auto-fetch from remote if needed)
+        local_branches = ctx.git.branch.list_local_branches(repo.root)
+        if branch not in local_branches:
+            remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+            remote_ref = f"origin/{branch}"
+            if remote_ref in remote_branches:
+                user_output(
+                    f"Branch '{branch}' exists on origin, creating local tracking branch..."
+                )
+                ctx.git.remote.fetch_branch(repo.root, "origin", branch)
+                ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
+            else:
+                user_output(
+                    f"Error: Branch '{branch}' does not exist.\n"
+                    f"To create a new branch, use:\n"
+                    f"  gt create {branch}"
+                )
+                raise SystemExit(1) from None
+
+        # Allocate slot for the branch
+        slot_result = allocate_slot_for_branch(
             ctx,
-            repo.root,
-            wt_path,
-            branch=branch,
-            ref=None,
-            use_existing_branch=True,
-            use_graphite=False,
-            skip_remote_check=skip_remote_check,
+            repo,
+            branch,
+            force=force,
+            reuse_inactive_slots=True,
+            cleanup_artifacts=True,
         )
+
+        # Navigate to the worktree
+        should_output = navigate_to_worktree(
+            ctx,
+            worktree_path=slot_result.worktree_path,
+            branch=branch,
+            script=script,
+            command_name="create",
+            script_message=(
+                f'echo "Branch {branch} already in slot {slot_result.slot_name}"'
+                if slot_result.already_assigned
+                else f'echo "Assigned {branch} to {slot_result.slot_name}"'
+            ),
+            relative_path=None,
+            post_cd_commands=None,
+        )
+
+        if should_output:
+            styled_branch = click.style(branch, fg="yellow")
+            styled_slot = click.style(slot_result.slot_name, fg="cyan")
+
+            if slot_result.already_assigned:
+                user_output(f"Branch {styled_branch} already assigned to {styled_slot}")
+            else:
+                user_output(
+                    click.style("✓ ", fg="green") + f"Assigned {styled_branch} to {styled_slot}"
+                )
+
+            display_sync_status(
+                ctx, worktree_path=slot_result.worktree_path, branch=branch, script=script
+            )
+
+            activation_script_path_slot = ensure_worktree_activate_script(
+                worktree_path=slot_result.worktree_path,
+                post_create_commands=None,
+            )
+            same_worktree = slot_result.worktree_path.resolve() == ctx.cwd.resolve()
+            print_activation_instructions(
+                activation_script_path_slot,
+                source_branch=None,
+                force=False,
+                config=activation_config_activate_only(),
+                copy=True,
+                same_worktree=same_worktree,
+            )
+        return
+
     elif linked_branch_name:
         # Plan-based worktree: use the branch created for this plan
         use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
