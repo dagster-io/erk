@@ -326,7 +326,7 @@ trigger_workflow(...)
 
 **Contrast with strict handler:**
 
-A user-facing command like `get-plan-info` is **strict** because the user explicitly asked for the data and expects either the answer or a clear error message.
+A user-facing command like `get-pr-info` is **strict** because the user explicitly asked for the data and expects either the answer or a clear error message.
 
 ### See Also
 

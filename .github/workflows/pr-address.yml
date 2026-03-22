@@ -51,7 +51,7 @@ jobs:
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PR_NUMBER" \
+          erk exec update-pr-header "$PR_NUMBER" \
             "last_dispatched_run_id=$RUN_ID" \
             "last_dispatched_node_id=$NODE_ID" \
             "last_dispatched_at=$TIMESTAMP"
@@ -154,7 +154,7 @@ jobs:
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PR_NUMBER" \
+          erk exec update-pr-header "$PR_NUMBER" \
             "last_remote_impl_at=$TIMESTAMP" \
             "last_remote_impl_run_id=$RUN_ID" \
             "last_remote_impl_session_id=$SESSION_ID" \

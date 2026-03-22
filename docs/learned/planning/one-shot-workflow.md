@@ -10,8 +10,8 @@ read_when:
 tripwires:
   - action: "adding dry-run support to one-shot commands"
     warning: "One-shot dry-run mode must NOT create skeleton issues"
-  - action: "modifying register-one-shot-plan exit behavior"
-    warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+  - action: "modifying register-one-shot-pr exit behavior"
+    warning: "register-one-shot-pr uses best-effort: exit 0 if any operation succeeds"
   - action: "adding post-dispatch operations without matching dispatch_cmd.py pattern"
     warning: "dispatch_one_shot() and _dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
   - action: "writing post-dispatch operations without try/except guards"
@@ -84,7 +84,7 @@ The `.github/workflows/one-shot.yml` workflow has two jobs:
    - `NODE_ID` -- specific roadmap node ID
    - `PLAN_ISSUE_NUMBER` -- plan entity number (PR number for planned-PR backend)
 5. Validates Claude produced `.erk/impl-context/plan.md` and `.erk/impl-context/plan-result.json` (with `pr_number` in JSON)
-6. Runs `erk exec register-one-shot-plan` for metadata registration
+6. Runs `erk exec register-one-shot-pr` for metadata registration
 7. Optionally updates objective roadmap step
 
 ### Implement Job

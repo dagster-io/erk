@@ -178,7 +178,7 @@ After saving, the JSON output includes `objective_issue`. Check that it matches 
 If verification is needed:
 
 ```bash
-erk exec get-plan-metadata <new-plan-number> objective_issue
+erk exec get-pr-metadata <new-plan-number> objective_issue
 ```
 
 Check that `value` matches the expected objective number.

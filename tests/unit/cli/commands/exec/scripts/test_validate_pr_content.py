@@ -1,12 +1,12 @@
-"""Unit tests for validate-plan-content kit CLI command."""
+"""Unit tests for validate-pr-content exec CLI command."""
 
 import json
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.validate_plan_content import (
-    _validate_plan_content,
-    validate_plan_content,
+from erk.cli.commands.exec.scripts.validate_pr_content import (
+    _validate_pr_content,
+    validate_pr_content,
 )
 
 # Test the internal validation function
@@ -25,7 +25,7 @@ length requirement. It includes headers and enough text to be meaningful.
 
 Step details here."""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -43,7 +43,7 @@ query performance
 patterns
 - Task 3: Add comprehensive test coverage including unit tests and integration tests"""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -62,7 +62,7 @@ scalability
 - Step 2: Implement business logic with clear separation of concerns and testability
 - Step 3: Add documentation with examples and usage patterns for future maintenance"""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -75,7 +75,7 @@ def test_validate_plan_too_short() -> None:
     """Test validation fails for plan under 100 characters."""
     plan = "# Short Plan\n\n- Step 1"
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is False
     assert error is not None
@@ -87,7 +87,7 @@ def test_validate_plan_no_structure() -> None:
     """Test validation fails for plan without headers or lists."""
     plan = "This is just plain text without any structure. " * 5  # Make it long enough
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is False
     assert error is not None
@@ -100,7 +100,7 @@ def test_validate_plan_empty() -> None:
     """Test validation fails for empty plan."""
     plan = ""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is False
     assert error is not None
@@ -112,7 +112,7 @@ def test_validate_plan_whitespace_only() -> None:
     """Test validation fails for whitespace-only plan."""
     plan = "\n\n   \n\t\n   \n\n"
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is False
     assert error is not None
@@ -124,7 +124,7 @@ def test_validate_plan_exactly_100_chars_with_structure() -> None:
     # Create plan exactly 100 characters with header
     plan = "# Title\n\n" + "x" * 91  # "# Title\n\n" = 9 chars, needs 91 more
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -140,7 +140,7 @@ def test_validate_plan_numbered_lists() -> None:
 2. Second step that also includes sufficient detail for implementation guidance
 3. Third step that completes the plan with proper structure and documentation"""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -160,7 +160,7 @@ def test_validate_plan_unicode_content() -> None:
 
 - 步骤一：设计数据模型"""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -176,7 +176,7 @@ def test_validate_plan_mixed_list_markers() -> None:
 + Plus list item two with enough content to meet requirements and provide clarity
 * Asterisk list item three completing the structure with proper documentation"""
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -190,7 +190,7 @@ def test_validate_plan_strips_whitespace_before_validation() -> None:
         "here\n- Another item with more detail\n  "
     )
 
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
 
     assert valid is True
     assert error is None
@@ -213,7 +213,7 @@ to meet all validation requirements for structure and length.
 
 Implementation details here."""
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -231,7 +231,7 @@ def test_cli_valid_plan_with_lists() -> None:
 - Implement API layer with validation, error handling, and security measures
 - Add test coverage including unit tests, integration tests, and documentation"""
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -245,7 +245,7 @@ def test_cli_invalid_too_short() -> None:
     runner = CliRunner()
     plan = "# Short\n\n- One"
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0  # CLI always succeeds, check JSON
     output = json.loads(result.output)
@@ -259,7 +259,7 @@ def test_cli_invalid_no_structure() -> None:
     runner = CliRunner()
     plan = "Just plain text without any structure or formatting. " * 10
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -273,7 +273,7 @@ def test_cli_invalid_empty() -> None:
     runner = CliRunner()
     plan = ""
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -286,7 +286,7 @@ def test_cli_json_structure() -> None:
     runner = CliRunner()
     plan = "# Valid Plan\n\n" + "x" * 100
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -329,7 +329,7 @@ Implementation details here."""
     plan_file = tmp_path / "plan.md"
     plan_file.write_text(plan, encoding="utf-8")
 
-    result = runner.invoke(validate_plan_content, ["--plan-file", str(plan_file)])
+    result = runner.invoke(validate_pr_content, ["--plan-file", str(plan_file)])
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -346,7 +346,7 @@ def test_cli_plan_file_invalid_too_short(tmp_path) -> None:
     plan_file = tmp_path / "short.md"
     plan_file.write_text(plan, encoding="utf-8")
 
-    result = runner.invoke(validate_plan_content, ["--plan-file", str(plan_file)])
+    result = runner.invoke(validate_pr_content, ["--plan-file", str(plan_file)])
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -359,7 +359,7 @@ def test_cli_plan_file_nonexistent() -> None:
     """Test CLI fails gracefully when --plan-file does not exist."""
     runner = CliRunner()
 
-    result = runner.invoke(validate_plan_content, ["--plan-file", "/nonexistent/path/plan.md"])
+    result = runner.invoke(validate_pr_content, ["--plan-file", "/nonexistent/path/plan.md"])
 
     # click.Path(exists=True) causes non-zero exit code for missing files
     assert result.exit_code != 0
@@ -380,7 +380,7 @@ This plan demonstrates that stdin input still works correctly when the
 
 - Verify stdin behavior remains unchanged"""
 
-    result = runner.invoke(validate_plan_content, input=plan)
+    result = runner.invoke(validate_pr_content, input=plan)
 
     assert result.exit_code == 0
     output = json.loads(result.output)

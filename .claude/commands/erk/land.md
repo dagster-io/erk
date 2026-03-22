@@ -90,10 +90,10 @@ Example:
 
 ### Step 5: Check for Objective Link
 
-If branch has P-prefix, use the `get-plan-metadata` exec command to extract the objective issue:
+If branch has P-prefix, use the `get-pr-metadata` exec command to extract the objective issue:
 
 ```bash
-erk exec get-plan-metadata <pr-number> objective_issue
+erk exec get-pr-metadata <pr-number> objective_issue
 ```
 
 **Output format:**

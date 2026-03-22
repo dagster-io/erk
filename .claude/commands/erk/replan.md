@@ -34,7 +34,7 @@ If no argument provided, ask the user for the pr number.
 
 ### Step 2: Validate Plans and Extract Metadata (Delegated)
 
-Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-plan-info` + N × `get-plan-metadata`) out of the main conversation context.
+Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-pr-info` + N × `get-pr-metadata`) out of the main conversation context.
 
 Launch a Task agent with:
 
@@ -45,8 +45,8 @@ Launch a Task agent with:
 
 > For each of the following PR numbers: [list pr numbers]
 >
-> 1. Run `erk exec get-plan-info <number>` for each plan
-> 2. Run `erk exec get-plan-metadata <number> objective_issue` for each plan
+> 1. Run `erk exec get-pr-info <number>` for each plan
+> 2. Run `erk exec get-pr-metadata <number> objective_issue` for each plan
 >
 > Then return a structured summary in EXACTLY this format:
 >
@@ -136,7 +136,7 @@ Each Explore agent MUST fetch its plan's content as its first action. This keeps
 **Fetch command:**
 
 ```bash
-erk exec get-plan-info <number> --include-body
+erk exec get-pr-info <number> --include-body
 ```
 
 **Parse the response:** The JSON response includes a `body` field containing the full plan content. Extract `body` from the JSON output.
@@ -394,15 +394,15 @@ After the user approves the plan in Plan Mode:
    - **Otherwise**: Run `/erk:plan-save` without flags
 3. **If an objective was linked**, verify the link was saved correctly:
    ```bash
-   erk exec get-plan-metadata <new_pr_number> objective_issue
+   erk exec get-pr-metadata <new_pr_number> objective_issue
    ```
    If the objective link is missing, fix it with:
    ```bash
-   erk exec update-plan-header <new_pr_number> objective_issue=<number>
+   erk exec update-pr-header <new_pr_number> objective_issue=<number>
    ```
 4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
-   echo "[{\"pr_number\": <new_pr_number>, \"label\": \"erk-consolidated\"}]" | erk exec add-plan-labels
+   echo "[{\"pr_number\": <new_pr_number>, \"label\": \"erk-consolidated\"}]" | erk exec add-pr-labels-batch
    ```
    This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
 5. Close original plan(s) with comment linking to the new one:
@@ -453,7 +453,7 @@ Next steps:
 After saving and closing, verify the new plan is in a healthy state:
 
 ```bash
-erk exec get-plan-info <new_pr_number>
+erk exec get-pr-info <new_pr_number>
 ```
 
 Check the returned labels:
@@ -465,7 +465,7 @@ Check the returned labels:
 If any expected label is missing, add it:
 
 ```bash
-erk exec add-plan-label <new_pr_number> --label "<missing_label>"
+erk exec add-pr-label <new_pr_number> --label "<missing_label>"
 ```
 
 Display validation result:

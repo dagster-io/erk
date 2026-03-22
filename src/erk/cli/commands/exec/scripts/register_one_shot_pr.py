@@ -1,7 +1,7 @@
-"""Register a one-shot plan: dispatch metadata and queued comment.
+"""Register a one-shot PR: dispatch metadata and queued comment.
 
 Composes independent operations that ``erk pr dispatch`` performs but
-one-shot cannot do at submit time (the plan doesn't exist yet).
+one-shot cannot do at submit time (the PR doesn't exist yet).
 Each operation is best-effort; failures are logged but don't block others.
 """
 
@@ -20,14 +20,14 @@ from erk_shared.context.helpers import (
 from erk_shared.gateway.github.issues.types import IssueNotFound
 
 
-@click.command(name="register-one-shot-plan")
+@click.command(name="register-one-shot-pr")
 @click.option("--pr-number", type=int, required=True)
 @click.option("--run-id", type=str, required=True)
 @click.option("--impl-pr-number", "impl_pr_number", type=int, required=True)
 @click.option("--submitted-by", type=str, required=True)
 @click.option("--run-url", type=str, required=True)
 @click.pass_context
-def register_one_shot_plan(
+def register_one_shot_pr(
     ctx: click.Context,
     *,
     pr_number: int,
@@ -36,7 +36,7 @@ def register_one_shot_plan(
     submitted_by: str,
     run_url: str,
 ) -> None:
-    """Register a one-shot plan with issue metadata and comment."""
+    """Register a one-shot PR with issue metadata and comment."""
     issues = require_issues(ctx)
     github = require_github(ctx)
     pr_backend = require_pr_backend(ctx)

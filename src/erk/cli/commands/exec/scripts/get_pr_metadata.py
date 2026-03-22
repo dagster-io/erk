@@ -1,14 +1,14 @@
-"""Extract arbitrary metadata fields from a plan's plan-header block.
+"""Extract arbitrary metadata fields from a PR's plan-header block.
 
 Usage:
-    erk exec get-plan-metadata <plan-number> <field-name>
+    erk exec get-pr-metadata <pr-number> <field-name>
 
 Output:
     JSON with success status and field value (or null if field doesn't exist)
 
 Exit Codes:
     0: Success (field found or null)
-    1: Error (plan not found)
+    1: Error (PR not found)
 """
 
 import json
@@ -40,16 +40,16 @@ class MetadataError:
     message: str
 
 
-@click.command(name="get-plan-metadata")
+@click.command(name="get-pr-metadata")
 @click.argument("pr_number", type=int)
 @click.argument("field_name")
 @click.pass_context
-def get_plan_metadata(
+def get_pr_metadata(
     ctx: click.Context,
     pr_number: int,
     field_name: str,
 ) -> None:
-    """Extract a metadata field from a plan's plan-header block.
+    """Extract a metadata field from a PR's plan-header block.
 
     Fetches the issue, extracts the plan-header block, and returns the
     specified field value. Returns null if the field doesn't exist.

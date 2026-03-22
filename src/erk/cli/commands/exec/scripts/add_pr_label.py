@@ -1,14 +1,14 @@
-"""Backend-aware label addition for plans.
+"""Backend-aware label addition for PRs.
 
 Usage:
-    erk exec add-plan-label <pr-number> --label <label>
+    erk exec add-pr-label <pr-number> --label <label>
 
 Output:
     JSON with {success, pr_number, label}
 
 Exit Codes:
     0: Success - label added
-    1: Error - plan not found or API error
+    1: Error - PR not found or API error
     2: Usage error - missing required --label flag
 """
 
@@ -19,7 +19,7 @@ import click
 from erk_shared.context.helpers import require_pr_backend, require_repo_root
 
 
-@click.command(name="add-plan-label")
+@click.command(name="add-pr-label")
 @click.argument("pr_number", type=int)
 @click.option(
     "--label",
@@ -27,13 +27,13 @@ from erk_shared.context.helpers import require_pr_backend, require_repo_root
     help="Label to add to the PR",
 )
 @click.pass_context
-def add_plan_label(
+def add_pr_label(
     ctx: click.Context,
     pr_number: int,
     *,
     label: str,
 ) -> None:
-    """Add a label to a plan via the appropriate backend."""
+    """Add a label to a PR via the appropriate backend."""
     backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
@@ -46,7 +46,7 @@ def add_plan_label(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add label to plan #{pr_number}: {e}",
+                    "error": f"Failed to add label to PR #{pr_number}: {e}",
                 }
             )
         )

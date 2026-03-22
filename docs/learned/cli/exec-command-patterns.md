@@ -129,10 +129,10 @@ See `validate_plan_content()` in `src/erk/cli/commands/exec/scripts/validate_pla
 
 ```bash
 # Pipe from another command (stdin)
-echo "$plan" | erk exec validate-plan-content
+echo "$plan" | erk exec validate-pr-content
 
 # Read from file (--plan-file)
-erk exec validate-plan-content --plan-file ./plan.md
+erk exec validate-pr-content --plan-file ./plan.md
 ```
 
 ### Key Principles

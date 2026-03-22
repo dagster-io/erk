@@ -51,7 +51,7 @@ EOF
 For each remaining plan, fetch the full body:
 
 ```bash
-erk exec get-plan-info <N> --include-body
+erk exec get-pr-info <N> --include-body
 ```
 
 Collect the title, body, and any metadata from each plan.

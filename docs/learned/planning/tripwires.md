@@ -178,7 +178,7 @@ Rules triggered by matching actions in code.
 
 **modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
 
-**modifying register-one-shot-plan exit behavior** → Read [One-Shot Workflow](one-shot-workflow.md) first. register-one-shot-plan uses best-effort: exit 0 if any operation succeeds
+**modifying register-one-shot-pr exit behavior** → Read [One-Shot Workflow](one-shot-workflow.md) first. register-one-shot-pr uses best-effort: exit 0 if any operation succeeds
 
 **moving gateway files without git mv** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder.
 
@@ -226,7 +226,7 @@ Rules triggered by matching actions in code.
 
 **running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
-**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
+**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-pr-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 

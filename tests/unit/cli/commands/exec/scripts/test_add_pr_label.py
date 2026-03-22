@@ -1,4 +1,4 @@
-"""Unit tests for add_plan_label exec command.
+"""Unit tests for add_pr_label exec command.
 
 Tests backend-aware label addition using ManagedGitHubPrBackend and FakeLocalGitHub.
 """
@@ -8,7 +8,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
+from erk.cli.commands.exec.scripts.add_pr_label import add_pr_label
 from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
@@ -19,7 +19,7 @@ from tests.fakes.tests.shared_context import context_for_test
 # ============================================================================
 
 
-def test_add_plan_label_success() -> None:
+def test_add_pr_label_success() -> None:
     """Test successful label addition via ManagedGitHubPrBackend."""
     fake_github = FakeLocalGitHub()
     backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
@@ -35,7 +35,7 @@ def test_add_plan_label_success() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        add_plan_label,
+        add_pr_label,
         [create_result.pr_id, "--label", "erk-consolidated"],
         obj=context_for_test(
             github=fake_github,
@@ -58,12 +58,12 @@ def test_add_plan_label_success() -> None:
 # ============================================================================
 
 
-def test_add_plan_label_requires_label_flag() -> None:
+def test_add_pr_label_requires_label_flag() -> None:
     """Test that missing --label flag exits with code 2 (usage error)."""
     runner = CliRunner()
 
     result = runner.invoke(
-        add_plan_label,
+        add_pr_label,
         ["42"],
         obj=context_for_test(),
     )

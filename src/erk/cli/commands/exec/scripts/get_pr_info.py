@@ -1,20 +1,20 @@
-"""Backend-aware plan info retrieval.
+"""Backend-aware PR info retrieval.
 
 Usage:
-    erk exec get-plan-info <plan-number>
-    erk exec get-plan-info <plan-number> --include-body
+    erk exec get-pr-info <pr-number>
+    erk exec get-pr-info <pr-number> --include-body
 
 Output:
-    JSON with plan info fields:
+    JSON with PR info fields:
     {"success": true, "pr_number": "42", "title": "...", "state": "OPEN",
      "labels": [...], "url": "...", "objective_id": null, "backend": "github",
      "head_ref_name": "...", "base_ref_name": "..."}
 
-    With --include-body, adds "body": "..." containing plan content.
+    With --include-body, adds "body": "..." containing PR content.
 
 Exit Codes:
     0: Success
-    1: Error (plan not found)
+    1: Error (PR not found)
 """
 
 import json
@@ -25,7 +25,7 @@ from erk_shared.context.helpers import require_pr_backend, require_repo_root
 from erk_shared.pr_store.types import PrNotFound
 
 
-@click.command(name="get-plan-info")
+@click.command(name="get-pr-info")
 @click.argument("pr_number", type=int)
 @click.option(
     "--include-body",
@@ -33,13 +33,13 @@ from erk_shared.pr_store.types import PrNotFound
     help="Include the PR body content in the response",
 )
 @click.pass_context
-def get_plan_info(
+def get_pr_info(
     ctx: click.Context,
     pr_number: int,
     *,
     include_body: bool,
 ) -> None:
-    """Retrieve plan info from the appropriate backend."""
+    """Retrieve PR info from the appropriate backend."""
     backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
@@ -51,7 +51,7 @@ def get_plan_info(
             json.dumps(
                 {
                     "success": False,
-                    "error": "plan_not_found",
+                    "error": "pr_not_found",
                     "message": f"PR #{pr_number} not found",
                 }
             ),

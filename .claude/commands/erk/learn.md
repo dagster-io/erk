@@ -137,7 +137,7 @@ Found N session(s) for PR #<pr-number>:
 Before gathering sessions, get the PR information for this plan (needed by analysis agents):
 
 ```bash
-erk exec get-plan-info <pr-number>
+erk exec get-pr-info <pr-number>
 ```
 
 This returns JSON with plan details (`pr_number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`, `objective_id`, `backend`) or an error if not found. Save the PR number for the parallel agents below.
@@ -690,7 +690,7 @@ Present the synthesized plan to the user. The PlanSynthesizer output already inc
 First validate the synthesized plan has actionable content:
 
 ```bash
-cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md | erk exec validate-plan-content
+cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md | erk exec validate-pr-content
 ```
 
 Parse the JSON output:

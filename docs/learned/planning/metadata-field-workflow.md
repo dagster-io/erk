@@ -69,7 +69,7 @@ After making changes:
 
 1. Run `make fast-ci` to catch type errors
 2. Verify field appears correctly in created issues
-3. Verify field can be read back via `erk exec get-plan-metadata`
+3. Verify field can be read back via `erk exec get-pr-metadata`
 
 ## Related Topics
 

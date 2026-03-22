@@ -1,7 +1,7 @@
 """Update plan-header metadata fields generically.
 
 Usage:
-    erk exec update-plan-header <pr_id> key1=value1 key2=value2 ...
+    erk exec update-pr-header <pr_id> key1=value1 key2=value2 ...
 
 Output:
     JSON with success status, pr_id, and fields_updated
@@ -94,11 +94,11 @@ def _parse_fields(fields: tuple[str, ...]) -> dict[str, str | None | int]:
     }
 
 
-@click.command(name="update-plan-header")
+@click.command(name="update-pr-header")
 @click.argument("pr_id", type=str)
 @click.argument("fields", nargs=-1)
 @click.pass_context
-def update_plan_header(
+def update_pr_header(
     ctx: click.Context,
     *,
     pr_id: str,
@@ -114,7 +114,7 @@ def update_plan_header(
     if not fields:
         _fail(
             error="no_fields",
-            message="No fields provided. Usage: update-plan-header <pr_id> key=value ...",
+            message="No fields provided. Usage: update-pr-header <pr_id> key=value ...",
         )
 
     # Parse key=value pairs

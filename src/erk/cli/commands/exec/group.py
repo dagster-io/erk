@@ -8,8 +8,8 @@ import click
 
 # Import and register all scripts
 from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
-from erk.cli.commands.exec.scripts.add_plan_label import add_plan_label
-from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+from erk.cli.commands.exec.scripts.add_pr_label import add_pr_label
+from erk.cli.commands.exec.scripts.add_pr_labels import add_pr_labels_batch
 from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
 from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
@@ -35,8 +35,8 @@ from erk.cli.commands.exec.scripts.create_pr_from_session import (
     create_pr_from_session,
 )
 from erk.cli.commands.exec.scripts.dash_data import dash_data
-from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
-    detect_plan_from_branch,
+from erk.cli.commands.exec.scripts.detect_pr_from_branch import (
+    detect_pr_from_branch,
 )
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
@@ -52,8 +52,6 @@ from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
-from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
-from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
 from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
 from erk.cli.commands.exec.scripts.get_pr_context import get_pr_context
@@ -61,6 +59,8 @@ from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
 from erk.cli.commands.exec.scripts.get_pr_feedback import get_pr_feedback
+from erk.cli.commands.exec.scripts.get_pr_info import get_pr_info
+from erk.cli.commands.exec.scripts.get_pr_metadata import get_pr_metadata
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
@@ -131,8 +131,8 @@ from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
 )
-from erk.cli.commands.exec.scripts.register_one_shot_plan import (
-    register_one_shot_plan,
+from erk.cli.commands.exec.scripts.register_one_shot_pr import (
+    register_one_shot_pr,
 )
 from erk.cli.commands.exec.scripts.reopen_contested_threads import (
     reopen_contested_threads,
@@ -175,17 +175,17 @@ from erk.cli.commands.exec.scripts.track_learn_result import (
 )
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk.cli.commands.exec.scripts.update_objective_node import update_objective_node
-from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
 from erk.cli.commands.exec.scripts.update_pr_description import (
     update_pr_description,
 )
+from erk.cli.commands.exec.scripts.update_pr_header import update_pr_header
 from erk.cli.commands.exec.scripts.upload_impl_session import upload_impl_session
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_claude_credentials import (
     validate_claude_credentials,
 )
-from erk.cli.commands.exec.scripts.validate_plan_content import (
-    validate_plan_content,
+from erk.cli.commands.exec.scripts.validate_pr_content import (
+    validate_pr_content,
 )
 
 
@@ -197,8 +197,8 @@ def exec_group() -> None:
 
 # Register all commands
 exec_group.add_command(add_objective_node, name="add-objective-node")
-exec_group.add_command(add_plan_label, name="add-plan-label")
-exec_group.add_command(add_plan_labels, name="add-plan-labels")
+exec_group.add_command(add_pr_label, name="add-pr-label")
+exec_group.add_command(add_pr_labels_batch, name="add-pr-labels-batch")
 exec_group.add_command(add_pr_labels, name="add-pr-labels")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
@@ -208,7 +208,7 @@ exec_group.add_command(cmux_open_pr, name="cmux-open-pr")
 exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
 exec_group.add_command(dash_data, name="dash-data")
 exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
-exec_group.add_command(detect_plan_from_branch, name="detect-plan-from-branch")
+exec_group.add_command(detect_pr_from_branch, name="detect-pr-from-branch")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")
 exec_group.add_command(download_remote_session, name="download-remote-session")
@@ -216,8 +216,8 @@ exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
 exec_group.add_command(fetch_sessions, name="fetch-sessions")
 exec_group.add_command(generate_pr_address_summary, name="generate-pr-address-summary")
-exec_group.add_command(get_plan_info, name="get-plan-info")
-exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
+exec_group.add_command(get_pr_info, name="get-pr-info")
+exec_group.add_command(get_pr_metadata, name="get-pr-metadata")
 exec_group.add_command(get_prs_for_objective, name="get-prs-for-objective")
 exec_group.add_command(get_pr_view, name="get-pr-view")
 exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
@@ -260,7 +260,7 @@ exec_group.add_command(push_and_create_pr, name="push-and-create-pr")
 exec_group.add_command(push_session, name="push-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
-exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
+exec_group.add_command(register_one_shot_pr, name="register-one-shot-pr")
 exec_group.add_command(reopen_contested_threads, name="reopen-contested-threads")
 exec_group.add_command(resolve_objective_ref, name="resolve-objective-ref")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
@@ -277,7 +277,7 @@ exec_group.add_command(summarize_impl_failure, name="summarize-impl-failure")
 exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(track_learn_result, name="track-learn-result")
 exec_group.add_command(update_issue_body, name="update-issue-body")
-exec_group.add_command(update_plan_header, name="update-plan-header")
+exec_group.add_command(update_pr_header, name="update-pr-header")
 exec_group.add_command(update_objective_node, name="update-objective-node")
 exec_group.add_command(update_pr_description, name="update-pr-description")
 exec_group.add_command(upload_impl_session, name="upload-impl-session")
@@ -289,4 +289,4 @@ exec_group.add_command(close_pr, name="close-pr")
 exec_group.add_command(close_prs, name="close-prs")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
-exec_group.add_command(validate_plan_content, name="validate-plan-content")
+exec_group.add_command(validate_pr_content, name="validate-pr-content")

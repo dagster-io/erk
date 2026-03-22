@@ -1,7 +1,7 @@
-"""Batch add labels to multiple plans.
+"""Batch add labels to multiple PRs.
 
 Usage:
-    echo '[{"pr_number": 42, "label": "erk-learn"}]' | erk exec add-plan-labels
+    echo '[{"pr_number": 42, "label": "erk-learn"}]' | erk exec add-pr-labels
 
 Input:
     JSON array from stdin, each item: {"pr_number": int, "label": str}
@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-class PlanLabelItem(TypedDict):
-    """Type definition for a plan label item from stdin."""
+class PrLabelItem(TypedDict):
+    """Type definition for a PR label item from stdin."""
 
     pr_number: int
     label: str
@@ -52,8 +52,8 @@ class BatchLabelError:
     message: str
 
 
-def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError:
-    """Validate that stdin JSON is a list of valid plan label items.
+def _validate_batch_input(data: object) -> list[PrLabelItem] | BatchLabelError:
+    """Validate that stdin JSON is a list of valid PR label items.
 
     Args:
         data: Parsed JSON object from stdin
@@ -68,7 +68,7 @@ def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError
             message="Input must be a JSON array",
         )
 
-    validated_items: list[PlanLabelItem] = []
+    validated_items: list[PrLabelItem] = []
     for idx, item in enumerate(data):
         if not isinstance(item, dict):
             return BatchLabelError(
@@ -114,16 +114,16 @@ def _validate_batch_input(data: object) -> list[PlanLabelItem] | BatchLabelError
     return validated_items
 
 
-@click.command(name="add-plan-labels")
+@click.command(name="add-pr-labels-batch")
 @click.pass_context
-def add_plan_labels(ctx: click.Context) -> None:
-    """Batch add labels to multiple plans from JSON stdin.
+def add_pr_labels_batch(ctx: click.Context) -> None:
+    """Batch add labels to multiple PRs from JSON stdin.
 
     Reads a JSON array from stdin where each item has:
-    - pr_number (required): Plan PR number
+    - pr_number (required): PR number
     - label (required): Label to add
 
-    Processes each plan sequentially and outputs batch results.
+    Processes each PR sequentially and outputs batch results.
     Top-level success is true only if ALL labels were added successfully.
     """
     backend = require_pr_backend(ctx)
@@ -149,7 +149,7 @@ def add_plan_labels(ctx: click.Context) -> None:
         click.echo(json.dumps(asdict(validated), indent=2))
         raise SystemExit(0)
 
-    # Process each plan sequentially
+    # Process each PR sequentially
     results: list[dict[str, object]] = []
 
     for item in validated:
