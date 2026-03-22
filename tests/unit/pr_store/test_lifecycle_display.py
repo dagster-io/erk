@@ -645,6 +645,72 @@ def test_no_stage_with_workflow_run_returns_dash() -> None:
     assert compute_lifecycle_display(plan, has_workflow_run=True, linked_pr_state=None) == "-"
 
 
+# --- linked_pr_is_draft tests ---
+
+
+def test_linked_pr_open_draft_returns_planned() -> None:
+    """OPEN linked PR with is_draft=True returns planned."""
+    plan = _make_plan()
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=False, linked_pr_state="OPEN", linked_pr_is_draft=True
+    )
+    assert result == "[dim]planned[/dim]"
+
+
+def test_linked_pr_open_not_draft_returns_impl() -> None:
+    """OPEN linked PR with is_draft=False returns impl."""
+    plan = _make_plan()
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=False, linked_pr_state="OPEN", linked_pr_is_draft=False
+    )
+    assert result == "[yellow]impl[/yellow]"
+
+
+def test_linked_pr_open_draft_none_falls_through() -> None:
+    """OPEN linked PR with is_draft=None falls through to metadata/dash."""
+    plan = _make_plan()
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=False, linked_pr_state="OPEN", linked_pr_is_draft=None
+    )
+    assert result == "-"
+
+
+def test_linked_pr_open_header_wins() -> None:
+    """OPEN linked PR does not override existing header stage."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=False, linked_pr_state="OPEN", linked_pr_is_draft=True
+    )
+    assert result == "[yellow]impl[/yellow]"
+
+
+def test_linked_pr_open_draft_with_workflow_run_upgrades() -> None:
+    """OPEN draft PR with workflow run upgrades planned to impl."""
+    plan = _make_plan()
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=True, linked_pr_state="OPEN", linked_pr_is_draft=True
+    )
+    assert result == "[yellow]impl[/yellow]"
+
+
+def test_linked_pr_merged_returns_merged() -> None:
+    """MERGED linked PR returns merged regardless of draft status."""
+    plan = _make_plan()
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=False, linked_pr_state="MERGED", linked_pr_is_draft=False
+    )
+    assert result == "[green]merged[/green]"
+
+
+def test_linked_pr_closed_returns_closed() -> None:
+    """CLOSED linked PR returns closed."""
+    plan = _make_plan()
+    result = compute_lifecycle_display(
+        plan, has_workflow_run=False, linked_pr_state="CLOSED", linked_pr_is_draft=False
+    )
+    assert result == "[dim red]closed[/dim red]"
+
+
 # --- compute_status_indicators tests ---
 
 

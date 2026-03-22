@@ -437,3 +437,125 @@ def test_parse_issues_by_numbers_response_empty_repository() -> None:
 
     assert issues == []
     assert pr_linkages == {}
+
+
+def _make_pr_node(
+    *,
+    number: int = 100,
+    title: str = "Test PR",
+    state: str = "OPEN",
+    is_draft: bool = True,
+    head_ref_name: str = "feature-branch",
+    base_ref_name: str = "master",
+) -> dict:
+    """Create a PR node matching the PullRequest branch of the GraphQL response."""
+    return {
+        "number": number,
+        "title": title,
+        "body": "",
+        "state": state,
+        "url": f"https://github.com/acme/widgets/pull/{number}",
+        "isDraft": is_draft,
+        "headRefName": head_ref_name,
+        "baseRefName": base_ref_name,
+        "statusCheckRollup": None,
+        "mergeable": "UNKNOWN",
+        "reviewDecision": None,
+        "author": {"login": "testuser"},
+        "labels": {"nodes": [{"name": "erk-pr"}]},
+        "assignees": {"nodes": []},
+        "createdAt": "2025-01-01T00:00:00Z",
+        "updatedAt": "2025-01-02T00:00:00Z",
+    }
+
+
+def test_parse_pr_node_creates_self_linkage() -> None:
+    """PullRequest node creates a self-linkage in pr_linkages."""
+    github = real_github_for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_pr_node(number=100, is_draft=True),
+            }
+        }
+    }
+
+    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 1
+    assert issues[0].number == 100
+    assert 100 in pr_linkages
+    assert len(pr_linkages[100]) == 1
+    pr_info = pr_linkages[100][0]
+    assert pr_info.number == 100
+    assert pr_info.state == "OPEN"
+    assert pr_info.is_draft is True
+    assert pr_info.owner == "acme"
+    assert pr_info.repo == "widgets"
+    assert pr_info.head_branch == "feature-branch"
+    assert pr_info.base_ref_name == "master"
+
+
+def test_parse_pr_node_non_draft() -> None:
+    """Non-draft PR gets is_draft=False in self-linkage."""
+    github = real_github_for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_200": _make_pr_node(number=200, is_draft=False, state="OPEN"),
+            }
+        }
+    }
+
+    _, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    pr_info = pr_linkages[200][0]
+    assert pr_info.is_draft is False
+    assert pr_info.state == "OPEN"
+
+
+def test_parse_pr_node_merged() -> None:
+    """Merged PR gets correct state in self-linkage."""
+    github = real_github_for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_300": _make_pr_node(number=300, state="MERGED", is_draft=False),
+            }
+        }
+    }
+
+    _, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert pr_linkages[300][0].state == "MERGED"
+
+
+def test_parse_mixed_issues_and_prs() -> None:
+    """Mixed Issue and PullRequest nodes are both handled correctly."""
+    github = real_github_for_test()
+    repo_id = GitHubRepoId(owner="acme", repo="widgets")
+
+    response = {
+        "data": {
+            "repository": {
+                "issue_100": _make_issue_node(number=100),
+                "issue_200": _make_pr_node(number=200, is_draft=False),
+            }
+        }
+    }
+
+    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+
+    assert len(issues) == 2
+    numbers = {i.number for i in issues}
+    assert numbers == {100, 200}
+    # Issue has no linkages (empty timeline), PR has self-linkage
+    assert 100 not in pr_linkages
+    assert 200 in pr_linkages
+    assert pr_linkages[200][0].is_draft is False

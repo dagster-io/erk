@@ -19,6 +19,7 @@ from erk.tui.data.provider_abc import PrDataProvider
 from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_slug,
 )
@@ -34,6 +35,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
 )
 from erk_shared.gateway.github.metadata.schemas import (
     CI_SUMMARY_COMMENT_ID,
+    LAST_DISPATCHED_NODE_ID,
     LAST_LOCAL_IMPL_AT,
     LAST_REMOTE_IMPL_AT,
     LEARN_PLAN_ISSUE,
@@ -43,6 +45,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     OBJECTIVE_ISSUE,
     WORKTREE_NAME,
 )
+from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
@@ -387,6 +390,28 @@ class RealPrDataProvider(PrDataProvider):
         plans = [github_issue_to_plan(issue) for issue in issues]
         worktree_by_pr_number = self._build_worktree_mapping()
 
+        # Extract dispatch node IDs from planned PRs for workflow run lookup
+        node_id_to_pr: dict[str, int] = {}
+        for plan in plans:
+            node_id = header_str(plan.header_fields, LAST_DISPATCHED_NODE_ID)
+            if node_id is not None:
+                node_id_to_pr[node_id] = int(plan.pr_identifier)
+
+        # Batch fetch workflow runs via GraphQL
+        workflow_runs: dict[int, WorkflowRun | None] = {}
+        if node_id_to_pr:
+            try:
+                node_ids = list(node_id_to_pr.keys())
+                response = self._http_client.graphql(
+                    query=GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+                    variables={"nodeIds": node_ids},
+                )
+                runs_by_node_id = parse_workflow_runs_nodes_response(response, node_ids)
+                for node_id, run in runs_by_node_id.items():
+                    workflow_runs[node_id_to_pr[node_id]] = run
+            except Exception as e:
+                logger.warning("Failed to fetch workflow runs in fetch_prs_by_ids: %s", e)
+
         global_config = self._ctx.global_config
         use_graphite = global_config.use_graphite if global_config is not None else False
         rows: list[PrRowData] = []
@@ -396,7 +421,7 @@ class RealPrDataProvider(PrDataProvider):
                 plan=plan,
                 pr_number=pr_number,
                 pr_linkages=pr_linkages,
-                workflow_run=None,
+                workflow_run=workflow_runs.get(pr_number),
                 worktree_by_pr_number=worktree_by_pr_number,
                 use_graphite=use_graphite,
             )
@@ -709,7 +734,10 @@ class RealPrDataProvider(PrDataProvider):
         is_learn_plan = "erk-learn" in plan.labels
 
         lifecycle_display = _compute_lifecycle_display(
-            plan, has_workflow_run=workflow_run is not None, linked_pr_state=pr_state
+            plan,
+            has_workflow_run=workflow_run is not None,
+            linked_pr_state=pr_state,
+            linked_pr_is_draft=pr_is_draft,
         )
 
         status_display = compute_status_indicators(
@@ -832,13 +860,20 @@ def _format_learn_display_icon(
 
 
 def _compute_lifecycle_display(
-    plan: Plan, *, has_workflow_run: bool, linked_pr_state: str | None
+    plan: Plan,
+    *,
+    has_workflow_run: bool,
+    linked_pr_state: str | None,
+    linked_pr_is_draft: bool | None = None,
 ) -> str:
     """Compute lifecycle stage display string for a plan."""
     from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
 
     return compute_lifecycle_display(
-        plan, has_workflow_run=has_workflow_run, linked_pr_state=linked_pr_state
+        plan,
+        has_workflow_run=has_workflow_run,
+        linked_pr_state=linked_pr_state,
+        linked_pr_is_draft=linked_pr_is_draft,
     )
 
 
