@@ -162,7 +162,7 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("prog", key="progress", width=5)
             col_index += 1
-            self.add_column("frontier", key="state", width=20)
+            self.add_column("frontier", key="frontier", width=20)
             col_index += 1
             self.add_column("deps-state", key="deps_state", width=12)
             col_index += 1
@@ -280,7 +280,7 @@ class PlanDataTable(DataTable):
         if row.pr_url:
             plan_cell = f"[link={row.pr_url}]#{row.pr_number}[/link]"
 
-        # Objectives view: plan, slug, progress, state, deps-state, deps, next, updated, author
+        # Objectives view: plan, slug, progress, frontier, deps-state, deps, next, updated, author
         if self._view_mode == ViewMode.OBJECTIVES:
             # Build linkified deps cell (show up to 3, truncate with ... if more)
             if row.objective_deps_plans:

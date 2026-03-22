@@ -1,5 +1,7 @@
 """List open objectives."""
 
+import re
+
 import click
 from rich.console import Console
 from rich.markup import escape
@@ -106,8 +108,6 @@ def _rich_sparkline(sparkline: str) -> str:
     Handles bracket-compressed runs like "[13x○]" and individual symbols.
     Brackets and "Nx" prefixes pass through unstyled; the symbol gets styled.
     """
-    import re
-
     parts: list[str] = []
     i = 0
     while i < len(sparkline):
