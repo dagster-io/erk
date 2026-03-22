@@ -22,7 +22,7 @@ Submodules:
     post_init_hook            - check_post_init_hook
     legacy_prompt_hooks       - check_legacy_prompt_hooks
     claude_erk_permission     - check_claude_erk_permission
-    plans_repo_labels         - check_plans_repo_labels
+    pr_repo_labels            - check_pr_repo_labels
     repository                - check_repository
     claude_settings           - check_claude_settings
     user_prompt_hook          - check_user_prompt_hook
@@ -58,9 +58,9 @@ from erk.core.health_checks.legacy_prompt_hooks import check_legacy_prompt_hooks
 from erk.core.health_checks.legacy_slot_naming import check_legacy_slot_naming
 from erk.core.health_checks.managed_artifacts import check_managed_artifacts
 from erk.core.health_checks.models import CheckResult
-from erk.core.health_checks.plans_repo_labels import check_plans_repo_labels
 from erk.core.health_checks.post_init_hook import check_post_init_hook
 from erk.core.health_checks.post_plan_implement_ci_hook import check_post_plan_implement_ci_hook
+from erk.core.health_checks.pr_repo_labels import check_pr_repo_labels
 from erk.core.health_checks.repository import check_repository
 from erk.core.health_checks.required_tool_version import check_required_tool_version
 from erk.core.health_checks.statusline_configured import check_statusline_configured
@@ -135,7 +135,7 @@ def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
             )
         )
 
-        # Check plans_repo labels if configured
+        # Check pr_repo labels if configured
         from erk.cli.config import load_config
         from erk_shared.gateway.github.issues.real import RealGitHubIssues
 
@@ -145,7 +145,7 @@ def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
 
             github_issues = RealGitHubIssues(target_repo=repo_config.github_repo, time=RealTime())
             results.append(
-                check_plans_repo_labels(repo_root, repo_config.github_repo, github_issues)
+                check_pr_repo_labels(repo_root, repo_config.github_repo, github_issues)
             )
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks

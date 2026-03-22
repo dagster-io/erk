@@ -68,4 +68,4 @@ Run `erk doctor` to verify the setup:
 erk doctor
 ```
 
-Look for the "plans-repo-labels" check. If labels are missing, the check will fail with instructions to fix.
+Look for the "pr-repo-labels" check. If labels are missing, the check will fail with instructions to fix.

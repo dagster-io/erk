@@ -1,21 +1,21 @@
-"""Tests for create_plans_repo_labels().
+"""Tests for create_pr_repo_labels().
 
-These tests verify the label creation logic for the plans repository.
+These tests verify the label creation logic for the PR repository.
 Uses FakeGitHubIssues to test label creation behavior.
 """
 
-from erk.cli.commands.init.main import create_plans_repo_labels
+from erk.cli.commands.init.main import create_pr_repo_labels
 from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.paths import sentinel_path
 
 
-def test_create_plans_repo_labels_creates_all_labels() -> None:
+def test_create_pr_repo_labels_creates_all_labels() -> None:
     """Test that all five erk labels are created."""
     github_issues = FakeGitHubIssues()
 
-    result = create_plans_repo_labels(
+    result = create_pr_repo_labels(
         repo_root=sentinel_path(),
-        plans_repo="owner/plans-repo",
+        pr_repo="owner/plans-repo",
         github_issues=github_issues,
     )
 
@@ -26,13 +26,13 @@ def test_create_plans_repo_labels_creates_all_labels() -> None:
     assert "no-changes" in github_issues.labels
 
 
-def test_create_plans_repo_labels_tracks_created_labels() -> None:
+def test_create_pr_repo_labels_tracks_created_labels() -> None:
     """Test that label creation is tracked with correct details."""
     github_issues = FakeGitHubIssues()
 
-    create_plans_repo_labels(
+    create_pr_repo_labels(
         repo_root=sentinel_path(),
-        plans_repo="owner/plans-repo",
+        pr_repo="owner/plans-repo",
         github_issues=github_issues,
     )
 
@@ -47,13 +47,13 @@ def test_create_plans_repo_labels_tracks_created_labels() -> None:
     assert "no-changes" in label_names
 
 
-def test_create_plans_repo_labels_idempotent_with_existing() -> None:
+def test_create_pr_repo_labels_idempotent_with_existing() -> None:
     """Test that existing labels are not recreated."""
     github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-objective"})
 
-    create_plans_repo_labels(
+    create_pr_repo_labels(
         repo_root=sentinel_path(),
-        plans_repo="owner/plans-repo",
+        pr_repo="owner/plans-repo",
         github_issues=github_issues,
     )
 
@@ -64,15 +64,15 @@ def test_create_plans_repo_labels_idempotent_with_existing() -> None:
     assert "no-changes" in created_names
 
 
-def test_create_plans_repo_labels_all_exist_no_creation() -> None:
+def test_create_pr_repo_labels_all_exist_no_creation() -> None:
     """Test that no labels are created when all already exist."""
     github_issues = FakeGitHubIssues(
         labels={"erk-pr", "erk-learn", "erk-objective", "no-changes"},
     )
 
-    create_plans_repo_labels(
+    create_pr_repo_labels(
         repo_root=sentinel_path(),
-        plans_repo="owner/plans-repo",
+        pr_repo="owner/plans-repo",
         github_issues=github_issues,
     )
 
