@@ -1,0 +1,262 @@
+<session>
+  <meta source="agent-a3e8af1" />
+  <meta branch="plnd/O9318-rename-phase4-cli-fl-03-21-1602" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 9372
+Return the complete JSON output as your final message.</user>
+  <assistant>I'll load the skill and execute it with the provided arguments.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20053" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20053, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015LPs6148x3j4M7PJTwuFbU">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20053" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20053, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015LPs6148x3j4M7PJTwuFbU">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Classify PR review feedback by filling in semantic fields from mechanical CLI output.
+    16→
+    17→## Steps
+    18→
+    19→1. **Run mechanical classification:**
+    20→
+    21→   ```bash
+    22→   erk exec classify-pr-feedback [--pr &lt;number&gt;] [--include-resolved]
+    23→   ```
+    24→
+    25→   Pass `--pr &lt;number&gt;` if specified in `$ARGUMENTS`. Pass `--include-resolved` if specified in `$ARGUMENTS`.
+    26→
+    27→   This returns JSON with mechanically pre-classified items:
+    28→   - **review_submissions**: PR-level reviews (classification: "actionable" | "informational" | "needs_llm")
+    29→   - **review_threads**: Inline review threads (pre_existing_candidate flag set for bot + restructured)
+    30→   - **discussion_comments**: Discussion comments (classification: "informational" | "needs_llm")
+
+... [169 lines omitted] ...
+
+   104→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   106→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   144→  "error": null
+   159→## Error Case
+   173→  "error": "No PR found for branch feature-xyz"
+   191→  "error": null
+  </tool_result>
+  <assistant>Now I'll run the mechanical classification command as specified in the skill, passing the `--pr 9372` argument:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2676" cache_read_input_tokens="20053" cache_creation="{'ephemeral_5m_input_tokens': 2676, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WyPPF4jgt8uQSSziyWeeNR">
+    <param name="command">erk exec classify-pr-feedback --pr 9372</param>
+    <param name="description">Run PR feedback classifier for PR 9372</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2676" cache_read_input_tokens="20053" cache_creation="{'ephemeral_5m_input_tokens': 2676, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WyPPF4jgt8uQSSziyWeeNR">
+{
+  "success": true,
+  "pr_number": 9372,
+  "pr_title": "Phase 4: Rename plan-related CLI flags, constants, and help text to PR terminology",
+  "pr_url": "https://github.com/dagster-io/erk/pull/9372",
+  "review_submissions": [],
+  "review_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc515QjZ",
+      "path": "docs/learned/erk/remote-workflow-template.md",
+      "line": 81,
+      "is_outdated": false,
+      "author": "github-actions",
+      "comment_preview": "**Audit PR Docs**: Inaccurate claim detected (pre-existing, surfaced on full-doc audit).\n\nClaim (line 86): \"Extracts plan number from `P{number}-*` branch names\"\nReality: `maybe_update_pr_dispatch_met",
+      "is_bot": false,
+      "pre_existing_candidate": false
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc515QhV",
+      "path": "docs/learned/planning/metadata-update-patterns.md",
+      "line": 9,
+      "is_outdated": false,
+      "author": "github-actions",
+      "comment_preview": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `write_dispatch_metadata() raises on error. maybe_update_pr_dispatch_metadata() uses LBYL guards and silent skip with warning.`\nReality: The 'with",
+      "is_bot": false,
+      "pre_existing_candidate": false
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc515Qey",
+      "path": "docs/learned/planning/metadata-update-patterns.md",
+
+... [63 lines omitted] ...
+
+      "body_preview": "Plan Queued for Implementation\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:submission-queued --&gt;\n&lt;details&gt;\n&lt;summary&gt;submission-queued&lt;/summary&gt;\n\n`",
+      "body_preview": "\u2699\ufe0f GitHub Action Started\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:workflow-started --&gt;\n&lt;details&gt;\n&lt;summary&gt;workflow-started&lt;/summary&gt;\n\n```yaml\n\n",
+  "error": null
+  </tool_result>
+  <assistant>Now I need to fill in the semantic fields for the items that need LLM judgment. Let me examine the PR details and classify the feedback:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1697" cache_read_input_tokens="22729" cache_creation="{'ephemeral_5m_input_tokens': 1697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KMGdtQyTCuRcP3WPD6w8wg">
+    <param name="command">gh pr view 9372 --json body,title,url</param>
+    <param name="description">Fetch PR metadata for context</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1697" cache_read_input_tokens="22729" cache_creation="{'ephemeral_5m_input_tokens': 1697, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KMGdtQyTCuRcP3WPD6w8wg">
+{"body":"## Summary\n\nThis commit completes Phase 4 of the naming migration by systematically renaming plan-specific identifiers to PR-focused terminology throughout the codebase. The changes clarify that \"plans\" are fundamentally PR-based artifacts and improve consistency with GitHub's PR model.\n\n## Key Changes\n\n- Renamed `has_plan_title_prefix()` to `has_pr_title_prefix()` in CLI constants and all call sites\n- Renamed `maybe_update_plan_dispatch_metadata()` to `maybe_update_pr_dispatch_metadata()` in metadata helpers and all imports\n- Renamed CLI flags: `--from-plan-file` → `--from-pr-file`, `--keep-plan-file` → `--keep-pr-file`, `--copy-plan` → `--copy-pr`\n- Renamed internal parameters: `is_plan_derived` → `is_pr_derived`, `from_plan_file` → `from_pr_file`, `copy_plan` → `copy_pr`\n- Updated help text and docstrings to use \"PR\" terminology instead of \"plan\"\n- Renamed enum constant `SortKey.PLAN_ID` → `SortKey.PR_ID` in TUI sorting logic\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Modified (32 files)\n\n- `.claude/skills/erk-exec/reference.md` - Updated command documentation tables\n- `docs/learned/architecture/unified-dispatch-pattern.md` - Updated function name references\n- `docs/learned/cli/workflow-commands.md` - Updated metadata helper documentation\n- `docs/learned/erk/remote-workflow-template.md` - Updated code examples and imports\n- `docs/learned/integrations/github-review-decision.md` - Table alignment fix\n- `docs/learned/planning/index.md` - Updated documentation index\n- `docs/learned/planning/metadata-update-patterns.md` - Updated function names in patterns\n- `docs/learned/planning/one-shot-workflow.md` - Updated function references\n- `docs/learned/planning/tripwires.md` - Updated tripwire descriptions\n- `docs/learned/tui/status-indicators.md` - Table alignment fix\n- `packages/erk-shared/src/erk_shared/plan_workflow.py` - Renamed `_has_plan_title_prefix()` to `_has_pr_title_prefix()`\n- `src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py` - Updated parameter documentation\n- `src/erk/cli/commands/implement.py` - Updated function calls\n- `src/erk/cli/commands/launch_cmd.py` - Updated import and function call\n- `src/erk/cli/commands/one_shot/cli.py` - Updated example text\n- `src/erk/cli/commands/pr/dispatch_cmd.py` - Updated function calls\n- `src/erk/cli/commands/pr/duplicate_check_cmd.py` - Updated function calls\n- `src/erk/cli/commands/pr/list/cli.py` - Renamed `SortKey.PLAN_ID` to `SortKey.PR_ID`\n- `src/erk/cli/commands/pr/list/operation.py` - Updated sort key references\n- `src/erk/cli/commands/pr/metadata_helpers.py` - Renamed function and updated docstrings\n- `src/erk/cli/commands/pr/view/cli.py` - Renamed internal functions, updated help text\n- `src/erk/cli/commands/wt/create_cmd.py` - Renamed flags and parameters throughout\n- `src/erk/cli/constants.py` - Renamed function and removed unused constant\n- `src/erk/tui/sorting/logic.py` - Updated sort key references\n- `src/erk/tui/sorting/types.py` - Renamed enum and updated comments\n- `src/erk/tui/widgets/status_bar.py` - Updated comment\n- `tests/commands/management/test_impl.py` - Updated test names and assertions\n- `tests/commands/pr/test_view.py` - Updated test assertions\n- `tests/commands/test_create_copy_impl.py` - Updated test names and docstrings\n- `tests/commands/test_ensure_worktree.py` - Updated function calls\n- `tests/commands/workspace/create/test_naming_and_validation.py` - Updated comments\n- `tests/commands/workspace/create/test_output_modes.py` - Updated test names\n- `tests/commands/workspace/create/test_plan_file_operations.py` - Renamed all test functions and assertions\n- `tests/unit/cli/commands/pr/test_metadata_helpers.py` - Updated imports and test names\n- `tests/unit/cli/test_constants.py` - Updated function names and test names\n\n&lt;/details&gt;\n\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-03-21T16:02:15+00:00'\ncreated_by: schrockn\nbranch_name: plnd/O9318-rename-phase4-cli-fl-03-21-1602\nlast_dispatched_run_id: '23383855892'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFcclTFA\nlast_dispatched_at: '2026-03-21T16:31:24+00:00'\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo replicate this PR locally, run:\n\n```\nerk slot teleport 9372\n```\n","title":"Phase 4: Rename plan-related CLI flags, constants, and help text to PR terminology","url":"https://github.com/dagster-io/erk/pull/9372"}
+  </tool_result>
+  <assistant>Now let me get the full text of the review threads to accurately classify them:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1677" cache_read_input_tokens="24426" cache_creation="{'ephemeral_5m_input_tokens': 1677, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JtomzLxx3eny39CrG2SBPi">
+    <param name="command">gh pr view 9372 --comments | grep -A 20 "Audit PR Docs" | head -40</param>
+    <param name="description">Get full audit PR docs comments</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1677" cache_read_input_tokens="24426" cache_creation="{'ephemeral_5m_input_tokens': 1677, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JtomzLxx3eny39CrG2SBPi">
+## ❌ Audit PR Docs
+
+**Last updated:** 2026-03-21 09:29:40 PT
+
+Found 3 violations across 2 files. Inline comments posted for each.
+
+&lt;details&gt;
+&lt;summary&gt;Details&lt;/summary&gt;
+
+### Patterns Checked
+✅ Verbatim code blocks — None found (template blocks in remote-workflow-template.md are TEMPLATE classification, not VERBATIM)
+❌ Inaccurate claims — Found in docs/learned/planning/metadata-update-patterns.md and docs/learned/erk/remote-workflow-template.md
+✅ Duplicative sections — None found
+✅ Drift risk (symbol renames) — PR correctly updates all symbol references
+
+### Violations Summary
+- `docs/learned/planning/metadata-update-patterns.md:43`: Set-based field validation claim does not match implementation (no such validation exists); also references `resolve_plan_id_for_branch()` (should be `resolve_pr_number_for_branch()`)
+- `docs/learned/planning/metadata-update-patterns.md:9`: Tripwire says "silent skip with warning" but function silently returns with no warning; also `write_dispatch_metadata()` described as calling `get_plan()`/`PlanNotFound` (actually `get_managed_pr()`/`PrNotFound`)
+- `docs/learned/erk/remote-workflow-template.md:81`: Pre-existing: line 86 claims "Extracts plan number from `P{number}-*` branch names" — legacy format, current code uses `plnd/` prefix
+
+### Files Reviewed
+  </tool_result>
+  <assistant>Let me get the specific inline thread comments:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="620" cache_read_input_tokens="26103" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011PV4AP8w3pfwToYzBAxNgk">
+    <param name="command">gh api repos/dagster-io/erk/pulls/9372/comments --paginate -q '.[] | select(.body | contains("Audit PR Docs")) | {thread_id: .id, path: .path, line: .line, body: .body}' 2&gt;/dev/null | head -200</param>
+    <param name="description">Get inline thread comment details</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="620" cache_read_input_tokens="26103" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011PV4AP8w3pfwToYzBAxNgk">
+{"body":"**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"It validates all required fields (`schema_version`, `created_at`, `created_by`) using set difference rather than checking a single field.\"\nReality: The current implementation of `maybe_update_pr_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py` does NOT perform set-based field validation. It only does two LBYL early returns: one for `resolve_pr_number_for_branch()` returning None, and one for `get_workflow_run_node_id()` returning None. There is no required-fields validation using set difference, and no dim-styled warning for incomplete plan-headers.\n\nAlso, line 35 of this doc references `resolve_plan_id_for_branch()` — the actual function called is `resolve_pr_number_for_branch()`.\n\nSource: `src/erk/cli/commands/pr/metadata_helpers.py:85-103`\n\nSuggested fix: Remove the \"Key Insight: Set-Based Field Validation\" section as it describes behavior that does not exist. Update the bullet list to match the actual two-guard implementation.","line":43,"path":"docs/learned/planning/metadata-update-patterns.md","thread_id":2969776925}
+{"body":"**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: `write_dispatch_metadata() raises on error. maybe_update_pr_dispatch_metadata() uses LBYL guards and silent skip with warning.`\nReality: The 'with warning' description is inaccurate — `maybe_update_pr_dispatch_metadata()` silently returns (no warning) when preconditions fail. The only output it produces is a success message (`✓ Updated dispatch metadata on PR #...`) when it successfully writes, not a warning on skip.\n\nAlso, the description at line 25 says `write_dispatch_metadata()` calls `get_plan() — raises if PlanNotFound`. The actual code calls `get_managed_pr()` and checks `PrNotFound` (not `PlanNotFound`).\n\nSource: `src/erk/cli/commands/pr/metadata_helpers.py:24-57` (write_dispatch_metadata) and `:60-103` (maybe_update_pr_dispatch_metadata)","line":9,"path":"docs/learned/planning/metadata-update-patterns.md","thread_id":2969777115}
+{"body":"**Audit PR Docs**: Inaccurate claim detected (pre-existing, surfaced on full-doc audit).\n\nClaim (line 86): \"Extracts plan number from `P{number}-*` branch names\"\nReality: `maybe_update_pr_dispatch_metadata()` calls `ctx.plan_backend.resolve_pr_number_for_branch()` — which uses the `plnd/` prefix convention, not the legacy `P{number}-*` format. The P-prefix naming has been removed.\n\nSource: `src/erk/cli/commands/pr/metadata_helpers.py:85`\n\nSuggested fix: Update line 86 to: \"Checks branch name via `resolve_pr_number_for_branch()` — skips gracefully if branch is not a plan branch\"","line":81,"path":"docs/learned/erk/remote-workflow-template.md","thread_id":2969777287}
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me analyze and classify these items according to the skill's requirements, then produce the final JSON output.
+
+Based on my analysis of PR 9372:
+
+**Review Threads Analysis:**
+1. **Thread PRRT_kwDOPxC3hc515QjZ** (remote-workflow-template.md:81) - Bot comment about "pre-existing" code (P{number} format) that no longer applies. This is marked as pre_existing candidate but the bot review indicates it's pre-existing and not specific to this PR's changes. Complexity: pre_existing.
+
+2. **Thread PRRT_kwDOPxC3hc515QhV** (metadata-update-patterns.md:9) - Specific inaccurate claims about function behavior and error types. This was surfaced by the PR changes but requires corrections. Complexity: single_file (one doc file).
+
+3. **Thread PRRT_kwDOPxC3hc515Qey** (metadata-update-patterns.md:43) - Inaccurate claim about set-based validation that doesn't exist. Also references an old function name. Complexity: single_file (same file as above).
+
+**Discussion Comments:**
+- `4103629413` (submission-queued) - Metadata block comment, informational
+- `4103630269` (workflow-started) - Already classified as informational (bot action)
+- `4103669590` (code simplifier) - Already classified as informational
+- `4103670078` (tripwires) - Classified as needs_llm but says "Found 0 violations", so it's informational
+- `4103670211` (dignified python) - Already classified as informational
+- `4103670314` (test coverage) - Already classified as informational
+- `4103673763` (audit pr docs) - Already classified as informational
+
+Now I'll generate the complete JSON output:
+
+```json
+{
+  "success": true,
+  "pr_number": 9372,
+  "pr_title": "Phase 4: Rename plan-related CLI flags, constants, and help text to PR terminology",
+  "pr_url": "https://github.com/dagster-io/erk/pull/9372",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc515QhV",
+      "type": "review",
+      "path": "docs/learned/planning/metadata-update-patterns.md",
+      "line": 9,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix inaccurate claims about function behavior: write_dispatch_metadata() calls get_managed_pr() not get_plan(), and maybe_update_pr_dispatch_metadata() silently returns without warning",
+      "complexity": "single_file",
+      "original_comment": "Audit PR Docs: Inaccurate claim detected.\n\nClaim: `write_dispatch_metadata() raises on error. maybe_update_pr_dispatch_metadata() uses LBYL guards and silent skip with warning.`"
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc515Qey",
+      "type": "review",
+      "path": "docs/learned/planning/metadata-update-patterns.md",
+      "line": 43,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Remove inaccurate 'Set-Based Field Validation' section and update bullets to match actual two-guard implementation; also fix function name from resolve_plan_id_for_branch() to resolve_pr_number_for_branch()",
+      "complexity": "single_file",
+      "original_comment": "Audit PR Docs: Inaccurate claim detected.\n\nClaim: \"It validates all required fields (`schema_version`, `created_at`, `created_by`) using set difference rather than checking a single field.\""
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc515QjZ",
+      "type": "review",
+      "path": "docs/learned/erk/remote-workflow-template.md",
+      "line": 81,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": true,
+      "action_summary": "Pre-existing legacy code reference: update line 86 to remove P{number}-* format reference and note plnd/ prefix convention used by resolve_pr_number_for_branch()",
+      "complexity": "pre_existing",
+      "original_comment": "Audit PR Docs: Inaccurate claim detected (pre-existing, surfaced on full-doc audit).\n\nClaim (line 86): \"Extracts plan number from `P{number}-*` branch names\""
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 8,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+      "auto_proceed": true,
+      "item_indices": [2]
+    },
+    {
+      "name": "Local Fixes",
+      "complexity": "local",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Single-File",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": [0, 1]
+    },
+    {
+      "name": "Cross-Cutting",
+      "complexity": "cross_cutting",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Complex",
+      "complexity": "complex",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Informational",
+      "complexity": "informational",
+      "auto_proceed": false,
+      "item_indices": []
+    }
+  ],
+  "error": null
+}
+```</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1002" cache_read_input_tokens="26723" cache_creation="{'ephemeral_5m_input_tokens': 1002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

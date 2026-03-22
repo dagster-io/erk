@@ -1,0 +1,420 @@
+<session>
+  <meta source="agent-a19785e" />
+  <meta branch="plnd/O9318-rename-phase4-cli-fl-03-21-1602" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>In these 7 files, rename all occurrences of `maybe_update_plan_dispatch_metadata` to `maybe_update_pr_dispatch_metadata`:
+
+- `/home/runner/work/erk/erk/docs/learned/planning/tripwires.md`
+- `/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md`
+- `/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md`
+- `/home/runner/work/erk/erk/docs/learned/planning/index.md`
+- `/home/runner/work/erk/erk/docs/learned/erk/remote-workflow-template.md`
+- `/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md`
+- `/home/runner/work/erk/erk/docs/learned/architecture/unified-dispatch-pattern.md`
+
+Read each file, then replace ALL occurrences of the old name with the new name. Use the Edit tool with replace_all=true for each file.</user>
+  <assistant>I'll help you rename all occurrences of `maybe_update_plan_dispatch_metadata` to `maybe_update_pr_dispatch_metadata` in these 7 files. Let me start by reading all the files to understand their content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S1h5cmbnd2v5htGFmvC3h4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Df4iAenZdRVS4uftVX3gr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dkw6ZEUG9A5vuMwR1iMiDp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AmCDupG85eVzAWiGx3rxUr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017Ju9TMZNB8myCzwSXvwZRN">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/remote-workflow-template.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016onU64Pp1d75XETXUrPxyP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013t5uGyehVsvLmfHeRNANMp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/unified-dispatch-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6136" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6136, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Df4iAenZdRVS4uftVX3gr">
+     1→---
+     2→title: Metadata Update Patterns
+     3→read_when:
+     4→  - "writing plan dispatch metadata updates"
+     5→  - "choosing between assertive and best-effort metadata operations"
+     6→  - "working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata"
+     7→tripwires:
+     8→  - action: "using assertive metadata writes in a best-effort context"
+     9→    warning: "write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation."
+    10→---
+    11→
+    12→# Metadata Update Patterns
+    13→
+    14→Two contrasting patterns for plan dispatch metadata updates exist in `src/erk/cli/commands/pr/metadata_helpers.py`.
+    15→
+    16→## Assertive: `write_dispatch_metadata()`
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, write_dispatch_metadata --&gt;
+    19→
+    20→Raises `RuntimeError` on any failure. Used when dispatch metadata is a hard requirement.
+    21→
+    22→- Calls `get_workflow_run_node_id()` — raises if None
+    23→- Calls `get_plan()` — raises if PlanNotFound
+    24→- Calls `update_metadata()` directly
+    25→
+    26→**Use when:** The caller cannot proceed without metadata being written.
+    27→
+    28→## Best-Effort: `maybe_update_plan_dispatch_metadata()`
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata --&gt;
+
+... [19 lines omitted] ...
+
+    32→Uses LBYL guards and returns silently when preconditions aren't met. Prints a warning for partial failures.
+    37→- Prints dim-styled warning if plan-header is incomplete, then returns
+  </tool_result>
+  <tool_result tool="toolu_01Dkw6ZEUG9A5vuMwR1iMiDp">
+     1→---
+     2→title: One-Shot Workflow
+     3→last_audited: "2026-02-24 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with erk one-shot dispatch"
+     7→  - "understanding how plans are autonomously created and implemented"
+     8→  - "debugging one-shot workflow failures"
+     9→  - "integrating objectives with one-shot dispatch"
+    10→tripwires:
+    11→  - action: "adding dry-run support to one-shot commands"
+    12→    warning: "One-shot dry-run mode must NOT create skeleton issues"
+    13→  - action: "modifying register-one-shot-plan exit behavior"
+    14→    warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+    15→  - action: "adding post-dispatch operations without matching dispatch_cmd.py pattern"
+    16→    warning: "dispatch_one_shot() and _dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
+    17→  - action: "writing post-dispatch operations without try/except guards"
+    18→    warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
+    19→  - action: "editing plan body content in plan creation, replan, or one-shot dispatch"
+    20→    warning: "One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers."
+    21→    score: 9
+    22→---
+    23→
+    24→# One-Shot Workflow
+    25→
+    26→The one-shot workflow enables fully autonomous planning and implementation from a single CLI command. It dispatches a GitHub Actions workflow that creates a plan and implements it without human intervention.
+    27→
+    28→## End-to-End Pipeline
+    29→
+    30→```
+
+... [197 lines omitted] ...
+
+   104→`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+   110→The command outputs JSON results for each operation with success/error details.
+   119→The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
+   208→2. If `rejected: true`, it extracts the `reason` and logs a GitHub Actions warning
+  </tool_result>
+  <tool_result tool="toolu_01AmCDupG85eVzAWiGx3rxUr">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Planning Documentation
+     5→
+     6→- **[agent-delegation.md](agent-delegation.md)** — delegating to agents from commands, implementing command-agent pattern, workflow orchestration
+     7→- **[agent-orchestration-safety.md](agent-orchestration-safety.md)** — passing data between agents via files or inline output, designing multi-agent workflows with parallel and sequential tiers, orchestrating subagents that produce markdown, XML, or other large outputs
+     8→- **[agent-orchestration.md](agent-orchestration.md)** — designing agent workflows with parallel and sequential tiers, choosing between parallel and sequential agent execution, adding or modifying agents in the learn pipeline, deciding which model tier to assign an agent
+     9→- **[agent-output-routing-strategies.md](agent-output-routing-strategies.md)** — deciding how agents should receive and produce outputs, designing multi-agent orchestration prompts, choosing between embedded-prompt and agent-file routing
+    10→- **[backend-naming-conventions.md](backend-naming-conventions.md)** — referencing the plan backend by name in code or documentation, confused about draft_pr vs planned_pr vs github-draft-pr naming, adding user-facing output that mentions the backend
+    11→- **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plans, implementing PR lookup from plans, modifying branch creation or naming conventions
+    12→- **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
+    13→- **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan as complete, creating a consolidation plan from multiple PRs
+    14→- **[consolidate-learn-plans-workflow.md](consolidate-learn-plans-workflow.md)** — working with consolidate-learn-plans dispatch, adding or modifying the consolidate-learn-plans workflow, understanding how learn plan consolidation branches are named, working with erk launch consolidate-learn-plans
+    15→- **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
+    16→- **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
+    17→- **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
+    18→- **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
+    19→- **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
+    20→- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [github] repo in config.toml, understanding cross-repo plan closing syntax
+    21→- **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
+    22→- **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
+    23→- **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
+    24→- **[impl-context.md](impl-context.md)** — working with .erk/impl-context/ files, debugging plan content missing from a draft-PR implementation, reviewing a PR that contains .erk/impl-context/ files, understanding how draft-PR plans transfer content to .erk/impl-context/
+    25→- **[incremental-dispatch.md](incremental-dispatch.md)** — dispatching implementation against an existing PR, adding a local plan to an existing PR for remote implementation, working with incremental-dispatch exec script or slash command
+    26→- **[label-scheme.md](label-scheme.md)** — understanding how plans and learn issues are labeled, working with erk-pr or erk-learn labels, debugging label filtering in TUI or CLI views
+    27→- **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — debugging why learn materials are missing or malformed, understanding data flow from sessions to documentation plan, choosing between local learn and async learn modes, adding a new stage to the learn pipeline
+    28→- **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
+    29→- **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
+    30→- **[learn-session-embedding.md](learn-session-embedding.md)** — embedding session XML files in learn plan PRs, working with session preprocessing in the land or plan-save pipeline, debugging missing session XML in learn plan diffs
+
+... [54 lines omitted] ...
+
+    32→- **[learn-without-pr-context.md](learn-without-pr-context.md)** — debugging learn workflow failures where PR data is missing, implementing new learn pipeline steps that consume PR context, understanding why learn output lacks review feedback
+    36→- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+    40→- **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
+    42→- **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures, integrating objectives with one-shot dispatch
+    44→- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
+    48→- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a pr_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+    51→- **[plan-schema.md](plan-schema.md)** — understanding plan structure, debugging plan validation errors, working with plan-header or plan-body blocks
+    61→- **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs plan number distinction
+    69→- **[session-preprocessing.md](session-preprocessing.md)** — modifying session preprocessing or compression pipeline, understanding why there are two preprocessing implementations, linking sessions to plans for learn workflow, debugging preprocessing failures or empty session output
+    70→- **[stacked-plan-branch-rebase.md](stacked-plan-branch-rebase.md)** — working with stacked plans that have non-trunk parents, debugging gt track failures for plan branches, understanding how plan branches integrate with Graphite stacking
+    71→- **[sub-agent-context-limitations.md](sub-agent-context-limitations.md)** — delegating session-dependent commands to Task tool sub-agents, debugging impl-signal or plan-save failures with empty session IDs, designing workflows that split work between root agent and sub-agents
+  </tool_result>
+  <tool_result tool="toolu_017Ju9TMZNB8myCzwSXvwZRN">
+     1→---
+     2→title: Remote Workflow Command Pattern
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "creating a new remote workflow command"
+     7→  - "triggering GitHub Actions from CLI"
+     8→  - "building commands like erk launch pr-address"
+     9→---
+    10→
+    11→# Remote Workflow Command Pattern
+    12→
+    13→This document describes the pattern for creating CLI commands that trigger GitHub Actions workflows remotely, allowing operations to run in CI without local environment setup.
+    14→
+    15→## Overview
+    16→
+    17→Remote workflow commands follow a consistent pattern:
+    18→
+    19→1. Validate preconditions (auth, repo, PR state)
+    20→2. Build workflow inputs
+    21→3. Trigger the workflow
+    22→4. Optionally update plan dispatch metadata
+    23→5. Display run URL
+    24→
+    25→## Command Structure
+    26→
+    27→```python
+    28→@click.command("action-remote")
+    29→@click.argument("pr_number", type=int, required=True)
+    30→@click.option("--model", "model_name", type=str, help="Claude model to use.")
+
+... [81 lines omitted] ...
+
+    68→Use `Ensure` helpers for consistent error messages:
+    71→- `Ensure.invariant(condition, message)` - Assert conditions with user-friendly errors
+  </tool_result>
+  <tool_result tool="toolu_016onU64Pp1d75XETXUrPxyP">
+     1→---
+     2→audit_result: clean
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→read_when:
+     5→  - triggering GitHub Actions workflows from CLI
+     6→  - adding a new workflow to erk launch
+     7→  - understanding local vs remote command duality
+     8→title: Workflow Commands
+     9→tripwires:
+    10→  - action: WORKFLOW_COMMAND_MAP maps command names to .yml filenames
+    11→    warning: command names intentionally diverge from filenames (e.g., pr-rebase
+    12→      → pr-rebase.yml, but plan-implement → plan-implement.yml via DISPATCH_WORKFLOW_NAME
+    13→      constant)
+    14→  - action:
+    15→      plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement
+    16→      always raises UsageError
+    17→    warning: use erk pr submit instead
+    18→  - action: using this pattern
+    19→    warning: PR workflows automatically update plan dispatch metadata when the
+    20→      branch follows the plnd/ prefix naming pattern
+    21→---
+    22→
+    23→# Workflow Commands
+    24→
+    25→## Design Decisions
+    26→
+    27→### Why a Unified Launcher
+    28→
+    29→`erk launch` consolidates all GitHub Actions workflow triggers behind a single command instead of scattering them across subcommand groups (e.g., `erk pr rebase-remote`, `erk workflow launch`). This was a deliberate migration away from the old pattern where each remote operation had its own command in the relevant noun group.
+    30→
+
+... [56 lines omitted] ...
+
+    44→`plan-implement` exists in `WORKFLOW_COMMAND_MAP` but `erk launch plan-implement` always raises `UsageError` directing users to `erk pr submit`. The plan-implement workflow requires branch creation, PR setup, and metadata initialization that `erk pr submit` handles as a coordinated sequence. Triggering the workflow directly would skip these prerequisites and produce orphaned workflow runs.
+  </tool_result>
+  <tool_result tool="toolu_013t5uGyehVsvLmfHeRNANMp">
+     1→---
+     2→title: Unified Dispatch Pattern
+     3→read_when:
+     4→  - "working with launch_cmd.py dispatch handlers"
+     5→  - "adding a new workflow to erk launch"
+     6→  - "understanding how workflows are dispatched via erk"
+     7→tripwires:
+     8→  - action: "adding a new dispatch handler that does not return (branch_name, run_id)"
+     9→    warning: "All PR-targeting dispatch handlers must return (branch_name, run_id) for post-dispatch metadata enrichment. learn and consolidate-learn-plans are exceptions (no branch/run_id needed for metadata). See unified-dispatch-pattern.md."
+    10→  - action: "dispatching a workflow directly from the launch command body without a handler"
+    11→    warning: "Add a dedicated _dispatch_&lt;workflow&gt; handler function. The handler pattern separates PR lookup, validation, input building, and dispatch. See unified-dispatch-pattern.md."
+    12→---
+    13→
+    14→# Unified Dispatch Pattern
+    15→
+    16→`src/erk/cli/commands/launch_cmd.py` implements dispatch for all GitHub Actions workflows via a consistent handler pattern.
+    17→
+    18→## The 7 Dispatch Handlers
+    19→
+    20→All handlers receive `RemoteGitHub + explicit params`. PR-targeting handlers return `(branch_name, run_id)`.
+    21→
+    22→| Handler                             | Returns           | PR Required | Notes                                             |
+    23→| ----------------------------------- | ----------------- | ----------- | ------------------------------------------------- |
+    24→| `_dispatch_workflow`                | `str` (run_id)    | No          | Generic wrapper; other handlers call it           |
+    25→| `_dispatch_pr_rebase`               | `tuple[str, str]` | Yes         | Validates OPEN state; passes squash               |
+    26→| `_dispatch_pr_address`              | `tuple[str, str]` | Yes         | Validates OPEN state                              |
+    27→| `_dispatch_pr_rewrite`              | `tuple[str, str]` | Yes         | Validates OPEN state                              |
+    28→| `_dispatch_learn`                   | `None`            | Yes         | No metadata enrichment                            |
+    29→| `_dispatch_one_shot`                | `tuple[str, str]` | Yes         | Also takes prompt string                          |
+    30→| `_dispatch_consolidate_learn_plans` | `None`            | No          | Delegates to `dispatch_consolidate_learn_plans()` |
+
+... [59 lines omitted] ...
+
+    73→## `plan-implement` Exception
+    77→The `plan-implement` workflow is blocked at the handler level and raises a `UsageError` directing users to use `erk pr dispatch` instead. This is because the plan-implement workflow requires branch and PR setup that is only handled by the dedicated `erk pr dispatch` command. See the workflow routing logic in `src/erk/cli/commands/launch_cmd.py`.
+  </tool_result>
+  <tool_result tool="toolu_01S1h5cmbnd2v5htGFmvC3h4">
+     1→---
+     2→title: Planning Tripwires
+     3→read_when:
+     4→  - "working on planning code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from planning/*.md frontmatter --&gt;
+    10→
+    11→# Planning Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**adding &lt;code&gt; inside &lt;summary&gt; elements in PR bodies** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Graphite doesn't render &lt;code&gt; inside &lt;summary&gt; — use plain text instead. GitHub renders it but Graphite does not. The correct format is &lt;summary&gt;original-plan&lt;/summary&gt; not &lt;summary&gt;&lt;code&gt;original-plan&lt;/code&gt;&lt;/summary&gt;.
+    16→
+    17→**adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
+    18→
+    19→**adding a LLM-generated slug to the consolidate-learn-plans branch name** → Read [Consolidate Learn Plans Workflow](consolidate-learn-plans-workflow.md) first. Branch name uses format_branch_timestamp_suffix() only — no LLM slug. Format: consolidate-learn-plans-{MM-DD-HHMM}. See consolidate-learn-plans-workflow.md.
+    20→
+    21→**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from PR lookup. The entire PR comment block is gated on pr_result not being None.
+    22→
+    23→**adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
+    24→
+    25→**adding a new pipeline stage to the async learn pipeline** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in planned-pr-context-local-preprocessing.md.
+    26→
+    27→**adding a new setup path to plan-implement without routing through Step 2d** → Read [Impl-Context Staging Directory](impl-context.md) first. Impl-context cleanup routing: all code paths that set up an implementation context must route through Step 2d in plan-implement.md, which is the single convergence point for .erk/impl-context/ cleanup. Adding a new setup path that bypasses Step 2d will silently skip cleanup, leaving .erk/impl-context/ files in the final PR diff.
+    28→
+    29→**adding branch_name to plan-header at creation time** → Read [Branch Name Inference](branch-name-inference.md) first. branch_name is intentionally omitted at creation because the branch doesn't exist yet. The plan-save → branch-create → impl-signal lifecycle requires this gap. See the temporal gap section below.
+    30→
+
+... [245 lines omitted] ...
+
+    47→**after plan-implement execution completes** → Read [Plan Lifecycle](lifecycle.md) first. Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier).
+    69→**calling `create_impl_context()` without checking `impl_context_exists()` first** → Read [Impl-Context Staging Directory](impl-context.md) first. Both submit paths use LBYL: `if impl_context_exists(): remove_impl_context()` before creating. Stale .erk/impl-context/ from a prior failed submission causes errors.
+    81→**calling update_metadata() on PlannedPRBackend without verifying plan exists** → Read [Planned PR Backend](planned-pr-backend.md) first. PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata.
+    83→**capturing subagent output inline when it may exceed 1KB** → Read [Agent Orchestration Safety Patterns](agent-orchestration-safety.md) first. Bash tool truncates output at ~10KB with no error. Use Write tool to save agent output to scratch storage, then pass the file path to dependent agents.
+    85→**catching PlanHeaderNotFoundError** → Read [PlanBackend Migration Guide](plan-backend-migration.md) first. PlanHeaderNotFoundError is an exception; PlanNotFound is a result type - use LBYL for the latter
+    93→**checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture.
+    99→**closing a plan without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
+   101→**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+   145→**grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
+   165→**making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
+   167→**making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
+   193→**pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
+   199→**reading parallel agent output without verifying files exist** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Always verify output files exist (ls -la) before reading. Agent failures may produce empty or missing files.
+   211→**renaming a lifecycle stage value** → Read [Plan Lifecycle](lifecycle.md) first. Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors.
+   219→**reviewing a PR that contains .erk/impl-context/ files** → Read [Impl-Context Staging Directory](impl-context.md) first. Leave a PR comment telling the author to remove .erk/impl-context/. This is an erk tooling error — the directory should have been cleaned up before implementation. Run: git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'
+   229→**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives.
+   235→**treating missing PR as an error in the learn pipeline** → Read [Learn Without PR Context](learn-without-pr-context.md) first. No-PR is a valid workflow state, not an error. The learn pipeline must degrade gracefully — sessions alone provide sufficient material for insight extraction.
+   247→**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+   267→**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+  </tool_result>
+  <assistant>Now I'll perform the replacements in each file using the Edit tool with `replace_all=true`:</assistant>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0184cxwQ5DyC6yCGt1LJ3DPW">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/tripwires.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0125L9bERcSoBw8ijjkuU6yq">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0182MtbRhFB26Rqa8PePXYyE">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016Bz6Zb59YsmjHPTTJYLS1v">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/index.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01T5KpKr4GskLmczu2gTK7uk">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/remote-workflow-template.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ppp9KRUzhWyQMzyAmFtVEU">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01DhKVHUQpNPAuBfkLUwhjGb">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/unified-dispatch-pattern.md</param>
+    <param name="old_string">maybe_update_plan_dispatch_metadata</param>
+    <param name="new_string">maybe_update_pr_dispatch_metadata</param>
+  </tool_use>
+  <usage input_tokens="13956" cache_creation_input_tokens="10768" cache_read_input_tokens="16233" cache_creation="{'ephemeral_5m_input_tokens': 10768, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0184cxwQ5DyC6yCGt1LJ3DPW">
+The file /home/runner/work/erk/erk/docs/learned/planning/tripwires.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <tool_result tool="toolu_0125L9bERcSoBw8ijjkuU6yq">
+The file /home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <tool_result tool="toolu_0182MtbRhFB26Rqa8PePXYyE">
+The file /home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <tool_result tool="toolu_016Bz6Zb59YsmjHPTTJYLS1v">
+The file /home/runner/work/erk/erk/docs/learned/planning/index.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <tool_result tool="toolu_01T5KpKr4GskLmczu2gTK7uk">
+The file /home/runner/work/erk/erk/docs/learned/erk/remote-workflow-template.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <tool_result tool="toolu_01Ppp9KRUzhWyQMzyAmFtVEU">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <tool_result tool="toolu_01DhKVHUQpNPAuBfkLUwhjGb">
+The file /home/runner/work/erk/erk/docs/learned/architecture/unified-dispatch-pattern.md has been updated. All occurrences of 'maybe_update_plan_dispatch_metadata' were successfully replaced with 'maybe_update_pr_dispatch_metadata'.
+  </tool_result>
+  <assistant>Perfect! I've successfully completed the task. Here's a summary of the changes made:
+
+## Summary
+
+I renamed all occurrences of `maybe_update_plan_dispatch_metadata` to `maybe_update_pr_dispatch_metadata` across 7 documentation files:
+
+1. **`/home/runner/work/erk/erk/docs/learned/planning/tripwires.md`** - 2 occurrences replaced
+2. **`/home/runner/work/erk/erk/docs/learned/planning/metadata-update-patterns.md`** - 2 occurrences replaced
+3. **`/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md`** - 1 occurrence replaced
+4. **`/home/runner/work/erk/erk/docs/learned/planning/index.md`** - 1 occurrence replaced
+5. **`/home/runner/work/erk/erk/docs/learned/erk/remote-workflow-template.md`** - 3 occurrences replaced
+6. **`/home/runner/work/erk/erk/docs/learned/cli/workflow-commands.md`** - 2 occurrences replaced
+7. **`/home/runner/work/erk/erk/docs/learned/architecture/unified-dispatch-pattern.md`** - 1 occurrence replaced
+
+All replacements were performed using the Edit tool with `replace_all=true` to ensure every occurrence of the old function name was updated to the new name. The refactoring is now complete across all 7 documentation files.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="15645" cache_read_input_tokens="27001" cache_creation="{'ephemeral_5m_input_tokens': 15645, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
