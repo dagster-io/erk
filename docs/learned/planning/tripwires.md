@@ -38,7 +38,7 @@ Rules triggered by matching actions in code.
 
 **adding plnd/ special-casing to cleanup_impl_for_submit** → Read [Impl-Context Staging Directory](impl-context.md) first. plan-save never goes through the submit pipeline — it pushes directly via push_to_remote(). No special casing for plnd/ branches is needed in cleanup_impl_for_submit().
 
-**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
+**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. The one-shot dispatch path (one_shot_remote_dispatch.py) and the planned-PR dispatch path (dispatch_cmd.py) must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
 
 **adding redundant branch-location guards to learn status checks** → Read [Remote Branch Learn Support](remote-branch-learn.md) first. Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via planned-pr-context branches.
 
@@ -178,7 +178,7 @@ Rules triggered by matching actions in code.
 
 **modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
 
-**modifying register-one-shot-plan exit behavior** → Read [One-Shot Workflow](one-shot-workflow.md) first. register-one-shot-plan uses best-effort: exit 0 if any operation succeeds
+**modifying register-one-shot-pr exit behavior** → Read [One-Shot Workflow](one-shot-workflow.md) first. register-one-shot-pr uses best-effort: exit 0 if any operation succeeds
 
 **moving gateway files without git mv** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder.
 
@@ -226,7 +226,7 @@ Rules triggered by matching actions in code.
 
 **running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
-**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
+**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-pr-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 
@@ -264,6 +264,6 @@ Rules triggered by matching actions in code.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
 
-**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_remote_dispatch.py.
 
 **writing to /tmp/** → Read [Scratch Storage](scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.

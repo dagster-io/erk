@@ -19,9 +19,9 @@ Quick reference for all `erk exec` subcommands.
 | Command                           | Description                                                                       |
 | --------------------------------- | --------------------------------------------------------------------------------- |
 | `add-objective-node`              | Add a new node to an objective's roadmap.                                         |
-| `add-plan-label`                  | Add a label to a plan via the appropriate backend.                                |
-| `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                               |
+| `add-pr-label`                    | Add a label to a PR via the appropriate backend.                                  |
 | `add-pr-labels`                   | Add labels to a PR with automatic retry on transient failures.                    |
+| `add-pr-labels-batch`             | Batch add labels to multiple PRs from JSON stdin.                                 |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                                    |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                                |
 | `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                              |
@@ -36,7 +36,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                               |
 | `create-pr-from-session`          | Extract plan from Claude session and create a planned PR.                         |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                            |
-| `detect-plan-from-branch`         | Detect PR number from the current git branch.                                     |
+| `detect-pr-from-branch`           | Detect PR number from the current git branch.                                     |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                          |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                                  |
 | `download-remote-session`         | Download a session from a git branch.                                             |
@@ -47,13 +47,13 @@ Quick reference for all `erk exec` subcommands.
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                                 |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).                |
 | `get-learn-sessions`              | Get session information for a plan.                                               |
-| `get-plan-info`                   | Retrieve plan info from the appropriate backend.                                  |
-| `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                         |
 | `get-pr-body-footer`              | Generate PR body footer with teleport command.                                    |
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).                     |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.                     |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                         |
 | `get-pr-feedback`                 | Fetch all PR feedback in a single command.                                        |
+| `get-pr-info`                     | Retrieve PR info from the appropriate backend.                                    |
+| `get-pr-metadata`                 | Extract a metadata field from a PR's plan-header block.                           |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                             |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).                     |
 | `get-prs-for-objective`           | Fetch erk-prs linked to an objective.                                             |
@@ -91,7 +91,7 @@ Quick reference for all `erk exec` subcommands.
 | `push-session`                    | Preprocess and push a session to the planned-pr-context branch with accumulation. |
 | `quick-submit`                    | Quick commit all changes and submit.                                              |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                      |
-| `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                         |
+| `register-one-shot-pr`            | Register a one-shot PR with issue metadata and comment.                           |
 | `reopen-contested-threads`        | Detect and reopen contested resolved PR review threads.                           |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.                   |
 | `resolve-objective-ref`           | Resolve an objective reference to an objective number.                            |
@@ -109,12 +109,12 @@ Quick reference for all `erk exec` subcommands.
 | `track-learn-result`              | Track learn workflow result on a plan.                                            |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).               |
 | `update-objective-node`           | Update node fields in an objective's roadmap table.                               |
-| `update-plan-header`              | Update plan-header metadata fields on a PR.                                       |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                           |
+| `update-pr-header`                | Update plan-header metadata fields on a PR.                                       |
 | `upload-impl-session`             | Upload current implementation session for async learn.                            |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.               |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                                     |
-| `validate-plan-content`           | Validate plan content from file or stdin.                                         |
+| `validate-pr-content`             | Validate PR content from file or stdin.                                           |
 
 ## Commands
 
@@ -141,11 +141,11 @@ Add a new node to an objective's roadmap.
 | `--depends-on`  | TEXT    | No       | Sentinel.UNSET | Dependency node IDs                               |
 | `--comment`     | TEXT    | No       | -              | Comment for adding this node                      |
 
-### add-plan-label
+### add-pr-label
 
-Add a label to a plan via the appropriate backend.
+Add a label to a PR via the appropriate backend.
 
-**Usage:** `erk exec add-plan-label` <pr_number>
+**Usage:** `erk exec add-pr-label` <pr_number>
 
 **Arguments:**
 
@@ -158,12 +158,6 @@ Add a label to a plan via the appropriate backend.
 | Flag      | Type | Required | Default        | Description            |
 | --------- | ---- | -------- | -------------- | ---------------------- |
 | `--label` | TEXT | Yes      | Sentinel.UNSET | Label to add to the PR |
-
-### add-plan-labels
-
-Batch add labels to multiple plans from JSON stdin.
-
-**Usage:** `erk exec add-plan-labels`
 
 ### add-pr-labels
 
@@ -182,6 +176,12 @@ Add labels to a PR with automatic retry on transient failures.
 | Flag       | Type | Required | Default        | Description                     |
 | ---------- | ---- | -------- | -------------- | ------------------------------- |
 | `--labels` | TEXT | Yes      | Sentinel.UNSET | Labels to add (can be repeated) |
+
+### add-pr-labels-batch
+
+Batch add labels to multiple PRs from JSON stdin.
+
+**Usage:** `erk exec add-pr-labels-batch`
 
 ### add-remote-execution-note
 
@@ -363,11 +363,11 @@ Serialize plan dashboard data to JSON.
 | `--run-state` | TEXT    | No       | -           | -           |
 | `--creator`   | TEXT    | No       | -           | -           |
 
-### detect-plan-from-branch
+### detect-pr-from-branch
 
 Detect PR number from the current git branch.
 
-**Usage:** `erk exec detect-plan-from-branch`
+**Usage:** `erk exec detect-pr-from-branch`
 
 ### detect-trunk-branch
 
@@ -491,37 +491,6 @@ Get session information for a plan.
 | ------- | -------- | ----------- |
 | `ISSUE` | No       | -           |
 
-### get-plan-info
-
-Retrieve plan info from the appropriate backend.
-
-**Usage:** `erk exec get-plan-info` <pr_number>
-
-**Arguments:**
-
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
-
-**Options:**
-
-| Flag             | Type | Required | Default | Description                                 |
-| ---------------- | ---- | -------- | ------- | ------------------------------------------- |
-| `--include-body` | FLAG | No       | -       | Include the PR body content in the response |
-
-### get-plan-metadata
-
-Extract a metadata field from a plan's plan-header block.
-
-**Usage:** `erk exec get-plan-metadata` <pr_number> <field_name>
-
-**Arguments:**
-
-| Name         | Required | Description |
-| ------------ | -------- | ----------- |
-| `PR_NUMBER`  | Yes      | -           |
-| `FIELD_NAME` | Yes      | -           |
-
 ### get-pr-body-footer
 
 Generate PR body footer with teleport command.
@@ -582,6 +551,37 @@ Fetch all PR feedback in a single command.
 | -------------------- | ------- | -------- | ------- | ------------------------------------------- |
 | `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
 | `--include-resolved` | FLAG    | No       | -       | Include resolved review threads             |
+
+### get-pr-info
+
+Retrieve PR info from the appropriate backend.
+
+**Usage:** `erk exec get-pr-info` <pr_number>
+
+**Arguments:**
+
+| Name        | Required | Description |
+| ----------- | -------- | ----------- |
+| `PR_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag             | Type | Required | Default | Description                                 |
+| ---------------- | ---- | -------- | ------- | ------------------------------------------- |
+| `--include-body` | FLAG | No       | -       | Include the PR body content in the response |
+
+### get-pr-metadata
+
+Extract a metadata field from a PR's plan-header block.
+
+**Usage:** `erk exec get-pr-metadata` <pr_number> <field_name>
+
+**Arguments:**
+
+| Name         | Required | Description |
+| ------------ | -------- | ----------- |
+| `PR_NUMBER`  | Yes      | -           |
+| `FIELD_NAME` | Yes      | -           |
 
 ### get-pr-review-comments
 
@@ -1138,11 +1138,11 @@ Rebase onto target branch and resolve conflicts with Claude.
 | `--model`         | TEXT    | No       | 'claude-sonnet-4-5' | Claude model to use for conflict resolution and summary generation |
 | `--max-attempts`  | INTEGER | No       | 5                   | Maximum number of conflict resolution attempts                     |
 
-### register-one-shot-plan
+### register-one-shot-pr
 
-Register a one-shot plan with issue metadata and comment.
+Register a one-shot PR with issue metadata and comment.
 
-**Usage:** `erk exec register-one-shot-plan`
+**Usage:** `erk exec register-one-shot-pr`
 
 **Options:**
 
@@ -1389,19 +1389,6 @@ Update node fields in an objective's roadmap table.
 | `--comment`      | TEXT   | No       | -              | Comment text (e.g., why a node was skipped). Omit to preserve existing. |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body'   |
 
-### update-plan-header
-
-Update plan-header metadata fields on a PR.
-
-**Usage:** `erk exec update-plan-header` <pr_id> [fields]
-
-**Arguments:**
-
-| Name     | Required | Description |
-| -------- | -------- | ----------- |
-| `PR_ID`  | Yes      | -           |
-| `FIELDS` | No       | -           |
-
 ### update-pr-description
 
 Update PR title and body with AI-generated description.
@@ -1414,6 +1401,19 @@ Update PR title and body with AI-generated description.
 | -------------- | ---- | -------- | ------- | ------------------------------------- |
 | `--debug`      | FLAG | No       | -       | Show diagnostic output                |
 | `--session-id` | TEXT | No       | -       | Session ID for scratch file isolation |
+
+### update-pr-header
+
+Update plan-header metadata fields on a PR.
+
+**Usage:** `erk exec update-pr-header` <pr_id> [fields]
+
+**Arguments:**
+
+| Name     | Required | Description |
+| -------- | -------- | ----------- |
+| `PR_ID`  | Yes      | -           |
+| `FIELDS` | No       | -           |
 
 ### upload-impl-session
 
@@ -1439,11 +1439,11 @@ Validate Claude credentials for CI workflows.
 
 **Usage:** `erk exec validate-claude-credentials`
 
-### validate-plan-content
+### validate-pr-content
 
-Validate plan content from file or stdin.
+Validate PR content from file or stdin.
 
-**Usage:** `erk exec validate-plan-content`
+**Usage:** `erk exec validate-pr-content`
 
 **Options:**
 

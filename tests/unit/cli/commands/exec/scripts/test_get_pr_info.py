@@ -1,6 +1,6 @@
-"""Unit tests for get_plan_info exec command.
+"""Unit tests for get_pr_info exec command.
 
-Tests backend-aware plan info retrieval using ManagedGitHubPrBackend and FakeLocalGitHub.
+Tests backend-aware PR info retrieval using ManagedGitHubPrBackend and FakeLocalGitHub.
 """
 
 import json
@@ -8,7 +8,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.get_plan_info import get_plan_info
+from erk.cli.commands.exec.scripts.get_pr_info import get_pr_info
 from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.fakes.gateway.time import FakeTime
@@ -42,13 +42,13 @@ def _create_backend_with_plan(
 # ============================================================================
 
 
-def test_get_plan_info_success() -> None:
+def test_get_pr_info_success() -> None:
     """Test successful plan info retrieval from ManagedGitHubPrBackend."""
     backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_info,
+        get_pr_info,
         [pr_id],
         obj=context_for_test(
             github=fake_github,
@@ -69,13 +69,13 @@ def test_get_plan_info_success() -> None:
     assert "base_ref_name" in output
 
 
-def test_get_plan_info_includes_objective_id() -> None:
+def test_get_pr_info_includes_objective_id() -> None:
     """Test that objective_id is included in the response."""
     backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_info,
+        get_pr_info,
         [pr_id],
         obj=context_for_test(
             github=fake_github,
@@ -93,13 +93,13 @@ def test_get_plan_info_includes_objective_id() -> None:
 # ============================================================================
 
 
-def test_get_plan_info_include_body() -> None:
+def test_get_pr_info_include_body() -> None:
     """Test that --include-body adds body field to the response."""
     backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_info,
+        get_pr_info,
         [pr_id, "--include-body"],
         obj=context_for_test(
             github=fake_github,
@@ -114,13 +114,13 @@ def test_get_plan_info_include_body() -> None:
     assert isinstance(output["body"], str)
 
 
-def test_get_plan_info_excludes_body_by_default() -> None:
+def test_get_pr_info_excludes_body_by_default() -> None:
     """Test that body field is NOT present without --include-body."""
     backend, fake_github, pr_id = _create_backend_with_plan()
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_info,
+        get_pr_info,
         [pr_id],
         obj=context_for_test(
             github=fake_github,
@@ -139,12 +139,12 @@ def test_get_plan_info_excludes_body_by_default() -> None:
 # ============================================================================
 
 
-def test_get_plan_info_not_found() -> None:
+def test_get_pr_info_not_found() -> None:
     """Test error when plan doesn't exist."""
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_info,
+        get_pr_info,
         ["9999"],
         obj=context_for_test(),
     )
@@ -152,5 +152,5 @@ def test_get_plan_info_not_found() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "plan_not_found"
+    assert output["error"] == "pr_not_found"
     assert "#9999" in output["message"]

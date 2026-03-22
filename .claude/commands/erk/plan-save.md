@@ -106,7 +106,7 @@ If the command fails, display the error and stop.
 Verify the objective link was saved correctly:
 
 ```bash
-erk exec get-plan-metadata <pr_number> objective_issue
+erk exec get-pr-metadata <pr_number> objective_issue
 ```
 
 Parse the JSON response:

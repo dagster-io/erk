@@ -10,7 +10,7 @@ tripwires:
   - action: "manually creating an erk-pr with gh issue create"
     warning: "Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan linked to an objective"
-    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    warning: "Always verify the link was saved correctly with `erk exec get-pr-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
     warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, STILL_RELEVANT, NEEDS_REVIEW verdict categories for consistency. Note: DIFFERENT_APPROACH is a match type in the evidence table, not a verdict."
   - action: "after plan-implement execution completes"
@@ -703,7 +703,7 @@ last_dispatched_run_id: "1234567890"
 last_dispatched_at: 2025-01-15T10:30:00Z
 ```
 
-Updated by `erk exec update-plan-header` command.
+Updated by `erk exec update-pr-header` command.
 
 ### Workflow Run → Issue
 
@@ -933,12 +933,12 @@ During the planning stage:
 
 Commands that depend on plan-header metadata should handle missing fields gracefully:
 
-#### Example: `get-plan-info` Dependency
+#### Example: `get-pr-info` Dependency
 
-The `get-plan-info` command returns plan metadata including `head_ref_name` and `base_ref_name`:
+The `get-pr-info` command returns plan metadata including `head_ref_name` and `base_ref_name`:
 
 ```bash
-erk exec get-plan-info <issue_number>
+erk exec get-pr-info <issue_number>
 ```
 
 **Failure modes:**
@@ -949,7 +949,7 @@ erk exec get-plan-info <issue_number>
 **Correct handling:**
 
 ```bash
-PLAN_INFO=$(erk exec get-plan-info <issue_number>)
+PLAN_INFO=$(erk exec get-pr-info <issue_number>)
 
 if echo "$PLAN_INFO" | jq -e '.success == false' > /dev/null 2>&1; then
   echo "Plan not found"
@@ -967,18 +967,18 @@ fi
 
 Before dispatching a plan for implementation, validate:
 
-| Check               | Command                                           | Expected        |
-| ------------------- | ------------------------------------------------- | --------------- |
-| Plan exists         | `erk exec get-issue-body <number>`                | `success: true` |
-| Has erk-pr label    | Check `labels` field in output                    | Contains label  |
-| Branch exists       | `erk exec get-plan-metadata <number> branch_name` | Non-null value  |
-| PR exists           | `erk exec get-plan-info <number>`                 | `head_ref_name` |
-| Not already running | Check for `workflow-started` comment on issue     | No such comment |
-| Issue is open       | Check `state` field in `get-issue-body` output    | `OPEN`          |
+| Check               | Command                                         | Expected        |
+| ------------------- | ----------------------------------------------- | --------------- |
+| Plan exists         | `erk exec get-issue-body <number>`              | `success: true` |
+| Has erk-pr label    | Check `labels` field in output                  | Contains label  |
+| Branch exists       | `erk exec get-pr-metadata <number> branch_name` | Non-null value  |
+| PR exists           | `erk exec get-pr-info <number>`                 | `head_ref_name` |
+| Not already running | Check for `workflow-started` comment on issue   | No such comment |
+| Issue is open       | Check `state` field in `get-issue-body` output  | `OPEN`          |
 
 #### When Branch Metadata Becomes Available
 
-The `head_ref_name` field in `get-plan-info` output becomes non-null after:
+The `head_ref_name` field in `get-pr-info` output becomes non-null after:
 
 1. **Plan submission** completes (Phase 2: `erk pr submit`)
 2. **Branch and PR creation** finishes
@@ -994,7 +994,7 @@ The `head_ref_name` field in `get-plan-info` output becomes non-null after:
 
 ```bash
 # DON'T: Assume head_ref_name always exists
-PLAN_INFO=$(erk exec get-plan-info <issue_number>)
+PLAN_INFO=$(erk exec get-pr-info <issue_number>)
 HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name')
 gh pr view "$HEAD_REF"  # Fails if plan not submitted
 ```
@@ -1003,7 +1003,7 @@ gh pr view "$HEAD_REF"  # Fails if plan not submitted
 
 ```bash
 # DO: Check for null head_ref_name
-PLAN_INFO=$(erk exec get-plan-info <issue_number>)
+PLAN_INFO=$(erk exec get-pr-info <issue_number>)
 HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name // empty')
 
 if [ -z "$HEAD_REF" ]; then
@@ -1046,10 +1046,10 @@ Each stage is set by specific commands at well-defined moments:
 
 ### Explicit Updates via Exec Command
 
-The `update-plan-header` exec command allows explicit field updates, including lifecycle stage:
+The `update-pr-header` exec command allows explicit field updates, including lifecycle stage:
 
 ```bash
-erk exec update-plan-header 123 lifecycle_stage=impl
+erk exec update-pr-header 123 lifecycle_stage=impl
 ```
 
 Returns JSON on success:

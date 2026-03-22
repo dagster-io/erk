@@ -5,7 +5,7 @@ Plan-ref.json is the primary source; this exec script is the fallback when no
 .erk/impl-context/ folder exists yet.
 
 Usage:
-    erk exec detect-plan-from-branch
+    erk exec detect-pr-from-branch
 
 Output:
     JSON with detection result:
@@ -16,7 +16,7 @@ Exit Codes:
     0: Always (caller decides how to handle not-found)
 
 Examples:
-    $ erk exec detect-plan-from-branch
+    $ erk exec detect-pr-from-branch
     {"found": true, "pr_number": 2521, "detection_method": "pr_lookup"}
 """
 
@@ -29,7 +29,7 @@ from erk_shared.context.helpers import require_cwd, require_git, require_github,
 from erk_shared.gateway.github.types import PRNotFound
 
 
-def _detect_plan_from_branch_impl(
+def _detect_pr_from_branch_impl(
     *,
     current_branch: str | None,
     pr_lookup: Callable[[], int | None],
@@ -55,9 +55,9 @@ def _detect_plan_from_branch_impl(
     return {"found": False}
 
 
-@click.command(name="detect-plan-from-branch")
+@click.command(name="detect-pr-from-branch")
 @click.pass_context
-def detect_plan_from_branch(ctx: click.Context) -> None:
+def detect_pr_from_branch(ctx: click.Context) -> None:
     """Detect PR number from the current git branch.
 
     Looks up the associated PR for the current branch.
@@ -79,7 +79,7 @@ def detect_plan_from_branch(ctx: click.Context) -> None:
             return None
         return pr_result.number
 
-    result = _detect_plan_from_branch_impl(
+    result = _detect_pr_from_branch_impl(
         current_branch=current_branch,
         pr_lookup=pr_lookup,
     )

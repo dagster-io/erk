@@ -1,4 +1,4 @@
-"""Tests for register-one-shot-plan exec command."""
+"""Tests for register-one-shot-pr exec command."""
 
 import json
 from datetime import UTC, datetime
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.register_one_shot_plan import register_one_shot_plan
+from erk.cli.commands.exec.scripts.register_one_shot_pr import register_one_shot_pr
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
@@ -106,7 +106,7 @@ def test_all_succeed(tmp_path: Path) -> None:
         pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
     )
     result = CliRunner().invoke(
-        register_one_shot_plan, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
+        register_one_shot_pr, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
     )
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -117,7 +117,7 @@ def test_all_succeed(tmp_path: Path) -> None:
 
 def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
     result = CliRunner().invoke(
-        register_one_shot_plan,
+        register_one_shot_pr,
         [
             "--pr-number",
             "999",
@@ -148,7 +148,7 @@ def test_dispatch_succeeds_when_plan_header_missing(tmp_path: Path) -> None:
         pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
     )
     result = CliRunner().invoke(
-        register_one_shot_plan, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
+        register_one_shot_pr, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
     )
     assert result.exit_code == 0
     output = json.loads(result.output)

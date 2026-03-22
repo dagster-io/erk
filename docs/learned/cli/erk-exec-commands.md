@@ -36,11 +36,11 @@ Not all erk exec commands support the `--format` flag. Always check with `erk ex
 
 ### Commands with `--format json` Support
 
-| Command             | `--format json` | Notes                        |
-| ------------------- | --------------- | ---------------------------- |
-| `impl-init`         | ✓               | Returns validation result    |
-| `get-plan-metadata` | ✓               | Returns specific field value |
-| `list-sessions`     | ✓               | Returns session list         |
+| Command           | `--format json` | Notes                        |
+| ----------------- | --------------- | ---------------------------- |
+| `impl-init`       | ✓               | Returns validation result    |
+| `get-pr-metadata` | ✓               | Returns specific field value |
+| `list-sessions`   | ✓               | Returns session list         |
 
 ### Commands Without Format Flag
 
@@ -72,7 +72,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 ### Plan Operations
 
-- `get-plan-metadata` - Read plan metadata
+- `get-pr-metadata` - Read plan metadata
 - `setup-impl-from-pr` - Prepare .erk/impl-context/ folder
 
 ### Session Operations
@@ -201,7 +201,7 @@ Performs `git rm -rf .erk/impl-context/` and commits the deletion.
 
 Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
 
-- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"pr_number": int, "label": str}]`)
+- `add-pr-labels-batch` — Add labels to multiple plans (stdin: `[{"pr_number": int, "label": str}]`)
 - `close-prs` — Close multiple PRs with comments (stdin: `[{"pr_number": int, "comment": str}]`)
 
 Both use frozen dataclass results with discriminated union error handling.

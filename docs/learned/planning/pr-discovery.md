@@ -16,21 +16,21 @@ tripwires:
 
 # PR Discovery Strategies for Plans
 
-Finding the PR associated with a plan is a cross-cutting concern that spans multiple commands (`get-plan-info`, `trigger-async-learn`, `erk pr co`, `erk pr close`). The strategy depends on what metadata is available.
+Finding the PR associated with a plan is a cross-cutting concern that spans multiple commands (`get-pr-info`, `trigger-async-learn`, `erk pr co`, `erk pr close`). The strategy depends on what metadata is available.
 
 ## Discovery Strategy
 
 Plan metadata accumulates progressively through the lifecycle. The `branch_name` field doesn't exist until Phase 2 (submission). Commands that run before submission will not find a PR.
 
-| Available Data | Strategy           | Used By                                                |
-| -------------- | ------------------ | ------------------------------------------------------ |
-| `branch_name`  | Branch → PR lookup | `get-plan-info`, `trigger-async-learn`, land, dispatch |
+| Available Data | Strategy           | Used By                                              |
+| -------------- | ------------------ | ---------------------------------------------------- |
+| `branch_name`  | Branch → PR lookup | `get-pr-info`, `trigger-async-learn`, land, dispatch |
 
 ## Branch-Based Lookup
 
 The plan-header metadata block contains a `branch_name` field populated during `erk pr dispatch`. Given a branch name, the GitHub gateway's `get_pr_for_branch()` method returns PR details directly.
 
-The `get-plan-info` command exposes `head_ref_name` and `base_ref_name` from plan metadata, providing branch information for PR discovery.
+The `get-pr-info` command exposes `head_ref_name` and `base_ref_name` from plan metadata, providing branch information for PR discovery.
 
 **Why branch-based**: Branch-to-PR is a deterministic 1:1 lookup via the GitHub API.
 

@@ -1,11 +1,11 @@
-"""Unit tests for add-plan-labels batch command."""
+"""Unit tests for add-pr-labels-batch command."""
 
 import json
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.add_plan_labels import add_plan_labels
+from erk.cli.commands.exec.scripts.add_pr_labels import add_pr_labels_batch
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
@@ -36,7 +36,7 @@ def _make_issue(
     )
 
 
-def test_add_plan_labels_batch_success() -> None:
+def test_add_pr_labels_batch_success() -> None:
     """Test successfully adding labels to multiple plans."""
     issue_42 = _make_issue(42, "Plan A", "Body A")
     issue_43 = _make_issue(43, "Plan B", "Body B")
@@ -58,7 +58,7 @@ def test_add_plan_labels_batch_success() -> None:
     )
 
     result = runner.invoke(
-        add_plan_labels,
+        add_pr_labels_batch,
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
@@ -77,7 +77,7 @@ def test_add_plan_labels_batch_success() -> None:
     assert output["results"][1]["success"] is True
 
 
-def test_add_plan_labels_partial_failure() -> None:
+def test_add_pr_labels_batch_partial_failure() -> None:
     """Test batch where one plan fails but others succeed."""
     issue_42 = _make_issue(42, "Plan A", "Body A")
     fake_gh = FakeGitHubIssues(issues={42: issue_42})
@@ -95,7 +95,7 @@ def test_add_plan_labels_partial_failure() -> None:
     )
 
     result = runner.invoke(
-        add_plan_labels,
+        add_pr_labels_batch,
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
@@ -111,14 +111,14 @@ def test_add_plan_labels_partial_failure() -> None:
     assert output["results"][1]["success"] is False
 
 
-def test_add_plan_labels_invalid_json() -> None:
+def test_add_pr_labels_batch_invalid_json() -> None:
     """Test error handling for invalid JSON input."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
-        add_plan_labels,
+        add_pr_labels_batch,
         input="not valid json",
         obj=ErkContext.for_test(
             github=fake_github,
@@ -132,7 +132,7 @@ def test_add_plan_labels_invalid_json() -> None:
     assert output["error_type"] == "invalid-json"
 
 
-def test_add_plan_labels_missing_field() -> None:
+def test_add_pr_labels_batch_missing_field() -> None:
     """Test error handling for missing required fields."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
@@ -141,7 +141,7 @@ def test_add_plan_labels_missing_field() -> None:
     batch_input = json.dumps([{"pr_number": 42}])  # Missing 'label'
 
     result = runner.invoke(
-        add_plan_labels,
+        add_pr_labels_batch,
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
@@ -156,14 +156,14 @@ def test_add_plan_labels_missing_field() -> None:
     assert "label" in output["message"]
 
 
-def test_add_plan_labels_empty_array() -> None:
+def test_add_pr_labels_batch_empty_array() -> None:
     """Test that empty array returns success with no results."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
-        add_plan_labels,
+        add_pr_labels_batch,
         input="[]",
         obj=ErkContext.for_test(
             github=fake_github,

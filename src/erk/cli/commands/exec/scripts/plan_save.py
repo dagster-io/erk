@@ -27,7 +27,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+from erk.cli.commands.exec.scripts.validate_pr_content import _validate_pr_content
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_branch_manager,
@@ -451,7 +451,7 @@ def _save_plan_via_planned_pr(
             return
 
     # Validate plan content
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
     if not valid:
         if output_format == "display":
             click.echo(f"Error: Plan validation failed: {error}", err=True)

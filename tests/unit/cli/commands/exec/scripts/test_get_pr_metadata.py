@@ -1,4 +1,4 @@
-"""Unit tests for get_plan_metadata exec command.
+"""Unit tests for get_pr_metadata exec command.
 
 Tests GitHub issue plan-header metadata extraction.
 Uses FakeGitHubIssues for fast, reliable testing without subprocess mocking.
@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
+from erk.cli.commands.exec.scripts.get_pr_metadata import get_pr_metadata
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
@@ -76,7 +76,7 @@ def make_issue_info(number: int, body: str) -> IssueInfo:
 # ============================================================================
 
 
-def test_get_plan_metadata_returns_existing_field() -> None:
+def test_get_pr_metadata_returns_existing_field() -> None:
     """Test successful extraction of an existing field."""
     body = make_plan_header_body(objective_issue=3400)
     issue = make_issue_info(3509, body)
@@ -88,7 +88,7 @@ def test_get_plan_metadata_returns_existing_field() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["3509", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -104,7 +104,7 @@ def test_get_plan_metadata_returns_existing_field() -> None:
     assert output["field"] == "objective_issue"
 
 
-def test_get_plan_metadata_returns_string_field() -> None:
+def test_get_pr_metadata_returns_string_field() -> None:
     """Test extraction of a string field value."""
     body = make_plan_header_body(worktree_name="P3509-feature-xyz")
     issue = make_issue_info(3509, body)
@@ -116,7 +116,7 @@ def test_get_plan_metadata_returns_string_field() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["3509", "worktree_name"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -131,7 +131,7 @@ def test_get_plan_metadata_returns_string_field() -> None:
     assert output["field"] == "worktree_name"
 
 
-def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
+def test_get_pr_metadata_returns_null_for_nonexistent_field() -> None:
     """Test that a nonexistent field returns null, not an error."""
     body = make_plan_header_body()
     issue = make_issue_info(3509, body)
@@ -143,7 +143,7 @@ def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["3509", "nonexistent_field"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -158,7 +158,7 @@ def test_get_plan_metadata_returns_null_for_nonexistent_field() -> None:
     assert output["field"] == "nonexistent_field"
 
 
-def test_get_plan_metadata_returns_null_for_null_field() -> None:
+def test_get_pr_metadata_returns_null_for_null_field() -> None:
     """Test that a field explicitly set to null returns null."""
     body = make_plan_header_body(objective_issue=None)
     issue = make_issue_info(3509, body)
@@ -170,7 +170,7 @@ def test_get_plan_metadata_returns_null_for_null_field() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["3509", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -185,7 +185,7 @@ def test_get_plan_metadata_returns_null_for_null_field() -> None:
     assert output["field"] == "objective_issue"
 
 
-def test_get_plan_metadata_no_plan_header_block() -> None:
+def test_get_pr_metadata_no_plan_header_block() -> None:
     """Test that an issue without plan-header block returns null."""
     old_format_body = """# Old Format Issue
 
@@ -200,7 +200,7 @@ This is an issue created before plan-header blocks were introduced.
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["100", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -221,14 +221,14 @@ This is an issue created before plan-header blocks were introduced.
 # ============================================================================
 
 
-def test_get_plan_metadata_issue_not_found() -> None:
+def test_get_pr_metadata_issue_not_found() -> None:
     """Test error when issue doesn't exist."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["9999", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -260,7 +260,7 @@ def test_json_output_structure_success() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["321", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -296,7 +296,7 @@ def test_json_output_structure_error() -> None:
     runner = CliRunner()
 
     result = runner.invoke(
-        get_plan_metadata,
+        get_pr_metadata,
         ["999", "objective_issue"],
         obj=ErkContext.for_test(
             github=fake_github,

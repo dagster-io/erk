@@ -1,4 +1,4 @@
-"""Unit tests for update-plan-header exec command."""
+"""Unit tests for update-pr-header exec command."""
 
 import json
 from datetime import UTC, datetime
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.update_plan_header import update_plan_header
+from erk.cli.commands.exec.scripts.update_pr_header import update_pr_header
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
@@ -53,7 +53,7 @@ def _make_issue_with_plan_header(number: int) -> IssueInfo:
 
 
 def test_update_single_field() -> None:
-    """update-plan-header sets a single field in plan-header."""
+    """update-pr-header sets a single field in plan-header."""
     issue = _make_issue_with_plan_header(123)
     fake_gh = FakeGitHubIssues(issues={123: issue})
     fake_github = FakeLocalGitHub(
@@ -64,7 +64,7 @@ def test_update_single_field() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["123", "objective_issue=7823"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -88,7 +88,7 @@ def test_update_single_field() -> None:
 
 
 def test_update_multiple_fields() -> None:
-    """update-plan-header sets multiple fields at once."""
+    """update-pr-header sets multiple fields at once."""
     issue = _make_issue_with_plan_header(456)
     fake_gh = FakeGitHubIssues(issues={456: issue})
     fake_github = FakeLocalGitHub(
@@ -99,7 +99,7 @@ def test_update_multiple_fields() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["456", "lifecycle_stage=impl", "objective_issue=7823"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -122,7 +122,7 @@ def test_update_multiple_fields() -> None:
 
 
 def test_overwrites_existing() -> None:
-    """update-plan-header overwrites existing field values."""
+    """update-pr-header overwrites existing field values."""
     body = format_plan_header_body_for_test(
         created_at="2025-01-01T00:00:00Z",
         created_by="testuser",
@@ -138,7 +138,7 @@ def test_overwrites_existing() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["789", "objective_issue=7823"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -162,7 +162,7 @@ def test_overwrites_existing() -> None:
 
 
 def test_null_coercion() -> None:
-    """update-plan-header coerces 'null' string to None."""
+    """update-pr-header coerces 'null' string to None."""
     body = format_plan_header_body_for_test(
         created_at="2025-01-01T00:00:00Z",
         created_by="testuser",
@@ -178,7 +178,7 @@ def test_null_coercion() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["100", "objective_issue=null"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -197,7 +197,7 @@ def test_null_coercion() -> None:
 
 
 def test_int_coercion() -> None:
-    """update-plan-header coerces valid integer strings to int."""
+    """update-pr-header coerces valid integer strings to int."""
     issue = _make_issue_with_plan_header(101)
     fake_gh = FakeGitHubIssues(issues={101: issue})
     fake_github = FakeLocalGitHub(
@@ -208,7 +208,7 @@ def test_int_coercion() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["101", "objective_issue=7823"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -228,7 +228,7 @@ def test_int_coercion() -> None:
 
 
 def test_run_id_field_stays_string() -> None:
-    """update-plan-header keeps last_remote_impl_run_id as str, not int."""
+    """update-pr-header keeps last_remote_impl_run_id as str, not int."""
     issue = _make_issue_with_plan_header(103)
     fake_gh = FakeGitHubIssues(issues={103: issue})
     fake_github = FakeLocalGitHub(
@@ -239,7 +239,7 @@ def test_run_id_field_stays_string() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["103", "last_remote_impl_run_id=22397458206"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -259,7 +259,7 @@ def test_run_id_field_stays_string() -> None:
 
 
 def test_dispatched_run_id_stays_string() -> None:
-    """update-plan-header keeps last_dispatched_run_id as str, not int."""
+    """update-pr-header keeps last_dispatched_run_id as str, not int."""
     issue = _make_issue_with_plan_header(104)
     fake_gh = FakeGitHubIssues(issues={104: issue})
     fake_github = FakeLocalGitHub(
@@ -270,7 +270,7 @@ def test_dispatched_run_id_stays_string() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["104", "last_dispatched_run_id=22397458206"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -290,7 +290,7 @@ def test_dispatched_run_id_stays_string() -> None:
 
 
 def test_non_string_field_still_coerced_to_int() -> None:
-    """update-plan-header still coerces objective_issue numeric strings to int."""
+    """update-pr-header still coerces objective_issue numeric strings to int."""
     issue = _make_issue_with_plan_header(105)
     fake_gh = FakeGitHubIssues(issues={105: issue})
     fake_github = FakeLocalGitHub(
@@ -301,7 +301,7 @@ def test_non_string_field_still_coerced_to_int() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["105", "objective_issue=7823"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -321,7 +321,7 @@ def test_non_string_field_still_coerced_to_int() -> None:
 
 
 def test_string_preserved() -> None:
-    """update-plan-header preserves string values as strings."""
+    """update-pr-header preserves string values as strings."""
     issue = _make_issue_with_plan_header(102)
     fake_gh = FakeGitHubIssues(issues={102: issue})
     fake_github = FakeLocalGitHub(
@@ -332,7 +332,7 @@ def test_string_preserved() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["102", "branch_name=my-branch"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -357,7 +357,7 @@ def test_string_preserved() -> None:
 
 
 def test_schema_validation_rejects_unknown_field() -> None:
-    """update-plan-header rejects unknown field names via schema validation."""
+    """update-pr-header rejects unknown field names via schema validation."""
     issue = _make_issue_with_plan_header(200)
     fake_gh = FakeGitHubIssues(issues={200: issue})
     fake_github = FakeLocalGitHub(
@@ -368,7 +368,7 @@ def test_schema_validation_rejects_unknown_field() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["200", "bogus_field=x"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -383,7 +383,7 @@ def test_schema_validation_rejects_unknown_field() -> None:
 
 
 def test_schema_validation_rejects_invalid_lifecycle_stage() -> None:
-    """update-plan-header rejects invalid lifecycle_stage values."""
+    """update-pr-header rejects invalid lifecycle_stage values."""
     issue = _make_issue_with_plan_header(201)
     fake_gh = FakeGitHubIssues(issues={201: issue})
     fake_github = FakeLocalGitHub(
@@ -394,7 +394,7 @@ def test_schema_validation_rejects_invalid_lifecycle_stage() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["201", "lifecycle_stage=bogus"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -409,7 +409,7 @@ def test_schema_validation_rejects_invalid_lifecycle_stage() -> None:
 
 
 def test_immutable_field_protected() -> None:
-    """update-plan-header silently ignores immutable fields (backend behavior)."""
+    """update-pr-header silently ignores immutable fields (backend behavior)."""
     issue = _make_issue_with_plan_header(202)
     fake_gh = FakeGitHubIssues(issues={202: issue})
     fake_github = FakeLocalGitHub(
@@ -420,7 +420,7 @@ def test_immutable_field_protected() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["202", "created_by=hacker"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -446,13 +446,13 @@ def test_immutable_field_protected() -> None:
 
 
 def test_no_fields_provided() -> None:
-    """update-plan-header exits 1 when no fields are provided."""
+    """update-pr-header exits 1 when no fields are provided."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["300"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -467,13 +467,13 @@ def test_no_fields_provided() -> None:
 
 
 def test_invalid_field_format() -> None:
-    """update-plan-header exits 1 for fields without '=' separator."""
+    """update-pr-header exits 1 for fields without '=' separator."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["301", "no-equals-sign"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -493,14 +493,14 @@ def test_invalid_field_format() -> None:
 
 
 def test_plan_not_found() -> None:
-    """update-plan-header exits 1 when plan doesn't exist."""
+    """update-pr-header exits 1 when plan doesn't exist."""
     fake_gh = FakeGitHubIssues()
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     repo_root = Path("/fake/repo")
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["999", "lifecycle_stage=planned"],
         obj=ErkContext.for_test(
             github=fake_github,
@@ -515,7 +515,7 @@ def test_plan_not_found() -> None:
 
 
 def test_no_plan_header_block() -> None:
-    """update-plan-header exits 1 when issue has no plan-header block."""
+    """update-pr-header exits 1 when issue has no plan-header block."""
     old_format_body = """# Old Format Issue
 
 This is an issue created before plan-header blocks were introduced.
@@ -530,7 +530,7 @@ This is an issue created before plan-header blocks were introduced.
 
     runner = CliRunner()
     result = runner.invoke(
-        update_plan_header,
+        update_pr_header,
         ["400", "lifecycle_stage=planned"],
         obj=ErkContext.for_test(
             github=fake_github,

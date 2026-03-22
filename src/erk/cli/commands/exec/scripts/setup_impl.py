@@ -33,7 +33,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.detect_plan_from_branch import _detect_plan_from_branch_impl
+from erk.cli.commands.exec.scripts.detect_pr_from_branch import _detect_pr_from_branch_impl
 from erk.cli.commands.exec.scripts.impl_init import _extract_related_docs, _validate_impl_folder
 from erk_shared.context.helpers import (
     require_branch_manager,
@@ -234,7 +234,7 @@ def setup_impl(ctx: click.Context, pr_number: int | None, file_path: Path | None
             return None
         return pr_result.number
 
-    detection = _detect_plan_from_branch_impl(
+    detection = _detect_pr_from_branch_impl(
         current_branch=current_branch,
         pr_lookup=pr_lookup,
     )
