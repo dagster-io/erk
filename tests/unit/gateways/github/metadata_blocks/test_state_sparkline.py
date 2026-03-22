@@ -2,6 +2,7 @@
 
 from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
+    _compress_sparkline,
     build_frontier_sparkline,
     build_state_sparkline,
 )
@@ -181,3 +182,36 @@ def test_frontier_multiple_compressed_runs() -> None:
         *(_node("pending") for _ in range(14)),
     )
     assert build_frontier_sparkline(nodes) == "[7x✓]-[14x○]"
+
+
+# _compress_sparkline direct tests
+
+
+def test_compress_sparkline_empty() -> None:
+    """Empty string passes through."""
+    assert _compress_sparkline("") == ""
+
+
+def test_compress_sparkline_single_char() -> None:
+    """Single character passes through."""
+    assert _compress_sparkline("✓") == "✓"
+
+
+def test_compress_sparkline_short_run_not_compressed() -> None:
+    """Runs of 4 or fewer are not compressed."""
+    assert _compress_sparkline("○○○○") == "○○○○"
+
+
+def test_compress_sparkline_five_compressed() -> None:
+    """Run of exactly 5 gets bracket-compressed."""
+    assert _compress_sparkline("○○○○○") == "[5x○]"
+
+
+def test_compress_sparkline_mixed_runs() -> None:
+    """Multiple long runs each get compressed independently."""
+    assert _compress_sparkline("✓✓✓✓✓✓✓○○○○○○○○") == "[7x✓][8x○]"
+
+
+def test_compress_sparkline_short_between_long() -> None:
+    """Short runs between long runs stay uncompressed."""
+    assert _compress_sparkline("✓✓✓✓✓✓✓-○○○○○○○○") == "[7x✓]-[8x○]"
