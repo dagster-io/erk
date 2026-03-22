@@ -163,7 +163,7 @@ docs-serve:
 	cd docs-site && npm install && npm run dev
 
 pull_master:
-	git -C /Users/schrockn/code/erk pull origin master
+	git -C /Users/schrockn/code/erk fetch origin master:master
 
 # === MCP Server ===
 

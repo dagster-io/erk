@@ -130,7 +130,7 @@ def test_enriched_fields_no_body() -> None:
     plan = _make_plan(body="")
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "-"
-    assert fields["state"] == "-"
+    assert fields["frontier"] == "-"
     assert fields["deps_state"] == "-"
     assert fields["deps"] == "-"
     assert fields["next_node"] == "-"
@@ -140,7 +140,7 @@ def test_enriched_fields_body_no_roadmap() -> None:
     plan = _make_plan(body="Just some text without a roadmap block.")
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "-"
-    assert fields["state"] == "-"
+    assert fields["frontier"] == "-"
 
 
 def test_enriched_fields_valid_roadmap() -> None:
@@ -148,7 +148,7 @@ def test_enriched_fields_valid_roadmap() -> None:
     plan = _make_plan(body=body)
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "1/2"
-    assert fields["state"] != "-"
+    assert fields["frontier"] != "-"
     assert fields["next_node"] == "1.2"
     assert fields["deps_state"] == "ready"
 
@@ -296,3 +296,28 @@ def test_rich_sparkline_passes_unknown_chars_through() -> None:
 
 def test_rich_sparkline_empty_string() -> None:
     assert _rich_sparkline("") == ""
+
+
+def test_rich_sparkline_bracket_compressed_run() -> None:
+    """Bracket-compressed run like [13x○] styles the symbol only."""
+    result = _rich_sparkline("[13x○]")
+    assert "13x" in result
+    assert "[dim]○[/dim]" in result
+
+
+def test_rich_sparkline_bracket_with_prefix() -> None:
+    """Bracket-compressed run preserves preceding individual characters."""
+    result = _rich_sparkline("✓✓[5x○]")
+    assert "[green]✓[/green]" in result
+    assert "5x" in result
+    assert "[dim]○[/dim]" in result
+
+
+def test_rich_sparkline_multiple_bracket_runs() -> None:
+    """Multiple bracket-compressed runs each get styled."""
+    result = _rich_sparkline("[7x✓]-[14x○]")
+    assert "7x" in result
+    assert "[green]✓[/green]" in result
+    assert "[dim]-[/dim]" in result
+    assert "14x" in result
+    assert "[dim]○[/dim]" in result
