@@ -321,16 +321,16 @@ def offer_backup_cleanup(backup_path: Path) -> None:
         user_output(click.style("✓", fg="green") + " Backup deleted")
 
 
-def create_plans_repo_labels(
+def create_pr_repo_labels(
     repo_root: Path,
-    plans_repo: str,
+    pr_repo: str,
     github_issues: GitHubIssues,
 ) -> str | None:
     """Create erk labels in the target issues repository.
 
     Args:
         repo_root: Path to the working repository root (used for gh CLI context)
-        plans_repo: Target repository in "owner/repo" format
+        pr_repo: Target repository in "owner/repo" format
         github_issues: GitHubIssues interface for label operations
 
     Returns:
@@ -349,32 +349,32 @@ def create_plans_repo_labels(
     return None
 
 
-def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
-    """Offer to set up erk labels in the target plans repository.
+def offer_pr_repo_label_setup(repo_root: Path, pr_repo: str) -> None:
+    """Offer to set up erk labels in the target PR repository.
 
-    When a plans_repo is configured, PRs are created in a separate repository
+    When a pr_repo is configured, PRs are created in a separate repository
     from the working repository. This function ensures all required erk labels
     (erk-pr, erk-objective) exist in that target repository.
 
     Args:
         repo_root: Path to the working repository root (used for gh CLI context)
-        plans_repo: Target repository in "owner/repo" format
+        pr_repo: Target repository in "owner/repo" format
     """
-    user_output(f"\nPRs repo configured: {plans_repo}")
+    user_output(f"\nPRs repo configured: {pr_repo}")
     user_output("Erk uses labels (erk-pr, erk-learn, erk-objective) to organize PRs and issues.")
 
-    if not _console.confirm(f"Set up erk labels in {plans_repo}?", default=True):
+    if not _console.confirm(f"Set up erk labels in {pr_repo}?", default=True):
         user_output("Skipped. You can set up labels later with: erk doctor --fix")
         return
 
-    github_issues = RealGitHubIssues(target_repo=plans_repo, time=RealTime())
+    github_issues = RealGitHubIssues(target_repo=pr_repo, time=RealTime())
 
     try:
-        create_plans_repo_labels(repo_root, plans_repo, github_issues)
-        user_output(click.style("✓", fg="green") + f" Labels configured in {plans_repo}")
+        create_pr_repo_labels(repo_root, pr_repo, github_issues)
+        user_output(click.style("✓", fg="green") + f" Labels configured in {pr_repo}")
     except RuntimeError as e:
         warning = click.style("⚠️  Warning: ", fg="yellow")
-        user_output(warning + f"Failed to set up labels in {plans_repo}")
+        user_output(warning + f"Failed to set up labels in {pr_repo}")
         user_output(f"   {e}")
         user_output("   You can try again with: erk doctor --fix")
 
@@ -662,12 +662,12 @@ def run_init(
             _run_gitignore_prompts(repo_context.root)
             pending_backup = offer_claude_permission_setup(repo_context.root)
 
-            # Check if plans_repo is configured and offer label setup
+            # Check if pr_repo is configured and offer label setup
             from erk.cli.config import load_config as load_repo_config
 
             repo_config = load_repo_config(repo_context.root)
             if repo_config.github_repo is not None:
-                offer_plans_repo_label_setup(repo_context.root, repo_config.github_repo)
+                offer_pr_repo_label_setup(repo_context.root, repo_config.github_repo)
 
         # Offer to clean up any pending backup files (at end of project setup)
         if not isinstance(pending_backup, NoBackupCreated):

@@ -1,4 +1,4 @@
-"""Check that required erk labels exist in the plans repository."""
+"""Check that required erk labels exist in the PR repository."""
 
 from pathlib import Path
 
@@ -7,21 +7,21 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.objective_issues import LabelDefinition, get_required_erk_labels
 
 
-def check_plans_repo_labels(
+def check_pr_repo_labels(
     repo_root: Path,
-    plans_repo: str,
+    pr_repo: str,
     github_issues: GitHubIssues,
 ) -> CheckResult:
-    """Check that required erk labels exist in the plans repository.
+    """Check that required erk labels exist in the PR repository.
 
-    When plans_repo is configured, PRs are created in that repository.
+    When pr_repo is configured, PRs are created in that repository.
     This check verifies that required erk labels (erk-pr, erk-objective)
     exist in the target repository. The erk-learn label is optional
     for documentation workflows.
 
     Args:
         repo_root: Path to the working repository root (for gh CLI context)
-        plans_repo: Target repository in "owner/repo" format
+        pr_repo: Target repository in "owner/repo" format
         github_issues: GitHubIssues interface (should be configured with target_repo)
 
     Returns:
@@ -39,19 +39,19 @@ def check_plans_repo_labels(
         # Build gh label create commands for remediation
         commands = [
             f'gh label create "{label.name}" --description "{label.description}" '
-            f'--color "{label.color}" -R {plans_repo}'
+            f'--color "{label.color}" -R {pr_repo}'
             for label in missing_labels
         ]
         missing_names = ", ".join(label.name for label in missing_labels)
         return CheckResult(
-            name="plans-repo-labels",
+            name="pr-repo-labels",
             passed=False,
-            message=f"Missing labels in {plans_repo}: {missing_names}",
+            message=f"Missing labels in {pr_repo}: {missing_names}",
             remediation="\n  ".join(commands),
         )
 
     return CheckResult(
-        name="plans-repo-labels",
+        name="pr-repo-labels",
         passed=True,
-        message=f"Labels configured in {plans_repo}",
+        message=f"Labels configured in {pr_repo}",
     )
