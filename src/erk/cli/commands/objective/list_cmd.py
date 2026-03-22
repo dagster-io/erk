@@ -101,8 +101,30 @@ _SPARKLINE_RICH_STYLES: dict[str, str] = {
 
 
 def _rich_sparkline(sparkline: str) -> str:
-    """Wrap sparkline characters in Rich markup for colored output."""
-    return "".join(_SPARKLINE_RICH_STYLES.get(ch, ch) for ch in sparkline)
+    """Wrap sparkline characters in Rich markup for colored output.
+
+    Handles bracket-compressed runs like "[13x○]" and individual symbols.
+    Brackets and "Nx" prefixes pass through unstyled; the symbol gets styled.
+    """
+    import re
+
+    parts: list[str] = []
+    i = 0
+    while i < len(sparkline):
+        # Try to match a bracket-compressed run like "[13x○]"
+        m = re.match(r"\[(\d+x)(.)(])", sparkline[i:])
+        if m:
+            prefix = m.group(1)
+            symbol = m.group(2)
+            styled = _SPARKLINE_RICH_STYLES.get(symbol, symbol)
+            parts.append(f"\\[{prefix}{styled}]")
+            i += m.end()
+            continue
+        # Single character
+        ch = sparkline[i]
+        parts.append(_SPARKLINE_RICH_STYLES.get(ch, ch))
+        i += 1
+    return "".join(parts)
 
 
 def _compute_enriched_fields(plan: Plan) -> dict[str, str]:

@@ -246,27 +246,54 @@ def build_state_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
     return "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in nodes)
 
 
-def build_frontier_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
-    """Build sparkline starting at first non-done node.
+def _compress_sparkline(raw: str) -> str:
+    """Compress runs of >4 identical symbols with bracket notation.
 
-    Strips leading done/skipped nodes so the sparkline shows only the
-    frontier (remaining work). Returns "-" when all nodes are done.
+    Runs of more than 4 identical characters become "[Nx symbol]" (e.g., "[13x○]").
+    Shorter runs are left as individual characters.
+
+    Args:
+        raw: Uncompressed sparkline string
+
+    Returns:
+        Compressed sparkline string.
+    """
+    if not raw:
+        return raw
+    parts: list[str] = []
+    i = 0
+    while i < len(raw):
+        char = raw[i]
+        count = 1
+        while i + count < len(raw) and raw[i + count] == char:
+            count += 1
+        if count > 4:
+            parts.append(f"[{count}x{char}]")
+        else:
+            parts.append(char * count)
+        i += count
+    return "".join(parts)
+
+
+def build_frontier_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
+    """Build compressed sparkline showing all nodes' status.
+
+    Shows every node with bracket-compressed runs of >4 identical symbols
+    (e.g., "[7x✓]-[14x○]"). Returns "-" when all nodes are done/skipped
+    or the tuple is empty.
 
     Args:
         nodes: Objective nodes in graph order
 
     Returns:
-        Sparkline string starting at first non-done node, or "-" if all done.
+        Compressed sparkline of all nodes, or "-" if all done/empty.
     """
-    first_non_done = 0
-    for node in nodes:
-        if node.status not in _TERMINAL_STATUSES:
-            break
-        first_non_done += 1
-    if first_non_done == len(nodes):
+    if not nodes:
         return "-"
-    frontier = nodes[first_non_done:]
-    return "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in frontier)
+    if all(node.status in _TERMINAL_STATUSES for node in nodes):
+        return "-"
+    raw = "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in nodes)
+    return _compress_sparkline(raw)
 
 
 def _find_node_by_status(

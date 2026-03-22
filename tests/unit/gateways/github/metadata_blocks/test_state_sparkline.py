@@ -87,13 +87,13 @@ def test_all_status_types() -> None:
 
 
 def test_frontier_all_done() -> None:
-    """All done nodes produce '-' (no remaining frontier)."""
+    """All done nodes produce '-' (no remaining work)."""
     nodes = tuple(_node("done") for _ in range(3))
     assert build_frontier_sparkline(nodes) == "-"
 
 
-def test_frontier_none_done() -> None:
-    """No done nodes - full sparkline starting at position 0."""
+def test_frontier_short_pending() -> None:
+    """Short runs stay as individual symbols (no compression)."""
     nodes = (
         _node("pending"),
         _node("pending"),
@@ -102,8 +102,39 @@ def test_frontier_none_done() -> None:
     assert build_frontier_sparkline(nodes) == "○○○"
 
 
-def test_frontier_leading_done_stripped() -> None:
-    """Leading done nodes are stripped; sparkline starts at first non-done."""
+def test_frontier_compresses_long_run() -> None:
+    """Runs of >4 identical symbols get bracket-compressed."""
+    nodes = tuple(_node("pending") for _ in range(13))
+    assert build_frontier_sparkline(nodes) == "[13x○]"
+
+
+def test_frontier_no_compress_at_four() -> None:
+    """Run of exactly 4 is NOT compressed (need >4)."""
+    nodes = tuple(_node("pending") for _ in range(4))
+    assert build_frontier_sparkline(nodes) == "○○○○"
+
+
+def test_frontier_compresses_five() -> None:
+    """Run of 5 gets bracket-compressed (>4)."""
+    nodes = (
+        *(_node("pending") for _ in range(5)),
+        _node("done"),
+        _node("pending"),
+    )
+    assert build_frontier_sparkline(nodes) == "[5x○]✓○"
+
+
+def test_frontier_compresses_later_run() -> None:
+    """Compression applies to any run >4, not just the first."""
+    nodes = (
+        _node("in_progress"),
+        *(_node("pending") for _ in range(8)),
+    )
+    assert build_frontier_sparkline(nodes) == "▶[8x○]"
+
+
+def test_frontier_shows_done_nodes() -> None:
+    """Done nodes are shown (not stripped), no compression for short runs."""
     nodes = (
         _node("done"),
         _node("done"),
@@ -112,31 +143,41 @@ def test_frontier_leading_done_stripped() -> None:
         _node("pending"),
         _node("pending"),
     )
-    assert build_frontier_sparkline(nodes) == "▶○○"
+    assert build_frontier_sparkline(nodes) == "✓✓✓▶○○"
 
 
-def test_frontier_mixed_done_pending_done_pending() -> None:
-    """Done nodes after a non-done node are NOT stripped (only leading done stripped)."""
+def test_frontier_interleaved_statuses() -> None:
+    """Interleaved statuses shown in full."""
     nodes = (
         _node("done"),
         _node("pending"),
         _node("done"),
         _node("pending"),
     )
-    assert build_frontier_sparkline(nodes) == "○✓○"
+    assert build_frontier_sparkline(nodes) == "✓○✓○"
 
 
-def test_frontier_skipped_treated_as_terminal() -> None:
-    """Skipped nodes at the start are stripped like done nodes."""
+def test_frontier_skipped_shown() -> None:
+    """Skipped nodes are shown (not stripped)."""
     nodes = (
         _node("skipped"),
         _node("skipped"),
         _node("pending"),
         _node("pending"),
     )
-    assert build_frontier_sparkline(nodes) == "○○"
+    assert build_frontier_sparkline(nodes) == "--○○"
 
 
 def test_frontier_empty_nodes() -> None:
-    """Empty nodes tuple: all done vacuously, returns '-'."""
+    """Empty nodes tuple returns '-'."""
     assert build_frontier_sparkline(()) == "-"
+
+
+def test_frontier_multiple_compressed_runs() -> None:
+    """Multiple long runs each get bracket-compressed."""
+    nodes = (
+        *(_node("done") for _ in range(7)),
+        _node("skipped"),
+        *(_node("pending") for _ in range(14)),
+    )
+    assert build_frontier_sparkline(nodes) == "[7x✓]-[14x○]"
