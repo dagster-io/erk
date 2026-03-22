@@ -16,6 +16,25 @@
       "raw_size_kb": 827,
       "xml_size_kb": 71,
       "git_branch": "master"
+    },
+    {
+      "session_id": "eb08587c-81d0-4ffe-a80a-c65f01e4b141",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-22T18:53:51.122128+00:00",
+      "files": [
+        "impl-eb08587c-81d0-4ffe-a80a-c65f01e4b141-eb08587c-81d0-4ffe-a80a-c65f01e4b141-part1.xml",
+        "impl-eb08587c-81d0-4ffe-a80a-c65f01e4b141-eb08587c-81d0-4ffe-a80a-c65f01e4b141-part2.xml",
+        "impl-eb08587c-81d0-4ffe-a80a-c65f01e4b141-eb08587c-81d0-4ffe-a80a-c65f01e4b141-part3.xml",
+        "impl-eb08587c-81d0-4ffe-a80a-c65f01e4b141-eb08587c-81d0-4ffe-a80a-c65f01e4b141-part4.xml",
+        "impl-eb08587c-81d0-4ffe-a80a-c65f01e4b141-eb08587c-81d0-4ffe-a80a-c65f01e4b141-part5.xml",
+        "impl-eb08587c-81d0-4ffe-a80a-c65f01e4b141-eb08587c-81d0-4ffe-a80a-c65f01e4b141-part6.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 12,
+      "raw_size_kb": 1003,
+      "xml_size_kb": 187,
+      "git_branch": "plnd/unified-pr-ref-type-03-22-1840"
     }
   ]
 }
