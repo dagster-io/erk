@@ -38,7 +38,7 @@ Rules triggered by matching actions in code.
 
 **adding plnd/ special-casing to cleanup_impl_for_submit** → Read [Impl-Context Staging Directory](impl-context.md) first. plan-save never goes through the submit pipeline — it pushes directly via push_to_remote(). No special casing for plnd/ branches is needed in cleanup_impl_for_submit().
 
-**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
+**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. The one-shot dispatch path (one_shot_remote_dispatch.py) and the planned-PR dispatch path (dispatch_cmd.py) must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
 
 **adding redundant branch-location guards to learn status checks** → Read [Remote Branch Learn Support](remote-branch-learn.md) first. Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via planned-pr-context branches.
 
@@ -264,6 +264,6 @@ Rules triggered by matching actions in code.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
 
-**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_remote_dispatch.py.
 
 **writing to /tmp/** → Read [Scratch Storage](scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
