@@ -7,13 +7,10 @@ ERK_PR_TITLE_PREFIX = "[erk-pr] "
 ERK_LEARN_TITLE_PREFIX = "[erk-learn] "
 
 
-def has_plan_title_prefix(title: str) -> bool:
+def has_pr_title_prefix(title: str) -> bool:
     """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
     return title.startswith(ERK_PR_TITLE_PREFIX) or title.startswith(ERK_LEARN_TITLE_PREFIX)
 
-
-# Plan markdown heading prefix (with trailing space for easy stripping)
-PLAN_HEADING_PREFIX = "Plan: "
 
 # PR title prefix for plan-originated PRs
 PLANNED_PR_TITLE_PREFIX = "plnd/"

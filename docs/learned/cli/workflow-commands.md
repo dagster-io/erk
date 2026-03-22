@@ -59,9 +59,9 @@ The handler functions follow a consistent pattern: validate inputs → fetch con
 
 ## Plan Dispatch Metadata Side Effect
 
-PR-related workflows (`pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_plan_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.
+PR-related workflows (`pr-address`) have an automatic side effect: after triggering the workflow, they call `maybe_update_pr_dispatch_metadata()` which checks if the branch is associated with a plan. If so, it writes dispatch metadata (run ID, node ID, timestamp) back to the associated plan body.
 
-<!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_plan_dispatch_metadata -->
+<!-- Source: src/erk/cli/commands/pr/metadata_helpers.py, maybe_update_pr_dispatch_metadata -->
 
 This is a cross-cutting concern — the launch command doesn't know about plans, but the metadata helper silently links workflow runs to their originating plans. The function uses multiple LBYL early returns (no matching branch pattern, no node ID available, no plan-header metadata block) to gracefully skip non-plan branches.
 

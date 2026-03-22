@@ -22,7 +22,7 @@ import click
 from erk.cli.commands.consolidate_learn_plans_dispatch import (
     dispatch_consolidate_learn_plans,
 )
-from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.commands.pr.metadata_helpers import maybe_update_pr_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure, UserFacingCliError
@@ -582,4 +582,4 @@ def launch(
     # 7. Post-dispatch: plan metadata update (local repo only)
     if has_local_repo and branch_name is not None and run_id is not None:
         assert not isinstance(ctx.repo, NoRepoSentinel)
-        maybe_update_plan_dispatch_metadata(ctx, ctx.repo, branch_name, run_id)
+        maybe_update_pr_dispatch_metadata(ctx, ctx.repo, branch_name, run_id)

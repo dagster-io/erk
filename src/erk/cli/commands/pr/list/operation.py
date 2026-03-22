@@ -123,7 +123,7 @@ def run_pr_list(
         activity_by_plan = provider.fetch_branch_activity(rows)
         rows = sort_plans(rows, sort_key, activity_by_plan=activity_by_plan)
     else:
-        sort_key = SortKey.PLAN_ID
+        sort_key = SortKey.PR_ID
         rows = sort_plans(rows, sort_key)
 
     return PrListResult(rows=rows, warnings=warnings)

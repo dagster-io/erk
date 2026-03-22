@@ -343,7 +343,7 @@ def _run_interactive_mode(
         lifecycle_stage=stage,
     )
 
-    initial_sort = SortState(key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.PLAN_ID)
+    initial_sort = SortState(key=SortKey.BRANCH_ACTIVITY if sort == "activity" else SortKey.PR_ID)
 
     cmux_integration = (
         ctx.global_config.cmux_integration if ctx.global_config is not None else False

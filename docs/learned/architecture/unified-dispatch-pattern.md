@@ -57,7 +57,7 @@ The generic workflow dispatcher accepts `RemoteGitHub`, owner, repo_name, workfl
 
 <!-- Source: src/erk/cli/commands/launch_cmd.py, launch -->
 
-After a PR-targeting handler completes, the `launch` command updates plan metadata with the dispatch run ID when a local repo is available. This enrichment calls `maybe_update_plan_dispatch_metadata()` with the branch name and run ID returned by the handler. `learn` and `consolidate-learn-plans` handlers don't return `(branch_name, run_id)`, so they skip this metadata enrichment step. See the post-dispatch logic in `src/erk/cli/commands/launch_cmd.py`.
+After a PR-targeting handler completes, the `launch` command updates plan metadata with the dispatch run ID when a local repo is available. This enrichment calls `maybe_update_pr_dispatch_metadata()` with the branch name and run ID returned by the handler. `learn` and `consolidate-learn-plans` handlers don't return `(branch_name, run_id)`, so they skip this metadata enrichment step. See the post-dispatch logic in `src/erk/cli/commands/launch_cmd.py`.
 
 ## Ref Resolution
 

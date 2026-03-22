@@ -143,7 +143,7 @@ class StatusBar(Static):
         """Set the current sort mode display.
 
         Args:
-            mode: Sort mode label (e.g., "by plan#", "by recent activity")
+            mode: Sort mode label (e.g., "by pr#", "by recent activity")
         """
         self._sort_mode = mode
         self._update_display()

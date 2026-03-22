@@ -22,8 +22,8 @@ def sort_plans(
     Returns:
         Sorted list of plans. Original list is not modified.
     """
-    if sort_key == SortKey.PLAN_ID:
-        # Sort by plan ID descending (newest first)
+    if sort_key == SortKey.PR_ID:
+        # Sort by PR ID descending (newest first)
         return sorted(plans, key=lambda p: p.pr_number, reverse=True)
 
     if sort_key == SortKey.BRANCH_ACTIVITY:

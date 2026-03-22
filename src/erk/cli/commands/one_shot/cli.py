@@ -8,7 +8,7 @@ Usage:
     erk one-shot --file prompt.md
     erk one-shot "add type hints to utils.py" --model opus
     erk one-shot "fix the typo in README.md" --dry-run
-    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    erk one-shot "rename issue_number to pr_number in impl_init.py" --plan-only
     erk one-shot "fix config bug" --repo owner/repo
 """
 

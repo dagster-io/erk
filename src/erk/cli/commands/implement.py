@@ -29,7 +29,7 @@ from erk.cli.commands.implement_shared import (
     prepare_plan_source_from_file,
     validate_flags,
 )
-from erk.cli.constants import has_plan_title_prefix
+from erk.cli.constants import has_pr_title_prefix
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions
@@ -172,7 +172,7 @@ def _implement_from_issue(
     plan = result
 
     # Validate plan title prefix
-    if not has_plan_title_prefix(plan.title):
+    if not has_pr_title_prefix(plan.title):
         user_output(
             click.style("Error: ", fg="red")
             + f"Plan #{pr_number} does not have a valid plan title prefix"

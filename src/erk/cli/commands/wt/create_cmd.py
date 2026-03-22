@@ -86,7 +86,7 @@ def ensure_worktree_for_branch(
     repo: RepoContext,
     branch: str,
     *,
-    is_plan_derived: bool = False,
+    is_pr_derived: bool = False,
 ) -> tuple[Path, bool]:
     """Ensure worktree exists for branch, creating if necessary.
 
@@ -98,7 +98,7 @@ def ensure_worktree_for_branch(
         ctx: The Erk context with git operations
         repo: Repository context with root and worktrees directory
         branch: The branch name to ensure a worktree for
-        is_plan_derived: If True, use dated worktree names (for plan workflows).
+        is_pr_derived: If True, use dated worktree names (for PR workflows).
                         If False, use simple names (for manual checkout).
 
     Returns:
@@ -168,9 +168,9 @@ def ensure_worktree_for_branch(
     # Generate and ensure unique worktree name
     name = sanitize_worktree_name(branch)
 
-    # Use appropriate naming strategy based on whether worktree is plan-derived
-    if is_plan_derived:
-        # Plan workflows need date suffixes to create multiple worktrees from same plan
+    # Use appropriate naming strategy based on whether worktree is PR-derived
+    if is_pr_derived:
+        # PR workflows need date suffixes to create multiple worktrees from same PR
         name = ensure_unique_worktree_name_with_date(
             name, repo.worktrees_dir, ctx.git, now=ctx.time.now()
         )
@@ -181,8 +181,8 @@ def ensure_worktree_for_branch(
     # Calculate worktree path
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
-    # Check for name collision with different branch (for non-plan checkouts)
-    if not is_plan_derived and ctx.git.worktree.path_exists(wt_path):
+    # Check for name collision with different branch (for non-PR checkouts)
+    if not is_pr_derived and ctx.git.worktree.path_exists(wt_path):
         # Worktree exists - check what branch it has
         worktrees = ctx.git.worktree.list_worktrees(repo.root)
         for wt in worktrees:
@@ -438,20 +438,20 @@ def _create_json_response(
     help="Skip running post-create commands from config.toml.",
 )
 @click.option(
-    "--from-plan-file",
-    "from_plan_file",
+    "--from-pr-file",
+    "from_pr_file",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help=(
-        "Path to a plan markdown file. Will derive worktree name from filename "
+        "Path to a PR markdown file. Will derive worktree name from filename "
         "and create implementation context folder with plan.md in the worktree. "
         "Worktree names are automatically suffixed with the current date (-YY-MM-DD) "
         "and versioned if duplicates exist."
     ),
 )
 @click.option(
-    "--keep-plan-file",
+    "--keep-pr-file",
     is_flag=True,
-    help="Copy the PR file instead of moving it (requires --from-plan-file).",
+    help="Copy the PR file instead of moving it (requires --from-pr-file).",
 )
 @click.option(
     "--from-pr",
@@ -465,7 +465,7 @@ def _create_json_response(
     ),
 )
 @click.option(
-    "--copy-plan",
+    "--copy-pr",
     is_flag=True,
     default=False,
     help=(
@@ -515,10 +515,10 @@ def create_wt(
     branch: str | None,
     ref: str | None,
     no_post: bool,
-    from_plan_file: Path | None,
-    keep_plan_file: bool,
+    from_pr_file: Path | None,
+    keep_pr_file: bool,
     from_pr: str | None,
-    copy_plan: bool,
+    copy_pr: bool,
     from_current_branch: bool,
     from_branch: str | None,
     script: bool,
@@ -529,7 +529,7 @@ def create_wt(
     """Create a worktree and write a .env file.
 
     Reads config.toml for env templates and post-create commands (if present).
-    If --from-plan-file is provided, derives name from the plan filename and creates
+    If --from-pr-file is provided, derives name from the PR filename and creates
     an implementation context folder in the worktree.
     If --from-pr is provided, fetches the plan, validates the erk-pr label,
     derives name from the plan title, and creates an impl folder with plan-ref.json metadata.
@@ -546,33 +546,33 @@ def create_wt(
         [
             from_current_branch,
             from_branch is not None,
-            from_plan_file is not None,
+            from_pr_file is not None,
             from_pr is not None,
         ]
     )
     Ensure.invariant(
         flags_set <= 1,
-        "Cannot use multiple of: --from-current-branch, --from-branch, --from-plan-file, --from-pr",
+        "Cannot use multiple of: --from-current-branch, --from-branch, --from-pr-file, --from-pr",
     )
 
     # Validate --json and --script are mutually exclusive
     Ensure.invariant(not (output_json and script), "Cannot use both --json and --script")
 
-    # Validate --keep-plan-file requires --from-plan-file
+    # Validate --keep-pr-file requires --from-pr-file
     Ensure.invariant(
-        not keep_plan_file or from_plan_file is not None,
-        "--keep-plan-file requires --from-plan-file",
+        not keep_pr_file or from_pr_file is not None,
+        "--keep-pr-file requires --from-pr-file",
     )
 
-    # Validate --copy-plan and --from-plan-file/--from-pr are mutually exclusive
+    # Validate --copy-pr and --from-pr-file/--from-pr are mutually exclusive
     Ensure.invariant(
-        not (copy_plan and (from_plan_file is not None or from_pr is not None)),
-        "--copy-plan and --from-plan-file/--from-pr are mutually exclusive. "
-        "Use --copy-plan to copy from current worktree OR --from-plan-file <file> to use a plan "
-        "file OR --from-pr <number> to use a plan.",
+        not (copy_pr and (from_pr_file is not None or from_pr is not None)),
+        "--copy-pr and --from-pr-file/--from-pr are mutually exclusive. "
+        "Use --copy-pr to copy from current worktree OR --from-pr-file <file> to use a PR "
+        "file OR --from-pr <number> to use a PR.",
     )
 
-    # Note: --copy-plan validation is deferred until after repo discovery
+    # Note: --copy-pr validation is deferred until after repo discovery
     # to ensure we check for .impl at the worktree root, not ctx.cwd
 
     # Initialize variables used in conditional blocks (for type checking)
@@ -605,14 +605,14 @@ def create_wt(
         if not name:
             name = sanitize_worktree_name(from_branch)
 
-    # Handle --from-plan-file flag
-    elif from_plan_file:
+    # Handle --from-pr-file flag
+    elif from_pr_file:
         Ensure.invariant(
-            not name, "Cannot specify both NAME and --from-plan-file. Use one or the other."
+            not name, "Cannot specify both NAME and --from-pr-file. Use one or the other."
         )
-        # Derive name from plan filename (strip extension)
-        plan_stem = from_plan_file.stem  # filename without extension
-        cleaned_stem = strip_plan_from_filename(plan_stem)
+        # Derive name from PR filename (strip extension)
+        pr_stem = from_pr_file.stem  # filename without extension
+        cleaned_stem = strip_plan_from_filename(pr_stem)
         base_name = sanitize_worktree_name(cleaned_stem)
         # Note: Apply ensure_unique_worktree_name() and truncation after getting erks_dir
         name = base_name
@@ -634,26 +634,26 @@ def create_wt(
         else:
             name = Ensure.truthy(
                 name,
-                "Must provide NAME or --from-plan-file or --from-branch "
+                "Must provide NAME or --from-pr-file or --from-branch "
                 "or --from-current-branch or --from-pr or --branch option.",
             )
 
-    # Track if name came from plan file (will need unique naming with date suffix)
-    is_plan_derived = from_plan_file is not None
+    # Track if name came from PR file (will need unique naming with date suffix)
+    is_pr_derived = from_pr_file is not None
 
     # Discover repo context (needed for all paths)
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
-    # Validate impl directory exists if --copy-plan is used (now that we have repo.root)
+    # Validate impl directory exists if --copy-pr is used (now that we have repo.root)
     impl_source: Path | None = None
-    if copy_plan:
+    if copy_pr:
         current_branch = ctx.git.branch.get_current_branch(repo.root)
         impl_source = resolve_impl_dir(repo.root, branch_name=current_branch)
         Ensure.invariant(
             impl_source is not None,
             f"No implementation directory found at {repo.root}. "
-            "Use 'erk create --from-plan-file <file>' to create a worktree with a plan.",
+            "Use 'erk create --from-pr-file <file>' to create a worktree with a plan.",
         )
 
     # Track linked branch name and setup for plan-based worktrees
@@ -711,7 +711,7 @@ def create_wt(
     # Sanitize the name to ensure consistency (truncate to 31 chars, normalize)
     # This applies to user-provided names as well as derived names
     # Note: sanitize_worktree_name is idempotent - preserves timestamp suffixes
-    if not is_plan_derived:
+    if not is_pr_derived:
         name = sanitize_worktree_name(name)
 
     # Validate that name is not a reserved word
@@ -730,8 +730,8 @@ def create_wt(
         f"  erk slot co root",
     )
 
-    # Apply date prefix and uniqueness for plan-derived names
-    if is_plan_derived:
+    # Apply date prefix and uniqueness for PR-derived names
+    if is_pr_derived:
         name = ensure_unique_worktree_name(name, repo.worktrees_dir, ctx.git, now=ctx.time.now())
 
     wt_path = worktree_path_for(repo.worktrees_dir, name)
@@ -878,13 +878,13 @@ def create_wt(
         post_create_commands=cfg.post_create_commands or None,
     )
 
-    # Create implementation context folder if plan file provided
+    # Create implementation context folder if PR file provided
     # Track impl folder destination: set to .erk/impl-context/ path only if
-    # --from-plan-file or --from-pr was provided
+    # --from-pr-file or --from-pr was provided
     impl_folder_destination: Path | None = None
-    if from_plan_file:
-        # Read plan content from source file
-        plan_content = from_plan_file.read_text(encoding="utf-8")
+    if from_pr_file:
+        # Read PR content from source file
+        pr_content = from_pr_file.read_text(encoding="utf-8")
 
         # Determine the branch for the new worktree
         wt_branch = branch or default_branch_for_worktree(name)
@@ -892,15 +892,15 @@ def create_wt(
         # Create impl folder in new worktree
         # Use overwrite=False since fresh worktree should not have impl folder
         impl_folder_destination = create_impl_folder(
-            wt_path, plan_content, branch_name=wt_branch, overwrite=False
+            wt_path, pr_content, branch_name=wt_branch, overwrite=False
         )
 
-        # Handle --keep-plan-file flag
-        if keep_plan_file:
+        # Handle --keep-pr-file flag
+        if keep_pr_file:
             if not script and not output_json:
                 user_output(f"Copied implementation context to {impl_folder_destination}")
         else:
-            from_plan_file.unlink()  # Remove source file
+            from_pr_file.unlink()  # Remove source file
             if not script and not output_json:
                 user_output(f"Moved implementation context to {impl_folder_destination}")
 
@@ -930,11 +930,11 @@ def create_wt(
         if not script and not output_json:
             user_output(f"Created worktree from plan #{setup.pr_number}: {setup.issue_title}")
 
-    # Copy implementation context directory if --copy-plan flag is set
-    if copy_plan and impl_source is not None:
+    # Copy implementation context directory if --copy-pr flag is set
+    if copy_pr and impl_source is not None:
         import shutil
 
-        # branch is always set when copy_plan=True (mutually exclusive with from_pr)
+        # branch is always set when copy_pr=True (mutually exclusive with from_pr)
         impl_dest = get_impl_dir(wt_path, branch_name=branch or "main")
         impl_dest.parent.mkdir(parents=True, exist_ok=True)
 

@@ -44,7 +44,7 @@ def test_create_with_plan_file() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file)],
+            ["wt", "create", "--from-pr-file", str(plan_file)],
             obj=test_ctx,
         )
 
@@ -60,7 +60,7 @@ def test_create_with_plan_file() -> None:
 
 
 def test_create_with_plan_file_removes_plan_word() -> None:
-    """Test that --from-plan-file flag removes 'plan' from worktree names."""
+    """Test that --from-pr-file flag removes 'plan' from worktree names."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         repo_dir = env.setup_repo_structure()
@@ -96,7 +96,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             plan_file.write_text(f"# {plan_filename}\n", encoding="utf-8")
 
             result = runner.invoke(
-                cli, ["wt", "create", "--from-plan-file", str(plan_file)], obj=test_ctx
+                cli, ["wt", "create", "--from-pr-file", str(plan_file)], obj=test_ctx
             )
 
             assert result.exit_code == 0, f"Failed for {plan_filename}: {result.output}"
@@ -124,7 +124,7 @@ def test_create_plan_file_not_found() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", "nonexistent.md"],
+            ["wt", "create", "--from-pr-file", "nonexistent.md"],
             obj=test_ctx,
         )
 
@@ -133,7 +133,7 @@ def test_create_plan_file_not_found() -> None:
 
 
 def test_create_with_keep_plan_file_flag() -> None:
-    """Test that --keep-plan-file copies instead of moves the plan file."""
+    """Test that --keep-pr-file copies instead of moves the plan file."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
@@ -162,7 +162,7 @@ def test_create_with_keep_plan_file_flag() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file), "--keep-plan-file"],
+            ["wt", "create", "--from-pr-file", str(plan_file), "--keep-pr-file"],
             obj=test_ctx,
         )
 
@@ -179,7 +179,7 @@ def test_create_with_keep_plan_file_flag() -> None:
 
 
 def test_create_keep_plan_file_without_plan_file_fails() -> None:
-    """Test that --keep-plan-file without --from-plan-file fails with error message."""
+    """Test that --keep-pr-file without --from-pr-file fails with error message."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -188,16 +188,16 @@ def test_create_keep_plan_file_without_plan_file_fails() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create", "test-feature", "--keep-plan-file"],
+            ["wt", "create", "test-feature", "--keep-pr-file"],
             obj=test_ctx,
         )
 
         assert result.exit_code == 1
-        assert "--keep-plan-file requires --from-plan-file" in result.output
+        assert "--keep-pr-file requires --from-pr-file" in result.output
 
 
 def test_create_with_plan_file_ensures_uniqueness() -> None:
-    """Test that --from-plan-file ensures uniqueness with date suffix and versioning."""
+    """Test that --from-pr-file ensures uniqueness with date suffix and versioning."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
@@ -219,7 +219,7 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         # Create first worktree from plan
         result1 = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file)],
+            ["wt", "create", "--from-pr-file", str(plan_file)],
             obj=test_ctx,
         )
         assert result1.exit_code == 0, result1.output
@@ -236,7 +236,7 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         # Create second worktree from same plan (same timestamp from FakeTime)
         result2 = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file)],
+            ["wt", "create", "--from-pr-file", str(plan_file)],
             obj=test_ctx,
         )
         assert result2.exit_code == 0, result2.output
@@ -295,7 +295,7 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
         # Create worktree from long plan filename
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file)],
+            ["wt", "create", "--from-pr-file", str(plan_file)],
             obj=test_ctx,
         )
         assert result.exit_code == 0, result.output
