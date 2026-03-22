@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "pr_number": 9399,
+  "sessions": [
+    {
+      "session_id": "89f5637c-5d6c-490b-9bc9-51fbcc5cf0cd",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-22T18:11:03.950840+00:00",
+      "files": [
+        "impl-89f5637c-5d6c-490b-9bc9-51fbcc5cf0cd-89f5637c-5d6c-490b-9bc9-51fbcc5cf0cd-part1.xml",
+        "impl-89f5637c-5d6c-490b-9bc9-51fbcc5cf0cd-89f5637c-5d6c-490b-9bc9-51fbcc5cf0cd-part2.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 3,
+      "raw_size_kb": 539,
+      "xml_size_kb": 69,
+      "git_branch": "plnd/O9318-rename-pr-repo-label-03-22-1804"
+    }
+  ]
+}
