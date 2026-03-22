@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "pr_number": 9390,
+  "sessions": [
+    {
+      "session_id": "dc0a45f2-f9c1-430e-8abb-4b4669a15a7c",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-22T10:35:46.579176+00:00",
+      "files": [
+        "impl-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-part1.xml",
+        "impl-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-part2.xml",
+        "impl-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-part3.xml",
+        "impl-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-part4.xml",
+        "impl-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-dc0a45f2-f9c1-430e-8abb-4b4669a15a7c-part5.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 15,
+      "raw_size_kb": 2202,
+      "xml_size_kb": 264,
+      "git_branch": "plnd/O9318-rename-phase5-exec-s-03-22-1019"
+    }
+  ]
+}
