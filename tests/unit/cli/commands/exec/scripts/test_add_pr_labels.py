@@ -36,7 +36,7 @@ def _make_issue(
     )
 
 
-def test_add_pr_labels_batch_batch_success() -> None:
+def test_add_pr_labels_batch_success() -> None:
     """Test successfully adding labels to multiple plans."""
     issue_42 = _make_issue(42, "Plan A", "Body A")
     issue_43 = _make_issue(43, "Plan B", "Body B")

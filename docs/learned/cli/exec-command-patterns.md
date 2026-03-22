@@ -121,9 +121,9 @@ Some exec commands accept input from either a file or stdin. This pattern enable
 
 ### Pattern: --plan-file Option
 
-<!-- Source: src/erk/cli/commands/exec/scripts/validate_plan_content.py, validate_plan_content -->
+<!-- Source: src/erk/cli/commands/exec/scripts/validate_pr_content.py, validate_pr_content -->
 
-See `validate_plan_content()` in `src/erk/cli/commands/exec/scripts/validate_plan_content.py`. It accepts an optional `--plan-file` Click path option (with `exists=True`), falling back to `sys.stdin.read()` when no file is provided.
+See `validate_pr_content()` in `src/erk/cli/commands/exec/scripts/validate_pr_content.py`. It accepts an optional `--plan-file` Click path option (with `exists=True`), falling back to `sys.stdin.read()` when no file is provided.
 
 ### Usage Examples
 
@@ -150,7 +150,7 @@ erk exec validate-pr-content --plan-file ./plan.md
 
 ### Reference Implementation
 
-See `src/erk/cli/commands/exec/scripts/validate_plan_content.py`.
+See `src/erk/cli/commands/exec/scripts/validate_pr_content.py`.
 
 ## Related Topics
 

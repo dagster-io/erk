@@ -101,7 +101,7 @@ concurrency:
 
 ## Registration Step (Best-Effort Composition)
 
-`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+`src/erk/cli/commands/exec/scripts/register_one_shot_pr.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
 
 1. **Dispatch metadata** -- the primary metadata source is the CLI dispatch (`write_dispatch_metadata()` in `src/erk/cli/commands/pr/metadata_helpers.py`), with CI registration as a fallback. Writes `run_id`, `node_id`, `dispatched_at` to the plan entity's `plan-header` metadata block.
 2. **Queued comment** -- adds a "Queued for Implementation" emoji comment to the plan with PR link and workflow run URL
@@ -114,7 +114,7 @@ The command outputs JSON results for each operation with success/error details.
 Dispatch metadata is written in two phases:
 
 1. **At dispatch time** (CLI): `write_dispatch_metadata()` writes `dispatched_at`, `run_id`, `node_id` immediately after workflow trigger
-2. **At registration time** (CI): `register_one_shot_plan.py` writes any remaining fields that weren't available at dispatch time
+2. **At registration time** (CI): `register_one_shot_pr.py` writes any remaining fields that weren't available at dispatch time
 
 The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
 
@@ -166,14 +166,14 @@ When the API key is missing or the LLM call fails, the dispatch code falls back 
 
 ## Source Code References
 
-| File                                                          | Key Components                                                                                    |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `src/erk/cli/commands/one_shot_dispatch.py`                   | `dispatch_one_shot()`, `generate_branch_name()`, `OneShotDispatchParams`, `OneShotDispatchResult` |
-| `src/erk/cli/commands/objective/plan_cmd.py`                  | `_handle_one_shot()`, `_find_node_in_phases()`                                                    |
-| `src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` | Best-effort registration of metadata, comment, closing ref                                        |
-| `src/erk/cli/commands/pr/metadata_helpers.py`                 | `write_dispatch_metadata()`, `maybe_update_pr_dispatch_metadata()`                                |
-| `.github/workflows/one-shot.yml`                              | Two-job pipeline (plan + implement)                                                               |
-| `.claude/commands/erk/system/one-shot-plan.md`                | Claude planning command with skeleton update logic                                                |
+| File                                                        | Key Components                                                                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/erk/cli/commands/one_shot_dispatch.py`                 | `dispatch_one_shot()`, `generate_branch_name()`, `OneShotDispatchParams`, `OneShotDispatchResult` |
+| `src/erk/cli/commands/objective/plan_cmd.py`                | `_handle_one_shot()`, `_find_node_in_phases()`                                                    |
+| `src/erk/cli/commands/exec/scripts/register_one_shot_pr.py` | Best-effort registration of metadata, comment, closing ref                                        |
+| `src/erk/cli/commands/pr/metadata_helpers.py`               | `write_dispatch_metadata()`, `maybe_update_pr_dispatch_metadata()`                                |
+| `.github/workflows/one-shot.yml`                            | Two-job pipeline (plan + implement)                                                               |
+| `.claude/commands/erk/system/one-shot-plan.md`              | Claude planning command with skeleton update logic                                                |
 
 ## Prompt Validation and Rejection
 
