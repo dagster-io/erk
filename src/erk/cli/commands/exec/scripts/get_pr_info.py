@@ -21,12 +21,13 @@ import json
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import require_pr_backend, require_repo_root
 from erk_shared.pr_store.types import PrNotFound
 
 
 @click.command(name="get-pr-info")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.option(
     "--include-body",
     is_flag=True,
@@ -35,7 +36,7 @@ from erk_shared.pr_store.types import PrNotFound
 @click.pass_context
 def get_pr_info(
     ctx: click.Context,
-    pr_number: int,
+    pr: int,
     *,
     include_body: bool,
 ) -> None:
@@ -43,7 +44,7 @@ def get_pr_info(
     backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    pr_id = str(pr_number)
+    pr_id = str(pr)
 
     plan = backend.get_managed_pr(repo_root, pr_id)
     if isinstance(plan, PrNotFound):
@@ -52,7 +53,7 @@ def get_pr_info(
                 {
                     "success": False,
                     "error": "pr_not_found",
-                    "message": f"PR #{pr_number} not found",
+                    "message": f"PR #{pr} not found",
                 }
             ),
             err=True,

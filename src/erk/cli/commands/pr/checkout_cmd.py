@@ -27,7 +27,7 @@ from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.parsing import (
     parse_issue_number_from_url,
-    parse_pr_number_from_url,
+    parse_pr_ref,
 )
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
@@ -46,7 +46,7 @@ def _parse_checkout_reference(reference: str) -> _PrRef:
     Routing:
     - P-prefix (P123, p123) → error with helpful message
     - Issue URL (github.com/.../issues/N) → error with helpful message
-    - PR URL (github.com/.../pull/N) → PR
+    - PR URL (github.com/.../pull/N or Graphite) → PR
     - Plain number (123) → PR
 
     Raises SystemExit(1) on invalid input.
@@ -60,10 +60,6 @@ def _parse_checkout_reference(reference: str) -> _PrRef:
         )
         raise SystemExit(1)
 
-    # Plain number → PR
-    if reference.isdigit():
-        return _PrRef(int(reference))
-
     # GitHub issue URL → error
     plan_number = parse_issue_number_from_url(reference)
     if plan_number is not None:
@@ -74,8 +70,8 @@ def _parse_checkout_reference(reference: str) -> _PrRef:
         )
         raise SystemExit(1)
 
-    # GitHub PR URL → PR
-    pr_number = parse_pr_number_from_url(reference)
+    # Plain number, GitHub PR URL, or Graphite PR URL → PR
+    pr_number = parse_pr_ref(reference)
     if pr_number is not None:
         return _PrRef(pr_number)
 
@@ -83,7 +79,7 @@ def _parse_checkout_reference(reference: str) -> _PrRef:
         click.style("Error: ", fg="red")
         + f"Invalid PR number or URL: {reference}\n\n"
         + "Expected formats:\n"
-        + "  123 or https://github.com/owner/repo/pull/123"
+        + "  123, https://github.com/owner/repo/pull/123, or https://app.graphite.dev/github/pr/owner/repo/123"
     )
     raise SystemExit(1)
 

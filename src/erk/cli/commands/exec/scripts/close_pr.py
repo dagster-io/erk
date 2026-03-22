@@ -15,6 +15,7 @@ import json
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import (
     require_pr_backend,
     require_repo_root,
@@ -22,7 +23,7 @@ from erk_shared.context.helpers import (
 
 
 @click.command(name="close-pr")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.option(
     "--comment",
     required=True,
@@ -31,14 +32,14 @@ from erk_shared.context.helpers import (
 @click.pass_context
 def close_pr(
     ctx: click.Context,
-    pr_number: int,
+    pr: int,
     *,
     comment: str,
 ) -> None:
     """Close a plan with a comment."""
     backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
-    pr_id = str(pr_number)
+    pr_id = str(pr)
 
     # Add the comment first
     try:
@@ -48,7 +49,7 @@ def close_pr(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add comment to PR #{pr_number}: {e}",
+                    "error": f"Failed to add comment to PR #{pr}: {e}",
                 }
             )
         )
@@ -62,7 +63,7 @@ def close_pr(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to close PR #{pr_number}: {e}",
+                    "error": f"Failed to close PR #{pr}: {e}",
                     "comment_id": comment_id,
                 }
             )
@@ -73,7 +74,7 @@ def close_pr(
         json.dumps(
             {
                 "success": True,
-                "pr_number": pr_number,
+                "pr_number": pr,
                 "comment_id": comment_id,
             }
         )

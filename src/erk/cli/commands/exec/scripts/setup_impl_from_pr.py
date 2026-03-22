@@ -24,6 +24,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import (
     require_branch_manager,
     require_cwd,
@@ -312,7 +313,7 @@ def _setup_planned_pr_plan(
 
 
 @click.command(name="setup-impl-from-pr")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.option(
     "--session-id",
     default=None,
@@ -326,7 +327,7 @@ def _setup_planned_pr_plan(
 @click.pass_context
 def setup_impl_from_pr(
     ctx: click.Context,
-    pr_number: int,
+    pr: int,
     session_id: str | None,
     no_impl: bool,
 ) -> None:
@@ -344,5 +345,5 @@ def setup_impl_from_pr(
     4. Creates .erk/impl-context/ folder with plan content
     5. Saves plan reference for PR linking
     """
-    output = _setup_planned_pr_plan(ctx, pr_number=pr_number, no_impl=no_impl)
+    output = _setup_planned_pr_plan(ctx, pr_number=pr, no_impl=no_impl)
     click.echo(json.dumps(output))

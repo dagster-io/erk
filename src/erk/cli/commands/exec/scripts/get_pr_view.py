@@ -15,6 +15,7 @@ import json
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import (
     get_current_branch,
     require_github,
@@ -24,16 +25,16 @@ from erk_shared.gateway.github.types import PRNotFound
 
 
 @click.command(name="get-pr-view")
-@click.argument("pr_number", type=int, required=False, default=None)
+@click.argument("pr", type=PR_REF, required=False, default=None)
 @click.option("--branch", type=str, default=None, help="Branch name to look up PR for")
 @click.pass_context
-def get_pr_view(ctx: click.Context, *, pr_number: int | None, branch: str | None) -> None:
+def get_pr_view(ctx: click.Context, *, pr: int | None, branch: str | None) -> None:
     """Fetch PR details using REST API (avoids GraphQL rate limits)."""
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
 
-    if pr_number is not None:
-        result = github.get_pr(repo_root, pr_number)
+    if pr is not None:
+        result = github.get_pr(repo_root, pr)
     elif branch is not None:
         result = github.get_pr_for_branch(repo_root, branch)
     else:

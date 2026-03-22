@@ -145,13 +145,13 @@ Add a new node to an objective's roadmap.
 
 Add a label to a PR via the appropriate backend.
 
-**Usage:** `erk exec add-pr-label` <pr_number>
+**Usage:** `erk exec add-pr-label` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
@@ -163,13 +163,13 @@ Add a label to a PR via the appropriate backend.
 
 Add labels to a PR with automatic retry on transient failures.
 
-**Usage:** `erk exec add-pr-labels` <pr_number>
+**Usage:** `erk exec add-pr-labels` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
@@ -285,13 +285,13 @@ Clean up .erk/impl-context/ staging directory.
 
 Close a plan with a comment.
 
-**Usage:** `erk exec close-pr` <pr_number>
+**Usage:** `erk exec close-pr` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
@@ -323,13 +323,13 @@ Create a cmux workspace to open a PR.
 
 Create .erk/impl-context/ folder from plan content.
 
-**Usage:** `erk exec create-impl-context-from-plan` <pr_number>
+**Usage:** `erk exec create-impl-context-from-plan` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 ### create-pr-from-session
 
@@ -507,13 +507,13 @@ Generate PR body footer with teleport command.
 
 Fetch PR commits using REST API (avoids GraphQL rate limits).
 
-**Usage:** `erk exec get-pr-commits` <pr_number>
+**Usage:** `erk exec get-pr-commits` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 ### get-pr-context
 
@@ -556,13 +556,13 @@ Fetch all PR feedback in a single command.
 
 Retrieve PR info from the appropriate backend.
 
-**Usage:** `erk exec get-pr-info` <pr_number>
+**Usage:** `erk exec get-pr-info` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
@@ -574,13 +574,13 @@ Retrieve PR info from the appropriate backend.
 
 Extract a metadata field from a PR's plan-header block.
 
-**Usage:** `erk exec get-pr-metadata` <pr_number> <field_name>
+**Usage:** `erk exec get-pr-metadata` <pr> <field_name>
 
 **Arguments:**
 
 | Name         | Required | Description |
 | ------------ | -------- | ----------- |
-| `PR_NUMBER`  | Yes      | -           |
+| `PR`         | Yes      | -           |
 | `FIELD_NAME` | Yes      | -           |
 
 ### get-pr-review-comments
@@ -600,13 +600,13 @@ Fetch PR review comments for agent context injection.
 
 Fetch PR details using REST API (avoids GraphQL rate limits).
 
-**Usage:** `erk exec get-pr-view` [pr_number]
+**Usage:** `erk exec get-pr-view` [pr]
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | No       | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | No       | -           |
 
 **Options:**
 
@@ -1271,13 +1271,13 @@ Consolidated implementation setup.
 
 Set up .erk/impl-context/ folder from GitHub PR in current worktree.
 
-**Usage:** `erk exec setup-impl-from-pr` <pr_number>
+**Usage:** `erk exec setup-impl-from-pr` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 

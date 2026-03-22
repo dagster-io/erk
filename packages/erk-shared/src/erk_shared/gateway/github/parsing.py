@@ -270,6 +270,57 @@ def parse_pr_number_from_url(url: str) -> int | None:
     return None
 
 
+def parse_pr_number_from_graphite_url(url: str) -> int | None:
+    """Extract PR number from Graphite PR URL (both .dev and .com domains).
+
+    Args:
+        url: Graphite PR URL (e.g., "https://app.graphite.dev/github/pr/owner/repo/123")
+
+    Returns:
+        PR number as int, or None if URL doesn't match expected pattern.
+        Handles URLs with trailing content, query strings, or fragments.
+
+    Example:
+        >>> parse_pr_number_from_graphite_url("https://app.graphite.dev/github/pr/owner/repo/123")
+        123
+        >>> parse_pr_number_from_graphite_url("https://app.graphite.com/github/pr/owner/repo/456/Some-Title?utm=foo")
+        456
+    """
+    match = re.match(r"https://app\.graphite\.(?:dev|com)/github/pr/[^/]+/[^/]+/(\d+)", url)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def parse_pr_ref(value: str) -> int | None:
+    """Parse a PR reference: plain number, GitHub PR URL, or Graphite PR URL.
+
+    Single canonical function for resolving any PR reference to a number.
+
+    Args:
+        value: PR reference as string (number, GitHub URL, or Graphite URL)
+
+    Returns:
+        PR number as int, or None if value doesn't match any known format.
+
+    Example:
+        >>> parse_pr_ref("123")
+        123
+        >>> parse_pr_ref("https://github.com/owner/repo/pull/456")
+        456
+        >>> parse_pr_ref("https://app.graphite.dev/github/pr/owner/repo/789")
+        789
+        >>> parse_pr_ref("not-a-pr")
+        None
+    """
+    if value.isdigit():
+        return int(value)
+    pr_number = parse_pr_number_from_url(value)
+    if pr_number is not None:
+        return pr_number
+    return parse_pr_number_from_graphite_url(value)
+
+
 def construct_workflow_run_url(owner: str, repo: str, run_id: int | str) -> str:
     """Construct GitHub Actions workflow run URL.
 

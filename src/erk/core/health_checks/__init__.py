@@ -41,6 +41,7 @@ from erk.artifacts.state import load_installed_capabilities
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
+
 from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
 from erk.core.health_checks.claude_cli import check_claude_cli
 from erk.core.health_checks.claude_erk_permission import check_claude_erk_permission
