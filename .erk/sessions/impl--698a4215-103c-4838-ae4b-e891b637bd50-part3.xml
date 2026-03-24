@@ -1,0 +1,21 @@
+<session>
+  <meta branch="plnd/O9401-discriminated-union-03-24-2058" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <tool_use name="Bash" id="toolu_01Tu4LuMYUQXeSvwFDTQdtms">
+    <param name="command">erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;&amp;1 || echo "Upload failed but continuing"</param>
+    <param name="description">Upload implementation session</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="416" cache_read_input_tokens="94854" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01F66RavnXpzyC8UrR4Pz4gU">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up implementation context</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="416" cache_read_input_tokens="94854" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018ZtYKpGp1gnwqwwyjQDyc2">
+{
+  "success": true,
+  "event": "ended",
+  "pr_number": 9403
+}
+  </tool_result>
+</session>

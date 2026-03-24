@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "pr_number": 9403,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-24T21:14:56.227580+00:00",
+      "files": [
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part1.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part10.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part2.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part3.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part4.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part5.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part6.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part7.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part8.xml",
+        "impl--698a4215-103c-4838-ae4b-e891b637bd50-part9.xml"
+      ],
+      "user_turns": 3,
+      "duration_minutes": 11,
+      "raw_size_kb": 1281,
+      "xml_size_kb": 176,
+      "git_branch": "plnd/O9401-discriminated-union-03-24-2058"
+    }
+  ]
+}
