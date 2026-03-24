@@ -47,6 +47,8 @@ from erk_shared.gateway.github.metadata.schemas import (
 )
 from erk_shared.gateway.github.pr_data_parsing import parse_workflow_runs_nodes_response
 from erk_shared.gateway.github.types import (
+    FetchedIssue,
+    FetchedPullRequest,
     GitHubRepoId,
     GitHubRepoLocation,
     PullRequestInfo,
@@ -382,12 +384,17 @@ class RealPrDataProvider(PrDataProvider):
         if not pr_ids:
             return []
 
-        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+        fetched_items, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
             location=self._location,
             plan_numbers=list(pr_ids),
         )
 
-        plans = [github_issue_to_plan(issue) for issue in issues]
+        plans: list[Plan] = []
+        for item in fetched_items:
+            if isinstance(item, FetchedIssue):
+                plans.append(github_issue_to_plan(item.issue))
+            elif isinstance(item, FetchedPullRequest):
+                plans.append(github_issue_to_plan(item.issue))
         worktree_by_pr_number = self._build_worktree_mapping()
 
         # Extract dispatch node IDs from planned PRs for workflow run lookup

@@ -11,6 +11,7 @@ from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
     IssueFilterState,
+    IssueOrPullRequest,
     MergeResult,
     PRCheckRun,
     PRDetails,
@@ -401,7 +402,7 @@ class DryRunLocalGitHub(LocalGitHub):
         *,
         location: GitHubRepoLocation,
         plan_numbers: list[int],
-    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[IssueOrPullRequest], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issues_by_numbers_with_pr_linkages(
             location=location, plan_numbers=plan_numbers

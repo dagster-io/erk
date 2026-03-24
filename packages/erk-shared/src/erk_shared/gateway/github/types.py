@@ -1,11 +1,16 @@
 """Type definitions for GitHub operations."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from erk_shared.non_ideal_state import EnsurableResult
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.github.issues.types import IssueInfo
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
@@ -253,6 +258,26 @@ class PullRequestInfo:
     review_decision: str | None = None
     # Base branch name (the target branch) - optional, populated by some API calls
     base_ref_name: str | None = None
+
+
+@dataclass(frozen=True)
+class FetchedIssue:
+    """An issue fetched via issueOrPullRequest, with its linked PRs."""
+
+    issue: IssueInfo
+    linked_prs: list[PullRequestInfo]
+
+
+@dataclass(frozen=True)
+class FetchedPullRequest:
+    """A pull request fetched via issueOrPullRequest, with native PR metadata."""
+
+    issue: IssueInfo  # Base issue fields (number, title, body, etc.)
+    pr_info: PullRequestInfo  # Native PR metadata (checks, draft, conflicts)
+
+
+# Discriminated union for issueOrPullRequest query results
+IssueOrPullRequest = FetchedIssue | FetchedPullRequest
 
 
 class _NotAvailable:

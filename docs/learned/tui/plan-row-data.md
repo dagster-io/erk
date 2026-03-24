@@ -100,19 +100,19 @@ Quick reference for writing command availability predicates and understanding
 
 ### Objective Info
 
-| Field                         | Type                          | Description                                                                               | Nullable?             |
-| ----------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------- | --------------------- |
-| `objective_issue`             | `int \| None`                 | Objective issue number (linking plans to objectives)                                      | Yes                   |
-| `objective_url`               | `str \| None`                 | URL to the objective issue                                                                | Yes                   |
-| `objective_display`           | `str`                         | Formatted display string (e.g., "#123" or "-")                                            | Never (dash possible) |
-| `objective_slug_display`      | `str`                         | Objective slug for compact display                                                        | Never (dash possible) |
+| Field                         | Type                          | Description                                                                             | Nullable?             |
+| ----------------------------- | ----------------------------- | --------------------------------------------------------------------------------------- | --------------------- |
+| `objective_issue`             | `int \| None`                 | Objective issue number (linking plans to objectives)                                    | Yes                   |
+| `objective_url`               | `str \| None`                 | URL to the objective issue                                                              | Yes                   |
+| `objective_display`           | `str`                         | Formatted display string (e.g., "#123" or "-")                                          | Never (dash possible) |
+| `objective_slug_display`      | `str`                         | Objective slug for compact display                                                      | Never (dash possible) |
 | `objective_frontier_display`  | `str`                         | Frontier sparkline starting at first non-done node (e.g., '▶▶○○○○'). '-' when all done. | Never (dash possible) |
-| `objective_done_nodes`        | `int`                         | Count of done nodes in objective roadmap                                                  | Never (0 if no obj)   |
-| `objective_total_nodes`       | `int`                         | Total nodes in objective roadmap                                                          | Never (0 if no obj)   |
-| `objective_progress_display`  | `str`                         | Progress display (e.g., "3/7" or "-")                                                     | Never (dash possible) |
-| `objective_next_node_display` | `str`                         | Next pending node (e.g., "1.3 Add tests" or "-")                                          | Never (dash possible) |
-| `objective_deps_display`      | `str`                         | Dep status of next node ("ready", "in progress", "-")                                     | Never (dash possible) |
-| `objective_deps_plans`        | `tuple[tuple[str, str], ...]` | Dependency plan references (plan_id, status) tuples                                       | Never (empty tuple)   |
+| `objective_done_nodes`        | `int`                         | Count of done nodes in objective roadmap                                                | Never (0 if no obj)   |
+| `objective_total_nodes`       | `int`                         | Total nodes in objective roadmap                                                        | Never (0 if no obj)   |
+| `objective_progress_display`  | `str`                         | Progress display (e.g., "3/7" or "-")                                                   | Never (dash possible) |
+| `objective_next_node_display` | `str`                         | Next pending node (e.g., "1.3 Add tests" or "-")                                        | Never (dash possible) |
+| `objective_deps_display`      | `str`                         | Dep status of next node ("ready", "in progress", "-")                                   | Never (dash possible) |
+| `objective_deps_plans`        | `tuple[tuple[str, str], ...]` | Dependency plan references (plan_id, status) tuples                                     | Never (empty tuple)   |
 
 ### Metadata
 
