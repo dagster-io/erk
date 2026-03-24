@@ -15,14 +15,15 @@ import json
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import require_cwd
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
 @click.command(name="get-pr-commits")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.pass_context
-def get_pr_commits(ctx: click.Context, pr_number: int) -> None:
+def get_pr_commits(ctx: click.Context, pr: int) -> None:
     """Fetch PR commits using REST API (avoids GraphQL rate limits)."""
     cwd = require_cwd(ctx)
 
@@ -34,11 +35,11 @@ def get_pr_commits(ctx: click.Context, pr_number: int) -> None:
             cmd=[
                 "gh",
                 "api",
-                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/commits",
+                f"repos/{{owner}}/{{repo}}/pulls/{pr}/commits",
                 "--jq",
                 "[.[] | {sha: .sha, message: .commit.message}]",
             ],
-            operation_context=f"get commits for PR #{pr_number}",
+            operation_context=f"get commits for PR #{pr}",
             cwd=cwd,
         )
     except RuntimeError as e:
@@ -46,7 +47,7 @@ def get_pr_commits(ctx: click.Context, pr_number: int) -> None:
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to get commits for PR #{pr_number}: {e}",
+                    "error": f"Failed to get commits for PR #{pr}: {e}",
                 }
             )
         )
@@ -59,7 +60,7 @@ def get_pr_commits(ctx: click.Context, pr_number: int) -> None:
         json.dumps(
             {
                 "success": True,
-                "pr_number": pr_number,
+                "pr_number": pr,
                 "commits": commits,
             }
         )

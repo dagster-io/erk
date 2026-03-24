@@ -41,6 +41,7 @@ from erk.artifacts.state import load_installed_capabilities
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
+
 from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
 from erk.core.health_checks.claude_cli import check_claude_cli
 from erk.core.health_checks.claude_erk_permission import check_claude_erk_permission
@@ -144,9 +145,7 @@ def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
             from erk_shared.gateway.time.real import RealTime
 
             github_issues = RealGitHubIssues(target_repo=repo_config.github_repo, time=RealTime())
-            results.append(
-                check_pr_repo_labels(repo_root, repo_config.github_repo, github_issues)
-            )
+            results.append(check_pr_repo_labels(repo_root, repo_config.github_repo, github_issues))
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 

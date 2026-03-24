@@ -12,6 +12,7 @@ import click
 
 from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr
 from erk.cli.ensure import Ensure
+from erk.cli.pr_ref_type import PR_REF
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.types import PRNotFound
@@ -20,9 +21,9 @@ from erk_shared.output.output import user_output
 
 
 @click.command("prepare")
-@click.argument("pr_number", type=int, required=False, default=None)
+@click.argument("pr", type=PR_REF, required=False, default=None)
 @click.pass_context
-def pr_prepare(ctx: click.Context, pr_number: int | None) -> None:
+def pr_prepare(ctx: click.Context, pr: int | None) -> None:
     """Set up impl-context for the current worktree's PR.
 
     Prepares the current worktree for plan implementation by creating
@@ -55,7 +56,7 @@ def pr_prepare(ctx: click.Context, pr_number: int | None) -> None:
         raise SystemExit(1)
 
     # Resolve plan number: explicit argument or auto-detect from branch's PR
-    if pr_number is None:
+    if pr is None:
         pr_result = erk_ctx.github.get_pr_for_branch(repo.root, branch)
         if isinstance(pr_result, PRNotFound):
             erk_ctx.console.error(
@@ -64,21 +65,21 @@ def pr_prepare(ctx: click.Context, pr_number: int | None) -> None:
                 "  erk pr prepare <plan-number>"
             )
             raise SystemExit(1)
-        pr_number = pr_result.number
+        pr = pr_result.number
 
     # Idempotent: check if impl-context already exists for this plan
     impl_dir = resolve_impl_dir(erk_ctx.cwd, branch_name=branch)
     if impl_dir is not None:
         existing_ref = read_plan_ref(impl_dir)
-        if existing_ref is not None and existing_ref.pr_id == str(pr_number):
-            user_output(f"Impl-context already set up for plan #{pr_number}")
+        if existing_ref is not None and existing_ref.pr_id == str(pr):
+            user_output(f"Impl-context already set up for plan #{pr}")
             return
 
     result = create_impl_context_from_pr(
         ctx,
-        pr_number=pr_number,
+        pr_number=pr,
         cwd=erk_ctx.cwd,
         branch_name=branch,
     )
 
-    user_output(f"Prepared impl-context for plan #{pr_number} at {result['impl_path']}")
+    user_output(f"Prepared impl-context for plan #{pr} at {result['impl_path']}")

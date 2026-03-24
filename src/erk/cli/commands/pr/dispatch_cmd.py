@@ -18,6 +18,7 @@ from erk.cli.constants import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure, UserFacingCliError
+from erk.cli.pr_ref_type import PR_REF
 from erk.cli.repo_resolution import get_remote_github, repo_option, resolve_owner_repo
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
@@ -844,7 +845,7 @@ def _print_dispatch_summary(results: list[DispatchResult]) -> None:
 
 
 @click.command("dispatch")
-@click.argument("pr_numbers", type=int, nargs=-1, required=False)
+@click.argument("prs", type=PR_REF, nargs=-1, required=False)
 @click.option(
     "--base",
     type=str,
@@ -868,7 +869,7 @@ def _print_dispatch_summary(results: list[DispatchResult]) -> None:
 @click.pass_obj
 def pr_dispatch(
     ctx: ErkContext,
-    pr_numbers: tuple[int, ...],
+    prs: tuple[int, ...],
     base: str | None,
     dispatch_ref: str | None,
     ref_current: bool,
@@ -908,7 +909,7 @@ def pr_dispatch(
         ref = dispatch_ref
         _dispatch_remote(
             ctx,
-            pr_numbers=pr_numbers,
+            pr_numbers=prs,
             target_repo=target_repo,
             base=base,
             ref=ref,
@@ -917,7 +918,7 @@ def pr_dispatch(
         ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
         _dispatch_local(
             ctx,
-            pr_numbers=pr_numbers,
+            pr_numbers=prs,
             base=base,
             ref=ref,
         )

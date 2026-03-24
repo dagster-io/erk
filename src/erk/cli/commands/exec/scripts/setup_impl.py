@@ -278,7 +278,7 @@ def _handle_issue_setup(ctx: click.Context, *, pr_number: int) -> None:
     # Run setup-impl-from-pr
     ctx.invoke(
         setup_impl_from_pr,
-        pr_number=pr_number,
+        pr=pr_number,
         session_id=None,
         no_impl=False,
     )

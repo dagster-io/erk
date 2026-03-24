@@ -11,7 +11,6 @@ Usage:
     erk land <branch>     # Land PR for branch
 """
 
-import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from pathlib import Path
@@ -51,6 +50,7 @@ from erk.core.worktree_pool import (
 )
 from erk.core.worktree_utils import is_root_worktree
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.github.parsing import parse_pr_ref
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.slots.naming import extract_slot_number, get_placeholder_branch_name
@@ -546,21 +546,10 @@ def parse_argument(arg: str) -> ParsedArgument:
         - arg_type="pr-url", pr_number=N if arg is a GitHub or Graphite PR URL
         - arg_type="branch", pr_number=None if arg is a branch name
     """
-    # Try parsing as a plain number (PR number)
-    if arg.isdigit():
-        return ParsedArgument(arg_type="pr-number", pr_number=int(arg))
-
-    # Try parsing as a GitHub PR URL (e.g., https://github.com/owner/repo/pull/123)
-    match = re.search(r"/pull/(\d+)", arg)
-    if match:
-        return ParsedArgument(arg_type="pr-url", pr_number=int(match.group(1)))
-
-    # Try parsing as a Graphite PR URL (e.g., https://app.graphite.com/github/pr/owner/repo/123)
-    match = re.search(r"/pr/[^/]+/[^/]+/(\d+)", arg)
-    if match:
-        return ParsedArgument(arg_type="pr-url", pr_number=int(match.group(1)))
-
-    # Treat as branch name
+    pr_number = parse_pr_ref(arg)
+    if pr_number is not None:
+        arg_type = "pr-number" if arg.isdigit() else "pr-url"
+        return ParsedArgument(arg_type=arg_type, pr_number=pr_number)
     return ParsedArgument(arg_type="branch", pr_number=None)
 
 

@@ -25,6 +25,7 @@ import json
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import (
     require_pr_backend,
     require_repo_root,
@@ -36,11 +37,11 @@ from erk_shared.pr_store.types import PrNotFound
 
 
 @click.command(name="create-impl-context-from-plan")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.pass_context
 def create_impl_context_from_plan(
     ctx: click.Context,
-    pr_number: int,
+    pr: int,
 ) -> None:
     """Create .erk/impl-context/ folder from plan content.
 
@@ -52,7 +53,7 @@ def create_impl_context_from_plan(
     backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
     time = require_time(ctx)
-    pr_id = str(pr_number)
+    pr_id = str(pr)
     provider = backend.get_provider_name()
 
     # Fetch plan via ManagedPrBackend
@@ -61,7 +62,7 @@ def create_impl_context_from_plan(
         error_output = {
             "success": False,
             "error": "plan_not_found",
-            "message": f"Could not fetch PR for #{pr_number}: Not found. "
+            "message": f"Could not fetch PR for #{pr}: Not found. "
             f"Ensure PR has erk-pr label and plan content.",
         }
         click.echo(json.dumps(error_output), err=True)
@@ -85,7 +86,7 @@ def create_impl_context_from_plan(
     output = {
         "success": True,
         "impl_context_path": str(impl_context_path),
-        "pr_number": pr_number,
+        "pr_number": pr,
         "pr_url": plan.url,
     }
     click.echo(json.dumps(output))

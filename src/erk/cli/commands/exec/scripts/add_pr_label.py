@@ -16,11 +16,12 @@ import json
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import require_pr_backend, require_repo_root
 
 
 @click.command(name="add-pr-label")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.option(
     "--label",
     required=True,
@@ -29,7 +30,7 @@ from erk_shared.context.helpers import require_pr_backend, require_repo_root
 @click.pass_context
 def add_pr_label(
     ctx: click.Context,
-    pr_number: int,
+    pr: int,
     *,
     label: str,
 ) -> None:
@@ -37,7 +38,7 @@ def add_pr_label(
     backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
-    pr_id = str(pr_number)
+    pr_id = str(pr)
 
     try:
         backend.add_label(repo_root, pr_id, label)
@@ -46,7 +47,7 @@ def add_pr_label(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"Failed to add label to PR #{pr_number}: {e}",
+                    "error": f"Failed to add label to PR #{pr}: {e}",
                 }
             )
         )
@@ -56,7 +57,7 @@ def add_pr_label(
         json.dumps(
             {
                 "success": True,
-                "pr_number": pr_number,
+                "pr_number": pr,
                 "label": label,
             }
         )

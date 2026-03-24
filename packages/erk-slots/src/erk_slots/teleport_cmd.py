@@ -27,6 +27,7 @@ from erk.cli.commands.checkout_helpers import (
 from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.pr_ref_type import PR_REF
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk.core.worktree_pool import load_pool_state
@@ -56,7 +57,7 @@ class TeleportPlan:
 
 
 @click.command("teleport", cls=CommandWithHiddenOptions)
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.option("--new-slot", is_flag=True, help="Create a new worktree slot")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
 @click.option("--sync", is_flag=True, help="Run gt submit after teleport to sync with Graphite")
@@ -65,7 +66,7 @@ class TeleportPlan:
 @click.pass_obj
 def slot_teleport(
     ctx: ErkContext,
-    pr_number: int,
+    pr: int,
     new_slot: bool,
     force: bool,
     sync: bool,
@@ -98,11 +99,13 @@ def slot_teleport(
 
     \b
     Examples:
-        erk slot teleport 123              # Overwrite current branch with PR #123's remote state
-        erk slot teleport 123 -f           # Skip confirmation
-        erk slot teleport 123 --new-slot   # Create a new worktree slot for the PR
+        erk slot teleport 123                           # PR number
+        erk slot teleport https://github.com/owner/repo/pull/123  # GitHub URL
+        erk slot teleport https://app.graphite.dev/github/pr/owner/repo/123  # Graphite URL
+        erk slot teleport 123 -f                        # Skip confirmation
+        erk slot teleport 123 --new-slot                # Create a new worktree slot for the PR
         erk slot teleport 123 --new-slot --script --sync  # Full setup with Graphite sync
-        erk slot teleport 123 --dry-run    # Preview what would be lost
+        erk slot teleport 123 --dry-run                 # Preview what would be lost
     """
     Ensure.gh_authenticated(ctx)
 
@@ -121,28 +124,28 @@ def slot_teleport(
         ctx_manager = nullcontext()
     with ctx_manager:
         # Ensure PR exists
-        ctx.console.info(f"Fetching PR #{pr_number}...")
-        pr = ctx.github.get_pr(repo.root, pr_number)
-        if isinstance(pr, PRNotFound):
+        ctx.console.info(f"Fetching PR #{pr}...")
+        pr_obj = ctx.github.get_pr(repo.root, pr)
+        if isinstance(pr_obj, PRNotFound):
             ctx.console.error(
-                f"Could not find PR #{pr_number}\n\n"
+                f"Could not find PR #{pr}\n\n"
                 "Check the PR number and ensure you're authenticated with gh CLI."
             )
             raise SystemExit(1)
 
-        if pr.is_cross_repository:
+        if pr_obj.is_cross_repository:
             ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
             raise SystemExit(1)
 
-        branch_name = pr.head_ref_name
-        base_ref_name = pr.base_ref_name
+        branch_name = pr_obj.head_ref_name
+        base_ref_name = pr_obj.base_ref_name
 
         # Build plan (what would happen)
         if new_slot:
             teleport_plan = _teleport_new_slot(
                 ctx,
                 repo,
-                pr_number=pr_number,
+                pr_number=pr,
                 branch_name=branch_name,
                 base_ref_name=base_ref_name,
                 sync=sync,
@@ -152,7 +155,7 @@ def slot_teleport(
             teleport_plan = _teleport_in_place(
                 ctx,
                 repo,
-                pr_number=pr_number,
+                pr_number=pr,
                 branch_name=branch_name,
                 base_ref_name=base_ref_name,
                 sync=sync,
