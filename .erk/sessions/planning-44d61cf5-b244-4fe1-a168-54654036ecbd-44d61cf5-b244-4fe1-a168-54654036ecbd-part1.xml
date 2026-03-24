@@ -1,0 +1,1173 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.81
+▝▜█████▛▘  Opus 4.6 (1M context) · Claude Max
+  ▘▘ ▝▝    /workspaces/erk
+
+❯ /erk:objective-plan 9394
+
+● Loading objective #9394...
+
+● Bash(erk exec resolve-objective-ref 9394)
+  ⎿  {
+       "resolved": true,
+       "objective_number": 9394,
+     … +2 lines (ctrl+o to expand)
+
+● Bash(erk exec objective-plan-setup 9394 --session-id "ceed6150-4273-4188-b172-1a681a537b87")
+  ⎿  {
+       "success": true,
+       "objective": {
+     … +29 lines (ctrl+o to expand)
+
+● The objective has no roadmap yet. Let me reconcile it and check the objective body.
+
+● Skill(/erk:objective-reconcile)
+  ⎿  Successfully loaded skill
+
+● Bash(erk exec get-issue-body 9394)
+  ⎿  {
+       "success": true,
+       "issue_number": 9394,
+     … +11 lines (ctrl+o to expand)
+
+● The objective #9394 has just been created — it contains only the metadata header with no roadmap, implementation context, or node
+  descriptions. There are no auditable references to reconcile.
+
+  All references are current. No updates needed for objective #9394.
+
+  Now let me load the objective skill and assess the situation.
+
+● Skill(objective)
+  ⎿  Successfully loaded skill
+
+● Objective #9394 ("Principled Issue/PR Type Separation and Plan Terminology Elimination") has just been created and has no roadmap
+  yet. There are no nodes to plan.
+
+  Before we can create a plan for a node, the objective needs a roadmap with phases and nodes. Would you like me to:
+
+  1. Help build out the roadmap — I'll review the objective's intent and propose phases/nodes, then update the issue body
+  2. You provide the roadmap — Tell me the phases and nodes you have in mind and I'll format and add them
+
+  What would you prefer?
+
+✻ Churned for 37s
+
+❯ there is a roadmap look
+
+Evaluation: Ask a fresh agent (with no context about this objective) to answer the question by reading the codebase. Discrepancies
+between its answer and the expected answer identify remaining work. The human may revise the acceptance criterion as understanding
+evolves — the roadmap unfolds, but the acceptance criterion is the invariant the agent operates against.
+
+Roadmap
+Phase 1: Steelthread: Discriminated Union for GitHub Items (1 PR)
+Introduce type-level separation between Issues and PRs at the gateway layer. Prove the pattern works end-to-end through the objective
+screen consumer.
+
+Node    Description    Status    PR
+1.1    Create FetchedIssue and FetchedPullRequest frozen dataclasses with IssueOrPullRequest union type in gateway types    pending
+ -
+1.2    Update get_issues_by_numbers_with_pr_linkages to return list[IssueOrPullRequest] — eliminate self-linkage in
+_parse_issues_by_numbers_response. Update ABC, fake, dry-run.    pending    -
+1.3    Update fetch_prs_by_ids in real_provider.py to handle IssueOrPullRequest union — separate issue-backed and PR-backed
+construction paths    pending    -
+Test: get_issues_by_numbers_with_pr_linkages returns FetchedIssue for issues (with linked_prs) and FetchedPullRequest for PRs (with
+native metadata). No self-linkage. Objective screen displays both correctly.
+
+Phase 2: Split Plan into PlannedPR and Separate Objective Handling (1-2 PRs)
+Replace the shared Plan type with PlannedPR (strictly for PRs). Objectives use IssueInfo directly — no conversion to a shared type.
+github_issue_to_plan() is eliminated.
+
+Node    Description    Status    PR
+2.1    Rename Plan to PlannedPR, PlanState to PlannedPRState, PlanQuery to PlannedPRQuery, CreatePlanResult to CreatePlannedPRResult
+in pr_store/types.py    pending    -
+2.2    Remove github_issue_to_plan() — objective consumers work with IssueInfo directly instead of converting to a shared type
+pending    -
+2.3    Rename pr_details_to_plan() to pr_details_to_planned_pr() in conversion.py, update all
+
+● Let me check if the roadmap is in a comment on the issue.
+
+● Bash(gh issue view 9394 --json body,comments --jq '.body' | head -100)
+  ⎿  &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     &lt;!-- erk:metadata-block:objective-header --&gt;
+     &lt;details&gt;
+     … +13 lines (ctrl+o to expand)
+
+● Bash(gh issue view 9394 --json comments --jq '.comments | length')
+  ⎿  1
+
+● The issue body only has the metadata header — the roadmap you're showing me isn't in the issue yet. It looks like it was part of the
+  creation process but didn't get saved to the body. Let me add this roadmap to the objective so the tooling can parse it, then we can
+  plan a node.
+
+  Let me first write the complete objective body with the roadmap you provided.
+
+● Bash(gh issue view 9394 --json comments --jq '.comments[0].body' | head -200)
+  ⎿  &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     &lt;!-- erk:metadata-block:objective-body --&gt;
+     &lt;details open&gt;
+     … +84 lines (ctrl+o to expand)
+
+● The roadmap is in the objective's first comment (the objective-body metadata block). The objective-plan-setup command returned empty
+  phases because it couldn't parse the roadmap from the comment structure. The objective has a full 6-phase roadmap.
+
+  Here's the roadmap:
+
+  Phase 1: Steelthread: Discriminated Union for GitHub Items (1 PR)
+
+  ┌──────┬────────────────────────────────────────────────────────────────────────────────────────────────────┬─────────┐
+  │ Node │                                            Description                                             │ Status  │
+  ├──────┼────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.1  │ Create FetchedIssue/FetchedPullRequest dataclasses with IssueOrPullRequest union                   │ pending │
+  ├──────┼────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.2  │ Update get_issues_by_numbers_with_pr_linkages to return IssueOrPullRequest, eliminate self-linkage │ pending │
+  ├──────┼────────────────────────────────────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.3  │ Update fetch_prs_by_ids to handle IssueOrPullRequest union                                         │ pending │
+  └──────┴────────────────────────────────────────────────────────────────────────────────────────────────────┴─────────┘
+
+  Phase 2: Split Plan into PlannedPR (1-2 PRs)
+
+  ┌──────┬──────────────────────────────────────────────────────────┬─────────┐
+  │ Node │                       Description                        │ Status  │
+  ├──────┼──────────────────────────────────────────────────────────┼─────────┤
+  │ 2.1  │ Rename Plan → PlannedPR and related types                │ pending │
+  ├──────┼──────────────────────────────────────────────────────────┼─────────┤
+  │ 2.2  │ Remove github_issue_to_plan()                            │ pending │
+  ├──────┼──────────────────────────────────────────────────────────┼─────────┤
+  │ 2.3  │ Rename pr_details_to_plan() → pr_details_to_planned_pr() │ pending │
+  ├──────┼──────────────────────────────────────────────────────────┼─────────┤
+  │ 2.4  │ Update objective list service/TUI for IssueInfo directly │ pending │
+  └──────┴──────────────────────────────────────────────────────────┴─────────┘
+
+  Phase 3: Rename Plan Schema and Header Types (1-2 PRs)
+  | 3.1 | Rename PlanSchema, PlanHeaderSchema, etc. | pending |
+  | 3.2 | Rename ~70 extract_plan_header_*/update_plan_header_* functions | pending |
+
+  Phase 4: Eliminate pr_linkages Self-Linkage (1 PR)
+  | 4.1-4.3 | Remove self-linkage, update _build_row_data, simplify pr_linkages | pending |
+
+  Phase 5: Module and File Renames (1-2 PRs)
+  | 5.1-5.4 | Rename plan_ prefixed files, exec scripts, labels | pending |
+
+  Phase 6: Metadata Block Key Migration (1 PR)
+  | 6.1-6.2 | Migrate plan-header/plan-body/plan-retry → pr-header/pr-body/pr-retry | pending |
+
+● User answered Claude's questions:
+  ⎿  · Which node should I create a plan for? → Phase 1 (all nodes 1.1-1.3)
+
+● Creating plan for Phase 1 (nodes 1.1, 1.2, 1.3). Let me invoke the inner skill.
+
+● Skill(/erk:system:objective-plan-node)
+  ⎿  Successfully loaded skill · 5 tools allowed
+
+● Planning nodes 1.1, 1.2, 1.3 of objective #9394...
+
+● Agent(Fetch objective context) Haiku 4.5
+  ⎿  Done (4 tool uses · 20.9k tokens · 14s)
+  (ctrl+o to expand)
+
+● The marker was created. Let me verify it and create the roadmap-step marker.
+
+● Bash(erk exec marker read --session-id "ceed6150-4273-4188-b172-1a681a537b87" objective-context)
+  ⎿  9394
+
+● Bash(erk exec marker create --session-id "ceed6150-4273-4188-b172-1a681a537b87" --content "1.1,1.2,1.3" roadmap-step)
+  ⎿  {
+       "success": true,
+       "message": "Created marker: roadmap-step"
+     }
+
+● Bash(erk exec update-objective-node 9394 --node 1.1 --node 1.2 --node 1.3 --status planning 2&gt;&amp;1 || true)
+  ⎿  {
+       "success": false,
+       "error": "no_roadmap",
+     … +2 lines (ctrl+o to expand)
+
+● The node status update failed because the roadmap is in the objective comment rather than the issue body — this is a tooling
+  limitation. Proceeding with planning (best-effort as noted).
+
+  Now let me gather context on the gateway layer before entering plan mode.
+
+● 3 Explore agents finished (ctrl+o to expand)
+   ├─ Explore gateway types and parsing · 20 tool uses · 46.0k tokens
+   │  ⎿  Done
+   ├─ Explore objective screen consumers · 23 tool uses · 47.8k tokens
+   │  ⎿  Done
+   └─ Explore fake and dry-run providers · 17 tool uses · 46.9k tokens
+      ⎿  Done
+
+❯ actually before doing that i want to debug the toolling issues you are talking abouty
+
+● Good call. Let me look at why objective-plan-setup returned empty phases and update-objective-node returned no_roadmap — the roadmap
+  clearly exists in the objective-body comment.
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+  Searched for 2 patterns, read 2 files (ctrl+o to expand)
+
+● Now I can see the issue. Both scripts look for the roadmap in issue.body, but for #9394 the roadmap is in the objective-body comment,
+   not the issue body. Let me trace both code paths.
+
+  Searched for 5 patterns, read 1 file (ctrl+o to expand)
+
+● Now I see the root cause. Let me check what BlockKeys.OBJECTIVE_ROADMAP is and how parse_roadmap works.
+
+  Searched for 2 patterns, read 1 file (ctrl+o to expand)
+
+● Now I have the full picture. Here's what's happening:
+
+  Root cause: Both validate_objective and update_objective_node call parse_roadmap(issue.body), which looks for a &lt;!--
+  erk:metadata-block:objective-roadmap --&gt; block in the issue body. But for #9394, the roadmap lives inside the objective-body comment
+  (fetched via objective_comment_id from the header).
+
+  The issue body only has:
+  - objective-header block (with objective_comment_id)
+
+  The comment has:
+  - objective-body block, which contains the &lt;!-- erk:roadmap-table --&gt; marker with the rendered table, but the objective-roadmap YAML
+  metadata block is inside the issue body (if properly created)
+
+  Let me check — does #9394's issue body actually have an objective-roadmap block, or is the YAML roadmap data only in the comment?
+
+● Bash(gh issue view 9394 --json body --jq '.body' | grep -c 'objective-roadmap')
+  ⎿  0
+
+● Bash(gh issue view 9394 --json comments --jq '.comments[0].body' | grep -c 'objective-roadmap')
+  ⎿  0
+
+● Bash(gh issue view 9394 --json comments --jq '.comments[0].body' | grep 'erk:' | head -20)
+  ⎿  &lt;!-- erk:metadata-block:objective-body --&gt;
+     &lt;!-- erk:roadmap-table --&gt;
+     &lt;!-- /erk:roadmap-table --&gt;
+     &lt;!-- /erk:metadata-block:objective-body --&gt;
+
+● There it is. The comment has erk:roadmap-table (the rendered markdown table) but no erk:metadata-block:objective-roadmap block (the
+  YAML source of truth). And the issue body has no objective-roadmap block either.
+
+  This means #9394 was created without the YAML frontmatter roadmap — it only has the human-readable markdown table in the comment. The
+   tooling expects a machine-parseable objective-roadmap metadata block with YAML frontmatter.
+
+  Let me check how other objectives that work correctly are structured.
+
+● Bash(gh issue list --label erk-objective --state open --json number,title --limit 10)
+  ⎿  [
+       {
+         "number": 9394,
+     … +31 lines (ctrl+o to expand)
+
+● Bash(gh issue view 9324 --json body --jq '.body' | grep 'objective-roadmap' | head -5)
+  ⎿  &lt;!-- erk:metadata-block:objective-roadmap --&gt;
+     &lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+     &lt;!-- /erk:metadata-block:objective-roadmap --&gt;
+
+● So #9324 has the objective-roadmap YAML block in the issue body. #9394 is missing it entirely — the objective was created with only
+  the markdown table in the comment but no YAML source of truth.
+
+  Let me check how objectives get created to understand the gap.
+
+  Searched for 2 patterns, read 2 files (ctrl+o to expand)
+
+● Now I have the full picture. Here's the diagnosis:
+
+  Root Cause
+
+  The objective #9394 was created without an objective-roadmap YAML metadata block in the plan content.
+
+  The create_objective_issue function (line 198-201) does:
+  roadmap_block_content = _build_objective_roadmap_block(plan_content)
+  if roadmap_block_content is not None:
+      issue_body = issue_body + "\n\n" + roadmap_block_content
+
+  _build_objective_roadmap_block (line 73-106) looks for a pre-existing &lt;!-- erk:metadata-block:objective-roadmap --&gt; block with
+  &lt;details&gt; YAML format in the plan content passed to it. If the plan content only has markdown tables (which is what
+  /erk:objective-create produced here), it returns None and the issue body never gets the YAML roadmap.
+
+  The chain of failures:
+  1. The objective was created with a markdown roadmap table in the comment but no objective-roadmap YAML block in the issue body
+  2. validate_objective → parse_roadmap(issue.body) → has_metadata_block(issue.body, BlockKeys.OBJECTIVE_ROADMAP) → False → returns "no
+   roadmap" (line 184-196)
+  3. update_objective_node → parse_roadmap(issue.body) → empty phases → "no_roadmap" error (line 444-451)
+  4. objective-plan-setup → phases_from_graph(validation_result.graph) → empty graph → empty phases
+
+  The fix needed: The /erk:objective-create skill needs to produce the objective-roadmap YAML metadata block in its plan content, OR
+  create_objective_issue needs to parse the markdown roadmap table and generate the YAML block from it.
+
+  Would you like me to:
+  1. Fix the issue body for #9394 — generate and add the missing objective-roadmap YAML block from the existing markdown table
+  2. Fix the creation pipeline — ensure future objectives always get the YAML block
+  3. Both
+
+✻ Churned for 1m 49s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ? for shortcuts
+Connection to localhost closed by remote host.
+Connection to localhost closed.
+shell closed: exit status 255
+(erk) ➜  erk git:(master)
+
+let's figure out a fix to the creation pipeline. analyze and then let's chat/ideate</user>
+  <usage input_tokens="3" cache_creation_input_tokens="26998" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 26998}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me trace the full creation pipeline to understand the gap.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="26998" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 26998}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014vxmtPy5HfLzYxfbgrMJjw">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Trace objective creation pipeline</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1299 chars]...body and comment → what _build_objective_roadmap_block expects → what parse_roadmap needs.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="26998" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 26998}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WARbsUrmpWSFzQVNjVnUuj">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Examine objective-create skill</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 663 chars]...arch for any docs in docs/learned/objectives/ that describe the expected objective format.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="26998" cache_read_input_tokens="0" output_tokens="870" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 26998, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014vxmtPy5HfLzYxfbgrMJjw">
+Perfect! Now I have all the pieces. Let me create a comprehensive summary document:
+
+## Complete Objective Creation Pipeline Trace
+
+I've thoroughly traced the full objective creation pipeline. Here's the complete chain of how the objective-roadmap YAML metadata block gets created (or fails):
+
+### 1. **Skill Template** (`.claude/commands/erk/objective-create.md`)
+
+The skill guides the user through these steps:
+- Prompts for objective description
+- Analyzes and explores the codebase
+- Asks for structure preference (steelthread, linear, single, custom)
+- **Key instruction (line 94-104)**: "Do NOT manually write roadmap tables or metadata blocks. Instead, construct a JSON object describing phases and steps, then generate the roadmap section via: `echo '&lt;json&gt;' | erk exec objective-render-roadmap`"
+
+The JSON input format requires:
+```json
+{
+  "phases": [
+    {
+      "name": "Phase Name",
+      "description": "Optional phase description",
+      "pr_count": "1 PR",
+      "steps": [
+        {
+          "id": "1.1",
+          "description": "Step description",
+          "slug": "optional-slug"
+        }
+      ],
+      "test": "Acceptance test criteria"
+
+... [396 lines omitted] ...
+
+  &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+- Returns error if not authenticated
+   &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+        return None  # YAML parsing failed
+**Failure points in `_build_objective_roadmap_block`**:
+   &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    steps, _errors = validate_roadmap_frontmatter(data)
+### 6. **Failure Scenarios**
+| Skill creates JSON with invalid schema | objective_render_roadmap.py (line 230) | Error message: validation fails, exits with code 1 |
+| Schema version not in 2/3/4 | roadmap.py:78 | Validation error returned |
+| Missing required node fields | roadmap.py:104-106 | Validation error: "Step X missing required field: Y" |
+  </tool_result>
+  <tool_result tool="toolu_01WARbsUrmpWSFzQVNjVnUuj">
+Perfect! Now I have all the information I need. Let me compile a comprehensive summary for the user.
+
+## Summary
+
+I have found and analyzed the complete `/erk:objective-create` skill and related documentation about the objective roadmap format. Here are my findings:
+
+### 1. **Complete `/erk:objective-create` Skill File**
+
+**Location**: `/Users/schrockn/code/erk/.claude/commands/erk/objective-create.md`
+
+The skill provides comprehensive instructions on:
+- **6-step workflow** for creating structured objectives through guided conversation
+- **Exploration phase** that gathers codebase context
+- **Structure preferences** (Steelthread, Linear, Single, or Custom)
+- **Roadmap generation via `erk exec objective-render-roadmap`**
+
+### 2. **Roadmap Format Instructions**
+
+The skill explicitly states (lines 94-127):
+
+**Key directive:**
+&gt; "Do NOT manually write roadmap tables or metadata blocks. Instead, construct a JSON object describing the phases and steps, then generate the complete roadmap section:
+&gt; ```bash
+&gt; echo '&lt;json&gt;' | erk exec objective-render-roadmap
+&gt; ```
+&gt; This outputs a complete `## Roadmap` section with phase headers, tables, test sections, and a machine-readable metadata block (auto-generated, guaranteed consistent with tables)."
+
+**Input JSON format** (required fields):
+- `phases` (list) - Each phase needs:
+  - `name` (string) - Phase name
+
+... [97 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8190" cache_read_input_tokens="26998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8190}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's my analysis of the pipeline:
+
+## The Pipeline Design
+
+The pipeline is actually well-designed when it works:
+
+```
+JSON phases/steps → erk exec objective-render-roadmap → ## Roadmap section
+                                                         ├── markdown tables (display)
+                                                         └── objective-roadmap YAML block (machine-readable)
+                    ↓
+           Written to objective-body.md
+                    ↓
+           objective-save-to-issue reads it
+                    ↓
+           create_objective_issue():
+              • _build_objective_roadmap_block(plan_content) → extracts YAML block → issue body
+              • format_objective_content_comment(plan_content) → full content → first comment
+```
+
+## What Went Wrong with #9394
+
+The skill explicitly says:
+&gt; "Do NOT manually write roadmap tables or metadata blocks. Instead, construct a JSON object describing the phases and steps, then generate the complete roadmap section via `erk exec objective-render-roadmap`"
+
+But for #9394, the roadmap tables exist in the comment (hand-written markdown) while no `objective-roadmap` YAML block exists anywhere. This means Claude **manually wrote the roadmap tables** instead of piping JSON through the render command.
+
+## The Core Problem
+
+The skill instruction is a soft guardrail — it tells Claude what to do, but Claude can (and did) ignore it. The result: the markdown tables are the only representation, and no machine-readable YAML was ever generated.
+
+## Fix Options
+
+**Option A: Make the pipeline resilient (parse markdown tables as fallback)**
+- If `_build_objective_roadmap_block()` finds no YAML block, parse the markdown tables from plan_content and generate the YAML
+- Pro: Handles the case where Claude skips the render command
+- Con: Adds complexity, markdown parsing is fragile
+
+**Option B: Make `objective-save-to-issue` validate before saving**
+- Before creating the issue, check that plan_content contains the `objective-roadmap` block
+- If missing, error out and tell Claude to use `objective-render-roadmap`
+- Pro: Fail-fast, forces correct behavior
+- Con: Doesn't help if Claude still doesn't comply
+
+**Option C: Move roadmap generation into `objective-save-to-issue` itself**
+- Have the save command parse the markdown tables and generate the YAML block server-side
+- Claude still writes tables however it wants; the tooling handles the machine-readable format
+- Pro: Removes the dependency on Claude calling a separate command
+- Con: Parsing markdown tables is inherently brittle
+
+**Option D: Make `objective-save-to-issue` accept a `--roadmap-json` flag**
+- The skill passes the phases JSON directly to the save command
+- The save command calls `objective-render-roadmap` internally
+- Pro: Single command, no way to skip the YAML generation
+- Con: Requires skill changes + potentially duplicates the roadmap rendering
+
+**Option E: Strengthen the skill + add validation (belt and suspenders)**
+- Improve the skill prompt to make the instruction harder to ignore
+- AND add validation in `objective-save-to-issue --validate` to reject content without the YAML block
+
+What's your instinct? I'm leaning toward some combination — probably making the save command smarter (C or D) since relying on Claude to follow multi-step instructions is the fragile link.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8190" cache_read_input_tokens="26998" output_tokens="1180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8190, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>remember this principle: yaml is source of truth for roadmap. markdown block is a rendering of that. we should never parse the markdown table</user>
+  <usage input_tokens="3" cache_creation_input_tokens="27576" cache_read_input_tokens="9015" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27576}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good principle. That eliminates A and C entirely — we never invert the data flow.
+
+So the question becomes: **how do we ensure the YAML always gets generated from the structured JSON that Claude has?**
+
+The current design has a fragile handoff:
+
+```
+Claude constructs JSON → Claude pipes to render command → Claude pastes output into objective-body.md
+         ✓ always happens         ✗ can be skipped              ✗ can be skipped
+```
+
+The fix should collapse that chain. Two directions:
+
+**Direction 1: `objective-save-to-issue --roadmap-json &lt;path-or-stdin&gt;`**
+- Claude writes the phases JSON to a scratch file (it always has this data)
+- The save command calls the render logic internally — YAML generation is guaranteed
+- The skill instruction simplifies: "write JSON to file, call save with --roadmap-json"
+- One command instead of two, no way to skip the YAML step
+
+**Direction 2: Validation gate in `objective-save-to-issue --validate`**
+- Save command checks for the `objective-roadmap` block before creating the issue
+- If missing, it errors: "No roadmap YAML found — run `erk exec objective-render-roadmap` first"
+- Keeps the two-command design but makes the failure loud and immediate
+
+Direction 1 is stronger — it removes the failure mode entirely rather than catching it after the fact. Direction 2 is simpler to implement but still relies on Claude retrying correctly.
+
+What's your read?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="27576" cache_read_input_tokens="9015" output_tokens="714" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 27576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>"No roadmap YAML found — run erk exec objective-render-roadmap first"
+
+--&gt; 
+
+shouldn't this be no roadmap md table found?
+
+render roadmap does not touch yaml</user>
+  <assistant>
+
+You're right — let me re-check what `objective-render-roadmap` actually outputs. I may have conflated things.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="914" cache_read_input_tokens="36591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 914}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F4t8NMy8k5PhAVBbWdjbBN">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="914" cache_read_input_tokens="36591" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 914, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F4t8NMy8k5PhAVBbWdjbBN">
+     1→"""Render a complete roadmap section from structured JSON input.
+     2→
+     3→Takes structured JSON from stdin describing phases/steps and outputs
+     4→a complete ## Roadmap markdown section with phase headers, tables,
+     5→test sections, and a machine-readable metadata block.
+     6→
+     7→Usage:
+     8→    echo '&lt;json&gt;' | erk exec objective-render-roadmap
+     9→
+    10→Input JSON:
+    11→    {
+    12→      "phases": [
+    13→        {
+    14→          "name": "Steelthread",
+    15→          "description": "Minimal vertical slice.",
+    16→          "pr_count": "1 PR",
+    17→          "steps": [
+    18→            {"id": "1.1", "description": "Minimal infrastructure"},
+    19→            {"id": "1.2", "description": "Wire into one path"}
+    20→          ],
+    21→          "test": "End-to-end acceptance test"
+    22→        }
+    23→      ]
+    24→    }
+    25→
+    26→Output:
+    27→    Complete ## Roadmap section including:
+    28→    - Phase headers (### Phase 1: Name (1 PR))
+    29→    - Phase descriptions
+    30→    - 4-column markdown tables (Step | Description | Status | PR)
+
+... [207 lines omitted] ...
+
+    59→        Tuple of (phases_list, error_message). If valid, error is None.
+   218→            json.dumps({"success": False, "error": "No input provided on stdin"}),
+   224→    except json.JSONDecodeError as e:
+   226→            json.dumps({"success": False, "error": f"Invalid JSON: {e}"}),
+   230→    phases, error = _validate_input(data)
+   231→    if error is not None:
+   232→        click.echo(json.dumps({"success": False, "error": error}))
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3732" cache_read_input_tokens="37505" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3732}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Wait — I just re-read the code. `objective-render-roadmap` **does** generate the YAML metadata block. Lines 200-201:
+
+```python
+metadata_inner = render_roadmap_block_inner(all_steps)
+sections.append(render_objective_roadmap_block(metadata_inner))
+```
+
+It outputs a complete `## Roadmap` section that includes **both**:
+1. Markdown tables (the rendering)
+2. The `&lt;!-- erk:metadata-block:objective-roadmap --&gt;` block with YAML inside `&lt;details&gt;` (the source of truth)
+
+So the command takes JSON in, produces markdown tables + YAML metadata block out. The problem with #9394 is that Claude never called this command — it hand-wrote the markdown tables and skipped the command entirely, so no YAML was ever generated.
+
+Does that match your understanding, or is there a different data flow I'm missing?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3732" cache_read_input_tokens="37505" output_tokens="1102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3732, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>this is confusing at this point. my mental model is that the yaml structure is the source of truth for the dependency graph.</user>
+  <assistant>
+
+You're right, let me get grounded. Let me look at what the YAML block actually contains and what the markdown tables contain, so we can talk about this concretely.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1278" cache_read_input_tokens="41237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1278}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LAM2LSkPRnqCvQHYRWQip5">
+    <param name="command">gh issue view 9324 --json body --jq '.body' | head -80</param>
+    <param name="description">View working objective #9324 body structure</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1278" cache_read_input_tokens="41237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1278}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LAM2LSkPRnqCvQHYRWQip5">
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+created_at: '2026-03-21T10:54:43.956480+00:00'
+created_by: schrockn
+objective_comment_id: 4103073582
+slug: eliminate-exception-control-flow
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:objective-header --&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+&lt;details&gt;
+&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+
+```yaml
+schema_version: '4'
+nodes:
+- id: '1.1'
+  slug: node-eaee1c42
+  description: Define SubmitStackResult | SubmitStackError discriminated union types
+  status: pending
+  pr: null
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019w9kenAEqUaFaHvRVSHSw6">
+    <param name="pattern">render_roadmap_block_inner</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1278" cache_read_input_tokens="41237" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019w9kenAEqUaFaHvRVSHSw6">
+Found 8 files
+packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py
+src/erk/cli/commands/exec/scripts/objective_render_roadmap.py
+packages/erk-shared/tests/unit/github/metadata/test_roadmap.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+src/erk/cli/commands/exec/scripts/migrate_objective_schema.py
+packages/erk-shared/tests/unit/github/metadata/test_roadmap_frontmatter.py
+packages/erk-shared/tests/unit/github/metadata/test_dependency_graph.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qd2SBYs3AuXit4ZrbDReM1">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1462" cache_read_input_tokens="42515" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1462, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qd2SBYs3AuXit4ZrbDReM1">
+     1→"""Shared parser, serializer, and data types for objective roadmap operations.
+     2→
+     3→This module provides:
+     4→- Data types: RoadmapNodeStatus, RoadmapNode, RoadmapPhase
+     5→- Parsing: parse_roadmap() (v2 frontmatter only)
+     6→- Frontmatter: validate, parse, group, update
+     7→- Utilities: compute_summary(), find_next_node(), serialize_phases()
+     8→
+     9→Previously split across objective_roadmap_shared.py and
+    10→objective_roadmap_frontmatter.py in the erk package. Consolidated
+    11→here to eliminate the circular dependency between erk_shared and erk.
+    12→"""
+    13→
+    14→import re
+    15→from collections.abc import Mapping
+    16→from dataclasses import dataclass, replace
+    17→from typing import Literal, cast
+    18→
+    19→import yaml
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    extract_raw_metadata_blocks,
+    23→    parse_metadata_block_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>OK. Now I see the picture clearly. Here's the actual data model:
+
+**YAML metadata block** (in issue body) = source of truth. Contains:
+- `RoadmapNode` list: id, description, status, pr, depends_on, slug, comment
+- Schema version
+- This is where `parse_roadmap()` reads from. All tooling reads from here.
+
+**Markdown tables** (in comment) = human-readable rendering of the YAML. Contains phase names, table rows. Derived from YAML via `rerender_comment_roadmap()`.
+
+**`objective-render-roadmap` command** = takes JSON, produces BOTH the markdown tables AND the YAML block in one output. It's a convenience command that generates the full `## Roadmap` section from structured input.
+
+So your mental model is correct: **YAML is the source of truth for the dependency graph**. The markdown tables are just a rendering. And the render command happens to produce both in a single output (since you need both when creating an objective).
+
+The bug: for #9394, Claude hand-wrote the markdown tables but never called the render command, so the YAML source of truth was never created. All downstream tooling (`validate_objective`, `update-objective-node`, `objective-plan-setup`) reads from the YAML block and correctly reports "no roadmap."
+
+So back to fixes — the question is: **how do we ensure the YAML source of truth always gets created?** Given your principle, Direction 1 (collapse the chain so the save command generates YAML from JSON internally) still seems right. What's your thinking?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="767" cache_read_input_tokens="43977" output_tokens="365" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 767, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>where is this json from? is it just the parsed yaml?</user>
+  <assistant>
+
+Good question. Let me trace where the JSON comes from.
+
+The JSON is **invented by Claude** during the `/erk:objective-create` skill. The skill instructs Claude to construct a JSON object from its analysis of the codebase, then pipe it to `objective-render-roadmap`. It's not parsed from anything — it's the original structured data that Claude generates.
+
+So the data flow is:
+
+```
+Claude's brain → JSON → objective-render-roadmap → { markdown tables + YAML block }
+```
+
+The JSON and the YAML are essentially the same data in different formats. The JSON has `phases[].steps[]` nesting, the YAML has a flat `nodes[]` list with `schema_version`. The render command transforms one into the other.
+
+So there are really **three representations** of the same data:
+1. **JSON** — Claude's structured output (ephemeral, piped to stdin)
+2. **YAML metadata block** — machine-readable source of truth (persisted in issue body)
+3. **Markdown tables** — human-readable rendering (persisted in comment)
+
+And the JSON is basically thrown away after the render command runs. It only exists for that one moment.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="532" cache_read_input_tokens="44744" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>objective-render-roadmap is a bad name then
+
+this is persisting the dependency graph of the objective</user>
+  <assistant>
+
+Exactly. The command's real job is: **take the structured graph definition, produce the YAML source of truth + its markdown rendering.** That's persistence/serialization, not "rendering."
+
+Something like `objective-init-roadmap` or `objective-create-roadmap` — it's creating the roadmap data structure, with the markdown tables as a side effect.
+
+And with that framing, the fix becomes clearer too. The current design asks Claude to call a "render" command (which sounds optional/cosmetic) when it's actually creating the authoritative data. No wonder Claude skipped it and just wrote the tables directly.
+
+Want to rename it as part of the fix, or keep that separate?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="451" cache_read_input_tokens="45276" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 451, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>i want to rename it 
+
+look at this. we have hte objective roadmap in the header AND rendered in the first comment
+
+what does the current command mutate</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1916" cache_read_input_tokens="45727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1916}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>`objective-render-roadmap` mutates **nothing**. It's a pure function: JSON on stdin → markdown text on stdout. Claude is supposed to capture that output and paste it into the objective body markdown file.
+
+The actual GitHub mutations happen later in `objective-save-to-issue` / `create_objective_issue()`:
+1. **Creates issue body** — objective-header + objective-roadmap YAML block
+2. **Creates first comment** — objective-body with markdown tables
+3. **Updates issue body** — backfills comment_id into header
+
+So the two places you see in that screenshot:
+- **Issue body**: objective-header + objective-roadmap (YAML source of truth, collapsed `&lt;details&gt;`)
+- **First comment**: objective-body (human-readable content including markdown table rendering)
+
+The render command is just a text transformation step that happens locally before any of those mutations.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1916" cache_read_input_tokens="45727" output_tokens="465" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1916, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>let's step back for a second and think about how to mkae this entire pipeline more reliable, clearly separating out what is appropriate for an LLM to handle and what is appropriate for deterministic code to handle</user>
+  <assistant>
+
+Good framing. Let me think about this from first principles.
+
+**What the LLM is good at:**
+- Understanding the codebase and deciding what the phases/nodes should be
+- Producing structured data (JSON) describing the dependency graph
+- Writing the human prose (goal, context, design decisions)
+
+**What deterministic code should handle:**
+- Serializing the YAML source of truth
+- Rendering markdown tables from YAML
+- Placing data in the right locations on GitHub (issue body vs comment)
+- Ensuring both representations stay in sync
+
+**The current pipeline's fragility:**
+1. Claude generates JSON
+2. Claude must remember to pipe it to a render command
+3. Claude must capture the output (which mixes markdown + YAML)
+4. Claude must paste that output into the right place in the objective body
+5. Claude writes the file to scratch
+6. A save command reads the file and tries to extract the YAML block back out of it
+
+Steps 2-4 are all opportunities for Claude to go off-script. And step 6 is parsing back out data that was already structured — the JSON existed, got turned into a blob of text, got mixed into a markdown file, and now the save command has to fish the YAML back out via regex.
+
+**What it should probably look like:**
+
+Claude produces two things:
+1. **Prose content** — the objective body (goal, context, design decisions, etc.)
+2. **Structured JSON** — the phases and nodes
+
+Then deterministic code handles everything else: persisting the YAML, rendering the tables, assembling the issue body and comment, placing blocks in the right locations.
+
+The save command would take both inputs — something like:
+```
+erk exec objective-save-to-issue --session-id X --slug Y --roadmap-json path/to/roadmap.json
+```
+
+No more round-tripping through a markdown file where structured data gets embedded as text and re-extracted. The JSON goes straight to the save command, which calls the serialization/rendering internally.
+
+Does that match your instinct?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="664" cache_read_input_tokens="47643" output_tokens="466" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>yes</user>
+  <assistant>
+
+OK so the plan is:
+
+1. **`objective-save-to-issue` takes `--roadmap-json &lt;path&gt;`** — reads the structured JSON directly, generates YAML block and markdown tables internally
+2. **Kill the round-trip** — no more "render to stdout, paste into markdown, re-extract via regex"
+3. **`objective-render-roadmap` becomes a preview-only tool** (or gets deleted) — Claude can still preview what the tables will look like, but it's not in the persistence path
+4. **Update `/erk:objective-create` skill** — Claude writes prose to scratch file, writes JSON to scratch file, calls save with both paths
+
+Want me to plan this out as a PR, or should we keep refining the design first? For instance — should the save command also validate the JSON schema before persisting, or trust that the schema is correct since it's the same validation that exists in the render command today?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="624" cache_read_input_tokens="48307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 624}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>one more use case we have to consider is when the roadmap gets updated. my mental model is that we called objective-render-roadmap to regenerated the md table from the source of truth yaml, that gets updated CRUD style</user>
+  <assistant>
+
+Ah, that's an important distinction. So `objective-render-roadmap` isn't (or shouldn't be) about creation at all — it's the **read/render step**: take the YAML source of truth and produce the markdown table display.
+
+So the operations are:
+
+| Operation | Input | Output | Who does it |
+|-----------|-------|--------|-------------|
+| **Create** roadmap | JSON (from Claude) | YAML block + markdown tables → GitHub | `objective-save-to-issue --roadmap-json` |
+| **Update** node | node ID + new status/PR | mutated YAML → re-rendered markdown | `update-objective-node` |
+| **Render** tables | YAML (from issue body) | markdown tables | `objective-render-roadmap` (renamed) |
+
+The render command's real job is: **given the YAML source of truth, produce the markdown table representation**. It's the YAML→markdown direction, not JSON→YAML.
+
+Right now it's doing JSON→(YAML+markdown), which conflates creation with rendering.
+
+So the rename should reflect that it's a render/display operation from YAML. Something like `objective-roadmap-render` or just keep `objective-render-roadmap` but change its input from JSON to YAML.
+
+And `update-objective-node` presumably already does the CRUD mutation on the YAML and then re-renders? Let me check.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="418" cache_read_input_tokens="48931" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 418}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EFPppnUEEcbqFPWdX3kqaC">
+    <param name="pattern">def update_objective_node</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="418" cache_read_input_tokens="48931" output_tokens="429" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 418, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EFPppnUEEcbqFPWdX3kqaC">
+Found 1 file
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_016EJBUKmSrPUMTBHs1NFcuT">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="49349" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 469, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016EJBUKmSrPUMTBHs1NFcuT">
+     1→"""Update node PR cells in an objective's roadmap table.
+     2→
+     3→Why this command exists (instead of using update-issue-body directly):
+     4→
+     5→    The alternative is "fetch body -&gt; parse markdown table -&gt; find node row -&gt;
+     6→    surgically edit the PR cell -&gt; write entire body back". That's ~15
+     7→    lines of fragile ad-hoc Python that every caller (skills, hooks, scripts)
+     8→    must duplicate. The roadmap table has a specific structure
+     9→    (| node_id | description | status | pr |) and the update has
+    10→    specific semantics:
+    11→
+    12→    1. Find the row by node ID across all phases
+    13→    2. Compute display status from the PR value
+    14→    3. Write status and PR cells atomically so the table is
+    15→       always human-readable without requiring a parse pass
+    16→
+    17→    Encoding this once in a tested CLI command means:
+    18→    - No duplicated table-parsing logic across callers
+    19→    - Testable edge cases (node not found, no roadmap, clearing PR)
+    20→    - Atomic mental model: "update node 1.3's PR to X"
+    21→    - Resilient to roadmap format changes (one command updates, not N sites)
+    22→
+    23→Usage:
+    24→    # Single node -- landed PR
+    25→    erk exec update-objective-node 6423 --node 1.3 --pr "#6500" --status done
+    26→
+    27→    # Clear PR
+    28→    erk exec update-objective-node 6423 --node 1.3 --pr ""
+    29→
+    30→    # Status-only update (preserve existing PR)
+
+... [524 lines omitted] ...
+
+    41→        Each node result: {node_id, success, previous_pr, error}
+    80→def _node_error_message(node_id: str, issue_number: int, error: object) -&gt; str:
+    81→    if error == "node_not_found":
+    83→    return f"Failed to replace cells for node '{node_id}'"
+    94→    backlink_warning: str | None
+    99→        return cls(backlink_set=True, backlink_warning=None, backlink_skip=None)
+   102→    def warning(cls, *, message: str) -&gt; BacklinkResult:
+   103→        return cls(backlink_set=False, backlink_warning=message, backlink_skip=None)
+   107→        return cls(backlink_set=False, backlink_warning=None, backlink_skip=reason)
+   115→    error: str | None
+   119→        return cls(node_id=node_id, success=True, previous_pr=previous_pr, error=None)
+   122→    def fail(cls, *, node_id: str, error: str) -&gt; UpdateObjectiveNodeResult:
+   123→        return cls(node_id=node_id, success=False, previous_pr=None, error=error)
+   127→class UpdateObjectiveNodeError:
+   128→    error: str
+   132→        return {"success": False, "error": self.error, "message": self.message}
+   187→    UpdateObjectiveNodeMultiOutput | UpdateObjectiveNodeError | UpdateObjectiveNodeSuccess
+   219→        return UpdateObjectiveNodeError(
+   220→            error=single.error or "unknown",
+   221→            message=_node_error_message(node[0], issue_number, single.error),
+   305→    except ValueError:
+   322→    Never raises — backlink failure doesn't block the node update.
+   331→        return BacklinkResult.warning(message=f"PR {pr_ref} not found")
+   339→        return BacklinkResult.warning(
+   422→        err = UpdateObjectiveNodeError(
+   423→            error="no_update",
+   436→        err = UpdateObjectiveNodeError(
+   437→            error="issue_not_found",
+   446→        err = UpdateObjectiveNodeError(
+   447→            error="no_roadmap",
+   458→            UpdateObjectiveNodeResult.fail(node_id=n, error="node_not_found") for n in missing_nodes
+   476→    any_failure = False
+   481→            results.append(UpdateObjectiveNodeResult.fail(node_id=node_id, error="node_not_found"))
+   482→            any_failure = True
+   496→                UpdateObjectiveNodeResult.fail(node_id=node_id, error="replacement_failed")
+   498→            any_failure = True
+   504→    # Exit early if all nodes failed
+   505→    if any_failure and not any(r.success for r in results):
+   534→    # failure doesn't prevent the node update from succeeding.
+  </tool_result>
+  <assistant>Good — `update-objective-node` confirms the pattern:
+
+1. **Mutates YAML** — `_replace_node_refs_in_body` updates the `objective-roadmap` YAML block in the issue body (lines 285-308)
+2. **Writes YAML to GitHub** — `update_issue_body` (line 520)
+3. **Re-renders markdown from YAML** — `rerender_comment_roadmap(updated_body, comment_body)` reads the updated YAML and regenerates the comment's markdown tables (lines 522-530)
+
+So the update path is clean: **YAML is mutated, then markdown is deterministically re-rendered from it.**
+
+The creation path is the broken one. Here's the full picture:
+
+| Operation | YAML handling | Markdown handling | Status |
+|-----------|--------------|-------------------|--------|
+| **Update** node | Mutate YAML in issue body | Re-render from YAML | Clean |
+| **Create** roadmap | Claude pastes text containing YAML block, save command fishes it back out | Claude pastes text containing tables | Fragile |
+
+The fix: make creation work like update — **deterministic code owns YAML creation and markdown rendering.** Claude provides the structured input (JSON), `objective-save-to-issue --roadmap-json &lt;path&gt;` handles everything else internally.
+
+And `objective-render-roadmap` gets renamed to reflect its actual role: it's really `rerender-comment-roadmap` at the CLI level — "given the YAML source of truth, regenerate the markdown display." Though that's already handled internally by `update-objective-node`, so it may not even need to be a standalone command anymore.
+
+Shall I draft this as a plan?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7200" cache_read_input_tokens="49818" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7200}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>it is already handled in update-objective-node? is there duplicated code here? the creation and update codepaths should run identical code when it comes to regenerating the markdown table</user>
+  <usage input_tokens="3" cache_creation_input_tokens="594" cache_read_input_tokens="57018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check if they share the same rendering code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="594" cache_read_input_tokens="57018" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 594}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QcBB2Sd4N1GS8pXWd39Fca">
+    <param name="pattern">rerender_comment_roadmap</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="594" cache_read_input_tokens="57018" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 594, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QcBB2Sd4N1GS8pXWd39Fca">
+src/erk/cli/commands/objective/check/validation.py:89:    from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+src/erk/cli/commands/objective/check/validation.py:91:    rerendered = rerender_comment_roadmap(issue_body, comment_body)
+src/erk/cli/commands/objective/plan_cmd.py:39:    rerender_comment_roadmap,
+src/erk/cli/commands/objective/plan_cmd.py:409:        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/objective/plan_cmd.py:465:        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/objective/plan_cmd.py:515:        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/exec/scripts/objective_link_pr.py:29:    rerender_comment_roadmap,
+src/erk/cli/commands/exec/scripts/objective_link_pr.py:155:            updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:52:from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py:130:    updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/exec/scripts/add_objective_node.py:35:    rerender_comment_roadmap,
+src/erk/cli/commands/exec/scripts/add_objective_node.py:161:        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/pr/submit_pipeline.py:45:    rerender_comment_roadmap,
+src/erk/cli/commands/pr/submit_pipeline.py:989:            updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+src/erk/cli/commands/exec/scripts/update_objective_node.py:73:    rerender_comment_roadmap,
+src/erk/cli/commands/exec/scripts/update_objective_node.py:528:        updated_comment = rerender_comment_roadmap(updated_body, comment_body)
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:12:from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:650:    runs, the comment body should match what rerender_comment_roadmap() produces.
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:679:    rerendered = rerender_comment_roadmap(final_issue_body, final_comment_body)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py:826:def rerender_comment_roadmap(issue_body: str, comment_body: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py:27:    rerender_comment_roadmap,
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py:243:    rerendered = rerender_comment_roadmap(updated_body, objective_comment)
+  </tool_result>
+  <assistant>Good news: everyone shares the same `rerender_comment_roadmap` from `roadmap.py`. It's called from 9 different sites — update-objective-node, objective creation, submit pipeline, plan_cmd, objective-link-pr, etc.
+
+Now let me check the **creation** path — does `create_objective_issue` also use it?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="57612" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1194}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SWkvixipVNcstJk9onEird">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="offset">230</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1194" cache_read_input_tokens="57612" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SWkvixipVNcstJk9onEird">
+   230→            title=title,
+   231→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+   232→        )
+   233→
+   234→    # Step 7: Update issue body with objective_comment_id
+   235→    updated_body = update_objective_header_comment_id(issue_body, comment_id)
+   236→    github_issues.update_issue_body(repo_root, result.number, BodyText(content=updated_body))
+   237→
+   238→    # Step 7b: Normalize roadmap tables in comment to canonical format
+   239→    # The comment from format_objective_content_comment() wraps raw markdown
+   240→    # between roadmap-table markers, but the validator re-renders from YAML
+   241→    # using render_roadmap_tables() which produces a stripped-down format.
+   242→    # Normalize here so the comment is created in the format the validator expects.
+   243→    rerendered = rerender_comment_roadmap(updated_body, objective_comment)
+   244→    if rerendered is not None and rerendered != objective_comment:
+   245→        github_issues.update_comment(repo_root, comment_id, rerendered)
+   246→
+   247→    return CreateObjectiveIssueResult(
+   248→        success=True,
+   249→        pr_number=result.number,
+   250→        plan_url=result.url,
+   251→        title=title,
+   252→        error=None,
+   253→    )
+   254→
+  </tool_result>
+  <assistant>The rendering code is shared — `rerender_comment_roadmap` is the single function everyone uses. No duplication there.
+
+But look at the creation path's comment (lines 238-242) — it's telling on itself:
+
+&gt; "The comment from `format_objective_content_comment()` wraps **raw markdown** between roadmap-table markers, but the validator re-renders from YAML using `render_roadmap_tables()` which produces a stripped-down format. **Normalize here** so the comment is created in the format the validator expects."
+
+So at creation time, Claude's hand-written markdown tables get put into the comment first, then immediately overwritten by a re-render from the YAML. The raw markdown tables are dead on arrival — they exist only to be replaced.
+
+This reinforces your point: with the `--roadmap-json` approach, the creation path wouldn't need Claude to produce markdown tables at all. The save command would:
+1. Take JSON → generate YAML block → put in issue body
+2. Generate markdown tables from YAML → put in comment
+3. Same `rerender_comment_roadmap` code path everyone else uses
+
+The Claude-authored markdown tables were always a vestigial step that gets overwritten. Removing them from the pipeline just makes the data flow honest.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="602" cache_read_input_tokens="58806" output_tokens="291" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>ok given all this context and exploration, what is the recommendation for the path forward?</user>
+  <assistant>
+
+Here's my recommendation:
+
+## 1. `objective-save-to-issue` takes `--roadmap-json &lt;path&gt;`
+
+The save command accepts the structured JSON (phases/nodes) directly. Internally it:
+- Validates the JSON schema (reuse existing validation from `objective-render-roadmap`)
+- Creates `RoadmapNode` objects → serializes to YAML → puts in issue body
+- Renders markdown tables from YAML → puts in comment via `rerender_comment_roadmap`
+
+Claude writes two files to scratch: the prose content and the roadmap JSON. One command persists everything.
+
+## 2. Delete `objective-render-roadmap`
+
+It currently conflates two things (JSON→YAML creation + markdown rendering) and its output gets overwritten at creation time anyway. The JSON→YAML path moves into `objective-save-to-issue`. The YAML→markdown path is already `rerender_comment_roadmap`.
+
+If Claude wants a preview of the tables before saving, we could add a `--dry-run` flag to the save command, but I'd skip that until it's actually needed.
+
+## 3. Update `/erk:objective-create` skill
+
+Simplify the instructions:
+- Write prose to `objective-body.md` (no roadmap section needed)
+- Write phases/nodes JSON to `roadmap.json`
+- Call `erk exec objective-save-to-issue --session-id X --slug Y --roadmap-json .erk/scratch/.../roadmap.json`
+
+The skill no longer needs the "Do NOT manually write roadmap tables" warning because there's no opportunity to do so — the tables are generated deterministically by the save command.
+
+## 4. Fix #9394 as a one-off
+
+Generate the missing YAML block from the existing markdown (manual, one-time) or re-create the objective using the new pipeline.
+
+---
+
+**What this doesn't change:** `update-objective-node`, `rerender_comment_roadmap`, `parse_roadmap` — all the downstream tooling stays the same since it reads from the YAML source of truth, which will now be reliably created.
+
+**Scope:** One exec script modified, one deleted, one skill updated. The shared library code (`roadmap.py`, `objective_issues.py`) needs minor changes to accept JSON input in `create_objective_issue`.
+
+Want me to turn this into a plan?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="462" cache_read_input_tokens="59408" output_tokens="550" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 462, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>skip 4 we are dealing with that separately
+
+plan the rest</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1913" cache_read_input_tokens="59870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1913}" output_tokens="35" service_tier="standard" inference_geo="not_available" />
+  <assistant>We've covered a lot of ground already. Let me do targeted exploration on the specific implementation details, then design the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1913" cache_read_input_tokens="59870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1913}" output_tokens="35" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NZgm8ajEEhQvXppopqxr6w">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore save-to-issue interface</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1192 chars]... of plan_content currently.
+
+Report all function signatures, key logic, and test patterns.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1913" cache_read_input_tokens="59870" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1913}" output_tokens="35" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JSmXUQcdwYNAZt6hjhaX37">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore render-roadmap and skill</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1315 chars]...iles).
+
+Report all function signatures, the JSON schema, and the exact skill instructions.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1913" cache_read_input_tokens="59870" output_tokens="1157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1913, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NZgm8ajEEhQvXppopqxr6w">
+Now I have comprehensive information. Let me compile the full interface and implementation details:
+
+## Summary Report: Full Interface and Implementation Analysis
+
+I've thoroughly explored the codebase and gathered complete information about `objective-save-to-issue`, `objective-render-roadmap`, and their supporting infrastructure. Here's the comprehensive analysis:
+
+---
+
+### 1. **`objective_save_to_issue` Command** 
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py`
+
+#### Function Signature:
+```python
+@click.command(name="objective-save-to-issue")
+@click.option("--format", "output_format", type=click.Choice(["json", "display"]), default="json", ...)
+@click.option("--session-id", default=None, help="Session ID for scoped PR lookup")
+@click.option("--slug", default=None, help="Short kebab-case identifier for the objective")
+@click.option("--validate", "run_validate", is_flag=True, help="Run objective validation after creation")
+@click.pass_context
+def objective_save_to_issue(
+    ctx: click.Context,
+    output_format: str,
+    session_id: str | None,
+    slug: str | None,
+    *,
+    run_validate: bool,
+) -&gt; None:
+```
+
+#### Key Logic:
+
+... [293 lines omitted] ...
+
+    error: str | None
+- **Exit 1**: JSON error object with `{"success": false, "error": "..."}`
+6. **Slug Validation**: Non-null slug is validated via `validate_objective_slug()` — rejects invalid, returns error (doesn't transform)
+  </tool_result>
+  <tool_result tool="toolu_01JSmXUQcdwYNAZt6hjhaX37">
+Perfect! Now I have all the information needed. Let me compile a comprehensive report.
+
+## Comprehensive Report: Objective Roadmap System
+
+### 1. **`objective-render-roadmap` Command**
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py`
+
+#### Input JSON Schema
+
+```json
+{
+  "phases": [
+    {
+      "name": "string (required)",
+      "description": "string (optional)",
+      "pr_count": "string (optional, defaults to '1 PR')",
+      "steps": [
+        {
+          "id": "string (required, e.g., '1.1')",
+          "description": "string (required)",
+          "status": "string (optional, defaults to 'pending')",
+          "pr": "string | null (optional, e.g., '#123')",
+          "slug": "string (optional, kebab-case)",
+          "depends_on": ["string", ...] (optional, list of step IDs)
+        },
+        ...
+      ],
+      "test": "string (optional)"
+    },
+
+... [316 lines omitted] ...
+
+1. **Validation** (lines 55-108): `_validate_input(data)` returns `(phases, error_message | None)`
+&lt;!-- WARNING: Machine-generated... --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="8520" cache_read_input_tokens="61783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8520}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration. Now let me design the implementation.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="8520" cache_read_input_tokens="61783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8520}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DNYNhbP7qVMjZ56NdLW9SJ">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design roadmap pipeline fix</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 6093 chars]...ntation plan with specific file changes, function signatures, and the order of operations.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="8520" cache_read_input_tokens="61783" output_tokens="2142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8520, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

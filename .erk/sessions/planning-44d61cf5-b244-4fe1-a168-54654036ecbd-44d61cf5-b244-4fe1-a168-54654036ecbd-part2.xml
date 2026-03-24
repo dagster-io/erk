@@ -1,0 +1,703 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01DNYNhbP7qVMjZ56NdLW9SJ">
+I now have complete understanding of the architecture. Let me design the implementation plan.
+
+---
+
+## Implementation Plan: Inline Roadmap JSON Processing into `objective-save-to-issue`
+
+### Problem Summary
+
+The current objective creation pipeline requires Claude to (1) pipe JSON to `objective-render-roadmap`, (2) capture its markdown+YAML output, (3) paste it into a markdown file, and (4) pass that file to `objective-save-to-issue` which re-extracts the YAML. This is fragile because Claude can skip step 1 and hand-write tables, resulting in objectives with no YAML source of truth. The fix is to pass structured JSON directly to the save command, which handles all YAML creation and markdown rendering internally.
+
+### Key Architectural Insight
+
+There are two types of data in the current flow:
+
+1. **YAML source of truth** (flat node list) -- stored in `objective-roadmap` metadata block in the issue body. Created from `RoadmapNode` objects via `render_roadmap_block_inner()` + `render_objective_roadmap_block()`.
+
+2. **Rendered markdown tables** (with phase headers) -- stored in the `objective-body` comment, wrapped in `&lt;!-- erk:roadmap-table --&gt;` markers. Created from `RoadmapPhase` objects via `render_roadmap_tables()`.
+
+The `objective-render-roadmap` command currently produces BOTH in one output that Claude pastes into the objective body. But the save command then tears them apart: it extracts YAML from the plan content via `_build_objective_roadmap_block()` and puts it in the issue body, while the full plan content (including rendered tables) goes into the comment.
+
+With the new design, the save command receives (a) prose content (no roadmap section) and (b) structured JSON. It creates the YAML itself and renders the tables itself. The "roadmap section" in the comment is generated entirely by the save command.
+
+### Design Answers
+
+**Q1: Where should JSON-to-RoadmapNode conversion live?**
+In a new shared function in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`. This keeps the roadmap data model concerns in the roadmap module and makes it testable independently. The function signature: `roadmap_nodes_from_json(data: dict[str, Any]) -&gt; tuple[list[RoadmapNode], list[PhaseMetadata], str | None]` -- returns nodes, phase metadata, and an optional error.
+
+**Q2: How do we handle phase metadata (names, descriptions, test sections)?**
+Introduce a lightweight `PhaseMetadata` frozen dataclass that captures the JSON's phase-level information: `name`, `description`, `pr_count`, `test`. This metadata is NOT stored in YAML (which remains flat nodes), but IS used at creation time to render the initial markdown tables and phase headers in the comment. After creation, `enrich_phase_names()` continues to derive phase names from markdown headers for subsequent mutations -- this is unchanged.
+
+
+... [213 lines omitted] ...
+
+        Tuple of (nodes, phase_metadata, error). On error, nodes and 
+2. If validation fails, output error and exit 1.
+- `roadmap_nodes_from_json()` -- valid input, all error cases (mirrors existing `_validate_input` tests).
+- `--roadmap-json` with invalid JSON returns error.
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="6970" cache_read_input_tokens="70303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6970}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a few critical details before writing the final plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6970" cache_read_input_tokens="70303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6970}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LV71wB1UE9nGnjnfWTkpG4">
+    <param name="pattern">def enrich_phase_names</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6970" cache_read_input_tokens="70303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6970}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LV71wB1UE9nGnjnfWTkpG4">
+471:def enrich_phase_names(body: str, phases: list[RoadmapPhase]) -&gt; list[RoadmapPhase]:
+472-    """Extract phase names from markdown headers and enrich phase objects.
+473-
+474-    Frontmatter doesn't store phase names, so we extract them from
+475-    markdown headers like "### Phase 1: Planning".
+476-
+477-    Args:
+478-        body: Full objective body with markdown headers
+479-        phases: List of phases with placeholder names
+480-
+481-    Returns:
+482-        List of phases with actual names from markdown headers
+483-    """
+484-    # Build map of phase identifiers to names from markdown
+485-    phase_pattern = re.compile(
+486-        r"^###\s+Phase\s+(\d+)([A-Z]?):\s*(.+?)(?:\s+\(\d+\s+PR\))?$", re.MULTILINE
+487-    )
+488-    phase_name_map: dict[tuple[int, str], str] = {}
+489-
+490-    for match in phase_pattern.finditer(body):
+491-        number = int(match.group(1))
+492-        suffix = match.group(2)
+493-        name = match.group(3).strip()
+494-        phase_name_map[(number, suffix)] = name
+495-
+496-    # Enrich phases with actual names
+497-    enriched_phases: list[RoadmapPhase] = []
+498-
+499-    for phase in phases:
+500-        key = (phase.number, phase.suffix)
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014kNMiDvHBaKpvBNRuQMbUj">
+    <param name="pattern">def render_roadmap_tables</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6970" cache_read_input_tokens="70303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6970}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014kNMiDvHBaKpvBNRuQMbUj">
+596:def render_roadmap_tables(phases: list[RoadmapPhase]) -&gt; str:
+597-    """Render phases as markdown tables matching the objective-body display format.
+598-
+599-    Format per phase:
+600-        ### Phase {number}{suffix}: {name} ({N} PR)
+601-        | Node | Description | Status | PR |
+602-        |------|-------------|--------|----|
+603-        | {id} | {desc}      | {status} | {pr} |
+604-
+605-    When any node across all phases has ``depends_on`` specified, a "Depends On"
+606-    column is inserted between Description and Status.
+607-
+608-    Status display: underscores are replaced with hyphens (in_progress → in-progress).
+609-    Null values render as ``-``.
+610-    """
+611-    any_has_depends_on = any(
+612-        step.depends_on is not None for phase in phases for step in phase.nodes
+613-    )
+614-    sections: list[str] = []
+615-
+616-    for phase in phases:
+617-        pr_count = sum(1 for step in phase.nodes if step.pr is not None)
+618-        header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"
+619-
+620-        rows: list[str] = []
+621-        if any_has_depends_on:
+622-            rows.append("| Node | Description | Depends On | Status | PR |")
+623-            rows.append("|------|-------------|------------|--------|----|")
+624-        else:
+625-            rows.append("| Node | Description | Status | PR |")
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LeawU8F8bw9yXJGAsi8syA">
+    <param name="pattern">def wrap_roadmap_tables_with_markers</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6970" cache_read_input_tokens="70303" output_tokens="614" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6970, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LeawU8F8bw9yXJGAsi8syA">
+751:def wrap_roadmap_tables_with_markers(content: str) -&gt; str:
+752-    """Wrap the roadmap section (phase headers + tables) with HTML comment markers.
+753-
+754-    Finds the first ``### Phase N:`` header through the end of the last table
+755-    and wraps the entire range with ``&lt;!-- erk:roadmap-table --&gt;`` /
+756-    ``&lt;!-- /erk:roadmap-table --&gt;``.
+757-
+758-    If markers already exist, replaces them in-place.
+759-    If no phase headers are found, returns content unchanged.
+760-
+761-    Args:
+762-        content: Objective markdown content (typically the objective-body comment).
+763-
+764-    Returns:
+765-        Content with roadmap section wrapped in markers.
+766-    """
+767-    # Remove any existing markers first
+768-    content = content.replace(ROADMAP_TABLE_MARKER_START + "\n", "")
+769-    content = content.replace("\n" + ROADMAP_TABLE_MARKER_END, "")
+770-    content = content.replace(ROADMAP_TABLE_MARKER_START, "")
+771-    content = content.replace(ROADMAP_TABLE_MARKER_END, "")
+772-
+773-    # Find all phase headers
+774-    phase_pattern = re.compile(r"^###\s+Phase\s+\d+[A-Z]?:\s*.+$", re.MULTILINE)
+775-    phase_matches = list(phase_pattern.finditer(content))
+776-
+777-    if not phase_matches:
+778-        return content
+779-
+780-    # Start of the roadmap section is the first phase header
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SRgVahNp38Pv3g7Aepa63M">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="offset">791</param>
+    <param name="limit">85</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2431" cache_read_input_tokens="77273" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2431, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SRgVahNp38Pv3g7Aepa63M">
+   791→        last_row_end = last_phase_end + match.end()
+   792→
+   793→    roadmap_end = last_row_end
+   794→
+   795→    # Extract the roadmap section and wrap it
+   796→    before = content[:roadmap_start]
+   797→    roadmap = content[roadmap_start:roadmap_end]
+   798→    after = content[roadmap_end:]
+   799→
+   800→    return f"{before}{ROADMAP_TABLE_MARKER_START}\n{roadmap}\n{ROADMAP_TABLE_MARKER_END}{after}"
+   801→
+   802→
+   803→def extract_roadmap_table_section(text: str) -&gt; tuple[str, int, int] | None:
+   804→    """Extract the roadmap table section bounded by markers.
+   805→
+   806→    Args:
+   807→        text: Full text that may contain roadmap table markers.
+   808→
+   809→    Returns:
+   810→        Tuple of (section_content, start_offset, end_offset) if markers found,
+   811→        None otherwise.
+   812→    """
+   813→    start_idx = text.find(ROADMAP_TABLE_MARKER_START)
+   814→    if start_idx == -1:
+   815→        return None
+   816→
+   817→    end_idx = text.find(ROADMAP_TABLE_MARKER_END, start_idx)
+   818→    if end_idx == -1:
+   819→        return None
+   820→
+
+... [53 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check one more thing — how `format_objective_content_comment` works and how the comment is assembled.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3756" cache_read_input_tokens="77273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3756}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PBDCYqBQ76bHzfzUeCEWov">
+    <param name="pattern">def format_objective_content_comment</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3756" cache_read_input_tokens="77273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3756}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PBDCYqBQ76bHzfzUeCEWov">
+795:def format_objective_content_comment(content: str) -&gt; str:
+796-    """Format objective content for the first comment.
+797-
+798-    Wraps objective content in collapsible objective-body metadata block.
+799-    If the content contains roadmap tables, wraps them with HTML comment
+800-    markers for reliable table detection by update-objective-node.
+801-
+802-    Args:
+803-        content: The full objective markdown content
+804-
+805-    Returns:
+806-        Comment body with objective wrapped in metadata block
+807-    """
+808-    from erk_shared.gateway.github.metadata.roadmap import wrap_roadmap_tables_with_markers
+809-
+810-    marked_content = wrap_roadmap_tables_with_markers(content.strip())
+811-    return render_objective_body_block(marked_content)
+812-
+813-
+814-def extract_objective_header_comment_id(issue_body: str) -&gt; int | None:
+815-    """Extract objective_comment_id from objective-header block.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0188vif6DWi9hwmNiveaVwFB">
+    <param name="pattern">def render_objective_body_block</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3756" cache_read_input_tokens="77273" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3756, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0188vif6DWi9hwmNiveaVwFB">
+770:def render_objective_body_block(content: str) -&gt; str:
+771-    """Render objective content wrapped in objective-body metadata block.
+772-
+773-    Returns markdown like:
+774-    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+775-    &lt;!-- erk:metadata-block:objective-body --&gt;
+776-    &lt;details open&gt;
+777-    &lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;
+778-
+779-    {content}
+780-
+781-    &lt;/details&gt;
+782-    &lt;!-- /erk:metadata-block:objective-body --&gt;
+783-    """
+784-    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+785-&lt;!-- erk:metadata-block:objective-body --&gt;
+786-&lt;details open&gt;
+787-&lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;
+788-
+789-{content}
+790-
+  </tool_result>
+  <assistant>Good. Now I have everything I need. Let me also check what `render_roadmap_tables` uses for the PR count header to understand the format mismatch concern.
+
+Looking at line 618: `header = f"### Phase {phase.number}{phase.suffix}: {phase.name} ({pr_count} PR)"` — this counts actual PRs linked, while the JSON input has a freeform `pr_count` field like "1 PR" or "1-2 PRs". At creation time all nodes are pending with no PRs, so the header would be `(0 PR)`. That's different from the JSON's `pr_count`.
+
+This confirms the plan agent's concern: `render_roadmap_tables` computes PR count from actual linked PRs, which is 0 at creation. The creation path needs to use the JSON's `pr_count` for initial headers, and subsequent re-renders will use the computed count. This is acceptable since `rerender_comment_roadmap` rewrites the tables anyway.
+
+Now let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="953" cache_read_input_tokens="81029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 953}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01XEwSMQ7r8GuN5t2pgtWQdo">
+    <param name="file_path">/Users/schrockn/.claude/plans/keen-zooming-piglet.md</param>
+    <param name="content"># Inline Roadmap JSON into objective-save-to-issue
+
+## Context
+
+The objective creation pip...[truncated 6143 chars]...ode &lt;number&gt; --node 1.1 --status planning` works (proves YAML source of truth is correct)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="953" cache_read_input_tokens="81029" output_tokens="2239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 953, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XEwSMQ7r8GuN5t2pgtWQdo">
+File created successfully at: /Users/schrockn/.claude/plans/keen-zooming-piglet.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01D3DAqnhX85ei5UFgwzxoGJ">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2614" cache_read_input_tokens="81982" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D3DAqnhX85ei5UFgwzxoGJ">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="84596" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Plan is written. The core idea: `objective-save-to-issue --roadmap-json &lt;path&gt;` handles YAML creation and markdown rendering internally, eliminating the fragile multi-step handoff where Claude had to pipe JSON through a separate render command.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="84596" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_013pJCiXHY4Lb75V6p68USaD">
+    <param name="plan"># Inline Roadmap JSON into objective-save-to-issue
+
+## Context
+
+The objective creation pip...[truncated 6143 chars]...ode &lt;number&gt; --node 1.1 --status planning` works (proves YAML source of truth is correct)
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/keen-zooming-piglet.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="84596" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013pJCiXHY4Lb75V6p68USaD">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/keen-zooming-piglet.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Inline Roadmap JSON into objective-save-to-issue
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Create a new branch and save plan as a planned PR. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without creating a planned PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider creating a planned PR instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 44d61cf5-b244-4fe1-a168-54654036ecbd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VvPYU5kuAUNBvYtngyfvHn">
+    <param name="file_path">/Users/schrockn/.claude/plans/keen-zooming-piglet.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="85334" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 760, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VvPYU5kuAUNBvYtngyfvHn">
+     1→# Inline Roadmap JSON into objective-save-to-issue
+     2→
+     3→## Context
+     4→
+     5→The objective creation pipeline is fragile because it relies on Claude to: (1) construct JSON, (2) pipe it to `objective-render-roadmap`, (3) capture the output, (4) paste it into a markdown file. Claude can skip steps 2-3 and hand-write markdown tables, resulting in objectives with no YAML source of truth. This happened with #9394.
+     6→
+     7→**Principle:** YAML is the source of truth for the roadmap dependency graph. Markdown tables are a rendering of it. We never parse markdown tables.
+     8→
+     9→**Fix:** `objective-save-to-issue` accepts `--roadmap-json &lt;path&gt;` and handles YAML creation + markdown rendering internally. Delete `objective-render-roadmap`.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Add `PhaseMetadata` dataclass and `roadmap_nodes_from_json()` to roadmap.py
+    14→
+    15→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+    16→
+    17→Add `PhaseMetadata` frozen dataclass (captures phase-level info from JSON that isn't stored in YAML: `number`, `name`, `description`, `pr_count`, `test`).
+    18→
+    19→Add `roadmap_nodes_from_json(data: dict) -&gt; tuple[list[RoadmapNode], list[PhaseMetadata], str | None]`:
+    20→- Absorbs validation logic from `_validate_input()` in `objective_render_roadmap.py`
+    21→- Absorbs RoadmapNode construction + slug generation via `slugify_node_description()`
+    22→- Returns `(nodes, phase_metadata, error_message)`
+    23→
+    24→### 2. Add `render_initial_roadmap_section()` to roadmap.py
+    25→
+    26→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+    27→
+    28→Add `render_initial_roadmap_section(nodes: list[RoadmapNode], phase_metadata: list[PhaseMetadata]) -&gt; str`:
+    29→- Renders phase headers using JSON's `pr_count` field (e.g., "### Phase 1: Steelthread (1 PR)")
+    30→- Renders markdown tables using `escape_md_table_cell()` (reuse existing pattern from `render_roadmap_tables`)
+
+... [88 lines omitted] ...
+
+    70→3. On error, output JSON error and exit 1
+    91→- Remove "Do NOT manually write roadmap tables" warning (no longer relevant)
+   102→- `--roadmap-json` with invalid JSON → error output
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01NZdXm8BZ7zDxbErbopPh3o">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2385" cache_read_input_tokens="86094" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2385, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NZdXm8BZ7zDxbErbopPh3o">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+**# Inline Roadmap JSON into objective-save-to-issue**
+
+**Context:** The objective creation pipeline is fragile because Claude can skip the `objective-render-roadmap` command and hand-write markdown tables, resulting in no YAML source of truth (happened with #9394). Fix: `objective-save-to-issue --roadmap-json &lt;path&gt;` handles YAML creation + markdown rendering internally.
+
+**Changes (8 steps):**
+1. Add `PhaseMetadata` dataclass + `roadmap_nodes_from_json()` to `roadmap.py` — absorbs validation and node construction from the render command
+2. Add `render_initial_roadmap_section()` to `roadmap.py` — renders phase headers + tables + markers for creation time
+3. Modify `create_objective_issue()` — add optional `roadmap_nodes` and `phase_metadata` params, build YAML directly when provided
+4. Add `--roadmap-json` to `objective-save-to-issue` — reads JSON, validates, passes structured data to create function
+5. Delete `objective-render-roadmap` command, tests, and registration
+6. Update `/erk:objective-create` skill — write JSON to file, pass via `--roadmap-json`
+7. Add tests for new functions + CLI integration
+8. Update docs</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1428" cache_read_input_tokens="88479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1428}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Mt77eYKnP7fM7R59UwUhdV">
+    <param name="questions">[{'question': '📋 Inline Roadmap JSON into objective-save-to-issue\nCurrent context: (wt:er...[truncated 396 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1428" cache_read_input_tokens="88479" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1428}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mt77eYKnP7fM7R59UwUhdV">
+User has answered your questions: "📋 Inline Roadmap JSON into objective-save-to-issue
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Lc15Qjm3KVjcqWY9EzB9Xn">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="89907" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 619, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lc15Qjm3KVjcqWY9EzB9Xn">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a planned PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `pr_number`, `pr_url`, `title`, `branch_name`, `pr_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="44d61cf5-b244-4fe1-a168-54654036ecbd" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="44d61cf5-b244-4fe1-a168-54654036ecbd" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `pr_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-pr-metadata &lt;pr_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;pr_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "44d61cf5-b244-4fe1-a168-54654036ecbd" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;pr_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → PR #&lt;pr_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as PR #&lt;pr_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as planned PR #&lt;pr_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "44d61cf5-b244-4fe1-a168-54654036ecbd" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `pr_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "44d61cf5-b244-4fe1-a168-54654036ecbd" \
+    --stage planning \
+    --source local \
+    --pr-number &lt;pr_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;pr_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "44d61cf5-b244-4fe1-a168-54654036ecbd" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2995" cache_read_input_tokens="89907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2995}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check for the objective-context marker first, then save the plan.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2995" cache_read_input_tokens="89907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2995}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017oGZNSg4n2yphkg5ufNS4o">
+    <param name="command">erk exec marker read --session-id "44d61cf5-b244-4fe1-a168-54654036ecbd" objective-context 2&gt;&amp;1 || true</param>
+    <param name="description">Check for objective-context marker</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2995" cache_read_input_tokens="89907" output_tokens="275" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2995, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017oGZNSg4n2yphkg5ufNS4o">
+(Bash completed with no output)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01J5VvAfHaa3rQM49UfuRX6W">
+    <param name="command">erk exec marker read --session-id "44d61cf5-b244-4fe1-a168-54654036ecbd" objective-context</param>
+    <param name="description">Check objective-context marker (check exit code)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1493" cache_read_input_tokens="92902" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1493, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J5VvAfHaa3rQM49UfuRX6W">
+Exit code 1
+  </tool_result>
+  <assistant>No objective-context marker. Now let me save the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="94395" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 135}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018ugyZGvSf727Wa9csRqXqu">
+    <param name="command">erk exec plan-save --format json --session-id="44d61cf5-b244-4fe1-a168-54654036ecbd" --bra...[truncated 309 chars]...own rendering internally, and deletes the now-redundant objective-render-roadmap command."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="94395" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 135, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ugyZGvSf727Wa9csRqXqu">
+{"success": true, "pr_number": 9402, "pr_url": "https://github.com/dagster-io/erk/pull/9402", "title": "[erk-pr] Inline Roadmap JSON into objective-save-to-issue", "branch_name": "plnd/inline-roadmap-json-save-03-24-1655", "pr_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/44d61cf5-b244-4fe1-a168-54654036ecbd/plan_snapshots/000001-e9b63d80"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01N1mzhTxSGo1rGDwjoJGVr5">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="94530" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 394, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N1mzhTxSGo1rGDwjoJGVr5">
+SESSION_ID=44d61cf5-b244-4fe1-a168-54654036ecbd
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/44d61cf5-b244-4fe1-a168-54654036ecbd.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01D85BZWGsJt7PwZEN1BNUn9">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 60 chars]...e1-a168-54654036ecbd" --stage planning --source local --pr-number 9402 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="94924" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 180, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
