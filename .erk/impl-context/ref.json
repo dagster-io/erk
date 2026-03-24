@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Blank line breaks ci-update-pr-body invocation in plan-implement workflow"
+}
