@@ -1,0 +1,1291 @@
+<session>
+  <meta branch="plnd/unified-pr-ref-type-03-22-1840" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;9393&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement PR #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `9393` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `pr_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;pr_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>I'll start by setting up the implementation environment for plan #9393.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11320" cache_read_input_tokens="17513" cache_creation="{'ephemeral_5m_input_tokens': 11320, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UVuK22g1aDrbGB3ET3eg8P">
+    <param name="command">erk exec setup-impl --issue 9393 2&gt;&amp;1</param>
+    <param name="description">Set up implementation for plan #9393</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11320" cache_read_input_tokens="17513" cache_creation="{'ephemeral_5m_input_tokens': 11320, 'ephemeral_1h_input_tokens': 0}" output_tokens="120" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UVuK22g1aDrbGB3ET3eg8P">
+Already on PR branch 'plnd/unified-pr-ref-type-03-22-1840', teleporting from remote...
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--unified-pr-ref-type-03-22-1840", "pr_number": 9393, "pr_url": "https://github.com/dagster-io/erk/pull/9393", "branch": "plnd/unified-pr-ref-type-03-22-1840", "pr_title": "[erk-pr] Unified PR Reference Type", "no_impl": false}
+{"success": true, "source": "issue", "pr_number": 9393, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="28833" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WwimGtX7X367mcsQFz5sET">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--unified-pr-ref-type-03-22-1840/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="28833" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WwimGtX7X367mcsQFz5sET">
+     1→# Plan: Unified PR Reference Type
+     2→
+     3→## Context
+     4→
+     5→Running `erk slot teleport https://app.graphite.com/github/dagster-io/erk/pull/9391` fails because the command uses `type=int`. Users naturally paste URLs from GitHub and Graphite. 12 commands across the codebase have this same limitation. Meanwhile, `land_cmd.py` already handles URLs via ad-hoc inline parsing, and `checkout_cmd.py` has its own parser. There's no single canonical place that defines what a "PR reference" is.
+     6→
+     7→**Goal:** Create a `PR_REF` Click ParamType so that every command accepting a PR argument automatically accepts plain numbers, GitHub URLs, and Graphite URLs — with one line of code change per command.
+     8→
+     9→## Implementation
+    10→
+    11→### Step 1: Add Graphite URL parser + unified `parse_pr_ref` to shared layer
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/gateway/github/parsing.py`
+    14→
+    15→Add two functions after `parse_pr_number_from_url`:
+    16→
+    17→```python
+    18→def parse_pr_number_from_graphite_url(url: str) -&gt; int | None:
+    19→    """Extract PR number from Graphite PR URL (both .dev and .com domains)."""
+    20→    match = re.match(r"https://app\.graphite\.(?:dev|com)/github/pr/[^/]+/[^/]+/(\d+)", url)
+    21→    if match:
+    22→        return int(match.group(1))
+    23→    return None
+    24→
+    25→
+    26→def parse_pr_ref(value: str) -&gt; int | None:
+    27→    """Parse a PR reference: plain number, GitHub PR URL, or Graphite PR URL.
+    28→
+    29→    Single canonical function for resolving any PR reference to a number.
+    30→    Returns None if value doesn't match any known format.
+
+... [149 lines omitted] ...
+
+    99→    # existing error message, updated to include Graphite format
+   114→**`src/erk/cli/commands/pr/checkout_cmd.py`** — Replace GitHub URL parsing in `_parse_checkout_reference` with `parse_pr_ref` (keeping the P-prefix and issue URL error routing):
+   118→    # P-prefix → error (keep existing)
+   119→    # Issue URL → error (keep existing)
+   123→    # error message
+   142→- Invalid input raises `click.exceptions.BadParameter`
+  </tool_result>
+  <assistant>Now I have a clear picture of the plan. Let me set up todos and signal GitHub that implementation has started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3208" cache_read_input_tokens="29159" cache_creation="{'ephemeral_5m_input_tokens': 3208, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_011GKJgst85A8vF6XAckSauy">
+    <param name="todos">[{'content': 'Step 1: Add Graphite URL parser + unified parse_pr_ref to erk-shared', 'stat...[truncated 893 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3208" cache_read_input_tokens="29159" cache_creation="{'ephemeral_5m_input_tokens': 3208, 'ephemeral_1h_input_tokens': 0}" output_tokens="433" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011GKJgst85A8vF6XAckSauy">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QfVpxwuNTAPpJewqPrHjAu">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="465" cache_read_input_tokens="32367" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QfVpxwuNTAPpJewqPrHjAu">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me explore the existing codebase to understand the current state before implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="32832" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JmNHueFNW5oJ7qnTDLYxSu">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="32832" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TXQDTB8eG7ghjcyeseMuKk">
+    <param name="command">ls /home/runner/work/erk/erk/src/erk/cli/commands/pr/ &amp;&amp; ls /home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/</param>
+    <param name="description">List relevant directories</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="32832" cache_creation="{'ephemeral_5m_input_tokens': 174, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JmNHueFNW5oJ7qnTDLYxSu">
+     1→"""Parsing utilities for GitHub operations."""
+     2→
+     3→import re
+     4→from pathlib import Path
+     5→from typing import Any
+     6→
+     7→from erk_shared.gateway.github.retry import (
+     8→    RETRY_DELAYS,
+     9→    RetriesExhausted,
+    10→    RetryRequested,
+    11→    with_retries,
+    12→)
+    13→from erk_shared.gateway.github.transient_errors import is_transient_error
+    14→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    15→from erk_shared.gateway.time.abc import Time
+    16→from erk_shared.subprocess_utils import run_subprocess_with_context
+    17→
+    18→
+    19→def execute_gh_command(cmd: list[str], cwd: Path) -&gt; str:
+    20→    """Execute a gh CLI command and return stdout.
+    21→
+    22→    Timing is handled by run_subprocess_with_context.
+    23→
+    24→    Args:
+    25→        cmd: Command and arguments to execute
+    26→        cwd: Working directory for command execution
+    27→
+    28→    Returns:
+    29→        stdout from the command
+    30→
+
+... [358 lines omitted] ...
+
+    32→        RuntimeError: If command fails with enriched error context
+    33→        FileNotFoundError: If gh is not installed
+    50→    """Execute gh command with automatic retry on transient network errors.
+    53→    Transient errors (network timeouts, connection failures) trigger automatic
+    66→        RuntimeError: If command fails after all retries, or with non-transient error
+    67→        FileNotFoundError: If gh is not installed
+    73→        except RuntimeError as e:
+    74→            if is_transient_error(str(e)):
+    82→        msg = f"GitHub command failed after retries: {result.reason}"
+    83→        raise RuntimeError(msg)
+   153→        ValueError: If URL is not a valid GitHub URL
+   171→    raise ValueError(f"Not a valid GitHub URL: {url}")
+  </tool_result>
+  <tool_result tool="toolu_01TXQDTB8eG7ghjcyeseMuKk">
+__init__.py
+__pycache__
+address_cmd.py
+check_cmd.py
+checkout_cmd.py
+close_cmd.py
+create_cmd.py
+dispatch_cmd.py
+dispatch_helpers.py
+diverge_fix_cmd.py
+duplicate_check_cmd.py
+list
+log_cmd.py
+metadata_helpers.py
+parse_pr_reference.py
+prepare_cmd.py
+replan_cmd.py
+resolve_conflicts_cmd.py
+rewrite_cmd.py
+shared.py
+submit_cmd.py
+submit_pipeline.py
+view
+__init__.py
+__pycache__
+assign_cmd.py
+checkout_cmd.py
+common.py
+config.py
+diagnostics.py
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>I notice there's a `parse_pr_reference.py` already in the pr commands directory. Let me read it along with other relevant files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5605" cache_read_input_tokens="33006" cache_creation="{'ephemeral_5m_input_tokens': 5605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UxA8JsB1DXna1NobTu4mEi">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/parse_pr_reference.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5605" cache_read_input_tokens="33006" cache_creation="{'ephemeral_5m_input_tokens': 5605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015nLs1RwZELuqU5mebXSgyv">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5605" cache_read_input_tokens="33006" cache_creation="{'ephemeral_5m_input_tokens': 5605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019ffyTvWDRsMC68mFfo8pJd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/github_parsing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5605" cache_read_input_tokens="33006" cache_creation="{'ephemeral_5m_input_tokens': 5605, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UxA8JsB1DXna1NobTu4mEi">
+     1→"""Parse PR reference from user input.
+     2→
+     3→This module re-exports parse_pr_identifier from the centralized CLI parsing module.
+     4→Kept for backwards compatibility with existing imports.
+     5→"""
+     6→
+     7→from erk.cli.github_parsing import parse_pr_identifier
+     8→
+     9→# Re-export with explicit assignment per PEP 484 to indicate intentional re-export
+    10→parse_pr_reference = parse_pr_identifier
+    11→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_015nLs1RwZELuqU5mebXSgyv">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from contextlib import nullcontext
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.activation import (
+    19→    activation_config_activate_only,
+    20→    ensure_worktree_activate_script,
+    21→    print_activation_instructions,
+    22→)
+    23→from erk.cli.commands.checkout_helpers import (
+    24→    ensure_branch_has_worktree,
+    25→    navigate_and_display_checkout,
+    26→)
+    27→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    28→from erk.cli.ensure import Ensure
+    29→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    30→from erk.core.context import ErkContext
+
+... [551 lines omitted] ...
+
+    33→from erk_shared.core.script_error import script_error_handler
+   110→        ctx.console.error("Not in a git repository")
+   119→        ctx_manager = script_error_handler(ctx)
+   127→            ctx.console.error(
+   134→            ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   257→        except RuntimeError:
+   371→    # Check if branch already has a worktree — navigate to it instead of erroring
+   551→    except RuntimeError:
+   566→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <tool_result tool="toolu_019ffyTvWDRsMC68mFfo8pJd">
+     1→"""CLI-level wrappers for GitHub URL parsing with error handling.
+     2→
+     3→This module provides CLI-friendly wrappers around the shared parsing functions
+     4→in erk_shared.gateway.github.parsing. These wrappers handle user input (not just URLs)
+     5→and raise SystemExit(1) with appropriate error messages for invalid input.
+     6→
+     7→Two-layer architecture:
+     8→- erk_shared.gateway.github.parsing: Pure parsing functions, return None on failure (LBYL-friendly)
+     9→- src/erk/cli/github_parsing.py: CLI wrappers that raise SystemExit(1)
+    10→"""
+    11→
+    12→import click
+    13→
+    14→from erk_shared.gateway.github.parsing import (
+    15→    parse_issue_number_from_url,
+    16→    parse_pr_number_from_url,
+    17→)
+    18→from erk_shared.output.output import user_output
+    19→
+    20→
+    21→def parse_issue_identifier(identifier: str) -&gt; int:
+    22→    """Parse issue number from plain number, P-prefixed ID, or GitHub issue URL.
+    23→
+    24→    This is a CLI-level function that handles user input.
+    25→
+    26→    Args:
+    27→        identifier: Plain number ("42"), P-prefixed ("P42"), or GitHub issue URL
+    28→
+    29→    Returns:
+    30→        Issue number as int
+
+... [81 lines omitted] ...
+
+    59→        click.style("Error: ", fg="red")
+    99→        click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>Now let me read the existing tests and the commands that need to be updated:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10002" cache_read_input_tokens="38611" cache_creation="{'ephemeral_5m_input_tokens': 10002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N6ZgzGUdR2nsjrT3DyDFq9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/test_parsing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10002" cache_read_input_tokens="38611" cache_creation="{'ephemeral_5m_input_tokens': 10002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016YXXvuakaoNNmeMTvkfQSU">
+    <param name="command">ls /home/runner/work/erk/erk/packages/erk-shared/tests/unit/github/</param>
+    <param name="description">List existing tests in erk-shared github tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10002" cache_read_input_tokens="38611" cache_creation="{'ephemeral_5m_input_tokens': 10002, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N6ZgzGUdR2nsjrT3DyDFq9">
+     1→"""Tests for GitHub URL parsing utilities."""
+     2→
+     3→from erk_shared.gateway.github.parsing import (
+     4→    construct_issue_url,
+     5→    construct_pr_url,
+     6→    construct_workflow_run_url,
+     7→    extract_owner_repo_from_github_url,
+     8→    parse_plan_number_from_url,
+     9→    parse_pr_number_from_url,
+    10→)
+    11→
+    12→# Tests for parse_plan_number_from_url
+    13→
+    14→
+    15→def test_parse_plan_number_from_simple_url() -&gt; None:
+    16→    """Test parsing plan number from a standard issue URL."""
+    17→    url = "https://github.com/owner/repo/issues/123"
+    18→    assert parse_plan_number_from_url(url) == 123
+    19→
+    20→
+    21→def test_parse_plan_number_from_url_with_fragment() -&gt; None:
+    22→    """Test parsing plan number from URL with fragment (anchor)."""
+    23→    url = "https://github.com/owner/repo/issues/456#issuecomment-789"
+    24→    assert parse_plan_number_from_url(url) == 456
+    25→
+    26→
+    27→def test_parse_plan_number_from_url_with_query_string() -&gt; None:
+    28→    """Test parsing plan number from URL with query parameters."""
+    29→    url = "https://github.com/owner/repo/issues/789?something=value"
+    30→    assert parse_plan_number_from_url(url) == 789
+
+... [116 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016YXXvuakaoNNmeMTvkfQSU">
+__init__.py
+metadata
+test_execute_gh_command_with_retry.py
+test_github_checks.py
+test_issue_comments.py
+test_issues_fake.py
+test_objective_issues.py
+test_parsing.py
+test_pr_details.py
+test_pr_footer.py
+test_pr_review_threads.py
+test_retry.py
+test_session_content.py
+test_transient_errors.py
+  </tool_result>
+  <assistant>I notice the test file imports `parse_plan_number_from_url`. Let me check the actual function names in `parsing.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2947" cache_read_input_tokens="48613" cache_creation="{'ephemeral_5m_input_tokens': 2947, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LiCXM891wXFy93Jpx29kaM">
+    <param name="command">grep -n "def parse_" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py</param>
+    <param name="description">List all parse functions in parsing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2947" cache_read_input_tokens="48613" cache_creation="{'ephemeral_5m_input_tokens': 2947, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TML8zefzj2VKMhkxJFDg2T">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2947" cache_read_input_tokens="48613" cache_creation="{'ephemeral_5m_input_tokens': 2947, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TML8zefzj2VKMhkxJFDg2T">
+     1→"""Unified land command for PRs.
+     2→
+     3→This command merges a PR and cleans up the worktree/branch.
+     4→It accepts a branch name, PR number, or PR URL as argument.
+     5→
+     6→Usage:
+     7→    erk land              # Land current branch's PR
+     8→    erk land --stack      # Land the current Graphite stack
+     9→    erk land 123          # Land PR by number
+    10→    erk land &lt;url&gt;        # Land PR by URL
+    11→    erk land &lt;branch&gt;     # Land PR for branch
+    12→"""
+    13→
+    14→import re
+    15→from dataclasses import dataclass, replace
+    16→from enum import Enum, auto
+    17→from pathlib import Path
+    18→from typing import Literal, NamedTuple, assert_never
+    19→
+    20→import click
+    21→
+    22→from erk.cli.activation import print_temp_script_instructions, render_activation_script
+    23→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    24→from erk.cli.commands.land_pipeline import (
+    25→    LandError,
+    26→    make_execution_state,
+    27→    make_initial_state,
+    28→    run_execution_pipeline,
+    29→    run_validation_pipeline,
+    30→)
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LiCXM891wXFy93Jpx29kaM">
+139:def parse_git_remote_url(url: str) -&gt; tuple[str, str]:
+193:def parse_aggregated_check_counts(
+227:def parse_issue_number_from_url(url: str) -&gt; int | None:
+250:def parse_pr_number_from_url(url: str) -&gt; int | None:
+327:def parse_gh_auth_status_output(output: str) -&gt; tuple[bool, str | None, str | None]:
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XFr39cZc9bmZBeegHRhbFs">
+    <param name="command">grep -n "parse_argument\|parse_pr_ref\|parse_pr_number_from_url\|re\.match\|re\.search" /home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py | head -30</param>
+    <param name="description">Find parse_argument and URL parsing in land_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1350" cache_creation_input_tokens="696" cache_read_input_tokens="51560" cache_creation="{'ephemeral_5m_input_tokens': 696, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HhUc2hrVFpNWXQE2h6QDpU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1350" cache_creation_input_tokens="696" cache_read_input_tokens="51560" cache_creation="{'ephemeral_5m_input_tokens': 696, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HhUc2hrVFpNWXQE2h6QDpU">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→
+    13→from erk.cli.activation import (
+    14→    activation_config_activate_only,
+    15→    ensure_worktree_activate_script,
+    16→    print_activation_instructions,
+    17→)
+    18→from erk.cli.commands.checkout_helpers import (
+    19→    ensure_branch_has_worktree,
+    20→    navigate_and_display_checkout,
+    21→)
+    22→from erk.cli.commands.pr.dispatch_helpers import sync_branch_to_sha
+    23→from erk.cli.ensure import Ensure
+    24→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    25→from erk.core.context import ErkContext
+    26→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    27→from erk_shared.cli_alias import alias
+    28→from erk_shared.gateway.github.parsing import (
+    29→    parse_issue_number_from_url,
+    30→    parse_pr_number_from_url,
+
+... [55 lines omitted] ...
+
+    47→    - P-prefix (P123, p123) → error with helpful message
+    48→    - Issue URL (github.com/.../issues/N) → error with helpful message
+    54→    # P-prefixed → error
+    57→            click.style("Error: ", fg="red")
+    67→    # GitHub issue URL → error
+    71→            click.style("Error: ", fg="red")
+  </tool_result>
+  <tool_result tool="toolu_01XFr39cZc9bmZBeegHRhbFs">
+537:def parse_argument(arg: str) -&gt; ParsedArgument:
+554:    match = re.search(r"/pull/(\d+)", arg)
+559:    match = re.search(r"/pr/[^/]+/[^/]+/(\d+)", arg)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ByNY6cxFfqLGjqdmfMNSME">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">80</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1132" cache_creation_input_tokens="1691" cache_read_input_tokens="52256" cache_creation="{'ephemeral_5m_input_tokens': 1691, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JFZJcQck1AfPs9bQM8EaBZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">530</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1132" cache_creation_input_tokens="1691" cache_read_input_tokens="52256" cache_creation="{'ephemeral_5m_input_tokens': 1691, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ByNY6cxFfqLGjqdmfMNSME">
+    80→        return _PrRef(pr_number)
+    81→
+    82→    user_output(
+    83→        click.style("Error: ", fg="red")
+    84→        + f"Invalid PR number or URL: {reference}\n\n"
+    85→        + "Expected formats:\n"
+    86→        + "  123 or https://github.com/owner/repo/pull/123"
+    87→    )
+    88→    raise SystemExit(1)
+    89→
+    90→
+    91→def _fetch_and_update_branch(
+    92→    ctx: ErkContext,
+    93→    repo: RepoContext,
+    94→    *,
+    95→    branch_name: str,
+    96→    pr_number: int,
+    97→) -&gt; None:
+    98→    """Fetch a branch from remote and update the local copy.
+    99→
+   100→    Handles three cases:
+   101→    - Remote branch exists, no local branch: create tracking branch
+   102→    - Remote branch exists, local branch exists: force-update local to match remote
+   103→    - No remote branch, no local branch: fetch via PR ref
+   104→    """
+   105→    local_branches = ctx.git.branch.list_local_branches(repo.root)
+   106→    remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+   107→    remote_ref = f"origin/{branch_name}"
+   108→    if remote_ref in remote_branches:
+   109→        ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JFZJcQck1AfPs9bQM8EaBZ">
+   530→class ParsedArgument(NamedTuple):
+   531→    """Result of parsing a land command argument."""
+   532→
+   533→    arg_type: Literal["pr-number", "pr-url", "branch"]
+   534→    pr_number: int | None
+   535→
+   536→
+   537→def parse_argument(arg: str) -&gt; ParsedArgument:
+   538→    """Parse argument to determine type.
+   539→
+   540→    Args:
+   541→        arg: The argument string (PR number, PR URL, or branch name)
+   542→
+   543→    Returns:
+   544→        ParsedArgument with:
+   545→        - arg_type="pr-number", pr_number=N if arg is a numeric PR number
+   546→        - arg_type="pr-url", pr_number=N if arg is a GitHub or Graphite PR URL
+   547→        - arg_type="branch", pr_number=None if arg is a branch name
+   548→    """
+   549→    # Try parsing as a plain number (PR number)
+   550→    if arg.isdigit():
+   551→        return ParsedArgument(arg_type="pr-number", pr_number=int(arg))
+   552→
+   553→    # Try parsing as a GitHub PR URL (e.g., https://github.com/owner/repo/pull/123)
+   554→    match = re.search(r"/pull/(\d+)", arg)
+   555→    if match:
+   556→        return ParsedArgument(arg_type="pr-url", pr_number=int(match.group(1)))
+   557→
+   558→    # Try parsing as a Graphite PR URL (e.g., https://app.graphite.com/github/pr/owner/repo/123)
+   559→    match = re.search(r"/pr/[^/]+/[^/]+/(\d+)", arg)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the 12 commands that need updating:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2992" cache_read_input_tokens="53947" cache_creation="{'ephemeral_5m_input_tokens': 2992, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Mg3k3tNo2Beq8HTQosGugw">
+    <param name="command">grep -n "type=int\|pr_number\|pr_numbers" \
+  /home/runner/work/erk/erk/src/erk/cli/comman...[truncated 749 chars]...
+  /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py 2&gt;&amp;1 | head -80</param>
+    <param name="description">Find type=int usages in all target commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2992" cache_read_input_tokens="53947" cache_creation="{'ephemeral_5m_input_tokens': 2992, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mg3k3tNo2Beq8HTQosGugw">
+grep: : No such file or directory
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:23:@click.argument("pr_number", type=int, required=False, default=None)
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:25:def pr_prepare(ctx: click.Context, pr_number: int | None) -&gt; None:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:58:    if pr_number is None:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:67:        pr_number = pr_result.number
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:73:        if existing_ref is not None and existing_ref.pr_id == str(pr_number):
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:74:            user_output(f"Impl-context already set up for plan #{pr_number}")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:79:        pr_number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py:84:    user_output(f"Prepared impl-context for plan #{pr_number} at {result['impl_path']}")
+grep: : No such file or directory
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:91:    pr_number: int
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:94:    impl_pr_number: int | None
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:117:def _build_pr_url(pr_url: str, pr_number: int) -&gt; str:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:122:        pr_number: PR number
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:130:        return construct_pr_url(owner, repo, pr_number)
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:131:    return f"https://github.com/pull/{pr_number}"
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:147:    pr_number: int,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:156:        pr_number: PR number to validate
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:161:    pr_result = ctx.github.get_pr(repo.root, pr_number)
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:163:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:170:            + f"PR #{pr_number} does not have a valid plan title prefix"
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:179:            click.style("Error: ", fg="red") + f"PR #{pr_number} is {pr_result.state}\n\n"
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:185:        number=pr_number,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:218:    pr_number = validated.number
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:223:    result = ctx.pr_store.get_managed_pr(repo.root, str(pr_number))
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:225:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:244:        pr_number=str(pr_number),
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:255:        message=f"Add plan for PR #{pr_number}",
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:288:        "pr_number": str(pr_number),
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:292:        "impl_pr_number": str(pr_number),
+
+... [50 lines omitted] ...
+
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:408:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number} not found")
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:422:            click.style("Error: ", fg="red") + f"PR #{pr_number} is {issue.state}\n\n"
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py:482:        user_output(click.style("Error: ", fg="red") + f"PR #{pr_number}: plan content not found")
+  </tool_result>
+  <assistant>Now let me read the specific lines in dispatch_cmd.py around line 847:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4354" cache_read_input_tokens="56939" cache_creation="{'ephemeral_5m_input_tokens': 4354, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AxfZ4f4ZsravBs9y6QXnDx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">840</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4354" cache_read_input_tokens="56939" cache_creation="{'ephemeral_5m_input_tokens': 4354, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XP8u8k8uvnCXqjMqzGKMCu">
+    <param name="command">for f in \
+  /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_conte...[truncated 650 chars]...y; do
+  echo "=== $f ==="
+  grep -n "type=int\|@click.argument\|def " "$f" | head -10
+done</param>
+    <param name="description">Find type=int usages in exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4354" cache_read_input_tokens="56939" cache_creation="{'ephemeral_5m_input_tokens': 4354, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AxfZ4f4ZsravBs9y6QXnDx">
+   840→        user_output(f"    Plan: {r.pr_url}")
+   841→        if r.impl_pr_url:
+   842→            user_output(f"    PR: {r.impl_pr_url}")
+   843→        user_output(f"    Workflow: {r.workflow_url}")
+   844→
+   845→
+   846→@click.command("dispatch")
+   847→@click.argument("pr_numbers", type=int, nargs=-1, required=False)
+   848→@click.option(
+   849→    "--base",
+   850→    type=str,
+   851→    default=None,
+   852→    help="Base branch for PR (defaults to current branch).",
+   853→)
+   854→@click.option(
+   855→    "--ref",
+   856→    "dispatch_ref",
+   857→    type=str,
+   858→    default=None,
+   859→    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+   860→)
+   861→@click.option(
+   862→    "--ref-current",
+   863→    is_flag=True,
+   864→    default=False,
+   865→    help="Dispatch workflow from the current branch",
+   866→)
+   867→@repo_option
+   868→@click.pass_obj
+   869→def pr_dispatch(
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XP8u8k8uvnCXqjMqzGKMCu">
+Exit code 2
+/bin/bash: eval: line 2: syntax error: unexpected end of file
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CkYzVnqpN4NE7DVSwzWYHm">
+    <param name="command">grep -n "type=int\|@click.argument\|def [a-z]" /home/runner/work/erk/erk/src/erk/cli/comma...[truncated 524 chars]...ome/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py 2&gt;&amp;1 | head -10</param>
+    <param name="description">Find type=int in exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1609" cache_read_input_tokens="61293" cache_creation="{'ephemeral_5m_input_tokens': 1609, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CkYzVnqpN4NE7DVSwzWYHm">
+head: invalid number of lines: ‘type=int\\|@click.argument\\|def [a-z]’
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Jg4e6L6PPQ9JWxS3DHYbQc">
+    <param name="command">grep -n "type=int" /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl...[truncated 535 chars].../get_pr_commits.py /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py</param>
+    <param name="description">Find all type=int usages in exec scripts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="443" cache_read_input_tokens="62902" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="388" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jg4e6L6PPQ9JWxS3DHYbQc">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/create_impl_context_from_plan.py:39:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:315:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_plan_label.py:23:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_metadata.py:44:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_plan_info.py:29:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_view.py:27:@click.argument("pr_number", type=int, required=False, default=None)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py:31:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/get_pr_commits.py:23:@click.argument("pr_number", type=int)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/close_pr.py:25:@click.argument("pr_number", type=int)
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me also check if there's a `graphite/parsing.py` to understand what already exists:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="63345" cache_creation="{'ephemeral_5m_input_tokens': 861, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QdwGvcgy5FAYkGhom1xtyr">
+    <param name="command">find /home/runner/work/erk/erk -name "parsing.py" -path "*/graphite/*" 2&gt;/dev/null</param>
+    <param name="description">Find graphite parsing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="63345" cache_creation="{'ephemeral_5m_input_tokens': 861, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017YbWP8UptciYC5HEhyYQEZ">
+    <param name="command">ls /home/runner/work/erk/erk/src/erk/cli/ &amp;&amp; ls /home/runner/work/erk/erk/tests/unit/cli/ 2&gt;/dev/null || echo "no cli tests dir"</param>
+    <param name="description">List CLI directory and tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="63345" cache_creation="{'ephemeral_5m_input_tokens': 861, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017YbWP8UptciYC5HEhyYQEZ">
+__init__.py
+__pycache__
+activation.py
+capability_check.py
+cli.py
+commands
+config.py
+constants.py
+core.py
+debug.py
+ensure-conversion-tasks.md
+ensure.py
+ensure_ideal.py
+github_parsing.py
+graphite.py
+graphite_command.py
+help_formatter.py
+output.py
+prompt_hooks_templates
+repo_resolution.py
+script_output.py
+shell_utils.py
+subprocess_utils.py
+uvx_detection.py
+__init__.py
+commands
+test_activation.py
+test_alias.py
+test_aliases.py
+test_capability_check.py
+
+... [19 lines omitted] ...
+
+test_checkout_helpers_error.py
+  </tool_result>
+  <tool_result tool="toolu_01QdwGvcgy5FAYkGhom1xtyr">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016Ckj3UdbqrcC2TfL7xHvT8">
+    <param name="command">ls /home/runner/work/erk/erk/tests/unit/cli/commands/land/</param>
+    <param name="description">List land command tests</param>
+  </tool_use>
+  <usage input_tokens="349" cache_creation_input_tokens="622" cache_read_input_tokens="64206" cache_creation="{'ephemeral_5m_input_tokens': 622, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Ckj3UdbqrcC2TfL7xHvT8">
+__init__.py
+pipeline
+test_cleanup_and_navigate.py
+test_determine_cleanup_type.py
+test_dry_run.py
+test_find_assignment.py
+test_land_learn.py
+test_land_stack.py
+test_no_delete_flag.py
+test_parse_argument.py
+test_render_land_script.py
+test_resolvers.py
+test_stack_flag.py
+test_validate_pr_for_landing.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_016XjSaC7JJfJrV7G2mNM1xg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/land/test_parse_argument.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="568" cache_read_input_tokens="64828" cache_creation="{'ephemeral_5m_input_tokens': 568, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016XjSaC7JJfJrV7G2mNM1xg">
+     1→"""Unit tests for parse_argument utility."""
+     2→
+     3→from erk.cli.commands.land_cmd import ParsedArgument, parse_argument
+     4→
+     5→
+     6→def test_parse_argument_pr_number() -&gt; None:
+     7→    """Test parsing a plain PR number."""
+     8→    result = parse_argument("123")
+     9→    assert result == ParsedArgument(arg_type="pr-number", pr_number=123)
+    10→
+    11→
+    12→def test_parse_argument_pr_number_single_digit() -&gt; None:
+    13→    """Test parsing single-digit PR number."""
+    14→    result = parse_argument("1")
+    15→    assert result == ParsedArgument(arg_type="pr-number", pr_number=1)
+    16→
+    17→
+    18→def test_parse_argument_pr_number_large() -&gt; None:
+    19→    """Test parsing large PR number."""
+    20→    result = parse_argument("99999")
+    21→    assert result == ParsedArgument(arg_type="pr-number", pr_number=99999)
+    22→
+    23→
+    24→def test_parse_argument_pr_url_github() -&gt; None:
+    25→    """Test parsing GitHub PR URL."""
+    26→    result = parse_argument("https://github.com/owner/repo/pull/456")
+    27→    assert result == ParsedArgument(arg_type="pr-url", pr_number=456)
+    28→
+    29→
+    30→def test_parse_argument_pr_url_with_trailing_content() -&gt; None:
+
+... [54 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have all the context I need. Let me load the dignified-python skill and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1323" cache_read_input_tokens="65396" cache_creation="{'ephemeral_5m_input_tokens': 1323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01Y4jQ38PhY4mALQHShtgxFa">
+    <param name="skill">dignified-code-simplifier</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1323" cache_read_input_tokens="65396" cache_creation="{'ephemeral_5m_input_tokens': 1323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y4jQ38PhY4mALQHShtgxFa">
+Launching skill: dignified-code-simplifier
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-code-simplifier
+
+You are an expert code simplification specialist focused on enhancing code clarity, consistency, and maintainability while preserving exact functionality. Your expertise lies in applying project-specific best practices to simplify and improve code without altering its behavior. You prioritize readable, explicit code over overly compact solutions. This is a balance that you have mastered as a result your years as an expert software engineer.
+
+You will analyze recently modified code and apply refinements that:
+
+1. **Preserve Functionality**: Never change what the code does - only how it does it. All original features, outputs, and behaviors must remain intact.
+
+2. **Apply Dignified Python Standards**: Follow the established coding standards from dignified-python:
+
+   @.claude/skills/dignified-python/
+
+   Key distilled guidance:
+   - **LBYL over EAFP**: Check conditions proactively, never use exceptions for control flow
+   - **Pathlib always**: Use pathlib.Path, never os.path; always specify encoding
+   - **Absolute imports only**: No relative imports, no re-exports
+   - **O(1) properties/magic methods**: No I/O or iteration in properties
+   - **Max 4 levels indentation**: Extract helpers for deep nesting
+   - **Declare variables close to use**: Don't destructure objects into single-use locals
+
+3. **Enhance Clarity**: Simplify code structure by:
+   - Reducing unnecessary complexity and nesting
+   - Eliminating redundant code and abstractions
+   - Improving readability through clear variable and function names
+   - Consolidating related logic
+   - Removing unnecessary comments that describe obvious code
+   - IMPORTANT: Avoid **nested** ternary operators (ternaries inside ternaries) - prefer if/else chains for multiple conditions
+   - Simple single-level ternaries are idiomatic, acceptable, and often **preferable** to avoid unnecessary variable assignment or multi-line if/else blocks. Do NOT suggest replacing them. Examples: `slug = branch_slug if branch_slug else fallback()`, `x = a if condition else b`, `root = obj.primary if obj.primary else obj.fallback`, `{"key": val_a if condition else val_b}`, `[x if x else default for x in items]`
+   - NEVER suggest `.or_else()` or similar non-Python patterns as alternatives to ternaries
+   - Conditional context managers (ternary in `with` statements) should generally stay inline — context managers belong in `with` statements where the `__enter__`/`__exit__` lifecycle is explicit. Do NOT suggest extracting them to intermediate variables by default. Example: `with (cm_a if condition else nullcontext()):` is correct. If the inline expression is genuinely overwhelming, suggest extracting the logic into a helper function that returns the context manager rather than assigning to a local variable.
+   - Choose clarity over brevity - explicit code is often better than overly compact code
+
+4. **Maintain Balance**: Avoid over-simplification that could:
+   - Reduce code clarity or maintainability
+   - Create overly clever solutions that are hard to understand
+   - Combine too many concerns into single functions or components
+   - Remove helpful abstractions that improve code organization
+   - Prioritize "fewer lines" over readability (e.g., multi-level nested ternaries, dense one-liners that chain 3+ operations)
+   - Make the code harder to debug or extend
+
+5. **Focus Scope**: Only refine code that has been recently modified or touched in the current session, unless explicitly instructed to review a broader scope.
+
+Your refinement process:
+
+1. Identify the recently modified code sections
+2. Analyze for opportunities to improve elegance and consistency
+3. Apply project-specific best practices and coding standards
+4. Ensure all functionality remains unchanged
+5. Verify the refined code is simpler and more maintainable
+6. Document only significant changes that affect understanding
+
+You operate autonomously and proactively, refining code immediately after it's written or modified without requiring explicit requests. Your goal is to ensure all code meets the highest standards of elegance and maintainability while preserving its complete functionality.
+</user>
+  <assistant>Now I'll start implementing. Let me mark the first step as in progress and begin with Step 1.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="68266" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 68266, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TodoWrite" id="toolu_01DgUWzZUGke1KzJ8zsZyNg6">
+    <param name="todos">[{'content': 'Step 1: Add Graphite URL parser + unified parse_pr_ref to erk-shared', 'stat...[truncated 897 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="68266" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 68266, 'ephemeral_1h_input_tokens': 0}" output_tokens="424" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DgUWzZUGke1KzJ8zsZyNg6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Step 1: Add Graphite URL parser + unified parse_pr_ref to erk-shared</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="463" cache_read_input_tokens="68266" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RYbUKeP4LEAoUyaiutEmsQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py</param>
+    <param name="old_string">def parse_pr_number_from_url(url: str) -&gt; int | None:
+    """Extract PR number from GitHub...[truncated 560 chars]...+/[^/]+/pull/(\d+)", url)
+    if match:
+        return int(match.group(1))
+    return None</param>
+    <param name="new_string">def parse_pr_number_from_url(url: str) -&gt; int | None:
+    """Extract PR number from GitHub...[truncated 2247 chars]... is not None:
+        return pr_number
+    return parse_pr_number_from_graphite_url(value)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="463" cache_read_input_tokens="68266" cache_creation="{'ephemeral_5m_input_tokens': 463, 'ephemeral_1h_input_tokens': 0}" output_tokens="1174" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RYbUKeP4LEAoUyaiutEmsQ">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read the file earlier. Let me read it again:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1219" cache_read_input_tokens="68729" cache_creation="{'ephemeral_5m_input_tokens': 1219, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E2yAZbBoBa3Crbnb5CkXhm">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py</param>
+    <param name="offset">250</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1219" cache_read_input_tokens="68729" cache_creation="{'ephemeral_5m_input_tokens': 1219, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E2yAZbBoBa3Crbnb5CkXhm">
+   250→def parse_pr_number_from_url(url: str) -&gt; int | None:
+   251→    """Extract PR number from GitHub PR URL.
+   252→
+   253→    Args:
+   254→        url: GitHub PR URL (e.g., "https://github.com/owner/repo/pull/123")
+   255→
+   256→    Returns:
+   257→        PR number as int, or None if URL doesn't match expected pattern.
+   258→        Also handles URLs with query strings or fragments like
+   259→        "https://github.com/owner/repo/pull/789#issuecomment-123"
+   260→
+   261→    Example:
+   262→        &gt;&gt;&gt; parse_pr_number_from_url("https://github.com/owner/repo/pull/123")
+   263→        123
+   264→        &gt;&gt;&gt; parse_pr_number_from_url("https://github.com/owner/repo/pull/789#issuecomment-123")
+   265→        789
+   266→    """
+   267→    match = re.match(r"https://github\.com/[^/]+/[^/]+/pull/(\d+)", url)
+   268→    if match:
+   269→        return int(match.group(1))
+   270→    return None
+   271→
+   272→
+   273→def construct_workflow_run_url(owner: str, repo: str, run_id: int | str) -&gt; str:
+   274→    """Construct GitHub Actions workflow run URL.
+   275→
+   276→    Args:
+   277→        owner: Repository owner
+   278→        repo: Repository name
+   279→        run_id: Workflow run ID (int or string)
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012fqvb57YFLQHg9bNL3afKR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py</param>
+    <param name="old_string">    match = re.match(r"https://github\.com/[^/]+/[^/]+/pull/(\d+)", url)
+    if match:
+   ...[truncated 20 chars]...rn None
+
+
+def construct_workflow_run_url(owner: str, repo: str, run_id: int | str) -&gt; str:</param>
+    <param name="new_string">    match = re.match(r"https://github\.com/[^/]+/[^/]+/pull/(\d+)", url)
+    if match:
+   ...[truncated 1707 chars]...(value)
+
+
+def construct_workflow_run_url(owner: str, repo: str, run_id: int | str) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="860" cache_read_input_tokens="69948" cache_creation="{'ephemeral_5m_input_tokens': 860, 'ephemeral_1h_input_tokens': 0}" output_tokens="821" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012fqvb57YFLQHg9bNL3afKR">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/parsing.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012EpsrJo9a7MqXuPZnuv6ag">
+    <param name="todos">[{'content': 'Step 1: Add Graphite URL parser + unified parse_pr_ref to erk-shared', 'stat...[truncated 899 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="874" cache_read_input_tokens="70808" cache_creation="{'ephemeral_5m_input_tokens': 874, 'ephemeral_1h_input_tokens': 0}" output_tokens="401" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012EpsrJo9a7MqXuPZnuv6ag">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Step 2: Create Click PrRef ParamType</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="443" cache_read_input_tokens="71682" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01HjQFjUYdkxsr6Vhaf7EAHW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/pr_ref_type.py</param>
+    <param name="content">"""Click parameter type for PR references.
+
+Accepts plain numbers, GitHub PR URLs, and Gra...[truncated 1385 chars]...wner/repo/123",
+            param,
+            ctx,
+        )
+
+
+PR_REF = PrRefParamType()
+</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="443" cache_read_input_tokens="71682" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="560" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HjQFjUYdkxsr6Vhaf7EAHW">
+File created successfully at: /home/runner/work/erk/erk/src/erk/cli/pr_ref_type.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UFAYBBbRuFNpJhtAFr73zP">
+    <param name="todos">[{'content': 'Step 1: Add Graphite URL parser + unified parse_pr_ref to erk-shared', 'stat...[truncated 901 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="604" cache_read_input_tokens="72125" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UFAYBBbRuFNpJhtAFr73zP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Step 3: Update 12 commands from type=int to type=PR_REF
+
+Starting with teleport_cmd.py since it's mentioned in the plan as the motivating example:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="443" cache_read_input_tokens="72729" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012eQTVVGPFwjjkrxA99kTZP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py</param>
+    <param name="offset">55</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="443" cache_read_input_tokens="72729" cache_creation="{'ephemeral_5m_input_tokens': 443, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012eQTVVGPFwjjkrxA99kTZP">
+    55→    has_slot: bool
+    56→
+    57→
+    58→@click.command("teleport", cls=CommandWithHiddenOptions)
+    59→@click.argument("pr_number", type=int)
+    60→@click.option("--new-slot", is_flag=True, help="Create a new worktree slot")
+    61→@click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
+    62→@click.option("--sync", is_flag=True, help="Run gt submit after teleport to sync with Graphite")
+    63→@click.option("--dry-run", is_flag=True, help="Preview without making changes")
+    64→@script_option
+    65→@click.pass_obj
+    66→def slot_teleport(
+    67→    ctx: ErkContext,
+    68→    pr_number: int,
+    69→    new_slot: bool,
+    70→    force: bool,
+    71→    sync: bool,
+    72→    dry_run: bool,
+    73→    script: bool,
+    74→) -&gt; None:
+    75→    """Teleport a PR's remote state to local, overwriting local branch.
+    76→
+    77→    Unlike 'checkout' which preserves local state (reusing existing worktrees
+    78→    and keeping local commits), teleport is remote-first: it force-resets the
+    79→    local branch to match the remote exactly, discarding any local commits
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HsaQkoodWnupfY6hRJMYSY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py</param>
+    <param name="old_string">import click
+
+from erk.cli.activation import (
+    activation_config_activate_only,
+    en...[truncated 656 chars]...ment_by_worktree, update_slot_assignment_tip
+
+
+@dataclass(frozen=True)
+class TeleportPlan:</param>
+    <param name="new_string">import click
+
+from erk.cli.activation import (
+    activation_config_activate_only,
+    en...[truncated 695 chars]...ment_by_worktree, update_slot_assignment_tip
+
+
+@dataclass(frozen=True)
+class TeleportPlan:</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="622" cache_read_input_tokens="73172" cache_creation="{'ephemeral_5m_input_tokens': 622, 'ephemeral_1h_input_tokens': 0}" output_tokens="666" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HsaQkoodWnupfY6hRJMYSY">
+The file /home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VwV4BV7BsWvMewV1EGHxTP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py</param>
+    <param name="old_string">@click.command("teleport", cls=CommandWithHiddenOptions)
+@click.argument("pr_number", type...[truncated 419 chars]...ot: bool,
+    force: bool,
+    sync: bool,
+    dry_run: bool,
+    script: bool,
+) -&gt; None:</param>
+    <param name="new_string">@click.command("teleport", cls=CommandWithHiddenOptions)
+@click.argument("pr_number", type...[truncated 422 chars]...ot: bool,
+    force: bool,
+    sync: bool,
+    dry_run: bool,
+    script: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="718" cache_read_input_tokens="73794" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="540" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VwV4BV7BsWvMewV1EGHxTP">
+The file /home/runner/work/erk/erk/packages/erk-slots/src/erk_slots/teleport_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the remaining 11 commands. Let me start with prepare_cmd.py:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="592" cache_read_input_tokens="74512" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QCEPQ4RCJpUX5sqKfFHFCD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="592" cache_read_input_tokens="74512" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
