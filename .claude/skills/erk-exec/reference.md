@@ -76,7 +76,6 @@ Quick reference for all `erk exec` subcommands.
 | `objective-link-pr`               | Link PR number to objective roadmap nodes from .erk/impl-context/ metadata.       |
 | `objective-plan-setup`            | Fetch, validate, and set up context for objective planning.                       |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                            |
-| `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                       |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                              |
 | `objective-update-after-land`     | Update objective after landing a PR.                                              |
 | `plan-save`                       | Save plan as a planned PR.                                                        |
@@ -926,12 +925,6 @@ Post a formatted action comment to an objective issue.
 
 **Usage:** `erk exec objective-post-action-comment`
 
-### objective-render-roadmap
-
-Render a complete roadmap section from JSON input on stdin.
-
-**Usage:** `erk exec objective-render-roadmap`
-
 ### objective-save-to-issue
 
 Save plan as objective GitHub issue.
@@ -940,12 +933,13 @@ Save plan as objective GitHub issue.
 
 **Options:**
 
-| Flag           | Type   | Required | Default | Description                                                               |
-| -------------- | ------ | -------- | ------- | ------------------------------------------------------------------------- |
-| `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
-| `--session-id` | TEXT   | No       | -       | Session ID for scoped PR lookup                                           |
-| `--slug`       | TEXT   | No       | -       | Short kebab-case identifier for the objective (e.g., 'build-auth-system') |
-| `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output     |
+| Flag             | Type   | Required | Default | Description                                                               |
+| ---------------- | ------ | -------- | ------- | ------------------------------------------------------------------------- |
+| `--format`       | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
+| `--session-id`   | TEXT   | No       | -       | Session ID for scoped PR lookup                                           |
+| `--slug`         | TEXT   | No       | -       | Short kebab-case identifier for the objective (e.g., 'build-auth-system') |
+| `--roadmap-json` | PATH   | No       | -       | Path to JSON file with structured roadmap phases                          |
+| `--validate`     | FLAG   | No       | -       | Run objective validation after creation and include results in output     |
 
 ### objective-update-after-land
 

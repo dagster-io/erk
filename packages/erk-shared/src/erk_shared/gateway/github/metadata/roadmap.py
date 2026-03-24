@@ -23,6 +23,7 @@ from erk_shared.gateway.github.metadata.core import (
     parse_metadata_block_body,
 )
 from erk_shared.gateway.github.metadata.types import BlockKeys
+from erk_shared.naming import slugify_node_description
 
 RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
@@ -169,6 +170,114 @@ def validate_roadmap_frontmatter(
     return steps, errors
 
 
+def roadmap_nodes_from_json(data: object) -> tuple[list[RoadmapNode], str | None]:
+    """Validate structured JSON and convert to RoadmapNodes.
+
+    Validates the ``{"phases": [...]}`` JSON input format used by
+    ``objective-create`` and constructs a flat list of RoadmapNode objects
+    with auto-generated slugs.
+
+    Args:
+        data: Parsed JSON object with ``phases`` key.
+
+    Returns:
+        ``(nodes, error_message)``. When valid, ``error_message`` is None.
+    """
+    if not isinstance(data, dict):
+        return [], "Input must be a JSON object"
+
+    data_dict = cast(dict[str, object], data)
+
+    if "phases" not in data_dict:
+        return [], "Missing required field: phases"
+
+    phases = data_dict["phases"]
+    if not isinstance(phases, list):
+        return [], "Field 'phases' must be a list"
+
+    if not phases:
+        return [], "Field 'phases' must not be empty"
+
+    # Detect global depends_on presence
+    any_has_depends_on = False
+    for phase in phases:
+        if not isinstance(phase, dict):
+            continue
+        phase_dict = cast(dict[str, object], phase)
+        steps_raw = phase_dict.get("steps")
+        if not isinstance(steps_raw, list):
+            continue
+        for step_data in steps_raw:
+            if isinstance(step_data, dict) and "depends_on" in step_data:
+                any_has_depends_on = True
+                break
+        if any_has_depends_on:
+            break
+
+    all_nodes: list[RoadmapNode] = []
+
+    for i, phase in enumerate(phases):
+        if not isinstance(phase, dict):
+            return [], f"Phase {i} must be a JSON object"
+
+        for field in ("name", "steps"):
+            if field not in phase:
+                return [], f"Phase {i} missing required field: {field}"
+
+        steps = phase["steps"]
+        if not isinstance(steps, list):
+            return [], f"Phase {i} field 'steps' must be a list"
+
+        if not steps:
+            return [], f"Phase {i} field 'steps' must not be empty"
+
+        for j, step_data in enumerate(steps):
+            if not isinstance(step_data, dict):
+                return [], f"Phase {i} step {j} must be a JSON object"
+
+            for field in ("id", "description"):
+                if field not in step_data:
+                    return [], f"Phase {i} step {j} missing required field: {field}"
+
+            raw_depends_on = step_data.get("depends_on")
+            depends_on: tuple[str, ...] | None = None
+            if raw_depends_on is not None:
+                if not isinstance(raw_depends_on, list):
+                    return [], f"Phase {i} step {j} field 'depends_on' must be a list"
+                for k, item in enumerate(raw_depends_on):
+                    if not isinstance(item, str):
+                        return (
+                            [],
+                            f"Phase {i} step {j} field 'depends_on' item {k} must be a string",
+                        )
+                depends_on = tuple(raw_depends_on)
+            elif any_has_depends_on:
+                depends_on = ()
+
+            raw_slug = step_data.get("slug")
+            if isinstance(raw_slug, str) and raw_slug:
+                slug = raw_slug
+            else:
+                slug = slugify_node_description(step_data["description"])
+
+            status = step_data.get("status", "pending")
+            pr = step_data.get("pr")
+
+            all_nodes.append(
+                RoadmapNode(
+                    id=step_data["id"],
+                    description=step_data["description"],
+                    status=status,
+                    pr=pr,
+                    depends_on=depends_on,
+                    slug=slug,
+                    comment=None,
+                )
+            )
+
+    return all_nodes, None
+
+
 def parse_roadmap_frontmatter(block_content: str) -> list[RoadmapNode] | None:
     """Parse YAML from objective-roadmap metadata block content.
 
@@ -253,6 +362,83 @@ def render_roadmap_block_inner(nodes: list[RoadmapNode]) -> str:
         "\n"
         "</details>"
     )
+
+
+def render_initial_roadmap_section(
+    phases_json: list[dict[str, object]],
+    nodes: list[RoadmapNode],
+) -> str:
+    """Render a complete ``## Roadmap`` section for a newly created objective.
+
+    Uses the raw JSON phases for display-only fields (name, description,
+    pr_count, test) and the already-constructed nodes for table rows and
+    the YAML metadata block.
+
+    Args:
+        phases_json: Validated list of phase dicts from the input JSON.
+            Each dict has ``name``, ``steps``, and optionally ``description``,
+            ``pr_count``, ``test``.
+        nodes: Flat list of RoadmapNodes from ``roadmap_nodes_from_json``.
+
+    Returns:
+        Complete ``## Roadmap`` markdown section with markers and metadata block.
+    """
+    any_has_depends_on = any(n.depends_on is not None for n in nodes)
+
+    # Index nodes by phase number (derived from ID prefix)
+    phase_nodes: dict[int, list[RoadmapNode]] = {}
+    for node in nodes:
+        if "." not in node.id:
+            phase_num = 1
+        else:
+            phase_id = node.id.rsplit(".", 1)[0]
+            match = re.match(r"^(\d+)", phase_id)
+            phase_num = int(match.group(1)) if match else 1
+        if phase_num not in phase_nodes:
+            phase_nodes[phase_num] = []
+        phase_nodes[phase_num].append(node)
+
+    sections: list[str] = ["## Roadmap", ""]
+
+    for phase_index, phase in enumerate(phases_json):
+        phase_number = phase_index + 1
+        name = phase["name"]
+        pr_count = phase.get("pr_count", "1 PR")
+
+        sections.append(f"### Phase {phase_number}: {name} ({pr_count})")
+        sections.append("")
+
+        if description := phase.get("description"):
+            sections.append(str(description))
+            sections.append("")
+
+        if any_has_depends_on:
+            sections.append("| Node | Description | Depends On | Status | PR |")
+            sections.append("|------|-------------|------------|--------|----|")
+        else:
+            sections.append("| Node | Description | Status | PR |")
+            sections.append("|------|-------------|--------|----|")
+
+        for node in phase_nodes.get(phase_number, []):
+            status_display = node.status.replace("_", "-")
+            pr_display = node.pr if node.pr is not None else "-"
+            cells = [node.id, node.description]
+            if any_has_depends_on:
+                cells.append(_format_depends_on(node.depends_on))
+            cells.extend([status_display, pr_display])
+            sections.append("| " + " | ".join(escape_md_table_cell(c) for c in cells) + " |")
+
+        sections.append("")
+
+        if test := phase.get("test"):
+            sections.append(f"**Test:** {test}")
+            sections.append("")
+
+    # Metadata block
+    metadata_inner = render_roadmap_block_inner(nodes)
+    sections.append(render_objective_roadmap_block(metadata_inner))
+
+    return "\n".join(sections)
 
 
 def group_nodes_by_phase(nodes: list[RoadmapNode]) -> list[RoadmapPhase]:

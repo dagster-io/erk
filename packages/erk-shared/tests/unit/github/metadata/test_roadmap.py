@@ -9,9 +9,12 @@ from erk_shared.gateway.github.metadata.roadmap import (
     escape_md_table_cell,
     find_next_node,
     parse_roadmap,
+    parse_roadmap_frontmatter,
     parse_v2_roadmap,
+    render_initial_roadmap_section,
     render_roadmap_block_inner,
     render_roadmap_tables,
+    roadmap_nodes_from_json,
     serialize_phases,
     validate_roadmap_frontmatter,
 )
@@ -1475,3 +1478,262 @@ def test_find_next_node_no_slug_returns_empty_string() -> None:
 
     assert result is not None
     assert result["slug"] == ""
+
+
+# ---------------------------------------------------------------------------
+# roadmap_nodes_from_json tests
+# ---------------------------------------------------------------------------
+
+
+def test_roadmap_nodes_from_json_valid_minimal() -> None:
+    """Valid minimal input produces nodes."""
+    data = {
+        "phases": [
+            {
+                "name": "Steelthread",
+                "steps": [
+                    {"id": "1.1", "description": "First step"},
+                ],
+            },
+        ],
+    }
+    nodes, error = roadmap_nodes_from_json(data)
+    assert error is None
+    assert len(nodes) == 1
+    assert nodes[0].id == "1.1"
+    assert nodes[0].status == "pending"
+    assert nodes[0].slug is not None
+
+
+def test_roadmap_nodes_from_json_valid_full() -> None:
+    """Valid full input with all optional fields."""
+    data = {
+        "phases": [
+            {
+                "name": "Steelthread",
+                "description": "Minimal slice.",
+                "pr_count": "1 PR",
+                "steps": [
+                    {"id": "1.1", "description": "Minimal infrastructure"},
+                    {"id": "1.2", "description": "Wire into one path"},
+                ],
+                "test": "E2E test",
+            },
+            {
+                "name": "Complete",
+                "steps": [
+                    {"id": "2.1", "description": "Extend"},
+                ],
+            },
+        ],
+    }
+    nodes, error = roadmap_nodes_from_json(data)
+    assert error is None
+    assert len(nodes) == 3
+
+
+def test_roadmap_nodes_from_json_not_dict() -> None:
+    nodes, error = roadmap_nodes_from_json("not a dict")
+    assert error == "Input must be a JSON object"
+
+
+def test_roadmap_nodes_from_json_missing_phases() -> None:
+    nodes, error = roadmap_nodes_from_json({})
+    assert error == "Missing required field: phases"
+
+
+def test_roadmap_nodes_from_json_phases_not_list() -> None:
+    nodes, error = roadmap_nodes_from_json({"phases": "not a list"})
+    assert error == "Field 'phases' must be a list"
+
+
+def test_roadmap_nodes_from_json_empty_phases() -> None:
+    nodes, error = roadmap_nodes_from_json({"phases": []})
+    assert error == "Field 'phases' must not be empty"
+
+
+def test_roadmap_nodes_from_json_phase_missing_name() -> None:
+    data = {"phases": [{"steps": [{"id": "1.1", "description": "Step"}]}]}
+    _, error = roadmap_nodes_from_json(data)
+    assert error is not None
+    assert "missing required field: name" in error
+
+
+def test_roadmap_nodes_from_json_empty_steps() -> None:
+    data = {"phases": [{"name": "Phase", "steps": []}]}
+    _, error = roadmap_nodes_from_json(data)
+    assert error is not None
+    assert "must not be empty" in error
+
+
+def test_roadmap_nodes_from_json_step_missing_id() -> None:
+    data = {"phases": [{"name": "Phase", "steps": [{"description": "Step"}]}]}
+    _, error = roadmap_nodes_from_json(data)
+    assert error is not None
+    assert "missing required field: id" in error
+
+
+def test_roadmap_nodes_from_json_with_depends_on() -> None:
+    """depends_on propagated to nodes; missing depends_on becomes ()."""
+    data = {
+        "phases": [
+            {
+                "name": "Phase",
+                "steps": [
+                    {"id": "1.1", "description": "Base"},
+                    {"id": "1.2", "description": "Wire", "depends_on": ["1.1"]},
+                ],
+            },
+        ],
+    }
+    nodes, error = roadmap_nodes_from_json(data)
+    assert error is None
+    assert nodes[0].depends_on == ()  # empty tuple when any has depends_on
+    assert nodes[1].depends_on == ("1.1",)
+
+
+def test_roadmap_nodes_from_json_preserves_status_and_pr() -> None:
+    """Status and pr fields from input are preserved."""
+    data = {
+        "phases": [
+            {
+                "name": "Phase",
+                "steps": [
+                    {"id": "1.1", "description": "Done", "status": "done", "pr": "#100"},
+                ],
+            },
+        ],
+    }
+    nodes, error = roadmap_nodes_from_json(data)
+    assert error is None
+    assert nodes[0].status == "done"
+    assert nodes[0].pr == "#100"
+
+
+def test_roadmap_nodes_from_json_custom_slug() -> None:
+    """Custom slug from input is preserved."""
+    data = {
+        "phases": [
+            {
+                "name": "Phase",
+                "steps": [
+                    {"id": "1.1", "description": "Step", "slug": "my-custom-slug"},
+                ],
+            },
+        ],
+    }
+    nodes, error = roadmap_nodes_from_json(data)
+    assert error is None
+    assert nodes[0].slug == "my-custom-slug"
+
+
+# ---------------------------------------------------------------------------
+# render_initial_roadmap_section tests
+# ---------------------------------------------------------------------------
+
+
+def test_render_initial_roadmap_section_single_phase() -> None:
+    """Renders correct markdown for a single phase."""
+    phases_json: list[dict[str, object]] = [
+        {
+            "name": "Foundation",
+            "description": "Set up infrastructure.",
+            "pr_count": "1 PR",
+            "steps": [
+                {"id": "1.1", "description": "Create base module"},
+                {"id": "1.2", "description": "Add core types"},
+            ],
+            "test": "Module imports work",
+        },
+    ]
+    nodes, _ = roadmap_nodes_from_json({"phases": phases_json})
+
+    result = render_initial_roadmap_section(phases_json, nodes)
+
+    assert "## Roadmap" in result
+    assert "### Phase 1: Foundation (1 PR)" in result
+    assert "Set up infrastructure." in result
+    assert "| 1.1 | Create base module | pending | - |" in result
+    assert "| 1.2 | Add core types | pending | - |" in result
+    assert "**Test:** Module imports work" in result
+    assert "erk:metadata-block:objective-roadmap" in result
+
+
+def test_render_initial_roadmap_section_multiple_phases() -> None:
+    """Renders correct markdown for multiple phases."""
+    phases_json: list[dict[str, object]] = [
+        {
+            "name": "Steelthread",
+            "steps": [{"id": "1.1", "description": "Minimal slice"}],
+        },
+        {
+            "name": "Complete Feature",
+            "steps": [
+                {"id": "2.1", "description": "Extend"},
+                {"id": "2.2", "description": "Polish"},
+            ],
+        },
+    ]
+    nodes, _ = roadmap_nodes_from_json({"phases": phases_json})
+
+    result = render_initial_roadmap_section(phases_json, nodes)
+
+    assert "### Phase 1: Steelthread (1 PR)" in result
+    assert "### Phase 2: Complete Feature (1 PR)" in result
+
+
+def test_render_initial_roadmap_section_with_depends_on() -> None:
+    """Renders 5-column table when depends_on present."""
+    phases_json: list[dict[str, object]] = [
+        {
+            "name": "Foundation",
+            "steps": [
+                {"id": "1.1", "description": "Base"},
+                {"id": "1.2", "description": "Wire", "depends_on": ["1.1"]},
+            ],
+        },
+    ]
+    nodes, _ = roadmap_nodes_from_json({"phases": phases_json})
+
+    result = render_initial_roadmap_section(phases_json, nodes)
+
+    assert "| Node | Description | Depends On | Status | PR |" in result
+    assert "| 1.1 | Base | - | pending | - |" in result
+    assert "| 1.2 | Wire | 1.1 | pending | - |" in result
+
+
+def test_render_initial_roadmap_section_metadata_roundtrip() -> None:
+    """Metadata block in rendered section is parseable."""
+    phases_json: list[dict[str, object]] = [
+        {
+            "name": "Foundation",
+            "steps": [
+                {"id": "1.1", "description": "First step"},
+                {"id": "1.2", "description": "Second step"},
+            ],
+        },
+        {
+            "name": "Complete",
+            "steps": [
+                {"id": "2.1", "description": "Third step"},
+            ],
+        },
+    ]
+    nodes, _ = roadmap_nodes_from_json({"phases": phases_json})
+
+    result = render_initial_roadmap_section(phases_json, nodes)
+
+    # Extract and parse the metadata block
+    start_marker = "<!-- erk:metadata-block:objective-roadmap -->"
+    end_marker = "<!-- /erk:metadata-block:objective-roadmap -->"
+    start_idx = result.index(start_marker) + len(start_marker) + 1
+    end_idx = result.index(end_marker)
+    block_content = result[start_idx:end_idx].strip()
+
+    steps = parse_roadmap_frontmatter(block_content)
+    assert steps is not None
+    assert len(steps) == 3
+    assert steps[0].id == "1.1"
+    assert steps[0].status == "pending"
+    assert steps[1].id == "1.2"
+    assert steps[2].id == "2.1"

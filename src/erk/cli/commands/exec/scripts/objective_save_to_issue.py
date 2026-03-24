@@ -42,6 +42,10 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.context.types import NoRepoSentinel
+from erk_shared.gateway.github.metadata.roadmap import (
+    render_initial_roadmap_section,
+    roadmap_nodes_from_json,
+)
 from erk_shared.gateway.github.objective_issues import create_objective_issue
 from erk_shared.scratch.scratch import get_scratch_dir
 
@@ -105,6 +109,13 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
     help="Short kebab-case identifier for the objective (e.g., 'build-auth-system')",
 )
 @click.option(
+    "--roadmap-json",
+    "roadmap_json_path",
+    type=click.Path(exists=True, path_type=Path),
+    default=None,
+    help="Path to JSON file with structured roadmap phases",
+)
+@click.option(
     "--validate",
     "run_validate",
     is_flag=True,
@@ -116,6 +127,7 @@ def objective_save_to_issue(
     output_format: str,
     session_id: str | None,
     slug: str | None,
+    roadmap_json_path: Path | None,
     *,
     run_validate: bool,
 ) -> None:
@@ -182,6 +194,30 @@ def objective_save_to_issue(
         else:
             click.echo(json.dumps({"success": False, "error": "No PR found in ~/.claude/plans/"}))
         raise SystemExit(1)
+
+    # Render and append roadmap section from JSON if provided
+    if roadmap_json_path is not None:
+        raw_text = roadmap_json_path.read_text(encoding="utf-8")
+        try:
+            roadmap_data = json.loads(raw_text)
+        except json.JSONDecodeError as e:
+            error_msg = f"Invalid JSON in {roadmap_json_path}: {e}"
+            if output_format == "display":
+                click.echo(f"Error: {error_msg}", err=True)
+            else:
+                click.echo(json.dumps({"success": False, "error": error_msg}))
+            raise SystemExit(1) from None
+
+        nodes, parse_error = roadmap_nodes_from_json(roadmap_data)
+        if parse_error is not None:
+            if output_format == "display":
+                click.echo(f"Error: {parse_error}", err=True)
+            else:
+                click.echo(json.dumps({"success": False, "error": parse_error}))
+            raise SystemExit(1)
+
+        rendered_section = render_initial_roadmap_section(roadmap_data["phases"], nodes)
+        plan = plan.rstrip() + "\n\n" + rendered_section
 
     # Create objective issue
     result = create_objective_issue(

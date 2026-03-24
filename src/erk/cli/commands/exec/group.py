@@ -102,9 +102,6 @@ from erk.cli.commands.exec.scripts.objective_plan_setup import (
 from erk.cli.commands.exec.scripts.objective_post_action_comment import (
     objective_post_action_comment,
 )
-from erk.cli.commands.exec.scripts.objective_render_roadmap import (
-    objective_render_roadmap,
-)
 from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
@@ -240,7 +237,6 @@ exec_group.add_command(list_sessions, name="list-sessions")
 exec_group.add_command(marker, name="marker")
 exec_group.add_command(migrate_objective_schema, name="migrate-objective-schema")
 exec_group.add_command(normalize_tripwire_candidates, name="normalize-tripwire-candidates")
-exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")

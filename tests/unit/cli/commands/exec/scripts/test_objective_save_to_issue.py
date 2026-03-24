@@ -679,3 +679,183 @@ def test_create_objective_comment_passes_validation(tmp_path: Path) -> None:
     rerendered = rerender_comment_roadmap(final_issue_body, final_comment_body)
     # rerendered is None when no roadmap markers found, or same content when already canonical
     assert rerendered is None or rerendered == final_comment_body
+
+
+# --- --roadmap-json tests ---
+
+
+ROADMAP_JSON_CONTENT = """{
+  "phases": [
+    {
+      "name": "Foundation",
+      "description": "Set up infrastructure.",
+      "pr_count": "1 PR",
+      "steps": [
+        {"id": "1.1", "description": "Create base module"},
+        {"id": "1.2", "description": "Add core types"}
+      ],
+      "test": "Module imports work"
+    },
+    {
+      "name": "Complete",
+      "steps": [
+        {"id": "2.1", "description": "Wire into CLI"}
+      ]
+    }
+  ]
+}"""
+
+
+def test_objective_save_to_issue_with_roadmap_json(tmp_path: Path) -> None:
+    """--roadmap-json renders roadmap and creates YAML metadata block in issue body."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "roadmap-json-session"
+
+    # Prose content (no roadmap section)
+    prose = """# My Feature Objective
+
+This objective describes the feature.
+
+## Goal
+
+Build the thing."""
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        # Set up scratch directory with prose
+        scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        scratch_dir.mkdir(parents=True)
+        (scratch_dir / "objective-body.md").write_text(prose, encoding="utf-8")
+
+        # Write roadmap JSON file
+        roadmap_json_path = scratch_dir / "roadmap.json"
+        roadmap_json_path.write_text(ROADMAP_JSON_CONTENT, encoding="utf-8")
+
+        result = runner.invoke(
+            objective_save_to_issue,
+            [
+                "--format",
+                "json",
+                "--session-id",
+                test_session_id,
+                "--roadmap-json",
+                str(roadmap_json_path),
+            ],
+            obj=ErkContext.for_test(
+                github=FakeLocalGitHub(issues_gateway=fake_gh),
+                git=fake_git,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+        assert output["title"] == "My Feature Objective"
+
+        # Issue body should have the roadmap YAML metadata block
+        created_body = fake_gh.created_issues[0][1]
+        assert "erk:metadata-block:objective-roadmap" in created_body
+        assert "schema_version: '4'" in created_body or 'schema_version: "4"' in created_body
+
+        # Comment should contain the rendered roadmap tables
+        comment_body = fake_gh.added_comments[0][1]
+        assert "### Phase 1: Foundation (1 PR)" in comment_body
+        assert "| 1.1 | Create base module | pending | - |" in comment_body
+        assert "### Phase 2: Complete (1 PR)" in comment_body
+
+
+def test_objective_save_to_issue_roadmap_json_invalid(tmp_path: Path) -> None:
+    """--roadmap-json with invalid JSON exits with error."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "bad-json-session"
+
+    prose = "# Objective\n\nContent."
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        scratch_dir.mkdir(parents=True)
+        (scratch_dir / "objective-body.md").write_text(prose, encoding="utf-8")
+
+        roadmap_json_path = scratch_dir / "roadmap.json"
+        roadmap_json_path.write_text("not valid json", encoding="utf-8")
+
+        result = runner.invoke(
+            objective_save_to_issue,
+            [
+                "--format",
+                "json",
+                "--session-id",
+                test_session_id,
+                "--roadmap-json",
+                str(roadmap_json_path),
+            ],
+            obj=ErkContext.for_test(
+                github=FakeLocalGitHub(issues_gateway=fake_gh),
+                git=fake_git,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 1
+        output = json.loads(result.output)
+        assert output["success"] is False
+        assert "Invalid JSON" in output["error"]
+
+
+def test_objective_save_to_issue_roadmap_json_invalid_structure(tmp_path: Path) -> None:
+    """--roadmap-json with valid JSON but invalid structure exits with error."""
+    fake_gh = FakeGitHubIssues()
+    fake_git = FakeGit(
+        current_branches={tmp_path: "feature"},
+        trunk_branches={tmp_path: "main"},
+    )
+    test_session_id = "bad-structure-session"
+
+    prose = "# Objective\n\nContent."
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        scratch_dir = Path(td) / ".erk" / "scratch" / "sessions" / test_session_id
+        scratch_dir.mkdir(parents=True)
+        (scratch_dir / "objective-body.md").write_text(prose, encoding="utf-8")
+
+        roadmap_json_path = scratch_dir / "roadmap.json"
+        roadmap_json_path.write_text('{"phases": "not a list"}', encoding="utf-8")
+
+        result = runner.invoke(
+            objective_save_to_issue,
+            [
+                "--format",
+                "json",
+                "--session-id",
+                test_session_id,
+                "--roadmap-json",
+                str(roadmap_json_path),
+            ],
+            obj=ErkContext.for_test(
+                github=FakeLocalGitHub(issues_gateway=fake_gh),
+                git=fake_git,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 1
+        output = json.loads(result.output)
+        assert output["success"] is False
+        assert "must be a list" in output["error"]
