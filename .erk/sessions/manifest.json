@@ -16,6 +16,23 @@
       "raw_size_kb": 2389,
       "xml_size_kb": 114,
       "git_branch": "master"
+    },
+    {
+      "session_id": "c4c4b1d4-50a5-437a-b071-d640516df130",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-24T17:24:19.649018+00:00",
+      "files": [
+        "impl-c4c4b1d4-50a5-437a-b071-d640516df130-c4c4b1d4-50a5-437a-b071-d640516df130-part1.xml",
+        "impl-c4c4b1d4-50a5-437a-b071-d640516df130-c4c4b1d4-50a5-437a-b071-d640516df130-part2.xml",
+        "impl-c4c4b1d4-50a5-437a-b071-d640516df130-c4c4b1d4-50a5-437a-b071-d640516df130-part3.xml",
+        "impl-c4c4b1d4-50a5-437a-b071-d640516df130-c4c4b1d4-50a5-437a-b071-d640516df130-part4.xml"
+      ],
+      "user_turns": 5,
+      "duration_minutes": 26,
+      "raw_size_kb": 2034,
+      "xml_size_kb": 218,
+      "git_branch": "plnd/inline-roadmap-json-save-03-24-1655"
     }
   ]
 }

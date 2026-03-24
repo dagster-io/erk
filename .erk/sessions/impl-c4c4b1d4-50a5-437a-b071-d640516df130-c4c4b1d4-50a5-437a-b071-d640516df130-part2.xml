@@ -1,0 +1,877 @@
+<session>
+  <meta branch="plnd/inline-roadmap-json-save-03-24-1655" />
+  <meta model="claude-opus-4-6" />
+  <assistant>**Phase 2: Add render_initial_roadmap_section() to roadmap.py**
+
+I'll add this after `render_roadmap_block_inner`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="96346" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Nh3vct6pe8yYRHJW4gdXXG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+    <param name="old_string">def group_nodes_by_phase(nodes: list[RoadmapNode]) -&gt; list[RoadmapPhase]:</param>
+    <param name="new_string">def render_initial_roadmap_section(
+    nodes: list[RoadmapNode],
+    phase_metadata: list...[truncated 2924 chars]...h_markers(raw)
+
+
+def group_nodes_by_phase(nodes: list[RoadmapNode]) -&gt; list[RoadmapPhase]:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="96346" output_tokens="1138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nh3vct6pe8yYRHJW4gdXXG">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_019VZNhpgL6zXfT8pTXNuNDW">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1207" cache_read_input_tokens="96544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1207}" output_tokens="71" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019VZNhpgL6zXfT8pTXNuNDW">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013JGiGCyJq6otBh5ctXyK8a">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1207" cache_read_input_tokens="96544" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013JGiGCyJq6otBh5ctXyK8a">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Modify create_objective_issue() signature**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="97751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Bx92G8emMyHDVRgMYyCr1t">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.roadmap import (
+    parse_roadmap_frontmatter,
+    render_objective_roadmap_block,
+    render_roadmap_block_inner,
+    rerender_comment_roadmap,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.roadmap import (
+    PhaseMetadata,
+    RoadmapNod...[truncated 59 chars]...r_objective_roadmap_block,
+    render_roadmap_block_inner,
+    rerender_comment_roadmap,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="97751" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bx92G8emMyHDVRgMYyCr1t">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py has been updated successfully.
+  </tool_result>
+  <assistant>Now modify the `create_objective_issue` function signature and body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="97949" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 387}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JQU9z43oDLTngjFneCMob3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="old_string">def create_objective_issue(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    plan...[truncated 41 chars]...    extra_labels: list[str] | None,
+    slug: str | None,
+) -&gt; CreateObjectiveIssueResult:</param>
+    <param name="new_string">def create_objective_issue(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    plan...[truncated 134 chars]...] | None,
+    phase_metadata: list[PhaseMetadata] | None,
+) -&gt; CreateObjectiveIssueResult:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="97949" output_tokens="377" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 387, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JQU9z43oDLTngjFneCMob3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the logic in steps 4 and 6 to use the new parameters when provided:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="98336" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 445}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VcgY4d34rRrfTsnHBS4cQZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="old_string">    # Add roadmap block if plan content has roadmap data
+    roadmap_block_content = _buil...[truncated 644 chars]...h objective content
+    objective_comment = format_objective_content_comment(plan_content)</param>
+    <param name="new_string">    # Add roadmap block if roadmap data is available
+    if roadmap_nodes is not None:
+   ...[truncated 1304 chars]...    )
+    else:
+        objective_comment = format_objective_content_comment(plan_content)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="98336" output_tokens="820" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 445, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VcgY4d34rRrfTsnHBS4cQZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update all callers of `create_objective_issue` to pass the new keyword arguments. Let me find all callers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="888" cache_read_input_tokens="98781" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 888}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015XnPVSaCp8PKepMKjQtdu2">
+    <param name="pattern">create_objective_issue\(</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="888" cache_read_input_tokens="98781" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 888, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015XnPVSaCp8PKepMKjQtdu2">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py
+packages/erk-shared/tests/unit/github/test_objective_issues.py
+docs/learned/objectives/objective-storage-format.md
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+docs/learned/objectives/objective-create-workflow.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JnNVkJmZM8eJRzX75CpbE1">
+    <param name="pattern">create_objective_issue\("</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="249" cache_read_input_tokens="99669" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 249, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JnNVkJmZM8eJRzX75CpbE1">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SukeE2noGW6yQFTgxL9fW5">
+    <param name="pattern">create_objective_issue\(\n"</param>
+    <param name="output_mode">content</param>
+    <param name="multiline">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="99918" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 110, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SukeE2noGW6yQFTgxL9fW5">
+No matches found
+  </tool_result>
+  <assistant>Let me check the call sites in the test files and the exec script:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="100028" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 396}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LrBVhxdbHn5dWCQ7drsuSA">
+    <param name="pattern">create_objective_issue\("</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="100028" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 396}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LrBVhxdbHn5dWCQ7drsuSA">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BzPan459jxfkzoNLcTRz5u">
+    <param name="pattern">= create_objective_issue\("</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="100028" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 396, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BzPan459jxfkzoNLcTRz5u">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AgcVaKYPMf6FaX5qsPmGRi">
+    <param name="pattern">create_objective_issue\b</param>
+    <param name="output_mode">content</param>
+    <param name="type">py</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="221" cache_read_input_tokens="100424" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 221}" output_tokens="61" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AgcVaKYPMf6FaX5qsPmGRi">
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:45:from erk_shared.gateway.github.objective_issues import create_objective_issue
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:187:    result = create_objective_issue(
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py:4:- create_objective_issue(): Create objective issues with roadmap metadata
+packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py:112:def create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:9:    create_objective_issue,
+packages/erk-shared/tests/unit/github/test_objective_issues.py:186:    """Test objective issue creation using create_objective_issue()."""
+packages/erk-shared/tests/unit/github/test_objective_issues.py:193:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:220:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:243:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:272:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:295:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:318:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:373:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:395:    """Test slug validation gate in create_objective_issue()."""
+packages/erk-shared/tests/unit/github/test_objective_issues.py:402:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:427:        result = create_objective_issue(
+packages/erk-shared/tests/unit/github/test_objective_issues.py:449:        result = create_objective_issue(
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:13:from erk_shared.gateway.github.objective_issues import create_objective_issue
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:649:    This is the generate-validate roundtrip invariant: after create_objective_issue()
+tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py:655:    result = create_objective_issue(
+  </tool_result>
+  <assistant>I need to update calls in 3 files. Let me update them:
+
+1. `objective_save_to_issue.py` (the exec script)
+2. `test_objective_issues.py` (erk-shared tests)
+3. `test_objective_save_to_issue.py` (exec script tests)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="844" cache_read_input_tokens="100645" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 844}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WWAHVxvCBVAcNmng6JmuMa">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    # Create objective issue
+    result = create_objective_issue(
+        github_issues=gi...[truncated 42 chars]...        time=time,
+        title=None,
+        extra_labels=None,
+        slug=slug,
+    )</param>
+    <param name="new_string">    # Create objective issue
+    result = create_objective_issue(
+        github_issues=gi...[truncated 99 chars]...ls=None,
+        slug=slug,
+        roadmap_nodes=None,
+        phase_metadata=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="844" cache_read_input_tokens="100645" output_tokens="389" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 844, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WWAHVxvCBVAcNmng6JmuMa">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the erk-shared test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="101489" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 456}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017a8gfRd2F1kAYfPMiz3YUX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="456" cache_read_input_tokens="101489" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 456, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017a8gfRd2F1kAYfPMiz3YUX">
+     1→"""Tests for objective_issues.py - objective issue creation and create_plan_draft_pr."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk_shared.gateway.github.objective_issues import (
+     8→    CreateObjectiveIssueResult,
+     9→    create_objective_issue,
+    10→)
+    11→from erk_shared.pr_store.create_plan_draft_pr import (
+    12→    CreatePlanDraftPRResult,
+    13→    create_plan_draft_pr,
+    14→)
+    15→from tests.fakes.gateway.branch_manager import FakeBranchManager
+    16→from tests.fakes.gateway.git import FakeGit
+    17→from tests.fakes.gateway.github import FakeLocalGitHub
+    18→from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    19→from tests.fakes.gateway.time import FakeTime
+    20→
+    21→
+    22→def _create_plan(
+    23→    *,
+    24→    tmp_path: Path,
+    25→    plan_content: str = "# My Feature Plan\n\nImplementation steps...",
+    26→    title: str | None = None,
+    27→    labels: list[str] | None = None,
+    28→    source_repo: str | None = None,
+    29→    objective_id: int | None = None,
+    30→    created_from_session: str | None = None,
+
+... [710 lines omitted] ...
+
+    87→        assert result.error is None
+   165→            error=None,
+   168→        with pytest.raises(AttributeError):
+   178→            error=None,
+   181→        with pytest.raises(AttributeError):
+   347→            "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+   397→    def test_invalid_slug_returns_failure_no_issue_created(self, tmp_path: Path) -&gt; None:
+   398→        """Invalid slug returns success=False with descriptive error, no issue created."""
+   414→        assert result.error is not None
+   415→        assert "Invalid objective slug" in result.error
+   416→        assert "INVALID SLUG" in result.error
+   468→    """Test error handling when branch already exists."""
+   470→    def test_returns_error_when_branch_exists(self, tmp_path: Path) -&gt; None:
+   471→        """BranchAlreadyExists returns error result with no PR created."""
+   477→            _create_branch_error=BranchAlreadyExists(
+   509→        assert result.error is not None
+   510→        assert "already exists" in result.error
+   619→    """Test error handling when backend returns non-numeric plan_id."""
+   621→    def test_non_numeric_plan_id_returns_error(self, tmp_path: Path) -&gt; None:
+   622→        """Non-numeric plan_id from backend returns error result with branch_name set."""
+   659→        assert result.branch_name is not None  # Branch was created before the error
+   661→        assert result.error is not None
+   662→        assert "not-a-number" in result.error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10474" cache_read_input_tokens="101945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10474}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to add the new keyword args to all test calls. Let me use replace_all for the pattern in the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10474" cache_read_input_tokens="101945" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10474}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QQeRFfyjLyufXoWRM7bsKX">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+    <param name="old_string">            slug=None,
+        )</param>
+    <param name="new_string">            slug=None,
+            roadmap_nodes=None,
+            phase_metadata=None,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10474" cache_read_input_tokens="101945" output_tokens="356" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QQeRFfyjLyufXoWRM7bsKX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py has been updated. All occurrences were successfully replaced.
+  </tool_result>
+  <assistant>Now handle the one with `slug="INVALID SLUG"` and `slug="build-auth-system"`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="112419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 713}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016eWz2ZiFZAjKCmgKt3gg7B">
+    <param name="pattern">slug=\"INVALID SLUG\"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="112419" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 713, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016eWz2ZiFZAjKCmgKt3gg7B">
+423:            slug="INVALID SLUG",
+424-        )
+425-
+426-        assert result.success is False
+427-        assert result.plan_number is None
+428-        assert result.error is not None
+  </tool_result>
+  <assistant>I see the replace_all only matched `slug=None,` followed by a specific indentation. Let me check if the other slug variants were missed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="113132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 247}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LC5W7CG4wrTbH2utXX7Dko">
+    <param name="pattern">slug=.+\n\s+\)"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+    <param name="output_mode">content</param>
+    <param name="multiline">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="113132" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LC5W7CG4wrTbH2utXX7Dko">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P8jwSgfTSmKcD7oQE46QJs">
+    <param name="pattern">slug=\"INVALID SLUG\",</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="210" cache_read_input_tokens="113379" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 210, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P8jwSgfTSmKcD7oQE46QJs">
+423:            slug="INVALID SLUG",
+424-        )
+425-
+426-        assert result.success is False
+  </tool_result>
+  <assistant>That call didn't get updated. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="113589" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 199}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Wi4pRf27PmVJiLaJBxMkqf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+    <param name="old_string">            slug="INVALID SLUG",
+        )</param>
+    <param name="new_string">            slug="INVALID SLUG",
+            roadmap_nodes=None,
+            phase_metadata=None,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="113589" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 199, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wi4pRf27PmVJiLaJBxMkqf">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018na3qjZ66DvqcEq3R1iCy3">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py</param>
+    <param name="old_string">            slug="build-auth-system",
+        )</param>
+    <param name="new_string">            slug="build-auth-system",
+            roadmap_nodes=None,
+            phase_metadata=None,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="113788" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 271, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018na3qjZ66DvqcEq3R1iCy3">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/tests/unit/github/test_objective_issues.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the call in test_objective_save_to_issue.py (the round-trip test):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="114059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SmLeX4g8Vi64qSfhMeNTag">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py</param>
+    <param name="old_string">    result = create_objective_issue(
+        github_issues=fake_gh,
+        repo_root=tmp_...[truncated 37 chars]...  time=FakeTime(),
+        title=None,
+        extra_labels=None,
+        slug=None,
+    )</param>
+    <param name="new_string">    result = create_objective_issue(
+        github_issues=fake_gh,
+        repo_root=tmp_...[truncated 94 chars]...ls=None,
+        slug=None,
+        roadmap_nodes=None,
+        phase_metadata=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="114059" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SmLeX4g8Vi64qSfhMeNTag">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/tests/unit/cli/commands/exec/scripts/test_objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CSZNLi2rv1EeFkoCFNBwe2">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="114319" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 701}" output_tokens="46" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CSZNLi2rv1EeFkoCFNBwe2">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01835p1tzeSpZCyzNLmcfPEY">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="114319" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 701, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01835p1tzeSpZCyzNLmcfPEY">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Add --roadmap-json to objective-save-to-issue**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="115020" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_017aNKjZg84pxSd6XAZcMwFA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">from erk_shared.gateway.github.objective_issues import create_objective_issue</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.roadmap import (
+    PhaseMetadata,
+    RoadmapNod...[truncated 1 chars]...from_json,
+)
+from erk_shared.gateway.github.objective_issues import create_objective_issue</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="115020" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017aNKjZg84pxSd6XAZcMwFA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the Click option:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="327" cache_read_input_tokens="115218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 327}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WttwbNuHmTbDEj7QjP3HKp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">@click.option(
+    "--validate",
+    "run_validate",
+    is_flag=True,
+    help="Run objec...[truncated 143 chars]...   session_id: str | None,
+    slug: str | None,
+    *,
+    run_validate: bool,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--roadmap-json",
+    "roadmap_json_path",
+    type=click.Path(exists=T...[truncated 372 chars]... str | None,
+    roadmap_json_path: Path | None,
+    *,
+    run_validate: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="327" cache_read_input_tokens="115218" output_tokens="458" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WttwbNuHmTbDEj7QjP3HKp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the roadmap JSON processing logic before the `create_objective_issue` call:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="525" cache_read_input_tokens="115545" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 525}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HP48Uv6qxJfAsGTExXwMqv">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+    <param name="old_string">    # Create objective issue
+    result = create_objective_issue(
+        github_issues=gi...[truncated 99 chars]...ls=None,
+        slug=slug,
+        roadmap_nodes=None,
+        phase_metadata=None,
+    )</param>
+    <param name="new_string">    # Parse roadmap JSON if provided
+    nodes: list[RoadmapNode] | None = None
+    phase_...[truncated 1177 chars]...,
+        slug=slug,
+        roadmap_nodes=nodes,
+        phase_metadata=phase_meta,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="525" cache_read_input_tokens="115545" output_tokens="669" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 525, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HP48Uv6qxJfAsGTExXwMqv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016BpmmzCtvtMb7b2stquvHw">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="116070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 736}" output_tokens="71" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016BpmmzCtvtMb7b2stquvHw">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01RHVQrtBtn8CPioqfv5BGo5">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="736" cache_read_input_tokens="116070" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 736, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RHVQrtBtn8CPioqfv5BGo5">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 5: Delete objective-render-roadmap**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="934" cache_read_input_tokens="116070" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 934}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AsiWb7iGWs7ZY1YNnwR7DV">
+    <param name="command">rm /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/...[truncated 46 chars]...orktrees/erk-slot-14/tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py</param>
+    <param name="description">Delete objective_render_roadmap.py and its tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="934" cache_read_input_tokens="116070" output_tokens="193" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 934, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AsiWb7iGWs7ZY1YNnwR7DV">
+(Bash completed with no output)
+  </tool_result>
+  <assistant>Now remove the import and `add_command` from `group.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="117004" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 211}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YYK1s3AVbDa3s2mJVuTF96">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.objective_render_roadmap import (
+    objective_render_roadmap,
+)
+from erk.cli.commands.exec.scripts.objective_save_to_issue import (</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.objective_save_to_issue import (</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="117004" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YYK1s3AVbDa3s2mJVuTF96">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SyyiA92sp7SaZqiqNwu3hc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/group.py</param>
+    <param name="old_string">exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap")
+exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")</param>
+    <param name="new_string">exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="117215" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SyyiA92sp7SaZqiqNwu3hc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/group.py has been updated successfully.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>i'm quite skeptical of official encoding phase in the core domain model here. this seems like a "claude-ism". we previusly concieved of phase as less structured concept that "overlaid" the node structure</user>
+  <usage input_tokens="3" cache_creation_input_tokens="578" cache_read_input_tokens="117513" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 578}" output_tokens="38" service_tier="standard" inference_geo="not_available" />
+  <assistant>You're right. Looking at the existing model, phases are deliberately derived from node ID prefixes via `group_nodes_by_phase()`, with names enriched from markdown headers. `PhaseMetadata` as a core dataclass promotes transient display-only info (pr_count, test, description from the JSON input) to the same level as `RoadmapNode` and `RoadmapPhase`.
+
+A better approach: `roadmap_nodes_from_json()` returns just `(nodes, error)` — the flat node list, consistent with how the rest of the system works. The rendering function takes the raw JSON `phases` dict alongside the nodes for the display-only fields it needs. No new domain type.
+
+Want me to refactor it that way?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="578" cache_read_input_tokens="117513" output_tokens="640" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 578, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>yes let's do that instead. i think it will just be easier to undo all these changes and rewrite the plan</user>
+  <usage input_tokens="3" cache_creation_input_tokens="821" cache_read_input_tokens="118091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 821}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VsXP9cpX3wtoCGJcuHKs6p">
+    <param name="command">git checkout -- . &amp;&amp; git clean -fd 2&gt;&amp;1 | tail -5</param>
+    <param name="description">Reset all changes to clean state</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="821" cache_read_input_tokens="118091" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 821, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VsXP9cpX3wtoCGJcuHKs6p">
+(Bash completed with no output)
+  </tool_result>
+  <assistant>Clean. Now let me verify and rewrite the plan with the corrected approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6239" cache_read_input_tokens="118912" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6239}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GaMexMPc1p6s9JTSw55HjV">
+    <param name="command">git status --short</param>
+    <param name="description">Verify clean working tree</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6239" cache_read_input_tokens="118912" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6239, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GaMexMPc1p6s9JTSw55HjV">
+(Bash completed with no output)
+  </tool_result>
+  <assistant>Good, fully clean. Let me rewrite the plan. The key insight: **no new domain type**. `roadmap_nodes_from_json()` returns `(nodes, error)`. The rendering function takes the raw JSON phases list for display-only fields.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="125151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 112}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NLaDUKG9UXcWJMvHeV5Mip">
+    <param name="query">select:ExitPlanMode,EnterPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="125151" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 112, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NLaDUKG9UXcWJMvHeV5Mip">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me clean up stale tasks and enter plan mode to rewrite.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_011ZAXU5KCk9Vhsyvx1zv4SS">
+    <param name="taskId">1</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01ThntGu9RKEU2XDGfBv4xW5">
+    <param name="taskId">2</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011ZAXU5KCk9Vhsyvx1zv4SS">
+Updated task #1 deleted
+  </tool_result>
+  <tool_result tool="toolu_01ThntGu9RKEU2XDGfBv4xW5">
+Updated task #2 deleted
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01P5vF2iWzgSYG7aJtDY2V4c">
+    <param name="taskId">3</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P5vF2iWzgSYG7aJtDY2V4c">
+Updated task #3 deleted
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JKqskemyFHaS8M4pZRBA6n">
+    <param name="taskId">4</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JKqskemyFHaS8M4pZRBA6n">
+Updated task #4 deleted
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_019ekH5x1xs4vhRXDUR4dSeM">
+    <param name="taskId">5</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ekH5x1xs4vhRXDUR4dSeM">
+Updated task #5 deleted
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PpmbyQgBiJDBsDwzA2CYxs">
+    <param name="taskId">6</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PpmbyQgBiJDBsDwzA2CYxs">
+Updated task #6 deleted
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01H7mLrAEf2wtgXNHXgaPnXE">
+    <param name="taskId">7</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H7mLrAEf2wtgXNHXgaPnXE">
+Updated task #7 deleted
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01PqKvGMz4Y7rSJkxTKKbBaQ">
+    <param name="taskId">8</param>
+    <param name="status">deleted</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01MWiaKVo2hXShpqVhjrRAvv">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2189" cache_read_input_tokens="125263" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2189}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PqKvGMz4Y7rSJkxTKKbBaQ">
+Updated task #8 deleted
+  </tool_result>
+  <tool_result tool="toolu_01MWiaKVo2hXShpqVhjrRAvv">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <assistant>I already have deep context from the first implementation attempt. The key design issue was promoting `PhaseMetadata` to the core domain model. Let me re-examine the existing rendering code to find the right minimal approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2114" cache_read_input_tokens="127452" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2114}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017GoQLdiTPXYuxx5dFVfrW6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/src/erk/cli/commands/exec/scripts/objective_render_roadmap.py</param>
+    <param name="offset">111</param>
+    <param name="limit">93</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2114" cache_read_input_tokens="127452" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2114, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017GoQLdiTPXYuxx5dFVfrW6">
+   111→def _render_roadmap(phases: list[dict[str, Any]]) -&gt; str:
+   112→    """Render a complete ## Roadmap markdown section from validated phases.
+   113→
+   114→    Args:
+   115→        phases: Validated list of phase dicts from input JSON.
+   116→
+   117→    Returns:
+   118→        Complete markdown string for the roadmap section.
+   119→    """
+   120→    all_steps: list[RoadmapNode] = []
+   121→    sections: list[str] = []
+   122→
+   123→    # Check if any step across all phases has depends_on
+   124→    any_has_depends_on = any(
+   125→        "depends_on" in step_data for phase in phases for step_data in phase["steps"]
+   126→    )
+   127→
+   128→    sections.append("## Roadmap")
+   129→    sections.append("")
+   130→
+   131→    for phase_index, phase in enumerate(phases):
+   132→        phase_number = phase_index + 1
+   133→        name = phase["name"]
+   134→        pr_count = phase.get("pr_count", "1 PR")
+   135→
+   136→        # Phase header
+   137→        sections.append(f"### Phase {phase_number}: {name} ({pr_count})")
+   138→        sections.append("")
+   139→
+   140→        # Phase description
+
+... [63 lines omitted] ...
+  </tool_result>
+  <assistant>Good. This function takes raw `list[dict]` phases, renders markdown, and constructs `RoadmapNode` objects along the way. The key insight: the rendering and node construction are interleaved because the JSON has both concerns. We can split them cleanly:
+
+1. **`roadmap_nodes_from_json(data)`** → validates JSON, returns `(nodes, error)` — just the flat node list
+2. **`render_initial_roadmap_section(phases_json, nodes)`** → takes raw JSON phases for display fields + the already-constructed nodes for the YAML block
+
+This keeps the domain model clean (no `PhaseMetadata`) while still moving the logic into `roadmap.py`.
+
+Let me also look at how `create_objective_issue` uses the result — specifically what it needs from `render_initial_roadmap_section`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1369" cache_read_input_tokens="129566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1369}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BdYMJujLTZBvzDoTTnzMvd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-14/packages/erk-shared/src/erk_shared/gateway/github/objective_issues.py</param>
+    <param name="offset">196</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1369" cache_read_input_tokens="129566" output_tokens="331" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1369, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BdYMJujLTZBvzDoTTnzMvd">
+   196→    issue_body = render_metadata_block(header_block)
+   197→
+   198→    # Add roadmap block if plan content has roadmap data
+   199→    roadmap_block_content = _build_objective_roadmap_block(plan_content)
+   200→    if roadmap_block_content is not None:
+   201→        issue_body = issue_body + "\n\n" + roadmap_block_content
+   202→
+   203→    # Step 5: Create issue
+   204→    try:
+   205→        result = github_issues.create_issue(
+   206→            repo_root=repo_root,
+   207→            title=title,  # No suffix for objectives
+   208→            body=issue_body,
+   209→            labels=labels,
+   210→        )
+   211→    except RuntimeError as e:
+   212→        return CreateObjectiveIssueResult(
+   213→            success=False,
+   214→            pr_number=None,
+   215→            plan_url=None,
+   216→            title=title,
+   217→            error=f"Failed to create GitHub issue: {e}",
+   218→        )
+   219→
+   220→    # Step 6: Add first comment with objective content
+   221→    objective_comment = format_objective_content_comment(plan_content)
+   222→    try:
+   223→        comment_id = github_issues.add_comment(repo_root, result.number, objective_comment)
+   224→    except RuntimeError as e:
+   225→        # Partial success - issue created but comment failed
+
+... [30 lines omitted] ...
+
+   231→            error=f"Issue #{result.number} created but failed to add objective comment: {e}",
+   252→        error=None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1175" cache_read_input_tokens="130935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1175}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have deep context from the prior attempt. The key revision: no `PhaseMetadata` dataclass. Let me write the revised plan directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1175" cache_read_input_tokens="130935" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1175}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01HoQxcaYCxR9sXnLE7tv6Ym">
+    <param name="file_path">/Users/schrockn/.claude/plans/lazy-giggling-balloon.md</param>
+    <param name="content"># Inline Roadmap JSON into objective-save-to-issue (Revised)
+
+## Context
+
+The objective cr...[truncated 5079 chars]...sue --roadmap-json &lt;test.json&gt; --session-id X --slug test --format json` works end-to-end
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1175" cache_read_input_tokens="130935" output_tokens="4207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HoQxcaYCxR9sXnLE7tv6Ym">
+File created successfully at: /Users/schrockn/.claude/plans/lazy-giggling-balloon.md
+  </tool_result>
+  <assistant>The key differences from the first attempt:
+
+1. **No `PhaseMetadata` dataclass** — raw `list[dict]` carries display-only phase info
+2. **No changes to `create_objective_issue()`** — the rendered roadmap section is appended to `plan_content` before the call, so existing extraction logic works unchanged
+3. `roadmap_nodes_from_json()` returns just `(nodes, error)` — flat list, consistent with how the domain model works</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4331" cache_read_input_tokens="132110" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Mt9BCpXibjNxL2WkpUSxNM">
+    <param name="plan"># Inline Roadmap JSON into objective-save-to-issue (Revised)
+
+## Context
+
+The objective cr...[truncated 5079 chars]...sue --roadmap-json &lt;test.json&gt; --session-id X --slug test --format json` works end-to-end
+</param>
+    <param name="planFilePath">/Users/schrockn/.claude/plans/lazy-giggling-balloon.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4331" cache_read_input_tokens="132110" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4331, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mt9BCpXibjNxL2WkpUSxNM">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/lazy-giggling-balloon.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Inline Roadmap JSON into objective-save-to-issue (Revised)
+Current context: (wt:erk-slot-14) (br:plnd/inline-roadmap-json-save-03-24-1655) (pr:#9402) (plan:#9402)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/inli"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR" - Create a new branch and save plan as a planned PR. You stay on your current branch.
+  2. "Implement without saving" - Implement directly on the current branch without creating a planned PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id c4c4b1d4-50a5-437a-b071-d640516df130 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/lazy-giggling-balloon.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Kfg1tkK5LPqFtUAvr5G1vu">
+    <param name="file_path">/Users/schrockn/.claude/plans/lazy-giggling-balloon.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="793" cache_read_input_tokens="136441" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 793, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kfg1tkK5LPqFtUAvr5G1vu">
+     1→# Inline Roadmap JSON into objective-save-to-issue (Revised)
+     2→
+     3→## Context
+     4→
+     5→The objective creation pipeline is fragile because it relies on Claude to: (1) construct JSON, (2) pipe it to `objective-render-roadmap`, (3) capture the output, (4) paste it into a markdown file. Claude can skip steps 2-3 and hand-write markdown tables, resulting in objectives with no YAML source of truth.
+     6→
+     7→**Fix:** `objective-save-to-issue` accepts `--roadmap-json &lt;path&gt;` and handles YAML creation + markdown rendering internally. Delete `objective-render-roadmap`.
+     8→
+     9→**Key design decision:** No new domain types. Phases are an overlay on the node structure, derived from node ID prefixes. The raw JSON `list[dict]` carries display-only phase info (name, description, pr_count, test) — these stay as dicts, never promoted to a dataclass.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Add `roadmap_nodes_from_json()` to roadmap.py
+    14→
+    15→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+    16→
+    17→Add `roadmap_nodes_from_json(data: object) -&gt; tuple[list[RoadmapNode], str | None]`:
+    18→- Absorbs validation logic from `_validate_input()` in `objective_render_roadmap.py`
+    19→- Absorbs RoadmapNode construction + slug generation via `slugify_node_description()`
+    20→- Returns `(nodes, error_message)` — just the flat node list, consistent with the existing domain model
+    21→- Import `slugify_node_description` from `erk_shared.naming`
+    22→
+    23→### 2. Add `render_initial_roadmap_section()` to roadmap.py
+    24→
+    25→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+    26→
+    27→Add `render_initial_roadmap_section(phases_json: list[dict], nodes: list[RoadmapNode]) -&gt; str`:
+    28→- `phases_json` is the raw validated JSON phases list — carries display-only fields (name, description, pr_count, test)
+    29→- `nodes` is the flat node list from `roadmap_nodes_from_json`
+    30→- Renders phase headers, descriptions, tables, test sections
+
+... [68 lines omitted] ...
+
+    49→3. On error, output JSON error and exit 1
+    74→- Remove "Do NOT manually write roadmap tables" warning (no longer relevant)
+    85→- `--roadmap-json` with invalid JSON → error output
+  </tool_result>
+  <assistant>Here's the revised plan:
+
+# Inline Roadmap JSON into objective-save-to-issue (Revised)
+
+## Context
+
+The objective creation pipeline is fragile because it relies on Claude to: (1) construct JSON, (2) pipe it to `objective-render-roadmap`, (3) capture the output, (4) paste it into a markdown file. Claude can skip steps 2-3 and hand-write markdown tables, resulting in objectives with no YAML source of truth.
+
+**Fix:** `objective-save-to-issue` accepts `--roadmap-json &lt;path&gt;` and handles YAML creation + markdown rendering internally. Delete `objective-render-roadmap`.
+
+**Key design decision:** No new domain types. Phases are an overlay on the node structure, derived from node ID prefixes. The raw JSON `list[dict]` carries display-only phase info (name, description, pr_count, test) — these stay as dicts, never promoted to a dataclass.
+
+## Changes
+
+### 1. Add `roadmap_nodes_from_json()` to roadmap.py
+- Absorbs validation + RoadmapNode construction from `_validate_input()`
+- Returns `(nodes, error_message)` — just the flat node list
+
+### 2. Add `render_initial_roadmap_section()` to roadmap.py
+- Takes `phases_json: list[dict]` (raw JSON) + `nodes: list[RoadmapNode]`
+- Renders complete `## Roadmap` section with tables, headers, markers, metadata block
+
+### 3. Add `--roadmap-json` to `objective-save-to-issue`
+- Parses JSON, calls the above, appends rendered section to plan_content
+- **`create_objective_issue()` is unchanged** — no new parameters
+
+### 4. Delete `objective-render-roadmap`
+### 5. Update `/erk:objective-create` skill
+### 6. Tests
+### 7. Update docs</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2886" cache_read_input_tokens="136441" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2886}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
