@@ -238,7 +238,10 @@ def run_workflow_run_list(
             return remote_runs
         workflow_runs = remote_runs
 
-    runs = [_serialize_workflow_run(workflow_run, owner=owner, repo=repo) for workflow_run in workflow_runs]
+    runs = [
+        _serialize_workflow_run(workflow_run, owner=owner, repo=repo)
+        for workflow_run in workflow_runs
+    ]
     return WorkflowRunListResult(runs=runs)
 
 
