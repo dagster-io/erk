@@ -21,16 +21,16 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.branch_manager.git import GitBranchManager
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import Git
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.abc import LocalGitHub
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.abc import Time
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
 
 
 @dataclass

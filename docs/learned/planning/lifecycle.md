@@ -7,10 +7,10 @@ read_when:
   - "closing a plan"
   - "understanding plan states"
 tripwires:
-  - action: "manually creating an erk-plan with gh issue create"
+  - action: "manually creating an erk-pr with gh issue create"
     warning: "Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan linked to an objective"
-    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    warning: "Always verify the link was saved correctly with `erk exec get-pr-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
   - action: "implementing custom PR/plan relevance assessment logic"
     warning: "Reference `/local:check-superceded` verdict classification system first. Use SUPERSEDED, PARTIALLY_SUPERSEDED, STILL_RELEVANT, NEEDS_REVIEW verdict categories for consistency. Note: DIFFERENT_APPROACH is a match type in the evidence table, not a verdict."
   - action: "after plan-implement execution completes"
@@ -59,7 +59,7 @@ The erk plan lifecycle manages implementation plans from creation through automa
        │                  │                   │                   │                   │
        ▼                  ▼                   ▼                   ▼                   ▼
  GitHub Issue       git branch            GitHub Actions      Code Changes        Issue Closed
- with erk-plan      creates branch        finds existing      committed           via commit
+ with erk-pr        creates branch        finds existing      committed           via commit
  label              + draft PR            PR and executes     and pushed          message
 ```
 
@@ -75,14 +75,14 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 ### Which Phase Am I In?
 
-| Observable State                        | Current Phase                | `lifecycle_stage` |
-| --------------------------------------- | ---------------------------- | ----------------- |
-| Issue has `erk-plan` label, no comments | Phase 1: Created             | `planned`         |
-| Issue has `submission-queued` comment   | Phase 2: Submitted           | `planned`         |
-| Issue has `workflow-started` comment    | Phase 3: Dispatched          | `impl`            |
-| PR is draft, workflow running           | Phase 4: Implementing        | `impl`            |
-| PR is ready for review                  | Phase 5: Complete            | `impl`            |
-| Issue is CLOSED                         | Merged (PR closed the issue) | —                 |
+| Observable State                      | Current Phase                | `lifecycle_stage` |
+| ------------------------------------- | ---------------------------- | ----------------- |
+| Issue has `erk-pr` label, no comments | Phase 1: Created             | `planned`         |
+| Issue has `submission-queued` comment | Phase 2: Submitted           | `planned`         |
+| Issue has `workflow-started` comment  | Phase 3: Dispatched          | `impl`            |
+| PR is draft, workflow running         | Phase 4: Implementing        | `impl`            |
+| PR is ready for review                | Phase 5: Complete            | `impl`            |
+| Issue is CLOSED                       | Merged (PR closed the issue) | —                 |
 
 **Note:** The `lifecycle_stage` field in plan-header metadata provides a machine-readable equivalent of these observable states. See [Lifecycle Stage Tracking](#lifecycle-stage-tracking) for details.
 
@@ -194,7 +194,7 @@ This workflow:
 1. Claude enters Plan Mode for the task
 2. Plan creation with context extraction
 3. Plan saved to `~/.claude/plans/*.md` on Exit Plan Mode
-4. `/erk:plan-save` creates GitHub Issue with `erk-plan` label
+4. `/erk:plan-save` creates GitHub Issue with `erk-pr` label
 
 ### CLI Path: `erk pr create --file <path>`
 
@@ -250,9 +250,9 @@ lifecycle_stage: planned
 <!-- /erk:metadata-block:plan-body -->
 ```
 
-### The `erk-plan` Label
+### The `erk-pr` Label
 
-The `erk-plan` label marks issues as implementation plans:
+The `erk-pr` label marks issues as implementation plans:
 
 - **Auto-created** if it doesn't exist (green, #0E8A16)
 - **Required** for submission and implementation
@@ -270,7 +270,7 @@ Dispatch prepares the plan for remote execution via `erk pr dispatch <issue_numb
 
 Before submission, the command validates:
 
-1. **Label check**: Issue must have `erk-plan` label
+1. **Label check**: Issue must have `erk-pr` label
 2. **State check**: Issue must be OPEN (not closed)
 3. **Clean working directory**: No uncommitted changes
 
@@ -350,7 +350,7 @@ The submit command creates the `.erk/impl-context/` folder structure:
 ```json
 {
   "provider": "github",
-  "plan_id": "123",
+  "pr_id": "123",
   "url": "https://github.com/owner/repo/issues/123",
   "created_at": "2025-01-15T10:30:00Z",
   "synced_at": "2025-01-15T10:30:00Z",
@@ -387,8 +387,8 @@ queued_at: 2025-01-15T10:30:00Z
 submitted_by: username
 issue_number: 123
 validation_results:
-  issue_is_open: true
-  has_erk_plan_label: true
+  pr_is_open: true
+  has_erk_pr_label: true
 expected_workflow: erk-impl
 ```
 
@@ -703,7 +703,7 @@ last_dispatched_run_id: "1234567890"
 last_dispatched_at: 2025-01-15T10:30:00Z
 ```
 
-Updated by `erk exec update-plan-header` command.
+Updated by `erk exec update-pr-header` command.
 
 ### Workflow Run → Issue
 
@@ -772,8 +772,8 @@ queued_at: 2025-01-15T10:30:00Z
 submitted_by: username
 issue_number: 123
 validation_results:
-  issue_is_open: true
-  has_erk_plan_label: true
+  pr_is_open: true
+  has_erk_pr_label: true
 expected_workflow: erk-impl
 ```
 
@@ -923,7 +923,7 @@ Different plan fields are populated at different lifecycle stages:
 
 During the planning stage:
 
-- Plan exists only as a GitHub issue with `erk-plan` label
+- Plan exists only as a GitHub issue with `erk-pr` label
 - No branch has been created yet
 - Branch is created during `erk pr submit` (Phase 2)
 
@@ -933,81 +933,80 @@ During the planning stage:
 
 Commands that depend on plan-header metadata should handle missing fields gracefully:
 
-#### Example: `get-pr-for-plan` Dependency
+#### Example: `get-pr-info` Dependency
 
-The `get-pr-for-plan` command requires `branch_name` from plan-header:
+The `get-pr-info` command returns plan metadata including `head_ref_name` and `base_ref_name`:
 
 ```bash
-erk exec get-pr-for-plan <issue_number>
+erk exec get-pr-info <issue_number>
 ```
 
 **Failure modes:**
 
-1. **Plan not submitted** (`branch_name` is null) → Returns sentinel value `no-branch-in-plan`
-2. **Metadata read failure** → Returns error with diagnostic message
+1. **Plan not found** → Returns `{"success": false, "error": "plan_not_found"}`
+2. **Branch not yet created** → `head_ref_name` is null in output
 
 **Correct handling:**
 
 ```bash
-PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
+PLAN_INFO=$(erk exec get-pr-info <issue_number>)
 
-if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
+if echo "$PLAN_INFO" | jq -e '.success == false' > /dev/null 2>&1; then
+  echo "Plan not found"
+  exit 1
+fi
+
+HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name // empty')
+if [ -z "$HEAD_REF" ]; then
   echo "Plan has not been submitted yet (no branch created)"
   exit 1
 fi
-
-if [ "$PR_NUMBER" = "error" ]; then
-  echo "Failed to read plan metadata"
-  exit 1
-fi
-
-# PR_NUMBER is valid
-gh pr view "$PR_NUMBER"
 ```
 
 #### Validation Checklist Before Plan Dispatch
 
 Before dispatching a plan for implementation, validate:
 
-| Check               | Command                                           | Expected        |
-| ------------------- | ------------------------------------------------- | --------------- |
-| Plan exists         | `erk exec get-issue-body <number>`                | `success: true` |
-| Has erk-plan label  | Check `labels` field in output                    | Contains label  |
-| Branch exists       | `erk exec get-plan-metadata <number> branch_name` | Non-null value  |
-| PR exists           | `erk exec get-pr-for-plan <number>`               | PR number       |
-| Not already running | Check for `workflow-started` comment on issue     | No such comment |
-| Issue is open       | Check `state` field in `get-issue-body` output    | `OPEN`          |
+| Check               | Command                                         | Expected        |
+| ------------------- | ----------------------------------------------- | --------------- |
+| Plan exists         | `erk exec get-issue-body <number>`              | `success: true` |
+| Has erk-pr label    | Check `labels` field in output                  | Contains label  |
+| Branch exists       | `erk exec get-pr-metadata <number> branch_name` | Non-null value  |
+| PR exists           | `erk exec get-pr-info <number>`                 | `head_ref_name` |
+| Not already running | Check for `workflow-started` comment on issue   | No such comment |
+| Issue is open       | Check `state` field in `get-issue-body` output  | `OPEN`          |
 
-#### When `get-pr-for-plan` Becomes Available
+#### When Branch Metadata Becomes Available
 
-The `get-pr-for-plan` command becomes functional after:
+The `head_ref_name` field in `get-pr-info` output becomes non-null after:
 
 1. **Plan submission** completes (Phase 2: `erk pr submit`)
 2. **Branch and PR creation** finishes
-3. **Metadata update** writes `branch_name` to plan-header
 
 **Timeline:**
 
-- **Planning** (Phase 1): ❌ Not available (`no-branch-in-plan`)
-- **Submitted** (Phase 2): ✅ Available (returns PR number)
+- **Planning** (Phase 1): ❌ `head_ref_name` is null
+- **Submitted** (Phase 2): ✅ `head_ref_name` populated
 - **Implementing** (Phase 4): ✅ Available
 - **Merged** (Phase 5): ✅ Available (PR still exists, just closed)
 
 **Anti-pattern:**
 
 ```bash
-# DON'T: Assume get-pr-for-plan always succeeds
-PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
-gh pr view "$PR_NUMBER"  # Fails if plan not submitted
+# DON'T: Assume head_ref_name always exists
+PLAN_INFO=$(erk exec get-pr-info <issue_number>)
+HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name')
+gh pr view "$HEAD_REF"  # Fails if plan not submitted
 ```
 
 **Correct pattern:**
 
 ```bash
-# DO: Check for sentinel value
-PR_NUMBER=$(erk exec get-pr-for-plan <issue_number>)
+# DO: Check for null head_ref_name
+PLAN_INFO=$(erk exec get-pr-info <issue_number>)
+HEAD_REF=$(echo "$PLAN_INFO" | jq -r '.head_ref_name // empty')
 
-if [ "$PR_NUMBER" = "no-branch-in-plan" ]; then
+if [ -z "$HEAD_REF" ]; then
   echo "Plan has not been submitted yet. Run: erk pr submit <number>"
   exit 1
 fi
@@ -1047,16 +1046,16 @@ Each stage is set by specific commands at well-defined moments:
 
 ### Explicit Updates via Exec Command
 
-The `update-plan-header` exec command allows explicit field updates, including lifecycle stage:
+The `update-pr-header` exec command allows explicit field updates, including lifecycle stage:
 
 ```bash
-erk exec update-plan-header 123 lifecycle_stage=impl
+erk exec update-pr-header 123 lifecycle_stage=impl
 ```
 
 Returns JSON on success:
 
 ```json
-{ "success": true, "plan_id": "123", "fields_updated": ["lifecycle_stage"] }
+{ "success": true, "pr_id": "123", "fields_updated": ["lifecycle_stage"] }
 ```
 
 The backend validates that the plan exists, the field names are valid, and enum values (like lifecycle_stage) are one of the allowed values.

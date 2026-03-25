@@ -79,7 +79,7 @@ class TestIsLearnPlan:
             "provider": "github",
             "created_at": "2025-01-01T00:00:00Z",
             "synced_at": "2025-01-01T00:00:00Z",
-            "labels": ["erk-plan", "bug"],
+            "labels": ["erk-pr", "bug"],
         }
         plan_ref_file.write_text(json.dumps(plan_ref_data), encoding="utf-8")
 

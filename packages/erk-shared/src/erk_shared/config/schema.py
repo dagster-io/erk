@@ -111,6 +111,10 @@ class GlobalConfigSchema(BaseModel):
         description="Enable cmux workspace creation on PR checkout",
         json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "cmux_integration"},
     )
+    anthropic_api_fast_path: bool = Field(
+        description="Use Anthropic API fast path for reduced latency",
+        json_schema_extra={"level": ConfigLevel.GLOBAL_ONLY, "cli_key": "anthropic_api_fast_path"},
+    )
 
 
 class RepoConfigSchema(BaseModel):
@@ -126,23 +130,6 @@ class RepoConfigSchema(BaseModel):
             "cli_key": "trunk-branch",
             "special": "pyproject",  # Lives in pyproject.toml
         },
-    )
-    pool_max_slots: int | None = Field(
-        description="Maximum number of pool slots for worktree pool",
-        json_schema_extra={
-            "level": ConfigLevel.REPO_ONLY,
-            "cli_key": "pool.max_slots",
-            "dataclass_attr": "pool_size",
-            "default_display": 4,
-        },
-    )
-    pool_checkout_shell: str | None = Field(
-        description="Shell to use for pool checkout commands",
-        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "pool.checkout.shell"},
-    )
-    pool_checkout_commands: list[str] = Field(
-        description="Commands to run after checking out a worktree from pool",
-        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "pool.checkout.commands"},
     )
     env: dict[str, str] = Field(
         description="Environment variables to set in worktrees",
@@ -160,9 +147,9 @@ class RepoConfigSchema(BaseModel):
         description="Commands to run after creating a worktree",
         json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "post_create.commands"},
     )
-    plans_repo: str | None = Field(
+    github_repo: str | None = Field(
         description="Repository for storing plan issues (owner/repo format)",
-        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "plans.repo"},
+        json_schema_extra={"level": ConfigLevel.REPO_ONLY, "cli_key": "github.repo"},
     )
     docs_path: str | None = Field(
         description="Local path to external repository containing docs/learned/",

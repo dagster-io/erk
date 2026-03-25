@@ -98,9 +98,9 @@ For the full streaming pattern reference, see [TUI Streaming Output](streaming-o
 
 View mode and data availability are the first two filter dimensions. **Plan backend** is the third. Some commands only make sense for one backend:
 
-- `copy_prepare` and `copy_prepare_activate` are hidden when `plan_backend == "github-draft-pr"` because the "prepare" workflow uses issue numbers that don't apply to draft-PR plans.
+- `copy_prepare` and `copy_prepare_activate` are hidden when `pr_backend == "github-draft-pr"` because the "prepare" workflow uses issue numbers that don't apply to draft-PR plans.
 
-The `plan_backend` field is available on `CommandContext` (alongside `view_mode` and `row`). The `_is_github_backend(ctx)` predicate checks `ctx.plan_backend == "github"`.
+The `pr_backend` field is available on `CommandContext` (alongside `view_mode` and `row`). The `_is_github_backend(ctx)` predicate checks `ctx.pr_backend == "github"`.
 
 See [Backend-Aware Commands](backend-aware-commands.md) for the complete reference.
 

@@ -20,7 +20,7 @@ def test_registry_has_all_yaml_schema_block_types() -> None:
     schema_keys = {
         "plan-header",
         "objective-header",
-        "erk-plan",
+        "erk-pr",
         "erk-worktree-creation",
         "erk-implementation-status",
         "workflow-started",
@@ -134,7 +134,7 @@ def test_registry_keys_match_info_keys() -> None:
     [
         "plan-header",
         "objective-header",
-        "erk-plan",
+        "erk-pr",
         "erk-worktree-creation",
         "erk-implementation-status",
         "workflow-started",

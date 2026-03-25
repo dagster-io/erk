@@ -2,10 +2,11 @@
 
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.gateway.time import FakeTime
 
 
 def test_dispatch_happy_path() -> None:
@@ -18,7 +19,6 @@ def test_dispatch_happy_path() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -43,6 +43,8 @@ def test_dispatch_happy_path() -> None:
     assert result is not None
     # Branch should have plnd/ prefix (planned-PR naming)
     assert result.branch_name.startswith("plnd/")
+    assert result.pr_url == "https://github.com/owner/repo/pull/1"
+    assert result.run_url == "https://github.com/owner/repo/actions/runs/run-1"
 
     # Verify branch was created
     assert len(remote.created_refs) == 1
@@ -63,16 +65,16 @@ def test_dispatch_happy_path() -> None:
     assert pr.base == "main"
     assert "plan-header" in pr.body
 
-    # Verify erk-plan label added to PR
+    # Verify erk-pr label added to PR
     assert len(remote.added_labels) == 1
-    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
+    assert remote.added_labels[0].labels == ("erk-pr",)
 
-    # Verify workflow was triggered with plan_backend=planned_pr
+    # Verify workflow was triggered with pr_backend=planned_pr
     assert len(remote.dispatched_workflows) == 1
     wf = remote.dispatched_workflows[0]
     assert wf.workflow == "one-shot.yml"
     assert wf.inputs["prompt"] == "fix the import in config.py"
-    assert wf.inputs["plan_backend"] == "planned_pr"
+    assert wf.inputs["pr_backend"] == "planned_pr"
     assert wf.inputs["plan_issue_number"] == "1"
 
 
@@ -86,7 +88,6 @@ def test_dispatch_with_extra_inputs() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -113,6 +114,8 @@ def test_dispatch_with_extra_inputs() -> None:
 
     assert result is not None
     assert result.branch_name.startswith("plnd/")
+    assert "owner/repo/pull/1" in result.pr_url
+    assert "owner/repo/actions/runs/run-1" in result.run_url
 
     # Verify extra inputs are in workflow trigger
     wf = remote.dispatched_workflows[0]
@@ -131,7 +134,6 @@ def test_dispatch_dry_run() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -153,7 +155,7 @@ def test_dispatch_dry_run() -> None:
         prompt_executor=None,
     )
 
-    assert result is None
+    assert isinstance(result, OneShotDryRunResult)
 
     # Verify no mutations occurred
     assert len(remote.created_refs) == 0
@@ -172,7 +174,6 @@ def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -198,6 +199,8 @@ def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
     # Branch should contain the pre-generated slug
     assert "fix-config-import" in result.branch_name
     assert result.branch_name.startswith("plnd/")
+    assert result.pr_url is not None
+    assert result.run_url is not None
 
 
 def test_dispatch_long_prompt_truncates_workflow_input() -> None:
@@ -210,7 +213,6 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -235,6 +237,8 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
     )
 
     assert result is not None
+    assert result.pr_url is not None
+    assert result.run_url is not None
 
     # Verify workflow input was truncated
     wf = remote.dispatched_workflows[0]
@@ -258,7 +262,6 @@ def test_dispatch_explicit_ref_is_passed_to_workflow() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -281,5 +284,7 @@ def test_dispatch_explicit_ref_is_passed_to_workflow() -> None:
     )
 
     assert result is not None
+    assert result.pr_url is not None
+    assert result.run_url is not None
     assert len(remote.dispatched_workflows) == 1
     assert remote.dispatched_workflows[0].ref == "custom-ref"

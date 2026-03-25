@@ -1,24 +1,24 @@
 ---
-title: PlanBackend Migration Pattern
+title: ManagedPrBackend Migration Pattern
 read_when:
-  - "migrating exec scripts to use PlanBackend"
-  - "working with require_plan_backend"
+  - "migrating exec scripts to use ManagedPrBackend"
+  - "working with require_pr_backend"
   - "understanding post_event vs update_metadata"
-  - "Phase 3 PlanBackend consolidation"
+  - "Phase 3 ManagedPrBackend consolidation"
 tripwires:
   - action: "calling gh api directly in an exec script for plan metadata updates"
-    warning: "Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers."
+    warning: "Use `require_pr_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers."
   - action: "choosing between post_event and update_metadata"
     warning: "post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline."
 ---
 
-# PlanBackend Migration Pattern
+# ManagedPrBackend Migration Pattern
 
-Pattern for migrating exec scripts from direct GitHub CLI calls to the `PlanBackend` abstraction. Part of Objective #6864 "Consolidate Plan Operations Behind PlanBackend".
+Pattern for migrating exec scripts from direct GitHub CLI calls to the `ManagedPrBackend` abstraction (formerly `PlanBackend`). Part of Objective #6864 "Consolidate Plan Operations Behind ManagedPrBackend".
 
 ## Context
 
-Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The PlanBackend abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
+Exec scripts historically used direct `gh` CLI calls to update plan metadata and post comments. The `ManagedPrBackend` abstraction (a Backend ABC, not a Gateway) provides a testable, provider-agnostic interface for these operations.
 
 ## Migration Pattern
 
@@ -37,8 +37,8 @@ See `impl_signal.py` for a complete example:
 
 Key steps:
 
-1. `from erk_shared.context.helpers import require_plan_backend`
-2. `backend = require_plan_backend(ctx)`
+1. `from erk_shared.context.helpers import require_pr_backend`
+2. `backend = require_pr_backend(ctx)`
 3. Build metadata dict and comment via `render_erk_issue_event()`
 4. `backend.post_event(repo_root, plan_ref.plan_id, metadata=metadata, comment=comment_body)`
 
@@ -54,7 +54,7 @@ Key steps:
 
 `src/erk/cli/commands/exec/scripts/impl_signal.py` was migrated from direct `gh` calls to PlanBackend:
 
-1. **Extract backend:** `backend = require_plan_backend(ctx)` with `SystemExit` catch
+1. **Extract backend:** `backend = require_pr_backend(ctx)` with `SystemExit` catch
 2. **Build metadata:** Context-aware fields (different for local vs GitHub Actions)
 3. **Build comment:** Using `render_erk_issue_event()` for consistent formatting
 4. **Post event:** Single `backend.post_event()` call
@@ -87,6 +87,6 @@ See `header_str()`, `header_int()`, and `header_datetime()` in `packages/erk-sha
 
 - [Gateway vs Backend](gateway-vs-backend.md) - Backend ABC (3-place) vs Gateway ABC (4-place)
 - [Backend Testing Composition](../testing/backend-testing-composition.md) - Testing pattern
-- [`PlanBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
+- [`ManagedPrBackend` ABC](../../../packages/erk-shared/src/erk_shared/plan_store/backend.py) - Complete method reference
 - [PR Body Assembly](pr-body-assembly.md) - How `assemble_pr_body()` handles existing_pr_body for dual-backend PR body construction
 - [Draft PR Lifecycle](../planning/draft-pr-lifecycle.md) - Lifecycle stages and body format for draft-PR-backed plans

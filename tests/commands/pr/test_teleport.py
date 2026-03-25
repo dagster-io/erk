@@ -1,16 +1,15 @@
-"""Tests for erk pr teleport command."""
-
-from pathlib import Path
+"""Tests for erk slot teleport command."""
 
 from click.testing import CliRunner
 
-from erk.cli.commands.pr import pr_group
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_slots.group import slot_group
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -51,7 +50,7 @@ def test_teleport_pr_not_found() -> None:
             current_branches={env.cwd: "main"},
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "999"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "999"], obj=ctx)
         assert result.exit_code == 1
         assert "Could not find PR #999" in result.output
 
@@ -68,7 +67,7 @@ def test_teleport_cross_repo_errors() -> None:
             current_branches={env.cwd: "main"},
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123"], obj=ctx)
         assert result.exit_code == 1
         assert "cross-repository" in result.output
 
@@ -87,7 +86,7 @@ def test_teleport_wrong_branch_switches_and_teleports() -> None:
             remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Teleported" in result.output
         assert "feature-branch" in result.output
@@ -112,7 +111,7 @@ def test_teleport_wrong_branch_exists_in_other_worktree() -> None:
             },
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123"], obj=ctx)
         assert result.exit_code == 0
         assert "feature-branch" in result.output
         assert str(other_worktree_path) in result.output
@@ -133,7 +132,7 @@ def test_teleport_in_place_with_force() -> None:
             ahead_behind={(env.cwd, "feature-branch"): (1, 2)},
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Teleported" in result.output
         assert "feature-branch" in result.output
@@ -154,7 +153,7 @@ def test_teleport_already_in_sync_exits_cleanly() -> None:
             ahead_behind={(env.cwd, "feature-branch"): (0, 0)},
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123"], obj=ctx)
         assert result.exit_code == 0
         assert "already in sync" in result.output
 
@@ -197,7 +196,7 @@ def test_teleport_stacked_pr_fetches_base_with_graphite() -> None:
         ctx = build_workspace_test_context(
             env, git=git, github=github, graphite=graphite, use_graphite=True
         )
-        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Fetching base branch" in result.output
         assert "Tracking branch with Graphite" in result.output
@@ -228,7 +227,7 @@ def test_teleport_trunk_parent_tracks_without_base_fetch() -> None:
         ctx = build_workspace_test_context(
             env, git=git, github=github, graphite=graphite, use_graphite=True
         )
-        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Fetching base branch" not in result.output
         assert "Tracking branch with Graphite" in result.output
@@ -289,7 +288,7 @@ def test_teleport_already_tracked_retracks() -> None:
         ctx = build_workspace_test_context(
             env, git=git, github=github, graphite=graphite, use_graphite=True
         )
-        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Tracking branch with Graphite" not in result.output  # Already tracked
         # Verify retrack was called - check git's tracked branches
@@ -319,7 +318,7 @@ def test_teleport_new_slot_existing_worktree_navigates() -> None:
             },
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "300", "--new-slot"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "300", "--new-slot"], obj=ctx)
         assert result.exit_code == 0
         assert "feature-existing" in result.output
         assert str(other_worktree_path) in result.output
@@ -349,11 +348,10 @@ def test_teleport_new_slot_existing_worktree_script_mode() -> None:
             },
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(pr_group, ["teleport", "301", "--new-slot", "--script"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "301", "--new-slot", "--script"], obj=ctx)
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert str(other_worktree_path) in script_content
         assert "gt submit --no-interactive" not in script_content
 
@@ -380,13 +378,12 @@ def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
         result = runner.invoke(
-            pr_group, ["teleport", "200", "--new-slot", "--script", "--sync"], obj=ctx
+            slot_group, ["teleport", "200", "--new-slot", "--script", "--sync"], obj=ctx
         )
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" in script_content
 
 
@@ -411,12 +408,11 @@ def test_teleport_new_slot_script_mode_without_sync_omits_gt_submit() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
-        result = runner.invoke(pr_group, ["teleport", "201", "--new-slot", "--script"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "201", "--new-slot", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" not in script_content
 
 
@@ -440,11 +436,202 @@ def test_teleport_in_place_script_mode_with_sync_includes_gt_submit() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
         result = runner.invoke(
-            pr_group, ["teleport", "202", "--force", "--script", "--sync"], obj=ctx
+            slot_group, ["teleport", "202", "--force", "--script", "--sync"], obj=ctx
         )
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" in script_content
+
+
+def test_teleport_in_place_updates_slot_assignment() -> None:
+    """Teleport in a slot-assigned worktree updates the slot assignment to the new branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(500, "new-feature-branch")
+        github = FakeLocalGitHub(pr_details={500: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "old-branch"},
+            local_branches={env.cwd: ["main", "old-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/new-feature-branch"]},
+            repository_roots={env.cwd: env.cwd},
+        )
+
+        # Write initial pool state with a slot assigned to old-branch at env.cwd
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="old-branch",
+                    assigned_at="2026-01-01T00:00:00",
+                    worktree_path=env.cwd,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(slot_group, ["teleport", "500", "--force"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Teleported" in result.output
+        assert "new-feature-branch" in result.output
+
+        # Verify slot assignment was updated to the new branch
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+        assert len(updated_state.assignments) == 1
+        assignment = updated_state.assignments[0]
+        assert assignment.slot_name == "erk-slot-01"
+        assert assignment.branch_name == "new-feature-branch"
+        assert assignment.worktree_path == env.cwd
+
+
+def test_teleport_dry_run_in_place_shows_local_state() -> None:
+    """Dry run shows local commits, staged/modified files, and operations."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(123, "feature-branch")
+        github = FakeLocalGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+            ahead_behind={(env.cwd, "feature-branch"): (2, 1)},
+            file_statuses={env.cwd: (["src/foo.py", "src/bar.py"], ["src/baz.py"], ["tmp.txt"])},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(slot_group, ["teleport", "123", "--dry-run"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Dry run: erk slot teleport 123" in result.output
+        assert "2 local commit(s) ahead of remote (would be lost)" in result.output
+        assert "2 staged file(s): src/foo.py, src/bar.py" in result.output
+        assert "1 modified file(s): src/baz.py" in result.output
+        assert "1 untracked file(s)" in result.output
+        assert "Would force-reset" in result.output
+        assert "[DRY RUN] No changes made" in result.output
+
+
+def test_teleport_dry_run_in_place_already_in_sync() -> None:
+    """Dry run still shows 'already in sync' when branch matches remote."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(123, "feature-branch")
+        github = FakeLocalGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+            ahead_behind={(env.cwd, "feature-branch"): (0, 0)},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(slot_group, ["teleport", "123", "--dry-run"], obj=ctx)
+        assert result.exit_code == 0
+        assert "already in sync" in result.output
+
+
+def test_teleport_dry_run_no_mutations() -> None:
+    """Dry run does not perform any git mutations."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(123, "feature-branch")
+        github = FakeLocalGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+            ahead_behind={(env.cwd, "feature-branch"): (3, 0)},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(slot_group, ["teleport", "123", "--dry-run"], obj=ctx)
+        assert result.exit_code == 0
+        # Verify no mutations occurred
+        assert len(git.created_branches) == 0
+        assert len(git.checked_out_branches) == 0
+
+
+def test_teleport_dry_run_new_slot() -> None:
+    """Dry run with --new-slot shows 'Would create new worktree slot'."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(123, "feature-branch")
+        github = FakeLocalGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(slot_group, ["teleport", "123", "--new-slot", "--dry-run"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Would create new worktree slot" in result.output
+        assert "[DRY RUN] No changes made" in result.output
+
+
+def test_teleport_dry_run_with_sync() -> None:
+    """Dry run with --sync shows 'Would run gt submit'."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(123, "feature-branch")
+        github = FakeLocalGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+            ahead_behind={(env.cwd, "feature-branch"): (1, 0)},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(slot_group, ["teleport", "123", "--dry-run", "--sync"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Would run gt submit --no-interactive" in result.output
+
+
+def test_teleport_dry_run_with_graphite() -> None:
+    """Dry run with Graphite enabled shows tracking operations."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        pr = _make_pr_details(
+            123,
+            "plnd/add-feature",
+            base_ref_name="plnd/parent-branch",
+        )
+        github = FakeLocalGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "plnd/add-feature"},
+            local_branches={env.cwd: ["main", "plnd/add-feature"]},
+            remote_branches={
+                env.cwd: [
+                    "origin/main",
+                    "origin/plnd/parent-branch",
+                    "origin/plnd/add-feature",
+                ]
+            },
+            ahead_behind={(env.cwd, "plnd/add-feature"): (1, 0)},
+        )
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, use_graphite=True
+        )
+        result = runner.invoke(slot_group, ["teleport", "123", "--dry-run"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Would fetch base branch 'plnd/parent-branch'" in result.output
+        assert "Would track branch with Graphite (base: plnd/parent-branch)" in result.output
+        # Verify no actual Graphite operations occurred
+        assert len(git.created_tracking_branches) == 0

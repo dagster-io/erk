@@ -1,0 +1,1324 @@
+"""Fake GitHub operations for testing.
+
+FakeLocalGitHub is an in-memory implementation that accepts pre-configured state
+in its constructor. Construct instances directly with keyword arguments.
+"""
+
+import dataclasses
+from collections.abc import Callable
+from datetime import UTC
+from pathlib import Path
+from typing import Any
+
+from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.types import (
+    BodyContent,
+    BodyFile,
+    BodyText,
+    GitHubRepoLocation,
+    IssueFilterState,
+    MergeError,
+    MergeResult,
+    PRCheckRun,
+    PRDetails,
+    PRListState,
+    PRNotFound,
+    PRReview,
+    PRReviewThread,
+    PullRequestInfo,
+    RepoInfo,
+    WorkflowRun,
+)
+from erk_shared.gateway.time.abc import Time
+from tests.fakes.gateway.time import FakeTime
+
+
+class FakeLocalGitHub(LocalGitHub):
+    """In-memory fake implementation of GitHub operations.
+
+    This class has NO public setup methods. All state is provided via constructor
+    using keyword arguments with sensible defaults (empty dicts).
+    """
+
+    def __init__(
+        self,
+        *,
+        repo_info: RepoInfo | None = None,
+        prs: dict[str, PullRequestInfo] | None = None,
+        pr_bases: dict[int, str] | None = None,
+        pr_details: dict[int, PRDetails] | None = None,
+        prs_by_branch: dict[str, PRDetails] | None = None,
+        workflow_runs: list[WorkflowRun] | None = None,
+        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+        run_logs: dict[str, str] | None = None,
+        pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
+        polled_run_id: str | None = None,
+        authenticated: bool = True,
+        auth_username: str | None = "test-user",
+        auth_hostname: str | None = "github.com",
+        issues_gateway: GitHubIssues | None = None,
+        issues_data: list[IssueInfo] | None = None,
+        pr_titles: dict[int, str] | None = None,
+        pr_bodies_by_number: dict[int, str] | None = None,
+        pr_diffs: dict[int, str] | None = None,
+        pr_changed_files: dict[int, list[str]] | None = None,
+        merge_should_succeed: bool = True,
+        pr_update_should_succeed: bool = True,
+        pr_base_update_should_apply: bool = True,
+        pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
+        pr_reviews: dict[int, list[PRReview]] | None = None,
+        pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
+        review_threads_rate_limited: bool = False,
+        resolve_thread_failures: set[str] | None = None,
+        unresolve_thread_failures: set[str] | None = None,
+        pr_diff_error: str | None = None,
+        workflow_runs_error: str | None = None,
+        artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
+        plan_pr_details: (
+            tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
+        ) = None,
+        ci_summary_logs: dict[str, str] | None = None,
+        comments_by_id: dict[int, str] | None = None,
+        time: Time | None = None,
+        add_label_errors: dict[str, str] | None = None,
+        pr_head_branches: dict[int, str] | None = None,
+    ) -> None:
+        """Create FakeLocalGitHub with pre-configured state.
+
+        Args:
+            repo_info: Repository owner/name info (defaults to test-owner/test-repo)
+            prs: Mapping of branch name -> PullRequestInfo
+            pr_bases: Mapping of pr_number -> base_branch
+            pr_details: Mapping of pr_number -> PRDetails for get_pr() and get_pr_for_branch()
+            prs_by_branch: Mapping of branch name -> PRDetails (simpler than prs + pr_details)
+            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+            workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
+                                     get_workflow_runs_by_node_ids()
+            run_logs: Mapping of run_id -> log string
+            pr_plan_linkages: Mapping of pr_number -> list[PullRequestInfo]
+            polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
+            authenticated: Whether gh CLI is authenticated (default True for test convenience)
+            auth_username: Username returned by check_auth_status() (default "test-user")
+            auth_hostname: Hostname returned by check_auth_status() (default "github.com")
+            issues_gateway: Optional GitHubIssues implementation. If None, creates
+                           FakeGitHubIssues with default empty state.
+            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
+            pr_titles: Mapping of pr_number -> title for explicit title storage
+            pr_bodies_by_number: Mapping of pr_number -> body for explicit body storage
+            pr_diffs: Mapping of pr_number -> diff content
+            pr_changed_files: Mapping of pr_number -> list of changed file paths
+            merge_should_succeed: Whether merge_pr() should succeed (default True)
+            pr_update_should_succeed: Whether PR updates should succeed (default True)
+            pr_base_update_should_apply: Whether update_pr_base_branch() should
+                mutate stored PR state. Set False to simulate a silent no-op
+                update for read-after-write verification tests.
+            pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
+            pr_reviews: Mapping of pr_number -> list[PRReview] for get_pr_reviews()
+            review_threads_rate_limited: Whether get_pr_review_threads() should raise
+                RuntimeError simulating GraphQL rate limit
+            resolve_thread_failures: Set of thread IDs that should fail when resolved
+            unresolve_thread_failures: Set of thread IDs that should fail when unresolved
+            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+                Use to simulate HTTP 406 "diff too large" errors.
+            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+                RuntimeError with this message. Use to simulate API failures.
+            artifact_download_callback: Optional callback invoked when download_run_artifact()
+                is called. Callback receives (run_id, artifact_name, destination) and can create
+                files in destination to simulate artifact content. Return True for success,
+                False or raise to simulate failure.
+        plan_pr_details: Pre-configured data for list_plan_prs_with_details().
+            Tuple of (pr_details_list, pr_linkages, unenriched_count). Defaults to empty.
+            ci_summary_logs: Mapping of run_id -> ci-summarize job log text.
+                Used by get_ci_summary_logs(). Defaults to empty dict.
+        """
+        # Default to test values if not provided
+        self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
+        self._prs = prs or {}
+        self._pr_bases = pr_bases or {}
+        self._pr_details = pr_details or {}
+        self._prs_by_branch = prs_by_branch or {}
+        self._workflow_runs = workflow_runs or []
+        self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
+        self._run_logs = run_logs or {}
+        self._pr_plan_linkages = pr_plan_linkages or {}
+        self._polled_run_id = polled_run_id
+        self._authenticated = authenticated
+        self._auth_username = auth_username
+        self._auth_hostname = auth_hostname
+        # Issues gateway composition - create FakeGitHubIssues if not provided
+        if issues_gateway is not None:
+            self._issues_gateway = issues_gateway
+        else:
+            from tests.fakes.gateway.github_issues import FakeGitHubIssues
+
+            self._issues_gateway = FakeGitHubIssues()
+        self._issues_data = issues_data or []
+        self._pr_titles = pr_titles or {}
+        self._pr_bodies_by_number = pr_bodies_by_number or {}
+        self._pr_diffs = pr_diffs or {}
+        self._pr_changed_files = pr_changed_files or {}
+        self._merge_should_succeed = merge_should_succeed
+        self._pr_update_should_succeed = pr_update_should_succeed
+        self._pr_base_update_should_apply = pr_base_update_should_apply
+        self._pr_review_threads = pr_review_threads or {}
+        self._review_threads_rate_limited = review_threads_rate_limited
+        self._resolve_thread_failures = resolve_thread_failures or set()
+        self._unresolve_thread_failures = unresolve_thread_failures or set()
+        self._pr_diff_error = pr_diff_error
+        self._workflow_runs_error = workflow_runs_error
+        self._artifact_download_callback = artifact_download_callback
+        self._time = time if time is not None else FakeTime()
+        self._downloaded_artifacts: list[tuple[str, str, Path]] = []
+        self._next_pr_number = 999
+        self._updated_pr_bases: list[tuple[int, str]] = []
+        self._updated_pr_bodies: list[tuple[int, str]] = []
+        self._updated_pr_titles: list[tuple[int, str]] = []
+        self._merged_prs: list[int] = []
+        self._closed_prs: list[int] = []
+        self._marked_pr_ready: list[int] = []
+        self._triggered_workflows: list[tuple[str, dict[str, str], str | None]] = []
+        self._poll_attempts: list[tuple[str, str, int, int]] = []
+        self._check_auth_status_calls: list[None] = []
+        self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
+        self._pr_labels: dict[int, set[str]] = {}
+        self._added_labels: list[tuple[int, str]] = []
+        self._pr_review_threads = pr_review_threads or {}
+        self._pr_reviews: dict[int, list[PRReview]] = pr_reviews or {}
+        self._pr_check_runs: dict[int, list[PRCheckRun]] = pr_check_runs or {}
+        self._resolved_thread_ids: set[str] = set()
+        self._unresolved_thread_ids: set[str] = set()
+        self._thread_replies: list[tuple[str, str]] = []
+        self._pr_review_comments: list[tuple[int, str, str, str, int]] = []
+        self._pr_comments: list[tuple[int, str]] = []
+        self._pr_comment_updates: list[tuple[int, str]] = []
+        self._next_comment_id = 1000000
+        self._deleted_remote_branches: list[str] = []
+        # Ordered log of all mutation operations for testing operation ordering
+        self._operation_log: list[tuple[Any, ...]] = []
+        # (repo, sha, state, context, description)
+        self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
+        self._plan_pr_details = plan_pr_details or ([], {}, 0)
+        self._ci_summary_logs = ci_summary_logs or {}
+        self._comments_by_id = comments_by_id or {}
+        self._add_label_errors = add_label_errors or {}
+        self._pr_head_branches = pr_head_branches or {}
+        self._cancelled_run_ids: list[str] = []
+        self._rerun_run_ids: list[tuple[str, bool]] = []
+
+    @property
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations."""
+        return self._issues_gateway
+
+    @property
+    def merged_prs(self) -> list[int]:
+        """List of PR numbers that were merged."""
+        return self._merged_prs
+
+    @property
+    def closed_prs(self) -> list[int]:
+        """Read-only access to tracked PR closures for test assertions."""
+        return self._closed_prs
+
+    def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
+        """Record PR base branch update and optionally mutate stored PR state."""
+        self._updated_pr_bases.append((pr_number, new_base))
+        self._operation_log.append(("update_pr_base_branch", pr_number, new_base))
+        if not self._pr_base_update_should_apply:
+            return
+
+        self._pr_bases[pr_number] = new_base
+
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, base_ref_name=new_base)
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
+    def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
+        """Record PR body update in mutation tracking list and update stored state.
+
+        Updates the PRDetails entry (if one exists) so get_pr() returns
+        the latest body. Also updates prs_by_branch if applicable.
+
+        Raises RuntimeError if pr_update_should_succeed is False.
+        """
+        if not self._pr_update_should_succeed:
+            raise RuntimeError("PR update failed (configured to fail)")
+        self._updated_pr_bodies.append((pr_number, body))
+
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, body=body)
+            self._pr_details[pr_number] = updated
+            # Keep prs_by_branch in sync
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
+    def merge_pr(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        squash: bool,
+        verbose: bool,
+        subject: str | None = None,
+        body: str | None = None,
+    ) -> MergeResult | MergeError:
+        """Record PR merge in mutation tracking list.
+
+        Returns MergeResult on success, MergeError on failure.
+        """
+        if self._merge_should_succeed:
+            self._merged_prs.append(pr_number)
+            self._operation_log.append(("merge_pr", pr_number))
+            return MergeResult(pr_number=pr_number)
+        return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
+
+    def trigger_workflow(
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
+    ) -> str:
+        """Record workflow trigger in mutation tracking list.
+
+        Note: In production, trigger_workflow() generates a distinct_id internally
+        and adds it to the inputs. Tests should verify the workflow was called
+        with expected inputs; the distinct_id is an internal implementation detail.
+
+        Also creates a WorkflowRun entry so get_workflow_run() can find it.
+        This simulates the real behavior where triggering a workflow creates a run.
+
+        Returns:
+            A fake run ID for testing
+        """
+        self._triggered_workflows.append((workflow, inputs, ref))
+        run_id = "1234567890"
+        # Create a WorkflowRun entry so get_workflow_run() can find it
+        # Use branch_name from inputs if available
+        branch = inputs.get("branch_name", "main")
+        triggered_run = WorkflowRun(
+            run_id=run_id,
+            status="queued",
+            conclusion=None,
+            branch=branch,
+            head_sha="abc123",
+            node_id=f"WFR_{run_id}",
+        )
+        # Prepend to list so it's found first (most recent)
+        self._workflow_runs.insert(0, triggered_run)
+        return run_id
+
+    def create_pr(
+        self,
+        repo_root: Path,
+        branch: str,
+        title: str,
+        body: str,
+        base: str | None = None,
+        *,
+        draft: bool = False,
+    ) -> int:
+        """Record PR creation and register PR in internal state.
+
+        Auto-registers a PRDetails entry so that get_pr() and
+        get_pr_for_branch() work after creation without manual setup.
+
+        Returns:
+            An incrementing fake PR number for testing
+        """
+        pr_number = self._next_pr_number
+        self._next_pr_number += 1
+        self._created_prs.append((branch, title, body, base, draft))
+
+        effective_base = base if base is not None else "main"
+        pr_url = (
+            f"https://github.com/{self._repo_info.owner}/{self._repo_info.name}/pull/{pr_number}"
+        )
+
+        details = PRDetails(
+            number=pr_number,
+            url=pr_url,
+            title=title,
+            body=body,
+            state="OPEN",
+            is_draft=draft,
+            base_ref_name=effective_base,
+            head_ref_name=branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner=self._repo_info.owner,
+            repo=self._repo_info.name,
+            labels=(),
+            created_at=self._time.now().replace(tzinfo=UTC),
+            updated_at=self._time.now().replace(tzinfo=UTC),
+            author=self._repo_info.owner,
+        )
+        self._pr_details[pr_number] = details
+        self._prs_by_branch[branch] = details
+
+        # Also register in _prs for list_prs() lookups
+        self._prs[branch] = PullRequestInfo(
+            number=pr_number,
+            state="OPEN",
+            url=pr_url,
+            is_draft=draft,
+            title=title,
+            checks_passing=None,
+            owner=self._repo_info.owner,
+            repo=self._repo_info.name,
+            head_branch=branch,
+        )
+
+        return pr_number
+
+    @property
+    def created_prs(self) -> list[tuple[str, str, str, str | None, bool]]:
+        """Read-only access to tracked PR creations for test assertions.
+
+        Returns list of (branch, title, body, base, draft) tuples.
+        """
+        return self._created_prs
+
+    def close_pr(self, repo_root: Path, pr_number: int) -> None:
+        """Record PR closure in mutation tracking list and update stored state."""
+        self._closed_prs.append(pr_number)
+
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, state="CLOSED")
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
+    @property
+    def updated_pr_bases(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR base updates for test assertions."""
+        return self._updated_pr_bases
+
+    @property
+    def updated_pr_bodies(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR body updates for test assertions."""
+        return self._updated_pr_bodies
+
+    @property
+    def updated_pr_titles(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR title updates for test assertions."""
+        return self._updated_pr_titles
+
+    @property
+    def triggered_workflows(self) -> list[tuple[str, dict[str, str], str | None]]:
+        """Read-only access to tracked workflow triggers for test assertions."""
+        return self._triggered_workflows
+
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """List all workflow runs (returns pre-configured data).
+
+        Returns the same pre-configured list as list_workflow_runs.
+        The limit and actor parameters are accepted but ignored.
+        """
+        return self._workflow_runs
+
+    def list_workflow_runs(
+        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+    ) -> list[WorkflowRun]:
+        """List workflow runs for a specific workflow.
+
+        Filters pre-configured runs by workflow filename, matching runs whose
+        workflow_path ends with the requested workflow file.
+        """
+        return [
+            run
+            for run in self._workflow_runs
+            if run.workflow_path is not None and run.workflow_path.endswith(workflow)
+        ]
+
+    def get_workflow_run(self, repo_root: Path, run_id: str) -> WorkflowRun | None:
+        """Get details for a specific workflow run by ID (returns pre-configured data).
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            run_id: GitHub Actions run ID to lookup
+
+        Returns:
+            WorkflowRun if found in pre-configured data, None otherwise
+        """
+        for run in self._workflow_runs:
+            if run.run_id == run_id:
+                return run
+        return None
+
+    def get_run_logs(self, repo_root: Path, run_id: str) -> str:
+        """Return pre-configured log string for run_id.
+
+        Raises RuntimeError if run_id not found, mimicking gh CLI behavior.
+        """
+        if run_id not in self._run_logs:
+            msg = f"Run {run_id} not found"
+            raise RuntimeError(msg)
+        return self._run_logs[run_id]
+
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -> str | None:
+        """Return pre-configured ci-summarize log text for run_id.
+
+        Returns None if no ci-summarize logs are configured for this run_id.
+        """
+        return self._ci_summary_logs.get(run_id)
+
+    def get_pr_comment(self, repo_root: Path, comment_id: int) -> str | None:
+        """Return pre-configured comment body for comment_id.
+
+        Returns None if no comment is configured for this ID.
+        """
+        return self._comments_by_id.get(comment_id)
+
+    def set_comment(self, comment_id: int, body: str) -> None:
+        """Set the comment body to return for a specific comment ID.
+
+        Args:
+            comment_id: GitHub comment ID
+            body: Comment body text
+        """
+        self._comments_by_id[comment_id] = body
+
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Batch fetch PR info for specific PR numbers (returns from pre-configured data).
+
+        Looks up PRs from pre-configured prs dict by number. The location
+        parameter is accepted but ignored.
+        """
+        result: dict[int, PullRequestInfo] = {}
+        for pr_num in pr_numbers:
+            for pr_info in self._prs.values():
+                if pr_info.number == pr_num:
+                    result[pr_num] = pr_info
+                    break
+        return result
+
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Get head branch names for PRs (returns from pre-configured data)."""
+        result: dict[int, str] = {}
+        for pr_num in pr_numbers:
+            # Check explicit pr_head_branches first
+            if pr_num in self._pr_head_branches:
+                result[pr_num] = self._pr_head_branches[pr_num]
+            # Then check pr_details (keyed by PR number)
+            elif pr_num in self._pr_details:
+                result[pr_num] = self._pr_details[pr_num].head_ref_name
+        return result
+
+    def get_workflow_runs_by_branches(
+        self, repo_root: Path, workflow: str, branches: list[str]
+    ) -> dict[str, WorkflowRun | None]:
+        """Get the most relevant workflow run for each branch.
+
+        Returns a mapping of branch name -> WorkflowRun for branches that have
+        matching workflow runs. Uses priority: in_progress/queued > failed > success > other.
+
+        The workflow parameter is accepted but ignored - fake returns runs from
+        all pre-configured workflow runs regardless of workflow name.
+        """
+        if not branches:
+            return {}
+
+        # Group runs by branch
+        runs_by_branch: dict[str, list[WorkflowRun]] = {}
+        for run in self._workflow_runs:
+            if run.branch in branches:
+                if run.branch not in runs_by_branch:
+                    runs_by_branch[run.branch] = []
+                runs_by_branch[run.branch].append(run)
+
+        # Select most relevant run for each branch
+        result: dict[str, WorkflowRun | None] = {}
+        for branch in branches:
+            if branch not in runs_by_branch:
+                continue
+
+            branch_runs = runs_by_branch[branch]
+
+            # Priority 1: in_progress or queued (active runs)
+            active_runs = [r for r in branch_runs if r.status in ("in_progress", "queued")]
+            if active_runs:
+                result[branch] = active_runs[0]
+                continue
+
+            # Priority 2: failed completed runs
+            failed_runs = [
+                r for r in branch_runs if r.status == "completed" and r.conclusion == "failure"
+            ]
+            if failed_runs:
+                result[branch] = failed_runs[0]
+                continue
+
+            # Priority 3: successful completed runs (most recent = first in list)
+            completed_runs = [r for r in branch_runs if r.status == "completed"]
+            if completed_runs:
+                result[branch] = completed_runs[0]
+                continue
+
+            # Priority 4: any other runs (unknown status, etc.)
+            if branch_runs:
+                result[branch] = branch_runs[0]
+
+        return result
+
+    def poll_for_workflow_run(
+        self,
+        *,
+        repo_root: Path,
+        workflow: str,
+        branch_name: str,
+        timeout: int = 30,
+        poll_interval: int = 2,
+    ) -> str | None:
+        """Return pre-configured run ID without sleeping.
+
+        Tracks poll attempts for test assertions but returns immediately
+        without actual polling delays.
+
+        Args:
+            repo_root: Repository root directory (ignored)
+            workflow: Workflow filename (ignored)
+            branch_name: Expected branch name (ignored)
+            timeout: Maximum seconds to poll (ignored)
+            poll_interval: Seconds between poll attempts (ignored)
+
+        Returns:
+            Pre-configured run ID or None for timeout simulation
+        """
+        self._poll_attempts.append((workflow, branch_name, timeout, poll_interval))
+        return self._polled_run_id
+
+    @property
+    def poll_attempts(self) -> list[tuple[str, str, int, int]]:
+        """Read-only access to tracked poll attempts for test assertions.
+
+        Returns list of (workflow, branch_name, timeout, poll_interval) tuples.
+        """
+        return self._poll_attempts
+
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        """Return pre-configured authentication status.
+
+        Tracks calls for verification.
+
+        Returns:
+            Tuple of (is_authenticated, username, hostname)
+        """
+        self._check_auth_status_calls.append(None)
+
+        if not self._authenticated:
+            return (False, None, None)
+
+        return (True, self._auth_username, self._auth_hostname)
+
+    @property
+    def check_auth_status_calls(self) -> list[None]:
+        """Get the list of check_auth_status() calls that were made.
+
+        Returns list of None values (one per call, no arguments tracked).
+
+        This property is for test assertions only.
+        """
+        return self._check_auth_status_calls
+
+    def get_workflow_runs_by_node_ids(
+        self,
+        repo_root: Path,
+        node_ids: list[str],
+    ) -> dict[str, WorkflowRun | None]:
+        """Get workflow runs by GraphQL node IDs (returns pre-configured data).
+
+        Looks up each node_id in the pre-configured workflow_runs_by_node_id mapping.
+
+        Raises RuntimeError if workflow_runs_error is set, simulating API failures.
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            node_ids: List of GraphQL node IDs to lookup
+
+        Returns:
+            Mapping of node_id -> WorkflowRun or None if not found
+        """
+        if self._workflow_runs_error is not None:
+            raise RuntimeError(self._workflow_runs_error)
+        return {node_id: self._workflow_runs_by_node_id.get(node_id) for node_id in node_ids}
+
+    def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:
+        """Get node ID for a workflow run (returns pre-configured fake data).
+
+        Looks up the run_id in the pre-configured workflow_runs_by_node_id mapping
+        (reverse lookup) to find the corresponding node_id.
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            run_id: GitHub Actions run ID
+
+        Returns:
+            Node ID if found in pre-configured data, or a generated fake node_id
+        """
+        # Reverse lookup: find node_id by run_id
+        for node_id, run in self._workflow_runs_by_node_id.items():
+            if run is not None and run.run_id == run_id:
+                return node_id
+
+        # If not in node_id mapping, check regular workflow runs and generate fake node_id
+        for run in self._workflow_runs:
+            if run.run_id == run_id:
+                return f"WFR_fake_node_id_{run_id}"
+
+        # Default: return a fake node_id for any run_id (convenience for tests)
+        return f"WFR_fake_node_id_{run_id}"
+
+    def get_issues_with_pr_linkages(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: IssueFilterState = "open",
+        limit: int | None = None,
+        creator: str | None = None,
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Get issues and PR linkages from pre-configured data.
+
+        Filters pre-configured issues by labels, state, and creator, then returns
+        matching PR linkages from pr_plan_linkages mapping.
+
+        Args:
+            location: GitHub repository location (ignored in fake)
+            labels: Labels to filter by
+            state: Filter by state ("open" or "closed")
+            limit: Maximum issues to return (default: all)
+            creator: Filter by creator username (e.g., "octocat")
+
+        Returns:
+            Tuple of (filtered_issues, pr_linkages for those issues)
+        """
+        # Filter issues by labels, state, and creator
+        filtered_issues = []
+        for issue in self._issues_data:
+            # Check if issue has all required labels
+            if not all(label in issue.labels for label in labels):
+                continue
+            # Check state filter
+            if issue.state.lower() != state.lower():
+                continue
+            # Check creator filter
+            if creator is not None and issue.author != creator:
+                continue
+            filtered_issues.append(issue)
+
+        # Apply limit
+        effective_limit = limit if limit is not None else len(filtered_issues)
+        filtered_issues = filtered_issues[:effective_limit]
+
+        # Build PR linkages for filtered issues
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+        for issue in filtered_issues:
+            if issue.number in self._pr_plan_linkages:
+                pr_linkages[issue.number] = self._pr_plan_linkages[issue.number]
+
+        return (filtered_issues, pr_linkages)
+
+    def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
+        """Get comprehensive PR details from pre-configured state.
+
+        Returns:
+            PRDetails if pr_number exists, PRNotFound otherwise
+        """
+        if pr_number not in self._pr_details:
+            return PRNotFound(pr_number=pr_number)
+        return self._pr_details[pr_number]
+
+    def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
+        """Get comprehensive PR details for a branch from pre-configured state.
+
+        Checks prs_by_branch first (simpler lookup), then falls back to
+        prs + pr_details (original two-step lookup).
+
+        Returns:
+            PRDetails if a PR exists for the branch, PRNotFound otherwise
+        """
+        # Simple lookup first
+        if branch in self._prs_by_branch:
+            return self._prs_by_branch[branch]
+
+        # Fall back to two-step lookup
+        pr = self._prs.get(branch)
+        if pr is None:
+            return PRNotFound(branch=branch)
+        pr_details = self._pr_details.get(pr.number)
+        if pr_details is None:
+            return PRNotFound(branch=branch)
+        return pr_details
+
+    def list_prs(
+        self,
+        repo_root: Path,
+        *,
+        state: PRListState,
+        labels: list[str] | None = None,
+        author: str | None = None,
+        draft: bool | None = None,
+    ) -> dict[str, PullRequestInfo]:
+        """List PRs from pre-configured state, filtered by state and optional filters.
+
+        Label filtering uses pr_details (which have labels). Author filtering is
+        not supported in the fake (no author data stored on PullRequestInfo).
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            state: Filter by state - "open", "closed", or "all"
+            labels: Filter to PRs with ALL specified labels. Uses pr_details for lookup.
+            author: Filter by author (not supported in fake, ignored).
+            draft: Filter by draft status. True=only drafts, False=only non-drafts.
+
+        Returns:
+            Dict mapping head branch name to PullRequestInfo.
+        """
+        result: dict[str, PullRequestInfo] = {}
+        for branch, pr in self._prs.items():
+            # State filter
+            if state != "all" and pr.state != state.upper():
+                continue
+
+            # Draft filter
+            if draft is not None and pr.is_draft != draft:
+                continue
+
+            # Label filter (cross-reference pr_details which have labels)
+            if labels is not None:
+                pr_details = self._pr_details.get(pr.number)
+                if pr_details is None:
+                    continue
+                if not all(label in pr_details.labels for label in labels):
+                    continue
+
+            result[branch] = pr
+
+        return result
+
+    def list_plan_prs_with_details(
+        self,
+        location: GitHubRepoLocation,
+        *,
+        labels: list[str],
+        state: IssueFilterState,
+        limit: int | None,
+        author: str | None,
+        exclude_labels: list[str] | None = None,
+    ) -> tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int]:
+        """Return pre-configured plan PR details and linkages."""
+        return self._plan_pr_details
+
+    def update_pr_title_and_body(
+        self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
+    ) -> None:
+        """Record PR title and body update in mutation tracking lists.
+
+        Raises RuntimeError if pr_update_should_succeed is False.
+        """
+        if not self._pr_update_should_succeed:
+            raise RuntimeError("PR update failed (configured to fail)")
+
+        # Resolve body content from BodyFile or BodyText
+        if isinstance(body, BodyFile):
+            body_content = body.path.read_text(encoding="utf-8")
+        elif isinstance(body, BodyText):
+            body_content = body.content
+        else:
+            # Should never happen with proper typing, but handle gracefully
+            body_content = str(body)
+
+        self._updated_pr_titles.append((pr_number, title))
+        self._updated_pr_bodies.append((pr_number, body_content))
+
+        # Update in-memory state so subsequent get_pr() reflects the change
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, title=title, body=body_content)
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
+    def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
+        """Record PR ready-for-review transition in mutation tracking list.
+
+        Updates the in-memory PRDetails entry to is_draft=False so subsequent
+        get_pr() calls reflect the change.
+        """
+        self._marked_pr_ready.append(pr_number)
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            updated = dataclasses.replace(old, is_draft=False)
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+
+    @property
+    def marked_pr_ready(self) -> list[int]:
+        """Read-only access to tracked PR ready transitions for test assertions."""
+        return list(self._marked_pr_ready)
+
+    @property
+    def marked_ready_prs(self) -> list[int]:
+        """Alias for marked_pr_ready (backwards compatibility with existing tests)."""
+        return list(self._marked_pr_ready)
+
+    def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
+        """Get the diff for a PR from configured state or return default.
+
+        First checks if pr_diff_error is set and raises RuntimeError.
+        Then checks explicit pr_diffs storage. Returns a simple default
+        diff if not configured.
+        """
+        if self._pr_diff_error is not None:
+            raise RuntimeError(self._pr_diff_error)
+
+        if pr_number in self._pr_diffs:
+            return self._pr_diffs[pr_number]
+
+        return (
+            "diff --git a/file.py b/file.py\n"
+            "--- a/file.py\n"
+            "+++ b/file.py\n"
+            "@@ -1,1 +1,1 @@\n"
+            "-old\n"
+            "+new"
+        )
+
+    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -> list[str]:
+        """Get list of files changed in a PR from pre-configured data.
+
+        Returns pre-configured file list or empty list if not configured.
+        """
+        return self._pr_changed_files.get(pr_number, [])
+
+    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
+        """Record label addition in mutation tracking list and update internal state."""
+        if label in self._add_label_errors:
+            raise RuntimeError(self._add_label_errors[label])
+        self._added_labels.append((pr_number, label))
+        if pr_number not in self._pr_labels:
+            self._pr_labels[pr_number] = set()
+        self._pr_labels[pr_number].add(label)
+
+        # Keep PRDetails labels in sync
+        if pr_number in self._pr_details:
+            old = self._pr_details[pr_number]
+            if label not in old.labels:
+                updated = dataclasses.replace(old, labels=old.labels + (label,))
+                self._pr_details[pr_number] = updated
+                if old.head_ref_name in self._prs_by_branch:
+                    self._prs_by_branch[old.head_ref_name] = updated
+
+    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
+        """Check if a PR has a specific label from configured state."""
+        if pr_number not in self._pr_labels:
+            return False
+        return label in self._pr_labels[pr_number]
+
+    @property
+    def added_labels(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked label additions for test assertions.
+
+        Returns list of (pr_number, label) tuples.
+        """
+        return self._added_labels
+
+    def set_pr_labels(self, pr_number: int, labels: set[str]) -> None:
+        """Set labels for a PR (for test setup)."""
+        self._pr_labels[pr_number] = labels
+
+    def get_pr_review_threads(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        *,
+        include_resolved: bool = False,
+    ) -> list[PRReviewThread]:
+        """Get review threads for a PR from pre-configured data.
+
+        Applies any resolutions that happened during the test, then filters
+        and sorts the results.
+
+        Raises RuntimeError if review_threads_rate_limited is True, simulating
+        a GraphQL API rate limit error.
+        """
+        if self._review_threads_rate_limited:
+            raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
+        threads = self._pr_review_threads.get(pr_number, [])
+
+        # Apply any resolutions that happened during test
+        result_threads: list[PRReviewThread] = []
+        for t in threads:
+            is_resolved = (
+                t.is_resolved or t.id in self._resolved_thread_ids
+            ) and t.id not in self._unresolved_thread_ids
+            if is_resolved and not include_resolved:
+                continue
+            # Create new thread with updated resolution status
+            result_threads.append(
+                PRReviewThread(
+                    id=t.id,
+                    path=t.path,
+                    line=t.line,
+                    is_resolved=is_resolved,
+                    is_outdated=t.is_outdated,
+                    comments=t.comments,
+                )
+            )
+
+        # Sort by path, then by line
+        result_threads.sort(key=lambda t: (t.path, t.line or 0))
+        return result_threads
+
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Get PR-level reviews for a PR from pre-configured data."""
+        return self._pr_reviews.get(pr_number, [])
+
+    def get_pr_check_runs(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRCheckRun]:
+        """Get failing check runs for a PR from pre-configured data."""
+        return self._pr_check_runs.get(pr_number, [])
+
+    def resolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Record thread resolution in mutation tracking set.
+
+        Returns False if thread_id is in resolve_thread_failures set.
+        Otherwise returns True to simulate successful resolution.
+        """
+        if thread_id in self._resolve_thread_failures:
+            return False
+        self._resolved_thread_ids.add(thread_id)
+        return True
+
+    @property
+    def resolved_thread_ids(self) -> set[str]:
+        """Read-only access to tracked thread resolutions for test assertions."""
+        return self._resolved_thread_ids
+
+    def unresolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
+        """Record thread unresolution in mutation tracking set.
+
+        Returns False if thread_id is in unresolve_thread_failures set.
+        Otherwise returns True to simulate successful unresolution.
+        """
+        if thread_id in self._unresolve_thread_failures:
+            return False
+        self._unresolved_thread_ids.add(thread_id)
+        return True
+
+    @property
+    def unresolved_thread_ids(self) -> set[str]:
+        """Read-only access to tracked thread unresolutions for test assertions."""
+        return self._unresolved_thread_ids
+
+    def add_review_thread_reply(
+        self,
+        repo_root: Path,
+        thread_id: str,
+        body: str,
+    ) -> bool:
+        """Record thread reply in mutation tracking list.
+
+        Always returns True to simulate successful comment addition.
+        """
+        self._thread_replies.append((thread_id, body))
+        return True
+
+    @property
+    def thread_replies(self) -> list[tuple[str, str]]:
+        """Read-only access to tracked thread replies for test assertions.
+
+        Returns list of (thread_id, body) tuples.
+        """
+        return self._thread_replies
+
+    def create_pr_review_comment(
+        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
+    ) -> int:
+        """Record PR review comment in mutation tracking list.
+
+        Returns a generated comment ID.
+        """
+        self._pr_review_comments.append((pr_number, body, commit_sha, path, line))
+        comment_id = self._next_comment_id
+        self._next_comment_id += 1
+        return comment_id
+
+    @property
+    def pr_review_comments(self) -> list[tuple[int, str, str, str, int]]:
+        """Read-only access to tracked PR review comments for test assertions.
+
+        Returns list of (pr_number, body, commit_sha, path, line) tuples.
+        """
+        return self._pr_review_comments
+
+    def fetch_pr_comments(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[dict[str, Any]]:
+        """Return all comments for a PR as list of dicts.
+
+        Mirrors the real implementation's return format with "id" and "body" keys.
+        """
+        result: list[dict[str, Any]] = []
+        for i, (stored_pr, body) in enumerate(self._pr_comments):
+            if stored_pr == pr_number:
+                result.append({"id": 1000000 + i, "body": body})
+        return result
+
+    def find_pr_comment_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> int | None:
+        """Find a PR comment by marker in tracked comments.
+
+        Searches _pr_comments for a comment containing the marker.
+        Returns None if not found (typical for first run).
+        """
+        for i, (stored_pr, body) in enumerate(self._pr_comments):
+            if stored_pr == pr_number and marker in body:
+                return 1000000 + i
+        return None
+
+    def update_pr_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Record PR comment update in mutation tracking list."""
+        self._pr_comment_updates.append((comment_id, body))
+
+    @property
+    def pr_comment_updates(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR comment updates for test assertions.
+
+        Returns list of (comment_id, body) tuples.
+        """
+        return self._pr_comment_updates
+
+    def create_pr_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+    ) -> int:
+        """Record PR comment creation in mutation tracking list.
+
+        Returns a generated comment ID.
+        """
+        self._pr_comments.append((pr_number, body))
+        comment_id = self._next_comment_id
+        self._next_comment_id += 1
+        return comment_id
+
+    @property
+    def pr_comments(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR comments for test assertions.
+
+        Returns list of (pr_number, body) tuples.
+        """
+        return self._pr_comments
+
+    def delete_remote_branch(self, repo_root: Path, branch: str) -> bool:
+        """Record remote branch deletion in mutation tracking list.
+
+        Always returns True to simulate successful deletion.
+        """
+        self._deleted_remote_branches.append(branch)
+        return True
+
+    @property
+    def deleted_remote_branches(self) -> list[str]:
+        """Read-only access to tracked remote branch deletions for test assertions.
+
+        Returns list of branch names that were deleted.
+        """
+        return self._deleted_remote_branches
+
+    @property
+    def operation_log(self) -> list[tuple[Any, ...]]:
+        """Read-only access to ordered operation log for testing operation ordering.
+
+        Returns list of tuples where first element is operation name:
+        - ("update_pr_base_branch", pr_number, new_base)
+        - ("merge_pr", pr_number)
+
+        Use this to verify operations happen in correct order.
+        """
+        return self._operation_log
+
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -> list[PullRequestInfo]:
+        """Get all open PRs with the given base branch from pre-configured data.
+
+        Filters the _prs mapping to find PRs where:
+        1. The PR's base branch matches (from _pr_bases or _pr_details)
+        2. The PR state is OPEN
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            base_branch: The base branch name to filter by
+
+        Returns:
+            List of PullRequestInfo for matching PRs
+        """
+        result: list[PullRequestInfo] = []
+        for branch_name, pr in self._prs.items():
+            # Check if state is OPEN
+            if pr.state != "OPEN":
+                continue
+
+            # Check if base branch matches (look up in pr_details first)
+            if pr.number in self._pr_details:
+                pr_base = self._pr_details[pr.number].base_ref_name
+            elif pr.number in self._pr_bases:
+                pr_base = self._pr_bases[pr.number]
+            else:
+                # No base info available, skip
+                continue
+
+            if pr_base == base_branch:
+                # Create new PullRequestInfo with head_branch populated
+                result.append(
+                    PullRequestInfo(
+                        number=pr.number,
+                        state=pr.state,
+                        url=pr.url,
+                        is_draft=pr.is_draft,
+                        title=pr.title,
+                        checks_passing=pr.checks_passing,
+                        owner=pr.owner,
+                        repo=pr.repo,
+                        has_conflicts=pr.has_conflicts,
+                        checks_counts=pr.checks_counts,
+                        head_branch=branch_name,
+                    )
+                )
+
+        return result
+
+    def download_run_artifact(
+        self,
+        repo_root: Path,
+        run_id: str,
+        artifact_name: str,
+        destination: Path,
+    ) -> bool:
+        """Download artifact - invokes callback if configured, otherwise succeeds.
+
+        The callback can create files in destination to simulate artifact content.
+        """
+        self._downloaded_artifacts.append((run_id, artifact_name, destination))
+
+        if self._artifact_download_callback is not None:
+            return self._artifact_download_callback(run_id, artifact_name, destination)
+        return True
+
+    @property
+    def downloaded_artifacts(self) -> list[tuple[str, str, Path]]:
+        """Read-only access to downloaded artifacts for test assertions.
+
+        Returns list of (run_id, artifact_name, destination) tuples.
+        """
+        return self._downloaded_artifacts
+
+    def get_issues_by_numbers_with_pr_linkages(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        plan_numbers: list[int],
+    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+        """Filter pre-configured issues by number, returning matching PR linkages.
+
+        Args:
+            location: GitHub repository location (ignored in fake)
+            plan_numbers: List of plan numbers to fetch
+
+        Returns:
+            Tuple of (filtered_issues, pr_linkages for those plans)
+        """
+        if not plan_numbers:
+            return ([], {})
+
+        number_set = set(plan_numbers)
+        filtered_issues = [issue for issue in self._issues_data if issue.number in number_set]
+
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}
+        for issue in filtered_issues:
+            if issue.number in self._pr_plan_linkages:
+                pr_linkages[issue.number] = self._pr_plan_linkages[issue.number]
+
+        return (filtered_issues, pr_linkages)
+
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """Record workflow run cancellation in mutation tracking list."""
+        self._cancelled_run_ids.append(run_id)
+
+    @property
+    def cancelled_run_ids(self) -> list[str]:
+        """Read-only access to cancelled run IDs for test assertions."""
+        return self._cancelled_run_ids
+
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """Record workflow run re-run in mutation tracking list."""
+        self._rerun_run_ids.append((run_id, failed_only))
+
+    @property
+    def rerun_run_ids(self) -> list[tuple[str, bool]]:
+        """Read-only access to re-run run IDs for test assertions.
+
+        Returns list of (run_id, failed_only) tuples.
+        """
+        return self._rerun_run_ids
+
+    def create_commit_status(
+        self,
+        *,
+        repo: str,
+        sha: str,
+        state: str,
+        context: str,
+        description: str,
+    ) -> bool:
+        """Record commit status creation in mutation tracking list.
+
+        Always returns True to simulate successful status creation.
+        """
+        self._created_commit_statuses.append((repo, sha, state, context, description))
+        return True
+
+    @property
+    def created_commit_statuses(self) -> list[tuple[str, str, str, str, str]]:
+        """Read-only access to created commit statuses for test assertions.
+
+        Returns list of (repo, sha, state, context, description) tuples.
+        """
+        return self._created_commit_statuses

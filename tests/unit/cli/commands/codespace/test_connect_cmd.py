@@ -6,13 +6,13 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.context.types import LoadedConfig
-from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.codespace import FakeCodespace
+from tests.fakes.gateway.codespace_registry import FakeCodespaceRegistry
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def test_connect_shows_error_when_no_codespaces() -> None:
@@ -164,12 +164,12 @@ def test_connect_with_env_injects_export() -> None:
     ctx = context_for_test(codespace_registry=codespace_registry, codespace=fake_codespace)
 
     result = runner.invoke(
-        cli, ["codespace", "connect", "--env", "ERK_PLAN_BACKEND=draft_pr"], obj=ctx
+        cli, ["codespace", "connect", "--env", "ERK_PR_BACKEND=draft_pr"], obj=ctx
     )
 
     assert result.exit_code == 0
     assert fake_codespace.last_call is not None
-    assert "export ERK_PLAN_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
+    assert "export ERK_PR_BACKEND=draft_pr" in fake_codespace.last_call.remote_command
     assert "git pull" in fake_codespace.last_call.remote_command
 
 

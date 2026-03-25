@@ -86,19 +86,20 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from erk.core.context import ErkContext, context_for_test
+from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import GitHubRepoId
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.script_writer import FakeScriptWriter
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.console import FakeConsole
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.shell import FakeShell
+from tests.fakes.tests.script_writer import FakeScriptWriter
+from tests.test_utils.test_context import context_for_test
 
 
 class ErkIsolatedFsEnv:
@@ -1188,10 +1189,9 @@ def erk_inmem_env(
                 )
                 result = runner.invoke(cli, ["checkout", "feature", "--script"], obj=ctx)
 
-                # Verify script content in-memory
-                script_path = Path(result.stdout.strip())
-                content = env.script_writer.get_script_content(script_path)
-                assert content is not None
+                # Verify script content from stdout
+                script_content = result.stdout
+                assert "feature" in script_content
         ```
     """
     from tests.test_utils.paths import sentinel_path

@@ -1,0 +1,85 @@
+"""PR list service abstraction - ABC and types.
+
+This module provides the abstract interface for efficiently fetching PR list data.
+The real implementation remains in erk.core.services.plan_list_service.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from erk_shared.gateway.github.types import (
+    GitHubRepoLocation,
+    IssueFilterState,
+    PullRequestInfo,
+    WorkflowRun,
+)
+from erk_shared.pr_store.types import Plan
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.http.abc import HttpClient
+
+
+@dataclass(frozen=True)
+class PrListData:
+    """Combined data for PR listing.
+
+    Attributes:
+        plans: List of Plan objects with enriched metadata
+        pr_linkages: Mapping of pr_number -> list of PRs that close that plan
+        workflow_runs: Mapping of pr_number -> most relevant WorkflowRun
+        api_ms: Milliseconds spent on REST+GraphQL API calls (issues/PRs fetch)
+        plan_parsing_ms: Milliseconds spent parsing plan bodies
+        workflow_runs_ms: Milliseconds spent fetching workflow runs
+        warnings: User-facing warnings about degraded data quality
+    """
+
+    plans: list[Plan]
+    pr_linkages: dict[int, list[PullRequestInfo]]
+    workflow_runs: dict[int, WorkflowRun | None]
+    api_ms: float = 0.0
+    plan_parsing_ms: float = 0.0
+    workflow_runs_ms: float = 0.0
+    warnings: tuple[str, ...] = ()
+
+
+class PrListService(ABC):
+    """Abstract interface for efficiently fetching PR list data.
+
+    Composes GitHub and GitHubIssues integrations to batch fetch all data
+    needed for PR listing. Uses GraphQL nodes(ids: [...]) for efficient
+    batch lookup of workflow runs by node_id.
+    """
+
+    @abstractmethod
+    def get_pr_list_data(
+        self,
+        *,
+        location: GitHubRepoLocation,
+        labels: list[str],
+        state: IssueFilterState = "open",
+        limit: int | None = None,
+        skip_workflow_runs: bool = False,
+        creator: str | None = None,
+        exclude_labels: list[str] | None = None,
+        http_client: HttpClient,
+    ) -> PrListData:
+        """Batch fetch all data needed for PR listing.
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            labels: Labels to filter issues by (e.g., ["erk-pr"])
+            state: Filter by state ("open" or "closed")
+            limit: Maximum number of issues to return (None for no limit)
+            skip_workflow_runs: If True, skip fetching workflow runs (for performance)
+            creator: Filter by creator username (e.g., "octocat"). If provided,
+                only issues created by this user are returned.
+            exclude_labels: Labels to exclude from results. Applied client-side before
+                expensive enrichment operations. None means no exclusion.
+
+        Returns:
+            PrListData containing PRs, PR linkages, and workflow runs
+        """
+        ...

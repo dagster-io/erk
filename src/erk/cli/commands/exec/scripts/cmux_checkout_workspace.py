@@ -10,7 +10,7 @@ Usage:
 
 Modes:
     checkout (default): lightweight -- runs `erk pr checkout {pr} --script`
-    teleport: heavyweight -- runs `erk pr teleport {pr} --new-slot --script --sync`
+    teleport: heavyweight -- runs `erk slot teleport {pr} --new-slot --script --sync`
 
 Output:
     JSON with {success, pr_number, branch, workspace_name} on success
@@ -115,9 +115,9 @@ def cmux_open_pr(ctx: click.Context, pr: int, branch: str | None, mode: str) -> 
 
     # Build the checkout command that will run inside the new workspace
     if mode == "teleport":
-        checkout_cmd = f'source "$(erk pr teleport {pr} --new-slot --script --sync)"'
+        checkout_cmd = f"source <(erk slot teleport {pr} --new-slot --script --sync)"
     else:
-        checkout_cmd = f'source "$(erk pr checkout {pr} --script)"'
+        checkout_cmd = f"source <(erk pr checkout {pr} --script)"
 
     cmux = require_context(ctx).cmux
 

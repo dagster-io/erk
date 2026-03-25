@@ -3,12 +3,11 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk.cli.commands.pr.dispatch_cmd import ERK_PLAN_LABEL
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.test_utils.test_context import context_for_test
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -26,7 +25,7 @@ def make_plan_body(content: str = "Implementation details...") -> str:
 
 
 def create_plan(
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     body: str | None = None,
     state: PlanState = PlanState.OPEN,
@@ -35,12 +34,12 @@ def create_plan(
     """Create a Plan with common defaults for testing."""
     now = datetime.now(UTC)
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body if body is not None else make_plan_body(),
         state=state,
-        url=f"https://github.com/test-owner/test-repo/issues/{plan_identifier}",
-        labels=labels if labels is not None else [ERK_PLAN_LABEL],
+        url=f"https://github.com/test-owner/test-repo/issues/{pr_identifier}",
+        labels=labels if labels is not None else ["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -74,16 +73,16 @@ def setup_submit_context(
         where fake_backing is FakeLocalGitHub.
     """
     from erk_shared.context.types import GlobalConfig
-    from erk_shared.gateway.console.fake import FakeConsole
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
-    from erk_shared.gateway.graphite.fake import FakeGraphite
-    from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    from tests.fakes.gateway.console import FakeConsole
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
+    from tests.fakes.gateway.graphite import FakeGraphite
+    from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    fake_plan_store, fake_backing = create_plan_store_with_plans(plans)
+    fake_pr_backend, fake_backing = create_pr_backend_with_plans(plans)
 
     git_kwargs = git_kwargs or {}
     if "current_branches" not in git_kwargs:
@@ -131,7 +130,7 @@ def setup_submit_context(
         git=fake_git,
         github=fake_github,
         issues=fake_backing.issues,
-        plan_store=fake_plan_store,
+        pr_store=fake_pr_backend,
         graphite=fake_graphite,
         repo=repo,
         global_config=global_config,

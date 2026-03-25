@@ -18,10 +18,10 @@ Exit Codes:
 
 Examples:
     $ erk exec setup-impl --issue 2521
-    {"success": true, "plan_number": 2521, "source": "issue_arg", ...}
+    {"success": true, "pr_number": 2521, "source": "issue_arg", ...}
 
     $ erk exec setup-impl
-    {"success": true, "plan_number": 2521, "source": "branch_detection", ...}
+    {"success": true, "pr_number": 2521, "source": "branch_detection", ...}
 
     $ erk exec setup-impl
     {"success": false, "error": "no_plan_found", ...}
@@ -33,7 +33,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.detect_plan_from_branch import _detect_plan_from_branch_impl
+from erk.cli.commands.exec.scripts.detect_pr_from_branch import _detect_pr_from_branch_impl
 from erk.cli.commands.exec.scripts.impl_init import _extract_related_docs, _validate_impl_folder
 from erk_shared.context.helpers import (
     require_branch_manager,
@@ -62,9 +62,9 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
     plan_ref = read_plan_ref(impl_dir)
     has_plan_tracking = plan_ref is not None
     if plan_ref is not None:
-        plan_number: int | None = int(plan_ref.plan_id)
+        pr_number: int | None = int(plan_ref.pr_id)
     else:
-        plan_number = None
+        pr_number = None
     plan_content = (impl_dir / "plan.md").read_text(encoding="utf-8")
     related_docs = _extract_related_docs(plan_content)
 
@@ -73,8 +73,8 @@ def _run_impl_init(ctx: click.Context) -> dict[str, object]:
         "has_plan_tracking": has_plan_tracking,
         "related_docs": related_docs,
     }
-    if plan_number is not None:
-        result["plan_number"] = plan_number
+    if pr_number is not None:
+        result["pr_number"] = pr_number
     return result
 
 
@@ -148,7 +148,7 @@ def _setup_from_file(
 
 
 @click.command(name="setup-impl")
-@click.option("--issue", "plan_number", type=int, default=None, help="Plan number to set up from")
+@click.option("--issue", "pr_number", type=int, default=None, help="PR number to set up from")
 @click.option(
     "--file",
     "file_path",
@@ -157,7 +157,7 @@ def _setup_from_file(
     help="Markdown file to set up from",
 )
 @click.pass_context
-def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | None) -> None:
+def setup_impl(ctx: click.Context, pr_number: int | None, file_path: Path | None) -> None:
     """Consolidated implementation setup.
 
     Handles all setup paths for plan-implement:
@@ -171,8 +171,8 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
     cwd = require_cwd(ctx)
 
     # Path 1: --issue provided
-    if plan_number is not None:
-        _handle_issue_setup(ctx, plan_number=plan_number)
+    if pr_number is not None:
+        _handle_issue_setup(ctx, pr_number=pr_number)
         return
 
     # Path 2: --file provided
@@ -201,12 +201,12 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
         plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None:
             # Has plan tracking - sync with remote
-            if plan_ref.plan_id.isdigit():
-                plan_id: int | None = int(plan_ref.plan_id)
+            if plan_ref.pr_id.isdigit():
+                pr_id: int | None = int(plan_ref.pr_id)
             else:
-                plan_id = None
-            if plan_id is not None:
-                _handle_issue_setup(ctx, plan_number=plan_id)
+                pr_id = None
+            if pr_id is not None:
+                _handle_issue_setup(ctx, pr_number=pr_id)
                 return
 
         # File-based plan (no tracking) - just validate
@@ -234,32 +234,32 @@ def setup_impl(ctx: click.Context, plan_number: int | None, file_path: Path | No
             return None
         return pr_result.number
 
-    detection = _detect_plan_from_branch_impl(
+    detection = _detect_pr_from_branch_impl(
         current_branch=current_branch,
         pr_lookup=pr_lookup,
     )
 
     if detection.get("found"):
-        detected_number = detection["plan_number"]
+        detected_number = detection["pr_number"]
         if isinstance(detected_number, int):
-            click.echo(f"Auto-detected plan #{detected_number} from branch", err=True)
-            _handle_issue_setup(ctx, plan_number=detected_number)
+            click.echo(f"Auto-detected PR #{detected_number} from branch", err=True)
+            _handle_issue_setup(ctx, pr_number=detected_number)
             return
 
-    # 3c: No plan found
+    # 3c: No PR found
     click.echo(
         json.dumps(
             {
                 "success": False,
                 "error": "no_plan_found",
-                "message": "No plan found. Provide --issue, --file, or run from a plan branch.",
+                "message": "No PR found. Provide --issue, --file, or run from a PR branch.",
             }
         )
     )
     raise SystemExit(1)
 
 
-def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
+def _handle_issue_setup(ctx: click.Context, *, pr_number: int) -> None:
     """Handle setup from a plan number (shared by explicit --issue and auto-detect).
 
     Delegates to setup-impl-from-pr, runs impl-init, runs cleanup,
@@ -267,7 +267,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
 
     Args:
         ctx: Click context.
-        plan_number: The plan/PR number to set up from.
+        pr_number: The plan/PR number to set up from.
     """
     from erk.cli.commands.exec.scripts.setup_impl_from_pr import setup_impl_from_pr
 
@@ -278,7 +278,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
     # Run setup-impl-from-pr
     ctx.invoke(
         setup_impl_from_pr,
-        plan_number=plan_number,
+        pr=pr_number,
         session_id=None,
         no_impl=False,
     )
@@ -304,7 +304,7 @@ def _handle_issue_setup(ctx: click.Context, *, plan_number: int) -> None:
             {
                 "success": True,
                 "source": "issue",
-                "plan_number": plan_number,
+                "pr_number": pr_number,
                 "has_plan_tracking": True,
                 **init_result,
             }

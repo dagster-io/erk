@@ -11,14 +11,14 @@ from erk.cli.commands.objective.plan_cmd import (
     ResolvedAllUnblocked,
     _resolve_all_unblocked,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_issue(
@@ -192,7 +192,6 @@ class TestResolveAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
@@ -226,7 +225,6 @@ class TestResolveAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(env, git=git, issues=issues, remote_github=remote)
 
@@ -263,7 +261,6 @@ class TestHandleAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote
@@ -312,7 +309,6 @@ class TestHandleAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote
@@ -362,7 +358,6 @@ class TestHandleAllUnblocked:
                 dispatch_run_id="run-1",
                 issues={42: issue},
                 issue_comments=None,
-                pr_references=None,
             )
             ctx = build_workspace_test_context(
                 env, git=git, github=github, issues=issues, remote_github=remote

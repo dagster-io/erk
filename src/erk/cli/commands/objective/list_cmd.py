@@ -1,28 +1,30 @@
 """List open objectives."""
 
+import re
+
 import click
 from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
 
-from erk.cli.alias import alias
 from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.metadata.core import extract_objective_slug
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
     DependencyGraph,
     ObjectiveNode,
+    build_frontier_sparkline,
     build_graph,
-    build_state_sparkline,
     compute_graph_summary,
     find_graph_next_node,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase, parse_roadmap
 from erk_shared.gateway.github.types import GitHubRepoId
-from erk_shared.plan_store.conversion import github_issue_to_plan
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.conversion import github_issue_to_plan
+from erk_shared.pr_store.types import Plan
 
 _SLUG_MAX_LEN = 50
 
@@ -101,15 +103,35 @@ _SPARKLINE_RICH_STYLES: dict[str, str] = {
 
 
 def _rich_sparkline(sparkline: str) -> str:
-    """Wrap sparkline characters in Rich markup for colored output."""
-    return "".join(_SPARKLINE_RICH_STYLES.get(ch, ch) for ch in sparkline)
+    """Wrap sparkline characters in Rich markup for colored output.
+
+    Handles bracket-compressed runs like "[13x○]" and individual symbols.
+    Brackets and "Nx" prefixes pass through unstyled; the symbol gets styled.
+    """
+    parts: list[str] = []
+    i = 0
+    while i < len(sparkline):
+        # Try to match a bracket-compressed run like "[13x○]"
+        m = re.match(r"\[(\d+x)(.)(])", sparkline[i:])
+        if m:
+            prefix = m.group(1)
+            symbol = m.group(2)
+            styled = _SPARKLINE_RICH_STYLES.get(symbol, symbol)
+            parts.append(f"\\[{prefix}{styled}]")
+            i += m.end()
+            continue
+        # Single character
+        ch = sparkline[i]
+        parts.append(_SPARKLINE_RICH_STYLES.get(ch, ch))
+        i += 1
+    return "".join(parts)
 
 
 def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
     """Compute roadmap-derived fields for a single objective."""
     defaults = {
         "progress": "-",
-        "state": "-",
+        "frontier": "-",
         "deps_state": "-",
         "deps": "-",
         "next_node": "-",
@@ -128,7 +150,7 @@ def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
 
     return {
         "progress": f"{summary['done']}/{summary['total_nodes']}",
-        "state": build_state_sparkline(graph.nodes),
+        "frontier": build_frontier_sparkline(graph.nodes),
         "deps_state": deps_state,
         "deps": deps,
         "next_node": next_node,
@@ -176,9 +198,9 @@ def list_objectives(ctx: ErkContext, *, repo_id: GitHubRepoId) -> None:
         author = str(plan.metadata.get("author", ""))
 
         table.add_row(
-            f"[link={plan.url}]#{plan.plan_identifier}[/link]",
+            f"[link={plan.url}]#{plan.pr_identifier}[/link]",
             escape(slug),
-            f"{_rich_sparkline(fields['state'])}  {fields['progress']}",
+            f"{_rich_sparkline(fields['frontier'])}  {fields['progress']}",
             fields["deps_state"],
             fields["deps"],
             fields["next_node"],

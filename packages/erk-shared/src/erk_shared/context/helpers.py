@@ -25,7 +25,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
 
 
 def require_context(ctx: click.Context) -> ErkContext:
@@ -81,7 +81,7 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
         ...     issues = require_issues(ctx)
-        ...     issues.add_comment(repo_root, plan_number, body)
+        ...     issues.add_comment(repo_root, pr_number, body)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
@@ -348,7 +348,7 @@ def require_local_config(ctx: click.Context) -> LoadedConfig:
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
         ...     config = require_local_config(ctx)
-        ...     plans_repo = config.plans_repo
+        ...     github_repo = config.github_repo
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
@@ -394,8 +394,8 @@ def get_repo_identifier(ctx: click.Context) -> str | None:
     return f"{repo.github.owner}/{repo.github.repo}"
 
 
-def require_plan_backend(ctx: click.Context) -> PlanBackend:
-    """Get PlanBackend from context, exiting with error if not initialized.
+def require_pr_backend(ctx: click.Context) -> ManagedPrBackend:
+    """Get ManagedPrBackend from context, exiting with error if not initialized.
 
     Uses LBYL pattern to check context before accessing.
 
@@ -403,7 +403,7 @@ def require_plan_backend(ctx: click.Context) -> PlanBackend:
         ctx: Click context (must have ErkContext in ctx.obj)
 
     Returns:
-        PlanBackend instance from context
+        ManagedPrBackend instance from context
 
     Raises:
         SystemExit: If context not initialized (exits with code 1)
@@ -412,14 +412,14 @@ def require_plan_backend(ctx: click.Context) -> PlanBackend:
         >>> @click.command()
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
-        ...     backend = require_plan_backend(ctx)
-        ...     result = backend.create_plan(repo_root, title, content, labels, metadata)
+        ...     backend = require_pr_backend(ctx)
+        ...     result = backend.create_managed_pr(repo_root, title, content, labels, metadata)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    return ctx.obj.plan_backend
+    return ctx.obj.pr_backend
 
 
 def require_time(ctx: click.Context) -> Time:

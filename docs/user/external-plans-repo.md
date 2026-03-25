@@ -32,13 +32,13 @@ When `plans.repo` is set:
 
 ## Required Labels
 
-Erk uses these labels to organize plan issues:
+Erk uses these labels to organize plan PRs:
 
-| Label            | Color              | Description                              |
-| ---------------- | ------------------ | ---------------------------------------- |
-| `erk-plan`       | `#0E8A16` (green)  | Implementation plan for manual execution |
-| `erk-objective`  | `#5319E7` (purple) | Multi-phase objective with roadmap       |
-| `erk-extraction` | `#D93F0B` (orange) | Documentation extraction plan            |
+| Label           | Color              | Description                        |
+| --------------- | ------------------ | ---------------------------------- |
+| `erk-pr`        | `#0E8A16` (green)  | Implementation plan PR             |
+| `erk-learn`     | `#D93F0B` (orange) | Documentation extraction plan PR   |
+| `erk-objective` | `#5319E7` (purple) | Multi-phase objective with roadmap |
 
 ### Automatic Label Setup
 
@@ -68,4 +68,4 @@ Run `erk doctor` to verify the setup:
 erk doctor
 ```
 
-Look for the "plans-repo-labels" check. If labels are missing, the check will fail with instructions to fix.
+Look for the "pr-repo-labels" check. If labels are missing, the check will fail with instructions to fix.

@@ -1,0 +1,336 @@
+"""Fake Graphite operations for testing.
+
+FakeGraphite is an in-memory implementation that accepts pre-configured state
+in its constructor. Construct instances directly with keyword arguments.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
+
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.types import BranchMetadata
+
+
+class FakeGraphite(Graphite):
+    """In-memory fake implementation of Graphite operations.
+
+    This class has NO public setup methods. All state is provided via constructor
+    using keyword arguments with sensible defaults (empty dicts).
+    """
+
+    def __init__(
+        self,
+        *,
+        submit_branch_raises: Exception | None = None,
+        track_branch_raises: Exception | None = None,
+        retrack_branch_raises: Exception | None = None,
+        squash_branch_raises: Exception | None = None,
+        submit_stack_raises: Exception | None = None,
+        delete_branch_raises: Exception | None = None,
+        restack_result: tuple[bool, str | None] = (True, None),
+        pr_info: dict[str, PullRequestInfo] | None = None,
+        branches: dict[str, BranchMetadata] | None = None,
+        stacks: dict[str, list[str]] | None = None,
+        authenticated: bool = True,
+        auth_username: str | None = "test-user",
+        auth_repo_info: str | None = "owner/repo",
+    ) -> None:
+        """Create FakeGraphite with pre-configured state.
+
+        Args:
+            submit_branch_raises: Exception to raise when submit_branch() is called
+            track_branch_raises: Exception to raise when track_branch() is called
+            retrack_branch_raises: Exception to raise when retrack_branch() is called
+            squash_branch_raises: Exception to raise when squash_branch() is called
+            submit_stack_raises: Exception to raise when submit_stack() is called
+            delete_branch_raises: Exception to raise when delete_branch() is called
+            pr_info: Mapping of branch name -> PullRequestInfo for get_prs_from_graphite()
+            branches: Mapping of branch name -> BranchMetadata for get_all_branches()
+            stacks: Mapping of branch name -> stack (list of branches from trunk to leaf)
+            authenticated: Whether gt is authenticated (default True for test convenience)
+            auth_username: Username returned by check_auth_status() (default "test-user")
+            auth_repo_info: Repo info returned by check_auth_status() (default "owner/repo")
+        """
+        self._submit_branch_raises = submit_branch_raises
+        self._track_branch_raises = track_branch_raises
+        self._retrack_branch_raises = retrack_branch_raises
+        self._squash_branch_raises = squash_branch_raises
+        self._submit_stack_raises = submit_stack_raises
+        self._delete_branch_raises = delete_branch_raises
+        self._restack_result = restack_result
+        self._restack_calls: list[Path] = []
+        self._submit_branch_calls: list[tuple[Path, str, bool]] = []
+        self._track_branch_calls: list[tuple[Path, str, str]] = []
+        self._retrack_branch_calls: list[tuple[Path, str]] = []
+        self._squash_branch_calls: list[tuple[Path, bool]] = []
+        self._submit_stack_calls: list[tuple[Path, bool, bool, bool, bool]] = []
+        self._delete_branch_calls: list[tuple[Path, str]] = []
+        # Ordered log of all mutation operations for testing operation ordering
+        self._operation_log: list[tuple[str, ...]] = []
+        self._pr_info = pr_info if pr_info is not None else {}
+        self._branches = branches if branches is not None else {}
+        self._stacks = stacks if stacks is not None else {}
+        self._authenticated = authenticated
+        self._auth_username = auth_username
+        self._auth_repo_info = auth_repo_info
+        self._check_auth_status_calls: list[None] = []
+
+    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -> str:
+        """Get Graphite PR URL (constructs URL directly)."""
+        return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
+
+    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -> dict[str, PullRequestInfo]:
+        """Return pre-configured PR info for tests."""
+        return self._pr_info.copy()
+
+    def get_all_branches(self, git_ops: Git, repo_root: Path) -> dict[str, BranchMetadata]:
+        """Return pre-configured branch metadata for tests."""
+        return self._branches.copy()
+
+    def get_branch_stack(self, git_ops: Git, repo_root: Path, branch: str) -> list[str] | None:
+        """Return pre-configured stack for the given branch."""
+        # If stacks are configured, use those
+        if self._stacks:
+            # Find the stack that contains this branch
+            for _stack_branch, stack in self._stacks.items():
+                if branch in stack:
+                    return stack.copy()
+            return None
+
+        # Otherwise, build from branch metadata if available
+        if not self._branches:
+            return None
+
+        if branch not in self._branches:
+            return None
+
+        # Build stack from branch metadata (simplified version)
+        ancestors: list[str] = []
+        current = branch
+        while current in self._branches:
+            ancestors.append(current)
+            parent = self._branches[current].parent
+            if parent is None or parent not in self._branches:
+                break
+            current = parent
+
+        ancestors.reverse()
+
+        # Add descendants
+        descendants: list[str] = []
+        current = branch
+        while current in self._branches:
+            children = self._branches[current].children
+            if not children:
+                break
+            first_child = children[0]
+            if first_child not in self._branches:
+                break
+            descendants.append(first_child)
+            current = first_child
+
+        return ancestors + descendants
+
+    def set_branch_parent(self, branch_name: str, parent_branch: str) -> None:
+        """Test helper: Set up branch-parent relationship in the fake.
+
+        This method is for test setup only. It updates internal branch metadata
+        so that get_parent_branch() and get_child_branches() work correctly.
+
+        Args:
+            branch_name: Name of the child branch
+            parent_branch: Name of the parent branch
+        """
+        from erk_shared.gateway.graphite.types import BranchMetadata
+
+        self._branches[branch_name] = BranchMetadata(
+            name=branch_name,
+            parent=parent_branch,
+            children=[],
+            is_trunk=False,
+            commit_sha=None,
+        )
+
+        # Also update parent's children list so get_child_branches() works
+        if parent_branch in self._branches:
+            parent_metadata = self._branches[parent_branch]
+            if branch_name not in parent_metadata.children:
+                updated_children = [*parent_metadata.children, branch_name]
+                self._branches[parent_branch] = BranchMetadata(
+                    name=parent_metadata.name,
+                    parent=parent_metadata.parent,
+                    children=updated_children,
+                    is_trunk=parent_metadata.is_trunk,
+                    commit_sha=parent_metadata.commit_sha,
+                )
+
+    def check_auth_status(self) -> tuple[bool, str | None, str | None]:
+        """Return pre-configured authentication status.
+
+        Tracks calls for verification.
+
+        Returns:
+            Tuple of (is_authenticated, username, repo_info)
+        """
+        self._check_auth_status_calls.append(None)
+
+        if not self._authenticated:
+            return (False, None, None)
+
+        return (True, self._auth_username, self._auth_repo_info)
+
+    @property
+    def check_auth_status_calls(self) -> list[None]:
+        """Get the list of check_auth_status() calls that were made.
+
+        Returns list of None values (one per call, no arguments tracked).
+
+        This property is for test assertions only.
+        """
+        return self._check_auth_status_calls
+
+    def squash_branch(self, repo_root: Path, *, quiet: bool) -> None:
+        """Track squash_branch calls and optionally raise."""
+        self._squash_branch_calls.append((repo_root, quiet))
+        if self._squash_branch_raises is not None:
+            raise self._squash_branch_raises
+
+    def submit_stack(
+        self,
+        repo_root: Path,
+        *,
+        publish: bool,
+        restack: bool,
+        quiet: bool,
+        force: bool,
+    ) -> None:
+        """Track submit_stack calls and optionally raise."""
+        self._submit_stack_calls.append((repo_root, publish, restack, quiet, force))
+        if self._submit_stack_raises is not None:
+            raise self._submit_stack_raises
+
+    @property
+    def squash_branch_calls(self) -> list[tuple[Path, bool]]:
+        """Get the list of squash_branch() calls.
+
+        Returns list of (repo_root, quiet) tuples.
+        """
+        return self._squash_branch_calls
+
+    @property
+    def submit_stack_calls(self) -> list[tuple[Path, bool, bool, bool, bool]]:
+        """Get the list of submit_stack() calls.
+
+        Returns list of (repo_root, publish, restack, quiet, force) tuples.
+        """
+        return self._submit_stack_calls
+
+    @property
+    def delete_branch_calls(self) -> list[tuple[Path, str]]:
+        """Get the list of delete_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (repo_root, branch) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._delete_branch_calls
+
+    @property
+    def track_branch_calls(self) -> list[tuple[Path, str, str]]:
+        """Get the list of track_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (repo_root, branch_name, parent_branch) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._track_branch_calls
+
+    @property
+    def retrack_branch_calls(self) -> list[tuple[Path, str]]:
+        """Get the list of retrack_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (cwd, branch_name) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._retrack_branch_calls
+
+    @property
+    def submit_branch_calls(self) -> list[tuple[Path, str, bool]]:
+        """Get the list of submit_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (repo_root, branch, force) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._submit_branch_calls
+
+    def restack(self, repo_root: Path) -> tuple[bool, str | None]:
+        """Return pre-configured restack result."""
+        self._restack_calls.append(repo_root)
+        return self._restack_result
+
+    @property
+    def restack_calls(self) -> list[Path]:
+        """Get the list of restack() calls.
+
+        Returns list of repo_root Path values.
+        """
+        return self._restack_calls
+
+    def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
+        """Return True if branch is in configured branches."""
+        return branch in self._branches
+
+    @property
+    def operation_log(self) -> list[tuple[str, ...]]:
+        """Get the ordered log of all mutation operations.
+
+        Used for testing operation ordering between multiple operations.
+        Currently only includes track_branch operations.
+
+        Returns list of tuples where first element is operation name.
+        """
+        return self._operation_log
+
+    def create_linked_branch_ops(self) -> FakeGraphiteBranchOps:
+        """Create a FakeGraphiteBranchOps linked to this FakeGraphite's state.
+
+        The returned FakeGraphiteBranchOps shares mutable state and mutation tracking
+        with this FakeGraphite instance. This allows tests to check FakeGraphite properties
+        like track_branch_calls while mutations happen through BranchManager.
+
+        Returns:
+            FakeGraphiteBranchOps with linked state and mutation tracking
+        """
+        from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
+
+        # Build tracked branches set from branch metadata
+        tracked_branches = set(self._branches.keys())
+
+        ops = FakeGraphiteBranchOps(
+            track_branch_raises=self._track_branch_raises,
+            delete_branch_raises=self._delete_branch_raises,
+            submit_branch_raises=self._submit_branch_raises,
+            retrack_branch_raises=self._retrack_branch_raises,
+            tracked_branches=tracked_branches,
+        )
+        # Link mutation tracking so FakeGraphite properties see mutations from FakeGraphiteBranchOps
+        ops.link_mutation_tracking(
+            track_branch_calls=self._track_branch_calls,
+            delete_branch_calls=self._delete_branch_calls,
+            submit_branch_calls=self._submit_branch_calls,
+            retrack_branch_calls=self._retrack_branch_calls,
+        )
+        return ops

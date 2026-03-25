@@ -3,7 +3,7 @@
 Layer 1 tests: Verify the fake implementation works correctly.
 """
 
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+from tests.fakes.gateway.erk_installation import FakeErkInstallation
 
 
 def test_fake_erk_installation_get_last_seen_version_returns_none_by_default() -> None:

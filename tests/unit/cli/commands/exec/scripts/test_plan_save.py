@@ -3,17 +3,16 @@
 import json
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_save import plan_save
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.tests.shared_context import context_for_test
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Plan
@@ -31,9 +30,8 @@ def _planned_pr_context(
     fake_github: FakeLocalGitHub | None = None,
     fake_git: FakeGit | None = None,
     fake_claude: FakeClaudeInstallation | None = None,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> ErkContext:
-    """Build an ErkContext configured for planned-PR plan backend."""
+    """Build an ErkContext configured for planned-PR pr backend."""
     if fake_git is None:
         fake_git = FakeGit(current_branches={tmp_path: "main"})
     if fake_github is None:
@@ -41,7 +39,6 @@ def _planned_pr_context(
     if fake_claude is None:
         fake_claude = FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT})
 
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     return context_for_test(
         github=fake_github,
         git=fake_git,
@@ -51,9 +48,9 @@ def _planned_pr_context(
     )
 
 
-def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_success_json(tmp_path: Path) -> None:
     """Happy path: exit 0, JSON output has success/issue_number/branch_name."""
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -61,15 +58,15 @@ def test_planned_pr_success_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert "plan_number" in output
+    assert "pr_number" in output
     assert "branch_name" in output
     assert output["branch_name"].startswith("plnd/")
-    assert output["plan_backend"] == "planned_pr"
+    assert output["pr_backend"] == "planned_pr"
 
 
-def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_success_display(tmp_path: Path) -> None:
     """Display format: output contains 'Plan saved as planned PR'."""
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -77,19 +74,18 @@ def test_planned_pr_success_display(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
-    assert "Plan saved as planned PR" in result.output
-    assert "Title: [erk-plan] Feature Plan" in result.output
+    assert "PR saved as planned PR" in result.output
+    assert "Title: [erk-pr] Feature Plan" in result.output
     assert "Branch: plnd/" in result.output
-    assert "erk br co" in result.output
+    assert "erk slot co" in result.output
     assert "plnd/" in result.output  # branch name appears in checkout command
 
 
-def test_planned_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_no_plan_found(tmp_path: Path) -> None:
     """Empty claude_installation: exit code 1."""
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(),
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -101,13 +97,12 @@ def test_planned_pr_no_plan_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert "No plan found" in output["error"]
 
 
-def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_validation_failure(tmp_path: Path) -> None:
     """Short plan: exit code 2, error_type='validation_failed'."""
     short_plan = "# Short\n\n- Step"
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"short": short_plan}),
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -119,9 +114,9 @@ def test_planned_pr_validation_failure(tmp_path: Path, monkeypatch: pytest.Monke
     assert output["error_type"] == "validation_failed"
 
 
-def test_planned_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_session_deduplication(tmp_path: Path) -> None:
     """Second call with same session_id: skipped_duplicate=True."""
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
     session_id = "dedup-session"
 
@@ -146,14 +141,14 @@ def test_planned_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Mo
     output2 = json.loads(result2.output)
     assert output2["success"] is True
     assert output2["skipped_duplicate"] is True
-    assert output2["plan_backend"] == "planned_pr"
+    assert output2["pr_backend"] == "planned_pr"
     # branch_name should be included from the branch marker saved during first call
     assert "branch_name" in output2
     assert output2["branch_name"] == output1["branch_name"]
 
 
 def test_planned_pr_different_titles_both_succeed(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Two saves with different plan titles in the same session both succeed."""
     runner = CliRunner()
@@ -179,7 +174,6 @@ This plan describes a different feature implementation.
     ctx1 = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"plan": first_plan}),
-        monkeypatch=monkeypatch,
     )
     result1 = runner.invoke(
         plan_save,
@@ -195,7 +189,6 @@ This plan describes a different feature implementation.
     ctx2 = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"plan": second_plan}),
-        monkeypatch=monkeypatch,
     )
     result2 = runner.invoke(
         plan_save,
@@ -206,10 +199,10 @@ This plan describes a different feature implementation.
     output2 = json.loads(result2.output)
     assert output2["success"] is True
     assert "skipped_duplicate" not in output2
-    assert output2["title"] == "[erk-plan] Second Plan"
+    assert output2["title"] == "[erk-pr] Second Plan"
 
 
-def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_plan_file_priority(tmp_path: Path) -> None:
     """--plan-file takes priority over claude_installation."""
     plan_file = tmp_path / "custom-plan.md"
     plan_file.write_text(
@@ -217,7 +210,7 @@ def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.Monke
         "- Step 1: Custom step\n- Step 2: Another custom step",
         encoding="utf-8",
     )
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -229,15 +222,15 @@ def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.Monke
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["title"] == "[erk-plan] Custom Plan"
+    assert output["title"] == "[erk-pr] Custom Plan"
 
 
 def test_planned_pr_objective_issue_from_marker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Objective context marker links plan to objective via branch name, metadata, and ref.json."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     # Create objective-context marker
@@ -268,10 +261,10 @@ def test_planned_pr_objective_issue_from_marker(
 
 
 def test_planned_pr_no_objective_without_marker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Without a marker, objective_issue is null in output."""
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -283,14 +276,14 @@ def test_planned_pr_no_objective_without_marker(
 
 
 def test_planned_pr_does_not_checkout_branch(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """plan-save uses git plumbing to commit without checking out the plan branch."""
     fake_git = FakeGit(
         current_branches={tmp_path: "feature-branch"},
         remote_branches={tmp_path: ["origin/feature-branch"]},
     )
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -301,10 +294,10 @@ def test_planned_pr_does_not_checkout_branch(
     assert len(fake_git.checked_out_branches) == 0
 
 
-def test_planned_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_commits_plan_file(tmp_path: Path) -> None:
     """plan-save commits plan.md to the plan branch via git plumbing."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -329,7 +322,7 @@ def test_planned_pr_commits_plan_file(tmp_path: Path, monkeypatch: pytest.Monkey
 
 
 def test_planned_pr_trunk_branch_passes_through_to_pr_base(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """When on trunk, trunk_branch flows through metadata to PR base."""
     fake_git = FakeGit(current_branches={tmp_path: "master"}, trunk_branches={tmp_path: "master"})
@@ -338,7 +331,6 @@ def test_planned_pr_trunk_branch_passes_through_to_pr_base(
         tmp_path=tmp_path,
         fake_git=fake_git,
         fake_github=fake_github,
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -350,12 +342,11 @@ def test_planned_pr_trunk_branch_passes_through_to_pr_base(
 
 
 def test_planned_pr_tracks_branch_with_graphite_on_trunk(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """When on trunk, plan branch is tracked with trunk as Graphite parent."""
     fake_git = FakeGit(current_branches={tmp_path: "master"}, trunk_branches={tmp_path: "master"})
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -386,7 +377,7 @@ def test_planned_pr_tracks_branch_with_graphite_on_trunk(
 
 
 def test_planned_pr_branch_stacked_on_current_feature_branch(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Plan branch is stacked on current feature branch, not trunk."""
     # Current branch is a feature branch, NOT trunk — and pushed to remote
@@ -396,7 +387,6 @@ def test_planned_pr_branch_stacked_on_current_feature_branch(
         remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -427,7 +417,7 @@ def test_planned_pr_branch_stacked_on_current_feature_branch(
 
 
 def test_planned_pr_feature_branch_creates_correct_pr_base(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """When on a feature branch pushed to remote, the PR base is the feature branch."""
     fake_git = FakeGit(
@@ -436,7 +426,6 @@ def test_planned_pr_feature_branch_creates_correct_pr_base(
         remote_branches={tmp_path: ["origin/feature/my-work"]},
     )
     fake_github = FakeLocalGitHub()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
@@ -455,7 +444,7 @@ def test_planned_pr_feature_branch_creates_correct_pr_base(
 
 
 def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """When on a feature branch NOT pushed to remote, falls back to trunk as base."""
     fake_git = FakeGit(
@@ -464,7 +453,6 @@ def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
         # No remote_branches — branch is not on remote
     )
     fake_github = FakeLocalGitHub()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
@@ -492,7 +480,7 @@ def test_planned_pr_unpushed_feature_branch_falls_back_to_trunk(
 
 
 def test_planned_pr_learn_branch_uses_trunk_as_base(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """When on a learn/ branch, the PR base is trunk (not the learn branch)."""
     fake_git = FakeGit(
@@ -500,7 +488,6 @@ def test_planned_pr_learn_branch_uses_trunk_as_base(
         trunk_branches={tmp_path: "master"},
     )
     fake_github = FakeLocalGitHub()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
@@ -520,10 +507,9 @@ def test_planned_pr_learn_branch_uses_trunk_as_base(
 
 # --- Title validation rejection tests (planned-PR path) ---
 
-# Plan content with no H1 heading → extract_title_from_plan returns "Untitled Plan"
+# Plan with explicit "Implementation Plan" heading should be rejected as fallback title
 _UNTITLED_PLAN_CONTENT = (
-    "This plan has no heading so extract_title_from_plan"
-    ' returns "Untitled Plan".\n\n'
+    "# Implementation Plan\n\n"
     "- Step 1: Set up the environment\n"
     "- Step 2: Implement the core logic\n"
     "- Step 3: Add tests and documentation\n"
@@ -541,13 +527,12 @@ This plan has an emoji-only title which should fail validation.
 
 
 def test_planned_pr_rejects_untitled_plan_json(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
-    """Planned-PR save rejects plan with fallback title 'Untitled Plan'."""
+    """Planned-PR save rejects plan with fallback title 'Implementation Plan'."""
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -561,13 +546,12 @@ def test_planned_pr_rejects_untitled_plan_json(
 
 
 def test_planned_pr_rejects_emoji_only_title(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Planned-PR save rejects plan with emoji-only title."""
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"emoji": _EMOJI_ONLY_TITLE_PLAN}),
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -580,13 +564,12 @@ def test_planned_pr_rejects_emoji_only_title(
 
 
 def test_planned_pr_rejects_untitled_plan_display(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Planned-PR save shows error message for invalid title in display format."""
     ctx = _planned_pr_context(
         tmp_path=tmp_path,
         fake_claude=FakeClaudeInstallation.for_test(plans={"untitled": _UNTITLED_PLAN_CONTENT}),
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -596,9 +579,9 @@ def test_planned_pr_rejects_untitled_plan_display(
     assert "Invalid plan title" in result.output
 
 
-def test_planned_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_branch_slug_provided(tmp_path: Path) -> None:
     """When --branch-slug is provided, branch name incorporates that slug."""
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -613,10 +596,10 @@ def test_planned_pr_branch_slug_provided(tmp_path: Path, monkeypatch: pytest.Mon
     assert "my-custom-slug" in output["branch_name"]
 
 
-def test_planned_pr_objective_from_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_planned_pr_objective_from_flag(tmp_path: Path) -> None:
     """--objective flag links plan to objective via branch name, metadata, and ref.json."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -637,11 +620,11 @@ def test_planned_pr_objective_from_flag(tmp_path: Path, monkeypatch: pytest.Monk
 
 
 def test_planned_pr_objective_flag_overrides_marker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """--objective flag takes precedence over the session marker."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     # Create objective-context marker with value 100
@@ -678,10 +661,10 @@ def test_planned_pr_objective_flag_overrides_marker(
 
 
 def test_planned_pr_branch_slug_missing_errors(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """When --branch-slug is not provided, exits with error and remediation message."""
-    ctx = _planned_pr_context(tmp_path=tmp_path, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json"], obj=ctx)
@@ -691,11 +674,11 @@ def test_planned_pr_branch_slug_missing_errors(
 
 
 def test_planned_pr_includes_session_xml_files(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Session XML files from --session-xml-dir are committed under sessions/."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     xml_dir = tmp_path / "learn"
@@ -723,11 +706,11 @@ def test_planned_pr_includes_session_xml_files(
 
 
 def test_planned_pr_session_xml_dir_only_includes_xml(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Only .xml files are committed from the session XML directory."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     xml_dir = tmp_path / "learn"
@@ -750,11 +733,11 @@ def test_planned_pr_session_xml_dir_only_includes_xml(
 
 
 def test_planned_pr_without_session_xml_dir_backward_compat(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Without --session-xml-dir, only plan.md and ref.json are committed."""
     fake_git = FakeGit(current_branches={tmp_path: "main"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(plan_save, ["--format", "json", "--branch-slug", "test-slug"], obj=ctx)
@@ -770,11 +753,11 @@ def test_planned_pr_without_session_xml_dir_backward_compat(
 
 
 def test_current_branch_skips_branch_creation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """--current-branch uses current branch directly without creating a new one."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -792,11 +775,11 @@ def test_current_branch_skips_branch_creation(
 
 
 def test_current_branch_does_not_require_branch_slug(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """--current-branch does not require --branch-slug."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     # No --branch-slug provided, but --current-branch should make that OK
@@ -811,7 +794,7 @@ def test_current_branch_does_not_require_branch_slug(
     assert output["success"] is True
 
 
-def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_current_branch_sets_base_to_trunk(tmp_path: Path) -> None:
     """--current-branch sets the PR base to trunk."""
     fake_git = FakeGit(
         current_branches={tmp_path: "my-feature-branch"},
@@ -822,7 +805,6 @@ def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.M
         tmp_path=tmp_path,
         fake_git=fake_git,
         fake_github=fake_github,
-        monkeypatch=monkeypatch,
     )
     runner = CliRunner()
 
@@ -838,11 +820,10 @@ def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.M
     assert fake_github.created_prs[0][3] == "master"
 
 
-def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_current_branch_does_not_retrack(tmp_path: Path) -> None:
     """--current-branch skips retrack_branch since no new branch was created."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
     fake_graphite = FakeGraphite()
-    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
     ctx = context_for_test(
         git=fake_git,
         graphite=fake_graphite,
@@ -864,11 +845,11 @@ def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.Mon
 
 
 def test_current_branch_writes_files_to_working_tree(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """--current-branch writes impl-context files to disk and stages them."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
 
     result = runner.invoke(
@@ -890,11 +871,11 @@ def test_current_branch_writes_files_to_working_tree(
 
 
 def test_current_branch_creates_unified_plan_saved_marker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """--current-branch creates unified plan-saved marker (same as new-branch path)."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git)
     runner = CliRunner()
     session_id = "current-branch-session"
 
@@ -912,7 +893,7 @@ def test_current_branch_creates_unified_plan_saved_marker(
     assert plan_saved_marker.exists(), "plan-saved marker should exist"
     marker_content = plan_saved_marker.read_text(encoding="utf-8")
     first_line = marker_content.split("\n")[0].strip()
-    assert first_line == str(output["plan_number"]), "first line should be plan number"
+    assert first_line == str(output["pr_number"]), "first line should be plan number"
     # Old current-branch marker should NOT exist
     old_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
     assert not old_marker.exists(), "plan-saved-current-branch marker should NOT exist"

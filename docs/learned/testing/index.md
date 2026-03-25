@@ -6,7 +6,7 @@
 - **[admin-command-testing.md](admin-command-testing.md)** — writing tests for admin CLI commands, using FakeGitHubAdmin in tests, testing permission-related CLI commands
 - **[alias-verification-pattern.md](alias-verification-pattern.md)** — enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
 - **[artifact-distribution-sync.md](artifact-distribution-sync.md)** — adding portable skills to codex_portable_skills(), modifying pyproject.toml force-include entries, understanding bundled skill testing and distribution
-- **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that uses PlanBackend, deciding whether to fake a backend or gateway, writing tests for exec scripts with backend operations
+- **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that uses ManagedPrBackend, deciding whether to fake a backend or gateway, writing tests for exec scripts with backend operations
 - **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action
@@ -14,7 +14,7 @@
 - **[devrun-agent.md](devrun-agent.md)** — using the devrun agent, running CI checks via Task tool, writing prompts for devrun, understanding the parent-agent fix cycle
 - **[dual-backend-testing.md](dual-backend-testing.md)** — writing tests that involve plan storage, testing plan-related features, creating test helpers for plan store operations
 - **[env-overrides-pattern.md](env-overrides-pattern.md)** — writing tests that need custom environment variables, testing erk init commands that depend on HOME, using erk_isolated_fs_env fixture with env_overrides
-- **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PLAN_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
+- **[environment-variable-isolation.md](environment-variable-isolation.md)** — debugging systematic test failures across many test files, working with ERK_PR_BACKEND in tests, understanding why tests behave differently based on environment, writing tests that involve plan backend selection
 - **[erk-package-info-pattern.md](erk-package-info-pattern.md)** — working with ErkPackageInfo or bundled paths, understanding is_in_erk_repo detection, writing tests that need ErkPackageInfo
 - **[exec-script-batch-testing.md](exec-script-batch-testing.md)** — writing tests for batch exec commands, organizing test cases for JSON stdin/stdout commands, adding failure injection to a fake gateway for batch operations
 - **[exec-script-testing.md](exec-script-testing.md)** — testing exec CLI commands, writing integration tests for scripts, debugging 'Context not initialized' errors in tests, debugging flaky tests in parallel execution
@@ -23,6 +23,7 @@
 - **[fake-github-api-reference.md](fake-github-api-reference.md)** — writing tests that need fake GitHub PR or issue data, understanding FakeLocalGitHub.create_pr() auto-registration, using mutation tracking in LocalGitHub fake tests
 - **[fake-github-mutation-tracking.md](fake-github-mutation-tracking.md)** — asserting against FakeLocalGitHub mutations in tests, adding a new mutation tracking list to FakeLocalGitHub or FakeGitHubIssues, understanding tuple formats in fake gateway tracking lists
 - **[fake-github-testing.md](fake-github-testing.md)** — setting up FakeGitHubIssues in a test, test fails with empty comments from FakeGitHubIssues, choosing between comments and comments_with_urls parameters
+- **[fakes-directory-structure.md](fakes-directory-structure.md)** — creating a new fake for testing, deciding where to put a fake class, understanding where test infrastructure lives
 - **[frozen-dataclass-test-doubles.md](frozen-dataclass-test-doubles.md)** — implementing a fake for an ABC interface, adding mutation tracking to a test double, choosing between frozen dataclass fakes and **init**-based fakes, writing tests that assert on method call parameters
 - **[gateway-fake-testing-exemplar.md](gateway-fake-testing-exemplar.md)** — writing tests for gateway fakes that return discriminated unions, deciding whether mutation tracking should occur on error paths, implementing a new fake gateway method with error injection
 - **[hook-testing.md](hook-testing.md)** — writing tests for any hook (PreToolUse, UserPromptSubmit, ExitPlanMode), creating a new hook implementation, testing hooks that read from stdin or check capabilities
@@ -34,6 +35,7 @@
 - **[monkeypatch-vs-fakes-decision.md](monkeypatch-vs-fakes-decision.md)** — choosing between monkeypatch and fakes for a test, deciding how to test code that uses Path.home(), unsure whether to create a gateway or use monkeypatch
 - **[parameter-injection-pattern.md](parameter-injection-pattern.md)** — adding functions that need access to bundled .claude/ directory, testing code that references get_bundled_claude_dir(), making internal path lookups testable
 - **[rebase-conflicts.md](rebase-conflicts.md)** — fixing merge conflicts in erk tests, ErkContext API changes during rebase, env_helpers conflicts
+- **[remote-paths-testing.md](remote-paths-testing.md)** — testing commands that use RemoteGitHub, testing commands with --repo flag (remote mode), writing tests for launch command workflows, testing without local git context
 - **[session-log-fixtures.md](session-log-fixtures.md)** — creating JSONL fixtures for session log tests, testing session plan extraction, writing integration tests for session parsing
 - **[session-store-testing.md](session-store-testing.md)** — testing code that reads session data, using FakeClaudeInstallation, mocking session ID lookup
 - **[submit-pipeline-tests.md](submit-pipeline-tests.md)** — adding tests for a new submit pipeline step, writing \_make_state helpers for pipeline step tests, deciding what to test at the step level vs the runner level

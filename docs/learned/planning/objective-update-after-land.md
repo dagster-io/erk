@@ -54,7 +54,7 @@ The `objective_apply_landed_update` exec script supports a `--plan` parameter fo
 Fallback chain in `objective_apply_landed_update.py`:
 
 1. If `--plan` is provided, use it directly
-2. Otherwise, discover plan via `plan_backend.get_plan_for_branch()`
+2. Otherwise, discover plan via `pr_backend.get_plan_for_branch()`
 3. Auto-fill objective from `plan_result.objective_id` if not explicitly provided
 4. Auto-fill PR from `github.get_pr_for_branch()` if not explicitly provided
 

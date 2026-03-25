@@ -3,7 +3,7 @@ title: Checkout Three-Path Logic
 category: cli
 read_when:
   - "modifying erk br co"
-  - "working with --for-plan flag"
+  - "working with --for-pr flag"
   - "changing slot allocation behavior"
 last_audited: "2026-03-05 00:00 PT"
 audit_result: clean
@@ -11,7 +11,7 @@ audit_result: clean
 
 # Checkout Three-Path Logic
 
-`erk br co` uses a three-path decision tree when `--for-plan` is involved, implemented in `branch/checkout_cmd.py:614-717`.
+`erk br co` uses a three-path decision tree when `--for-pr` is involved, implemented in `_branch_checkout_impl()` in `branch/checkout_cmd.py`.
 
 ## Decision Tree
 
@@ -27,7 +27,7 @@ The user is in a slot-assigned worktree and the branch has a current assignment.
 
 ### Path 2: Checkout in Current Worktree (`setup is not None and not new_slot`)
 
-The user passed `--for-plan` (so `setup is not None`) but did NOT pass `--new-slot`.
+The user passed `--for-pr` (so `setup is not None`) but did NOT pass `--new-slot`.
 
 - Checks out in current (root) worktree
 - Calls `_rebase_and_track_for_plan()` if setup exists
@@ -47,7 +47,7 @@ Neither condition matched — allocate a new slot for the branch.
 
 The two guards:
 
-- `setup is not None` = user passed `--for-plan` (the plan setup configuration is populated)
+- `setup is not None` = user passed `--for-pr` (the plan setup configuration is populated)
 - `not new_slot` = user did NOT pass `--new-slot` (prefers staying in current worktree)
 
 ## Shared Behavior

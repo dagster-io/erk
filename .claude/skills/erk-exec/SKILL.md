@@ -38,12 +38,12 @@ When addressing PR review comments or resolving threads:
 
 ### Plan Operations
 
-When working with erk-plans:
+When working with erk-prs:
 
 | Command              | Purpose                      |
 | -------------------- | ---------------------------- |
 | `plan-save`          | Save plan (backend-aware)    |
-| `get-plan-metadata`  | Get metadata from plan       |
+| `get-pr-metadata`    | Get metadata from PR         |
 | `setup-impl-from-pr` | Set up impl-context from PR  |
 | `get-issue-body`     | Fetch issue body (REST API)  |
 | `update-issue-body`  | Update issue body (REST API) |

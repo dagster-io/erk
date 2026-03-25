@@ -6,15 +6,15 @@ These tests verify that get_readable_sessions correctly uses global session look
 import json
 from pathlib import Path
 
-from erk_shared.gateway.claude_installation.fake import (
-    FakeClaudeInstallation,
-    FakeProject,
-    FakeSessionData,
-)
 from erk_shared.sessions.discovery import (
     SessionsForPlan,
     find_local_sessions_for_project,
     get_readable_sessions,
+)
+from tests.fakes.gateway.claude_installation import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
 )
 
 

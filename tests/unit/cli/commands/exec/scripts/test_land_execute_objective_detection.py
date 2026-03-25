@@ -11,21 +11,21 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _create_plan_issue_with_objective(
     *,
-    plan_number: int,
+    pr_number: int,
     objective_number: int,
 ) -> IssueInfo:
     """Create a plan with objective_issue in plan-header metadata."""
@@ -35,12 +35,12 @@ def _create_plan_issue_with_objective(
         objective_issue=objective_number,
     )
     return IssueInfo(
-        number=plan_number,
-        title=f"P{plan_number}: Test Plan",
+        number=pr_number,
+        title=f"P{pr_number}: Test Plan",
         body=body,
         state="OPEN",
-        url=f"https://github.com/owner/repo/issues/{plan_number}",
-        labels=["erk-pr", "erk-plan"],
+        url=f"https://github.com/owner/repo/issues/{pr_number}",
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -117,7 +117,7 @@ def test_land_execute_no_objective_auto_detection() -> None:
         )
 
         plan_issue = _create_plan_issue_with_objective(
-            plan_number=42,
+            pr_number=42,
             objective_number=100,
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})
@@ -236,7 +236,7 @@ def test_land_execute_with_objective_triggers_update() -> None:
         )
 
         plan_issue = _create_plan_issue_with_objective(
-            plan_number=42,
+            pr_number=42,
             objective_number=100,
         )
         issues_ops = FakeGitHubIssues(username="testuser", issues={42: plan_issue})

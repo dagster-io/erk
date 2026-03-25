@@ -292,7 +292,7 @@ class DependencyStatus:
 
 
 @dataclass(frozen=True)
-class PlanStatus:
+class PrStatus:
     """Status of .erk/impl-context/ folder."""
 
     exists: bool
@@ -301,8 +301,8 @@ class PlanStatus:
     line_count: int
     first_lines: list[str]
     format: str  # "folder" or "none"
-    plan_number: int | None = None  # GitHub plan number if linked
-    plan_url: str | None = None  # GitHub plan URL if linked
+    pr_number: int | None = None  # GitHub PR number if linked
+    pr_url: str | None = None  # GitHub PR URL if linked
 
 
 @dataclass(frozen=True)
@@ -315,7 +315,7 @@ class StatusData:
     pr_status: PullRequestStatus | None
     environment: EnvironmentStatus | None
     dependencies: DependencyStatus | None
-    plan: PlanStatus | None
+    plan: PrStatus | None
     related_worktrees: list[WorktreeDisplayInfo]
 
     @staticmethod

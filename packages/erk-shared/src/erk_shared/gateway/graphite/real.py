@@ -274,6 +274,19 @@ class RealGraphite(Graphite):
         # Invalidate branches cache - gt submit modifies Graphite metadata
         self._branches_cache = None
 
+    def restack(self, repo_root: Path) -> tuple[bool, str | None]:
+        """Restack the current stack using gt restack."""
+        result = subprocess.run(
+            ["gt", "restack", "--no-interactive"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            return (True, None)
+        return (False, result.stderr.strip() or "gt restack failed")
+
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Check if a branch is tracked by Graphite.
 

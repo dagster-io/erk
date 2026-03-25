@@ -57,7 +57,7 @@ This outputs JSON to stdout with:
 - `pr.number` and `pr.url`
 - `diff_file` path to the diff content
 - `commit_messages` array
-- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+- `plan_context` (nullable) with `pr_id`, `plan_content`, `objective_summary`
 
 Parse the JSON output. If this fails, display the error and stop.
 

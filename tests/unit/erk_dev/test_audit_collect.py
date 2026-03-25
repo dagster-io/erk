@@ -18,9 +18,9 @@ from erk_dev.commands.audit_collect.command import (
 )
 from erk_dev.context import ErkDevContext
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 _REPO = Path("/fake/repo")
 _NOW = datetime(2026, 3, 7, 12, 0, 0, tzinfo=UTC)

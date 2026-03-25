@@ -6,8 +6,8 @@ Tests use FakeAgentDocs to avoid subprocess calls.
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+from tests.fakes.gateway.agent_docs import FakeAgentDocs
+from tests.fakes.tests.shared_context import context_for_test
 
 VALID_DOC = """\
 ---

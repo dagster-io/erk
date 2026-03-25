@@ -28,7 +28,9 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 IMPL_DIR_RELATIVE = ".erk/impl-context"
 """Relative path for branch-scoped implementation directories."""
 
-_REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
+_REQUIRED_REF_FIELDS = ("provider", "pr_id", "url", "created_at", "synced_at")
+_LEGACY_REF_FIELD_ALIASES = {"plan_id": "pr_id"}
+"""Aliases for legacy field names in plan-ref.json for backward compatibility."""
 """Fields required in plan-ref.json and ref.json for valid PlanRef construction."""
 
 
@@ -157,7 +159,7 @@ class PlanRef:
     """Provider-agnostic reference to a plan, stored in .impl/plan-ref.json."""
 
     provider: PlanProviderType
-    plan_id: str  # Provider-specific ID as string ("42", "PROJ-123")
+    pr_id: str  # Provider-specific ID as string ("42", "PROJ-123")
     url: str  # Web URL to view the plan
     created_at: str  # ISO 8601 UTC timestamp of local file creation
     synced_at: str  # ISO 8601 UTC timestamp of last sync
@@ -191,7 +193,7 @@ class LocalRunState:
 def build_plan_ref_json(
     *,
     provider: str,
-    plan_id: str,
+    pr_id: str,
     url: str,
     labels: tuple[str, ...],
     objective_id: int | None,
@@ -203,7 +205,7 @@ def build_plan_ref_json(
 
     Args:
         provider: Plan provider name (e.g. "github", "github-draft-pr")
-        plan_id: Provider-specific ID as string ("42", "PROJ-123")
+        pr_id: Provider-specific ID as string ("42", "PROJ-123")
         url: Web URL to view the plan
         labels: Plan labels
         objective_id: Optional linked objective issue number
@@ -216,7 +218,7 @@ def build_plan_ref_json(
 
     data: dict[str, str | int | list[str] | None] = {
         "provider": provider,
-        "plan_id": plan_id,
+        "pr_id": pr_id,
         "url": url,
         "created_at": now,
         "synced_at": now,
@@ -232,7 +234,7 @@ def save_plan_ref(
     impl_dir: Path,
     *,
     provider: str,
-    plan_id: str,
+    pr_number: str,
     url: str,
     labels: tuple[str, ...],
     objective_id: int | None,
@@ -243,7 +245,7 @@ def save_plan_ref(
     Args:
         impl_dir: Path to impl directory
         provider: Plan provider name (e.g. "github", "github-draft-pr")
-        plan_id: Provider-specific ID as string ("42", "PROJ-123")
+        pr_number: Provider-specific ID as string ("42", "PROJ-123")
         url: Web URL to view the plan
         labels: Plan labels
         objective_id: Optional linked objective issue number
@@ -259,7 +261,7 @@ def save_plan_ref(
     ref_file = impl_dir / "ref.json"
     content = build_plan_ref_json(
         provider=provider,
-        plan_id=plan_id,
+        pr_id=pr_number,
         url=url,
         labels=labels,
         objective_id=objective_id,
@@ -272,11 +274,17 @@ def _parse_ref_json(ref_file: Path) -> PlanRef | None:
     """Parse a ref JSON file (plan-ref.json or ref.json) into a PlanRef.
 
     Returns None if the file contains invalid JSON or is missing required fields.
+    Supports legacy "plan_id" key for backward compatibility.
     """
     try:
         data = json.loads(ref_file.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return None
+
+    # Migrate legacy field names to current names
+    for legacy_key, current_key in _LEGACY_REF_FIELD_ALIASES.items():
+        if legacy_key in data and current_key not in data:
+            data[current_key] = data.pop(legacy_key)
 
     if any(f not in data for f in _REQUIRED_REF_FIELDS):
         return None
@@ -289,7 +297,7 @@ def _parse_ref_json(ref_file: Path) -> PlanRef | None:
 
     return PlanRef(
         provider=data["provider"],
-        plan_id=data["plan_id"],
+        pr_id=data["pr_id"],
         url=data["url"],
         created_at=data["created_at"],
         synced_at=data["synced_at"],
@@ -337,7 +345,7 @@ def has_plan_ref(impl_dir: Path) -> bool:
 
 
 def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
-    """Return plan_id from plan-ref.json.
+    """Return pr_number from plan-ref.json.
 
     Plan-ref.json is the sole source of truth for plan-to-branch mapping.
     Branch names no longer encode issue numbers.
@@ -351,7 +359,7 @@ def validate_plan_linkage(impl_dir: Path, branch_name: str) -> str | None:
     """
     plan_ref = read_plan_ref(impl_dir)
     if plan_ref is not None:
-        return plan_ref.plan_id
+        return plan_ref.pr_id
 
     return None
 
@@ -456,14 +464,14 @@ def read_last_dispatched_run_id(impl_dir: Path) -> str | None:
 
 
 def add_worktree_creation_comment(
-    *, github_issues, repo_root: Path, plan_number: int, worktree_name: str, branch_name: str
+    *, github_issues, repo_root: Path, pr_number: int, worktree_name: str, branch_name: str
 ) -> None:
     """Add a comment to the GitHub issue documenting worktree creation.
 
     Args:
         github_issues: GitHubIssues interface for posting comments
         repo_root: Repository root directory
-        plan_number: Plan number to comment on
+        pr_number: PR number to comment on
         worktree_name: Name of the created worktree
         branch_name: Git branch name for the worktree
 
@@ -472,18 +480,18 @@ def add_worktree_creation_comment(
     """
     timestamp = datetime.now(UTC).isoformat()
 
-    # Create metadata block with plan number
+    # Create metadata block with pr number
     block = create_worktree_creation_block(
         worktree_name=worktree_name,
         branch_name=branch_name,
         timestamp=timestamp,
-        plan_number=plan_number,
+        pr_number=pr_number,
     )
 
     # Format instructions for implementation
     instructions = f"""The worktree is ready for implementation. You can navigate to it using:
 ```bash
- erk br co {branch_name}
+ erk slot co {branch_name}
 ```
 
 To implement the plan:
@@ -498,7 +506,7 @@ claude --permission-mode acceptEdits "/erk:plan-implement"
         description=instructions,
     )
 
-    github_issues.add_comment(repo_root, plan_number, comment_body)
+    github_issues.add_comment(repo_root, pr_number, comment_body)
 
 
 def read_local_run_state(impl_dir: Path) -> LocalRunState | None:

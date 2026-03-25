@@ -19,7 +19,7 @@ from erk.cli.commands.exec.scripts.validate_claude_credentials import (
     validate_claude_credentials as validate_claude_credentials_command,
 )
 from erk_shared.context.context import ErkContext
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 # ============================================================================
 # 1. Helper Function Tests (3 tests)

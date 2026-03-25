@@ -408,47 +408,47 @@ class TargetInfo(NamedTuple):
     """Information about detected target type.
 
     Attributes:
-        target_type: Type of target - "plan_number", "plan_url", or "file_path"
-        plan_number: Extracted plan number for GitHub targets, None for file paths
+        target_type: Type of target - "pr_number", "pr_url", or "file_path"
+        pr_number: Extracted PR number for GitHub targets, None for file paths
     """
 
     target_type: str
-    plan_number: str | None
+    pr_number: str | None
 
 
 def detect_target_type(target: str) -> TargetInfo:
-    """Detect whether target is a plan number, plan URL, or file path.
+    """Detect whether target is a PR number, PR URL, or file path.
 
     Args:
         target: User-provided target argument
 
     Returns:
-        TargetInfo with target type and extracted plan number (if applicable)
+        TargetInfo with target type and extracted PR number (if applicable)
     """
-    # Check if starts with # followed by digits (plan number)
+    # Check if starts with # followed by digits (PR number)
     if target.startswith("#") and target[1:].isdigit():
-        return TargetInfo(target_type="plan_number", plan_number=target[1:])
+        return TargetInfo(target_type="pr_number", pr_number=target[1:])
 
     # Check if GitHub issue URL
     github_issue_pattern = r"github\.com/[^/]+/[^/]+/issues/(\d+)"
     match = re.search(github_issue_pattern, target)
     if match:
-        plan_number = match.group(1)
-        return TargetInfo(target_type="plan_url", plan_number=plan_number)
+        pr_number = match.group(1)
+        return TargetInfo(target_type="pr_url", pr_number=pr_number)
 
-    # Check if plain digits (plan number without # prefix)
+    # Check if plain digits (PR number without # prefix)
     if target.isdigit():
-        return TargetInfo(target_type="plan_number", plan_number=target)
+        return TargetInfo(target_type="pr_number", pr_number=target)
 
     # Otherwise, treat as file path
-    return TargetInfo(target_type="file_path", plan_number=None)
+    return TargetInfo(target_type="file_path", pr_number=None)
 
 
 def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
     """Extract plan identifier from current branch name if it's a plan branch.
 
     Args:
-        ctx: ErkContext with plan_backend access
+        ctx: ErkContext with pr_backend access
 
     Returns:
         Plan identifier as string if current branch is a plan branch, else None
@@ -462,7 +462,7 @@ def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
     if current_branch is None:
         return None
 
-    return ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, current_branch)
+    return ctx.pr_backend.resolve_pr_number_for_branch(ctx.cwd, current_branch)
 
 
 @dataclass(frozen=True)
@@ -495,11 +495,11 @@ def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSourc
     """
     # Validate plan file exists
     if not plan_file.exists():
-        ctx.console.error(f"Error: Plan file not found: {plan_file}")
+        ctx.console.error(f"Error: PR file not found: {plan_file}")
         raise SystemExit(1) from None
 
     # Output reading diagnostic
-    ctx.console.info("Reading plan file...")
+    ctx.console.info("Reading PR file...")
 
     # Read plan content
     plan_content = plan_file.read_text(encoding="utf-8")
@@ -576,7 +576,7 @@ def output_activation_instructions(
     else:
         # Provide manual instructions
         user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))
-        user_output(f"  1. Change to worktree:  erk br co {branch}")
+        user_output(f"  1. Change to worktree:  erk slot co {branch}")
         if submit:
             impl_cmd = build_claude_command("/erk:plan-implement", dangerous, model)
             user_output("  2. Run implementation, CI, and submit PR:")

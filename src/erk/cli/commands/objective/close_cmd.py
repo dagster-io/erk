@@ -2,10 +2,10 @@
 
 import click
 
-from erk.cli.alias import alias
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
+from erk_shared.cli_alias import alias
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output

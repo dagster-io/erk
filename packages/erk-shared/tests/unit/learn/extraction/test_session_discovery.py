@@ -3,13 +3,13 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.learn.extraction.session_discovery import (
     discover_sessions,
     encode_path_to_project_folder,
     find_project_dir,
     get_branch_context,
 )
+from tests.fakes.gateway.git import FakeGit
 
 
 class TestGetBranchContext:

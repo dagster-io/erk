@@ -9,9 +9,9 @@ from erk.cli.commands.reconcile_pipeline import (
     process_merged_branch,
 )
 from erk_shared.gateway.git.abc import BranchSyncInfo, WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -425,7 +425,7 @@ def test_dry_run_no_mutations() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -466,7 +466,7 @@ def test_cleans_up_branch() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -509,7 +509,7 @@ def test_cleans_up_worktree() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=wt_path,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -544,7 +544,7 @@ def test_cleanup_skips_branch_not_in_local() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id=None,
+            pr_id=None,
             objective_number=None,
         )
         result = process_merged_branch(
@@ -564,7 +564,7 @@ def test_cleanup_skips_branch_not_in_local() -> None:
 
 
 def test_skip_learn_flag() -> None:
-    """With skip_learn=True, learn PR is not created even with plan_id."""
+    """With skip_learn=True, learn PR is not created even with pr_id."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git = FakeGit(
@@ -582,7 +582,7 @@ def test_skip_learn_flag() -> None:
             pr_number=100,
             pr_title="Test",
             worktree_path=None,
-            plan_id="999",
+            pr_id="999",
             objective_number=None,
         )
         result = process_merged_branch(

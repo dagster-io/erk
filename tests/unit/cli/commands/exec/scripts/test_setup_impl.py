@@ -11,13 +11,13 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.setup_impl import setup_impl
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""
@@ -105,16 +105,16 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
     """
     plan_branch = "plan-fix-branch-slug-02-24"
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
         title="Fix branch slug",
         content="# Fix\n\nRemove dead branch_slug parameter.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
 
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},
@@ -126,7 +126,7 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
         graphite=FakeGraphite(),
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()
@@ -142,4 +142,4 @@ def test_issue_setup_invokes_setup_impl_from_issue(tmp_path: Path) -> None:
     assert json_lines, "Expected JSON output"
     output = json.loads(json_lines[0])
     assert output["success"] is True
-    assert output["plan_number"] == pr_number
+    assert output["pr_number"] == pr_number

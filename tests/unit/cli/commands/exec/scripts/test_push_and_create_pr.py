@@ -6,11 +6,11 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.push_and_create_pr import push_and_create_pr
-from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import BranchDivergence
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.test_utils.test_context import context_for_test
 
 
 def _pr_details(

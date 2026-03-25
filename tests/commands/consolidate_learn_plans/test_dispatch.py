@@ -3,8 +3,8 @@
 from erk.cli.commands.consolidate_learn_plans_dispatch import (
     dispatch_consolidate_learn_plans,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.gateway.time import FakeTime
 
 
 def _make_remote(
@@ -20,7 +20,6 @@ def _make_remote(
         dispatch_run_id=dispatch_run_id,
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
 
 
@@ -63,12 +62,12 @@ def test_dispatch_happy_path() -> None:
     pr = remote.created_pull_requests[0]
     assert pr.draft is True
     assert pr.base == "main"
-    assert pr.title == "Consolidate learn plans"
+    assert pr.title == "Consolidate learn PRs"
     assert "plan-header" in pr.body
 
-    # Verify erk-pr, erk-plan, and erk-learn labels added
+    # Verify erk-pr and erk-learn labels added
     assert len(remote.added_labels) == 1
-    assert remote.added_labels[0].labels == ("erk-pr", "erk-plan", "erk-learn")
+    assert remote.added_labels[0].labels == ("erk-pr", "erk-learn")
 
     # Verify workflow was triggered
     assert len(remote.dispatched_workflows) == 1

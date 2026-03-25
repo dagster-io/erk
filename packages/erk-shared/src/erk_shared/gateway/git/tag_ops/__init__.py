@@ -6,6 +6,5 @@ including checking tag existence, creating tags, and pushing tags.
 Import from submodules:
 - abc: GitTagOps
 - real: RealGitTagOps
-- fake: FakeGitTagOps
 - dry_run: DryRunGitTagOps
 """

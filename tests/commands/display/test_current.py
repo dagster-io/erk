@@ -9,11 +9,11 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.erk_installation import FakeErkInstallation, GlobalConfig
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.test_context import context_for_test
 
 
 def test_current_returns_worktree_name() -> None:

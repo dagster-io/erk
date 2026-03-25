@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import click
 
+from erk.cli.pr_ref_type import PR_REF
 from erk_shared.context.helpers import require_github, require_repo_root, require_time
 from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.types import PRNotFound
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 
 
 @click.command(name="add-pr-labels")
-@click.argument("pr_number", type=int)
+@click.argument("pr", type=PR_REF)
 @click.option(
     "--labels",
     "labels_list",
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
 @click.pass_context
 def add_pr_labels(
     ctx: click.Context,
-    pr_number: int,
+    pr: int,
     labels_list: tuple[str, ...],
 ) -> None:
     """Add labels to a PR with automatic retry on transient failures.
@@ -52,20 +53,20 @@ def add_pr_labels(
     repo_root: Path = require_repo_root(ctx)
 
     # Validate PR exists
-    pr_result = github.get_pr(repo_root, pr_number)
+    pr_result = github.get_pr(repo_root, pr)
     if isinstance(pr_result, PRNotFound):
         click.echo(
             json.dumps(
                 {
                     "success": False,
-                    "error": f"PR #{pr_number} not found",
+                    "error": f"PR #{pr} not found",
                 }
             )
         )
         ctx.exit(1)
 
     result = add_labels_resilient(
-        github, time=time, repo_root=repo_root, pr_number=pr_number, labels=labels_list
+        github, time=time, repo_root=repo_root, pr_number=pr, labels=labels_list
     )
 
     click.echo(json.dumps(asdict(result)))

@@ -12,7 +12,7 @@ Output:
     JSON object with session information:
     {
         "success": true,
-        "plan_id": "123",
+        "pr_number": "123",
         "planning_session_id": "abc-123" | null,
         "implementation_session_ids": [...],
         "learn_session_ids": [...],
@@ -38,7 +38,7 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.learn.extraction.get_learn_sessions_result import (
@@ -58,14 +58,14 @@ from erk_shared.sessions.discovery import (
 from erk_shared.sessions.manifest import read_session_manifest
 
 
-def _extract_plan_number(identifier: str) -> int | None:
-    """Extract plan number from identifier (number or URL).
+def _extract_pr_number(identifier: str) -> int | None:
+    """Extract PR number from identifier (number or URL).
 
     Args:
         identifier: Issue number or GitHub issue URL
 
     Returns:
-        Plan number or None if invalid
+        PR number or None if invalid
     """
     # Try direct number (LBYL: check before converting)
     if identifier.isdigit():
@@ -83,20 +83,20 @@ def _extract_plan_number(identifier: str) -> int | None:
 def _fetch_preprocessed_manifest(
     *,
     repo_root: Path,
-    plan_id: str,
+    pr_id: str,
     git,
 ) -> dict | None:
     """Check for preprocessed session manifest on planned-pr-context branch.
 
     Args:
         repo_root: Repository root path.
-        plan_id: Plan identifier.
+        pr_id: Plan identifier.
         git: Git gateway for branch operations.
 
     Returns:
         Parsed manifest dict if found, None otherwise.
     """
-    session_branch = f"planned-pr-context/{plan_id}"
+    session_branch = f"planned-pr-context/{pr_id}"
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
         return None
 
@@ -107,7 +107,7 @@ def _fetch_preprocessed_manifest(
 
 def _build_result(
     *,
-    plan_id: str,
+    pr_id: str,
     sessions_for_plan: SessionsForPlan,
     readable_session_ids: list[str],
     session_paths: list[str],
@@ -118,7 +118,7 @@ def _build_result(
     """Build the result dict from session data."""
     return GetLearnSessionsResultDict(
         success=True,
-        plan_id=plan_id,
+        pr_number=pr_id,
         planning_session_id=sessions_for_plan.planning_session_id,
         implementation_session_ids=sessions_for_plan.implementation_session_ids,
         learn_session_ids=sessions_for_plan.learn_session_ids,
@@ -138,23 +138,23 @@ def _build_result(
 
 def _discover_sessions(
     *,
-    plan_backend,
+    pr_backend,
     claude_installation,
     git,
     repo_root: Path,
     cwd: Path,
-    plan_id: str,
+    pr_id: str,
     branch_name: str | None,
 ) -> GetLearnSessionsResultDict:
     """Discover all sessions for a plan.
 
     Args:
-        plan_backend: PlanBackend for session discovery
+        pr_backend: ManagedPrBackend for session discovery
         claude_installation: Claude installation for session lookups
         git: Git gateway for branch operations
         repo_root: Repository root path
         cwd: Current working directory
-        plan_id: Plan identifier
+        pr_id: Plan identifier
         branch_name: Current branch name for local session filtering
 
     Returns:
@@ -163,14 +163,14 @@ def _discover_sessions(
     # Check for preprocessed manifest on planned-pr-context branch
     preprocessed_manifest = _fetch_preprocessed_manifest(
         repo_root=repo_root,
-        plan_id=plan_id,
+        pr_id=pr_id,
         git=git,
     )
 
-    # Find sessions for the plan via PlanBackend
-    sessions_for_plan = plan_backend.find_sessions_for_plan(
+    # Find sessions for the plan via ManagedPrBackend
+    sessions_for_plan = pr_backend.find_sessions_for_managed_pr(
         repo_root,
-        plan_id,
+        pr_id,
     )
 
     # Get readable sessions (ones that exist on disk)
@@ -230,7 +230,7 @@ def _discover_sessions(
         session_sources.append(remote_source)
 
     return _build_result(
-        plan_id=plan_id,
+        pr_id=pr_id,
         sessions_for_plan=sessions_for_plan,
         readable_session_ids=readable_session_ids,
         session_paths=session_paths,
@@ -256,27 +256,27 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
     claude_installation = require_claude_installation(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
 
     # Get current branch for local session filtering
     branch_name = git.branch.get_current_branch(cwd)
 
-    # Resolve plan_id: explicit argument or infer from branch
-    plan_id: str | None = None
+    # Resolve pr_id: explicit argument or infer from branch
+    pr_id: str | None = None
     if issue is not None:
-        plan_number = _extract_plan_number(issue)
-        if plan_number is None:
+        pr_number = _extract_pr_number(issue)
+        if pr_number is None:
             error = GetLearnSessionsErrorDict(
                 success=False,
                 error=f"Invalid issue identifier: {issue}",
             )
             click.echo(json.dumps(error))
             raise SystemExit(1)
-        plan_id = str(plan_number)
+        pr_id = str(pr_number)
     elif branch_name is not None:
-        plan_id = plan_backend.resolve_plan_id_for_branch(repo_root, branch_name)
+        pr_id = pr_backend.resolve_pr_number_for_branch(repo_root, branch_name)
 
-    if plan_id is None:
+    if pr_id is None:
         error = GetLearnSessionsErrorDict(
             success=False,
             error="No issue specified and could not infer from branch name",
@@ -286,12 +286,12 @@ def get_learn_sessions(ctx: click.Context, issue: str | None) -> None:
 
     # Discover sessions
     result = _discover_sessions(
-        plan_backend=plan_backend,
+        pr_backend=pr_backend,
         claude_installation=claude_installation,
         git=git,
         repo_root=repo_root,
         cwd=cwd,
-        plan_id=plan_id,
+        pr_id=pr_id,
         branch_name=branch_name,
     )
 

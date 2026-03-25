@@ -91,7 +91,7 @@ if len(matches) == 0:
 
 <!-- Source: src/erk/cli/commands/pr/checkout_cmd.py, _checkout_plan -->
 
-The `erk pr co` command demonstrates all three cases. See `_checkout_plan()` in `src/erk/cli/commands/pr/checkout_cmd.py`: queries open PRs referencing the issue via `ctx.issues.get_prs_referencing_issue()`, then dispatches on zero (exit 1), one (checkout immediately), or multiple (display table, exit 0).
+The `erk pr co` command demonstrates all three cases. See `_checkout_plan()` in `src/erk/cli/commands/pr/checkout_cmd.py`: queries for the PR associated with the plan, then dispatches on zero (exit 1), one (checkout immediately), or multiple (display table, exit 0).
 
 ## Exit Codes
 

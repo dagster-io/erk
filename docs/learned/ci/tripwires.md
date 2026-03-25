@@ -12,7 +12,7 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
+**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Use branches-ignore to prevent workflow queuing for ephemeral branches
 
 **CI job timing out in post-job cleanup** → Read [UV Cache Management in CI](uv-cache-management.md) first. check if UV cache pruning is enabled. Use prune-cache: false for ephemeral CI runners.
 
@@ -28,8 +28,6 @@ Rules triggered by matching actions in code.
 
 **Renaming a GitHub label used in CI automation** → Read [CI Label Rename Checklist](label-rename-checklist.md) first. Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates.
 
-**Use !contains() pattern for label-based gating** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Negation is critical — contains() without ! skips all push events
-
 **Use direct GCS download for Claude Code installation** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER use the curl | bash install script for Claude Code in CI — it hangs unpredictably. Use direct GCS download via setup-claude-code action.
 
 **Use erk-remote-setup for consolidated secret validation** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER duplicate secret validation across workflows — use erk-remote-setup's consolidated validation.
@@ -39,6 +37,8 @@ Rules triggered by matching actions in code.
 **Writing GitHub Actions workflow steps that pass large content to `gh` CLI commands (e.g., `gh pr comment --body "$VAR"`)** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. Use `--body-file` or other file-based input to avoid Linux ARG_MAX limit (~2MB on command-line arguments). Large CI outputs like rebase logs can exceed this limit.
 
 **adding a new CI job that invokes Claude without checking CLAUDE_ENABLED** → Read [Claude Kill Switch](claude-kill-switch.md) first. All Claude CI jobs must check vars.CLAUDE_ENABLED != 'false' before invoking Claude. See claude-kill-switch.md.
+
+**adding a new CI job without checking if it should feed into ci-summarize** → Read [CI Merge Gate Jobs](merge-gate-jobs.md) first. Jobs that can fail and block merge should be added to ci-summarize needs list. See merge-gate-jobs.md.
 
 **adding a new format-sensitive CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Format-sensitive jobs (format, docs-check) must depend on both check-submission and fix-formatting. Test jobs (lint, ty, unit-tests, integration-tests, erk-mcp-tests) run speculatively with only check-submission.
 
@@ -68,9 +68,9 @@ Rules triggered by matching actions in code.
 
 **creating a new review without checking the review types taxonomy** → Read [Automated Review System](automated-review-system.md) first. Consult review-types-taxonomy.md first. Creating overlapping reviews wastes CI resources and confuses PR status checks.
 
-**creating or modifying a reusable GitHub Actions workflow (workflow_call) that depends on ERK_PLAN_BACKEND or other env vars** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Reusable workflow input forwarding: GitHub Actions reusable workflows (via workflow_call) do NOT inherit environment variables from the caller workflow. Declare ERK_PLAN_BACKEND (and any other required env vars) as explicit inputs in the reusable workflow, and pass them explicitly from the caller workflow. Ambient env vars are NOT forwarded automatically.
+**creating or modifying a reusable GitHub Actions workflow (workflow_call) that depends on ERK_PR_BACKEND or other env vars** → Read [GitHub Actions Workflow Patterns](github-actions-workflow-patterns.md) first. Reusable workflow input forwarding: GitHub Actions reusable workflows (via workflow_call) do NOT inherit environment variables from the caller workflow. Declare ERK_PR_BACKEND (and any other required env vars) as explicit inputs in the reusable workflow, and pass them explicitly from the caller workflow. Ambient env vars are NOT forwarded automatically.
 
-**creating workflows that invoke Claude without specifying model** → Read [Workflow Model Policy](workflow-model-policy.md) first. All workflows MUST default to claude-opus-4-6. See workflow-model-policy.md for the standardization rationale.
+**creating workflows that invoke Claude without specifying model** → Read [Workflow Model Policy](workflow-model-policy.md) first. All workflows MUST default to claude-sonnet-4-6. See workflow-model-policy.md for the standardization rationale.
 
 **editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
 
@@ -81,6 +81,8 @@ Rules triggered by matching actions in code.
 **investigating a bot complaint about formatting** → Read [Prettier Formatting for Claude Commands](claude-commands-prettier.md) first. Prettier is the formatting authority for markdown/YAML/JSON files. If prettier --check passes locally, dismiss the bot complaint. See docs/learned/pr-operations/automated-review-handling.md.
 
 **matching check names from summaries to GitHub check runs** → Read [CI Failure Summarization](ci-failure-summarization.md) first. GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix.
+
+**modifying failure summarization prompt or model selection** → Read [Implementation Failure Summarization](impl-failure-summarization.md) first. The prompt template lives at .github/prompts/impl-failure-summarize.md. Changing the model from Haiku requires justifying cost vs. accuracy trade-off. Haiku was chosen for speed and cost on high-volume failure cases.
 
 **parsing ERK-CI-SUMMARY markers without re.DOTALL** → Read [CI Failure Summarization](ci-failure-summarization.md) first. Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured.
 
@@ -116,7 +118,7 @@ Rules triggered by matching actions in code.
 
 **using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
 
-**using this pattern** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. Always use negation (!contains) for safe defaults on push events without PR context
+**using label-based gating** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. Always use negation (!contains) for safe defaults on push events without PR context
 
 **using this pattern** → Read [Workflow Naming Conventions](workflow-naming-conventions.md) first. The CLI command name MUST match the workflow filename (without .yml)
 

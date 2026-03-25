@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.tests.context import create_test_context
 
 from erk.core.workflow_smoke_test import (
     SMOKE_TEST_BRANCH_PREFIX,
@@ -14,10 +17,7 @@ from erk.core.workflow_smoke_test import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PullRequestInfo, RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 
 
 class TestRunSmokeTest:
@@ -42,7 +42,6 @@ class TestRunSmokeTest:
             dispatch_run_id="run-99",
             issues=None,
             issue_comments=None,
-            pr_references=None,
         )
 
         ctx = ErkContext.for_test(
@@ -79,14 +78,14 @@ class TestRunSmokeTest:
 
         # Verify labels added
         assert len(remote.added_labels) == 1
-        assert remote.added_labels[0].labels == ("erk-pr", "erk-plan")
+        assert remote.added_labels[0].labels == ("erk-pr",)
 
         # Verify workflow triggered
         assert len(remote.dispatched_workflows) == 1
         wf = remote.dispatched_workflows[0]
         assert wf.workflow == "one-shot.yml"
         assert wf.inputs["submitted_by"] == "testuser"
-        assert wf.inputs["plan_backend"] == "planned_pr"
+        assert wf.inputs["pr_backend"] == "planned_pr"
 
     def test_returns_error_when_not_in_repo(self) -> None:
         """Smoke test returns error for NoRepoSentinel."""

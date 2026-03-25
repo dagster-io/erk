@@ -4,11 +4,11 @@ import click
 
 from erk.cli.commands.init.capability import capability_group
 from erk.cli.commands.init.main import run_init
-from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.context import ErkContext
+from erk_shared.cli_group import ErkCommandGroup
 
 
-@click.group("init", cls=ErkCommandGroup, invoke_without_command=True)
+@click.group("init", cls=ErkCommandGroup, grouped=True, invoke_without_command=True)
 @click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
     "--upgrade",

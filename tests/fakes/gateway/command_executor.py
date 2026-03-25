@@ -1,0 +1,83 @@
+"""Fake command executor for testing TUI command palette."""
+
+from erk_shared.gateway.command_executor.abc import CommandExecutor
+
+
+class FakeCommandExecutor(CommandExecutor):
+    """In-memory fake for testing command execution.
+
+    Tracks all operations performed for assertion in tests.
+    """
+
+    def __init__(self) -> None:
+        """Initialize with empty tracking state."""
+        self._opened_urls: list[str] = []
+        self._copied_texts: list[str] = []
+        self._closed_prs: list[tuple[int, str]] = []
+        self._notifications: list[str] = []
+        self._refresh_count: int = 0
+        self._close_pr_return: list[int] = []
+        self._dispatched_to_queue: list[tuple[int, str]] = []
+
+    @property
+    def opened_urls(self) -> list[str]:
+        """URLs that were opened in browser."""
+        return list(self._opened_urls)
+
+    @property
+    def copied_texts(self) -> list[str]:
+        """Texts that were copied to clipboard."""
+        return list(self._copied_texts)
+
+    @property
+    def closed_prs(self) -> list[tuple[int, str]]:
+        """PRs that were closed (pr_number, pr_url)."""
+        return list(self._closed_prs)
+
+    @property
+    def notifications(self) -> list[str]:
+        """Notifications that were shown."""
+        return list(self._notifications)
+
+    @property
+    def refresh_count(self) -> int:
+        """Number of times refresh was triggered."""
+        return self._refresh_count
+
+    @property
+    def dispatched_to_queue(self) -> list[tuple[int, str]]:
+        """Plans that were dispatched to queue (pr_number, pr_url)."""
+        return list(self._dispatched_to_queue)
+
+    def set_close_pr_return(self, pr_numbers: list[int]) -> None:
+        """Configure what close_pr should return.
+
+        Args:
+            pr_numbers: List of PR numbers to return when close_pr is called
+        """
+        self._close_pr_return = pr_numbers
+
+    def open_url(self, url: str) -> None:
+        """Track URL open."""
+        self._opened_urls.append(url)
+
+    def copy_to_clipboard(self, text: str) -> None:
+        """Track clipboard copy."""
+        self._copied_texts.append(text)
+
+    def close_plan(self, pr_number: int, pr_url: str) -> list[int]:
+        """Track plan close and return configured PRs."""
+        self._closed_prs.append((pr_number, pr_url))
+        return self._close_pr_return
+
+    def notify(self, message: str, *, severity: str | None) -> None:
+        """Track notification."""
+        self._notifications.append(message)
+
+    def refresh_data(self) -> None:
+        """Track refresh."""
+        self._refresh_count += 1
+
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
+        """Track queue dispatch."""
+        self._dispatched_to_queue.append((pr_number, pr_url))

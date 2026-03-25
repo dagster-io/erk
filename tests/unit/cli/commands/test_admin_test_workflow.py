@@ -3,14 +3,14 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_happy_path_with_existing_issue() -> None:
-    """Command succeeds with --plan flag, using existing plan number."""
+    """Command succeeds with --pr flag, using existing plan number."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeLocalGitHub()
@@ -22,12 +22,12 @@ def test_happy_path_with_existing_issue() -> None:
         )
 
         result = runner.invoke(
-            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+            cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Verify plan 42 was used
-        assert "Using existing plan #42" in result.output
+        assert "Using existing PR #42" in result.output
         # Verify PR was created as draft
         assert len(fake_github.created_prs) == 1
         branch, title, _body, base, draft = fake_github.created_prs[0]
@@ -38,14 +38,14 @@ def test_happy_path_with_existing_issue() -> None:
         assert len(fake_github.triggered_workflows) == 1
         workflow, inputs, _ref = fake_github.triggered_workflows[0]
         assert workflow == "plan-implement.yml"
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_number"] == "42"
         # Verify output contains run URL
         assert "Workflow dispatched successfully" in result.output
         assert "Run URL:" in result.output
 
 
 def test_happy_path_creating_new_issue() -> None:
-    """Command succeeds without --plan, creating a new plan."""
+    """Command succeeds without --pr, creating a new plan."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         fake_github = FakeLocalGitHub()
@@ -64,11 +64,11 @@ def test_happy_path_creating_new_issue() -> None:
         title, _body, labels = fake_issues.created_issues[0]
         assert title == "Test workflow run"
         assert "test" in labels
-        assert "Created test plan #1" in result.output
+        assert "Created test PR #1" in result.output
         # Verify workflow was triggered with the new plan number
         assert len(fake_github.triggered_workflows) == 1
         _, inputs, _ref = fake_github.triggered_workflows[0]
-        assert inputs["plan_id"] == "1"
+        assert inputs["pr_number"] == "1"
 
 
 def test_happy_path_uses_detected_trunk_branch() -> None:
@@ -92,7 +92,7 @@ def test_happy_path_uses_detected_trunk_branch() -> None:
         )
 
         result = runner.invoke(
-            cli, ["admin", "test-plan-implement-gh-workflow", "--plan", "42"], obj=ctx
+            cli, ["admin", "test-plan-implement-gh-workflow", "--pr", "42"], obj=ctx
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"

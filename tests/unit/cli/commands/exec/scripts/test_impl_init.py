@@ -13,8 +13,8 @@ from erk.cli.commands.exec.scripts.impl_init import (
     impl_init,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, get_impl_dir
+from tests.fakes.gateway.git import FakeGit
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""
@@ -84,7 +84,7 @@ Build a test feature.
 
 
 def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
-    """Test impl-init detects plan-ref.json and returns plan_number."""
+    """Test impl-init detects plan-ref.json and returns pr_number."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Test Plan\n", encoding="utf-8")
@@ -92,7 +92,7 @@ def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
         json.dumps(
             {
                 "provider": "github",
-                "plan_id": "123",
+                "pr_id": "123",
                 "url": "https://github.com/org/repo/issues/123",
                 "created_at": "2025-01-01T00:00:00Z",
                 "synced_at": "2025-01-01T00:00:00Z",
@@ -109,7 +109,7 @@ def test_impl_init_with_issue_tracking(tmp_path: Path) -> None:
     assert result.exit_code == 0
     data = json.loads(result.output)
     assert data["has_plan_tracking"] is True
-    assert data["plan_number"] == 123
+    assert data["pr_number"] == 123
 
 
 def test_impl_init_detects_branch_scoped_impl(tmp_path: Path) -> None:

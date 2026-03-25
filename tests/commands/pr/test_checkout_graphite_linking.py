@@ -5,17 +5,16 @@ with Graphite when checking out PRs into new worktrees.
 """
 
 import os
-from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.graphite.fake import FakeGraphite
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -320,9 +319,8 @@ def test_pr_checkout_script_mode_no_gt_submit_for_new_worktree() -> None:
         result = runner.invoke(pr_group, ["checkout", "110", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" not in script_content
 
 
@@ -358,9 +356,8 @@ def test_pr_checkout_script_mode_no_gt_submit_for_existing_worktree() -> None:
         result = runner.invoke(pr_group, ["checkout", "111", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" not in script_content
 
 
@@ -389,9 +386,8 @@ def test_pr_checkout_script_mode_no_gt_submit_for_fork_prs() -> None:
         result = runner.invoke(pr_group, ["checkout", "112", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        script_path_str = result.stdout.strip()
-        assert script_path_str != ""
-        script_content = Path(script_path_str).read_text(encoding="utf-8")
+        script_content = result.stdout
+        assert script_content.strip() != ""
         assert "gt submit --no-interactive" not in script_content
 
 

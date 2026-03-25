@@ -3,9 +3,9 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from erk.tui.data.types import PrFilters
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
+from tests.fakes.gateway.pr_service import FakePrService
 
 
 class TestIncrementalDispatch:
@@ -14,10 +14,10 @@ class TestIncrementalDispatch:
     @pytest.mark.asyncio
     async def test_callback_with_none_does_not_dispatch(self) -> None:
         """_on_incremental_dispatch_result with None does not start an operation."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan", pr_number=456)])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan")])
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -35,10 +35,10 @@ class TestIncrementalDispatch:
     @pytest.mark.asyncio
     async def test_callback_without_pending_pr_does_not_dispatch(self) -> None:
         """_on_incremental_dispatch_result without pending PR does not start an operation."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan", pr_number=456)])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(123, "Test Plan")])
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:

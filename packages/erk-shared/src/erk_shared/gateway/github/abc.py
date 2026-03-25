@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
@@ -17,6 +17,7 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
@@ -146,6 +147,27 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """List workflow runs across all workflows in the repository.
+
+        Uses a single REST API call to fetch runs from all workflows,
+        instead of one call per workflow. Each returned WorkflowRun has
+        workflow_path populated for caller-side workflow name mapping.
+
+        Args:
+            repo_root: Repository root directory
+            limit: Maximum number of runs to return (default: 100)
+            actor: Optional GitHub username to filter runs by (maps to actor query param)
+
+        Returns:
+            List of workflow runs with workflow_path populated,
+            ordered by creation time (newest first)
+        """
+        ...
+
+    @abstractmethod
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -224,24 +246,42 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        plan_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via GitHub's development references.
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Batch fetch PR info for specific PR numbers.
 
-        Queries GitHub for PRs that reference issues in their description
-        or via GitHub's "Closes #N" linking. Returns a mapping of plan
-        numbers to PRs.
+        Uses a single GraphQL query to fetch PR details for the given
+        numbers. More efficient than list_prs(state="all") when only
+        a handful of specific PRs are needed.
 
         Args:
             location: GitHub repository location (local path + owner/repo identity)
-            plan_numbers: List of plan numbers to query
+            pr_numbers: List of PR numbers to fetch
 
         Returns:
-            Mapping of plan_number -> list of PRs linked to that plan.
-            Returns empty dict if no PRs link to any of the plans.
+            Mapping of pr_number -> PullRequestInfo for found PRs.
+            PRs that don't exist are omitted from the result.
+        """
+        ...
+
+    @abstractmethod
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Get head branch names for a list of PR numbers.
+
+        Batch-fetches the headRefName for each PR in a single GraphQL query.
+        Used to resolve the actual target branch for workflow_dispatch runs,
+        where head_branch from the GitHub API is always the default branch.
+
+        Args:
+            location: GitHub repository location (local path + owner/repo identity)
+            pr_numbers: List of PR numbers to query
+
+        Returns:
+            Mapping of pr_number -> head branch name.
+            PRs that don't exist or can't be fetched are omitted.
         """
         ...
 
@@ -371,7 +411,7 @@ class LocalGitHub(ABC):
 
         Args:
             location: GitHub repository location (local root + repo identity)
-            labels: Labels to filter by (e.g., ["erk-plan"])
+            labels: Labels to filter by (e.g., ["erk-pr"])
             state: Filter by state ("open" or "closed")
             limit: Maximum issues to return (default: 100)
             creator: Filter by creator username (e.g., "octocat"). If provided,
@@ -462,7 +502,7 @@ class LocalGitHub(ABC):
 
         Args:
             location: GitHub repository location
-            labels: Labels to filter by (e.g., ["erk-plan"])
+            labels: Labels to filter by (e.g., ["erk-pr"])
             state: Filter by state ("open" or "closed")
             limit: Maximum number of results (None for no limit)
             author: Filter by PR author username (server-side via REST creator param)
@@ -595,6 +635,27 @@ class LocalGitHub(ABC):
         ...
 
     @abstractmethod
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Get PR-level reviews for a pull request.
+
+        Fetches reviews submitted via GitHub's "Review changes" flow
+        (not inline thread comments). Returns APPROVED, CHANGES_REQUESTED,
+        and COMMENTED reviews. Excludes PENDING (draft) and DISMISSED.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: PR number to query
+
+        Returns:
+            List of PRReview sorted by submitted_at
+        """
+        ...
+
+    @abstractmethod
     def get_pr_check_runs(
         self,
         repo_root: Path,
@@ -629,6 +690,11 @@ class LocalGitHub(ABC):
         Returns:
             True if resolved successfully
         """
+        ...
+
+    @abstractmethod
+    def unresolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
+        """Unresolve a PR review thread."""
         ...
 
     @abstractmethod
@@ -669,6 +735,26 @@ class LocalGitHub(ABC):
 
         Returns:
             Comment ID of the created comment
+        """
+        ...
+
+    @abstractmethod
+    def fetch_pr_comments(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[dict[str, Any]]:
+        """Fetch all issue/PR comments as a list of dicts.
+
+        Returns raw comment data from the GitHub API. Each dict contains
+        at minimum "id" and "body" keys.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            pr_number: PR number to fetch comments for
+
+        Returns:
+            List of comment dicts, or empty list on failure
         """
         ...
 
@@ -817,6 +903,27 @@ class LocalGitHub(ABC):
             Tuple of (issues, pr_linkages) where:
             - issues: List of IssueInfo objects for found issues
             - pr_linkages: Mapping of plan_number -> list of linked PRs
+        """
+        ...
+
+    @abstractmethod
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """Cancel an in-progress or queued workflow run.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID to cancel
+        """
+        ...
+
+    @abstractmethod
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """Re-run a completed workflow run.
+
+        Args:
+            repo_root: Repository root directory
+            run_id: GitHub Actions run ID to re-run
+            failed_only: If True, only re-run failed jobs
         """
         ...
 

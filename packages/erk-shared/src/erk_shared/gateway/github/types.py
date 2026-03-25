@@ -9,6 +9,8 @@ from erk_shared.non_ideal_state import EnsurableResult
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
+PRReviewState = Literal["PENDING", "COMMENTED", "APPROVED", "CHANGES_REQUESTED", "DISMISSED"]
+
 MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
 
 
@@ -47,6 +49,28 @@ class BodyFile:
 
 # Type alias for body content passed to update methods
 BodyContent = BodyText | BodyFile
+
+
+@dataclass(frozen=True)
+class PRReview:
+    """A PR-level review submission (not an inline thread comment).
+
+    Represents a review submitted via GitHub's "Review changes" flow,
+    which can include a body comment and a state change (approve/request changes).
+
+    Attributes:
+        id: GraphQL node ID of the review
+        author: Login of the reviewer
+        body: Review body text (may be empty for pure approval/request-changes)
+        state: Review state (APPROVED, CHANGES_REQUESTED, COMMENTED, etc.)
+        submitted_at: ISO 8601 timestamp when the review was submitted
+    """
+
+    id: str
+    author: str
+    body: str
+    state: PRReviewState
+    submitted_at: str
 
 
 @dataclass(frozen=True)
@@ -221,8 +245,6 @@ class PullRequestInfo:
     # True if CONFLICTING, False if MERGEABLE, None if UNKNOWN or not fetched
     has_conflicts: bool | None = None
     checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
-    # True if PR will close the linked issue when merged (via "Closes #N" keywords)
-    will_close_target: bool = False
     # Head branch name (the source branch) - optional, populated by some API calls
     head_branch: str | None = None
     # Review thread counts: (resolved_count, total_count) or None if not fetched
@@ -289,6 +311,7 @@ class WorkflowRun:
         "_head_sha",
         "_display_title",
         "_created_at",
+        "_workflow_path",
     )
 
     _run_id: str
@@ -299,6 +322,7 @@ class WorkflowRun:
     _head_sha: str
     _display_title: str | None | _NotAvailable
     _created_at: datetime | None
+    _workflow_path: str | None
 
     def __init__(
         self,
@@ -311,6 +335,7 @@ class WorkflowRun:
         display_title: str | None | _NotAvailable = None,
         created_at: datetime | None = None,
         node_id: str | None = None,
+        workflow_path: str | None = None,
     ) -> None:
         object.__setattr__(self, "_run_id", run_id)
         object.__setattr__(self, "_node_id", node_id)
@@ -320,6 +345,7 @@ class WorkflowRun:
         object.__setattr__(self, "_head_sha", head_sha)
         object.__setattr__(self, "_display_title", display_title)
         object.__setattr__(self, "_created_at", created_at)
+        object.__setattr__(self, "_workflow_path", workflow_path)
 
     def __setattr__(self, name: str, value: object) -> None:
         msg = "WorkflowRun is immutable"
@@ -369,6 +395,14 @@ class WorkflowRun:
     @property
     def created_at(self) -> datetime | None:
         return self._created_at
+
+    @property
+    def workflow_path(self) -> str | None:
+        """Workflow file path (e.g., '.github/workflows/plan-implement.yml').
+
+        Only populated when fetched via list_all_workflow_runs.
+        """
+        return self._workflow_path
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, WorkflowRun):

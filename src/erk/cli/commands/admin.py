@@ -121,7 +121,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             )
 
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "enable":
         # Enable PR creation
@@ -135,7 +135,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("Workflows can now create and approve pull requests.")
 
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "disable":
         # Disable PR creation
@@ -149,7 +149,7 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
             user_output("Workflows can no longer create pull requests.")
 
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
 
 def _compute_active_label(*, api_key_exists: bool, oauth_exists: bool) -> str | None:
@@ -291,7 +291,7 @@ def gh_actions_api_key(
                 + f" Deleted {config.other_github_secret_name} to prevent ambiguity"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "disable":
         try:
@@ -301,7 +301,7 @@ def gh_actions_api_key(
                 + f" Deleted {config.github_secret_name} secret from GitHub Actions"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
 
 @admin_group.command("claude-ci")
@@ -369,7 +369,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
                 click.style("✓", fg="green") + " Enabled Claude CI workflows (CLAUDE_ENABLED=true)"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
     elif action == "disable":
         try:
@@ -379,7 +379,7 @@ def claude_ci(ctx: ErkContext, action: Literal["enable", "disable"] | None) -> N
                 + " Disabled Claude CI workflows (CLAUDE_ENABLED=false)"
             )
         except RuntimeError as e:
-            raise UserFacingCliError(str(e)) from e
+            raise UserFacingCliError(str(e), error_type="cli_error") from e
 
 
 @admin_group.command("upgrade-repo")
@@ -416,10 +416,10 @@ def upgrade_repo(ctx: ErkContext) -> None:
 
 
 @admin_group.command("test-plan-implement-gh-workflow")
-@click.option("--plan", "-p", type=int, help="Existing plan number to use")
+@click.option("--pr", "-p", type=int, help="Existing PR number to use")
 @click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after dispatching")
 @click.pass_obj
-def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bool) -> None:
+def test_plan_implement_gh_workflow(ctx: ErkContext, pr: int | None, watch: bool) -> None:
     """Test the plan-implement.yml GitHub Actions workflow.
 
     This command automates testing of plan-implement workflow changes by:
@@ -453,13 +453,13 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         repo.root, "origin", current_branch, set_upstream=True, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     user_output(click.style("✓", fg="green") + f" Branch '{current_branch}' pushed to origin")
 
     # Step 2: Find or create test plan
-    if plan is not None:
-        plan_number = plan
-        user_output(f"Using existing plan #{plan_number}")
+    if pr is not None:
+        pr_number = pr
+        user_output(f"Using existing PR #{pr_number}")
     else:
         result = ctx.issues.create_issue(
             repo_root=repo.root,
@@ -467,8 +467,8 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
             body="This issue was created to test the plan-implement workflow. Safe to close.",
             labels=["test"],
         )
-        plan_number = result.number
-        user_output(click.style("✓", fg="green") + f" Created test plan #{plan_number}")
+        pr_number = result.number
+        user_output(click.style("✓", fg="green") + f" Created test PR #{pr_number}")
 
     # Detect trunk branch for PR base
     trunk = ctx.git.branch.detect_trunk_branch(repo.root)
@@ -484,7 +484,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         repo.root, "origin", f"{trunk}:{test_branch}", set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     user_output(click.style("✓", fg="green") + f" Test branch '{test_branch}' created")
 
     # Step 4: Add an empty commit to the test branch
@@ -497,12 +497,12 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         repo.root, "origin", test_branch, set_upstream=False, force=False
     )
     if isinstance(push_result, PushError):
-        raise UserFacingCliError(push_result.message)
+        raise UserFacingCliError(push_result.message, error_type="cli_error")
     ctx.branch_manager.checkout_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
 
     # Step 5: Create draft PR
-    pr_number = ctx.github.create_pr(
+    draft_pr_number = ctx.github.create_pr(
         repo.root,
         branch=test_branch,
         title="Test workflow run",
@@ -510,7 +510,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         base=trunk,
         draft=True,
     )
-    user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
+    user_output(click.style("✓", fg="green") + f" Draft PR #{draft_pr_number} created")
 
     # Step 6: Trigger workflow
     username = Ensure.not_none(
@@ -524,12 +524,12 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
         workflow="plan-implement.yml",
         ref=current_branch,
         inputs={
-            "plan_id": str(plan_number),
+            "pr_number": str(pr_number),
             "submitted_by": username,
             "distinct_id": distinct_id,
-            "plan_title": "Test workflow run",
+            "pr_title": "Test workflow run",
             "branch_name": test_branch,
-            "pr_number": str(pr_number),
+            "impl_pr_number": str(draft_pr_number),
             "base_branch": trunk,
         },
     )
@@ -547,7 +547,7 @@ def test_plan_implement_gh_workflow(ctx: ErkContext, plan: int | None, watch: bo
     user_output("")
     user_output(f"Run URL: {run_url}")
     user_output(f"Test branch: {test_branch}")
-    user_output(f"Draft PR: https://github.com/{repo_slug}/pull/{pr_number}")
+    user_output(f"Draft PR: https://github.com/{repo_slug}/pull/{draft_pr_number}")
 
     if watch:
         user_output("")

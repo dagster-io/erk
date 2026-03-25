@@ -1,7 +1,7 @@
 """Generate PR body footer for remote implementation PRs.
 
 This exec command generates a footer section for PR descriptions that includes
-the `erk pr teleport` command. This is used by the GitHub Actions workflow when
+the `erk slot teleport` command. This is used by the GitHub Actions workflow when
 creating PRs from remote implementations.
 
 Usage:
@@ -22,7 +22,7 @@ Examples:
     To replicate this PR locally, run:
 
     ```
-    erk pr teleport 1895
+    erk slot teleport 1895
     ```
 """
 
@@ -36,7 +36,7 @@ from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 def get_pr_body_footer(pr_number: int) -> None:
     """Generate PR body footer with teleport command.
 
-    Outputs a markdown footer section that includes the `erk pr teleport` command,
+    Outputs a markdown footer section that includes the `erk slot teleport` command,
     allowing users to easily replicate the PR locally.
 
     Args:

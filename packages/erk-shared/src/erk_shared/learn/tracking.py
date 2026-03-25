@@ -17,13 +17,13 @@ from erk_shared.gateway.github.metadata.core import (
 from erk_shared.gateway.github.metadata.types import BlockKeys
 
 if TYPE_CHECKING:
-    from erk_shared.plan_store.backend import PlanBackend
+    from erk_shared.pr_store.backend import ManagedPrBackend
 
 
 def track_learn_invocation(
-    plan_backend: PlanBackend,
+    pr_backend: ManagedPrBackend,
     repo_root: Path,
-    plan_id: str,
+    pr_number: str,
     *,
     session_id: str | None,
     readable_count: int,
@@ -35,9 +35,9 @@ def track_learn_invocation(
     to track when learn was run and from which session.
 
     Args:
-        plan_backend: PlanBackend for posting the comment
+        pr_backend: ManagedPrBackend for posting the comment
         repo_root: Repository root path
-        plan_id: Plan identifier (e.g., issue number as string)
+        pr_number: Plan identifier (e.g., issue number as string)
         session_id: Session ID invoking learn (passed via --session-id CLI flag)
         readable_count: Number of readable sessions found
         total_count: Total sessions discovered for the plan
@@ -71,4 +71,4 @@ def track_learn_invocation(
         description=description,
     )
 
-    plan_backend.add_comment(repo_root, plan_id, comment_body)
+    pr_backend.add_comment(repo_root, pr_number, comment_body)

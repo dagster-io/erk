@@ -6,14 +6,14 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -23,7 +23,7 @@ from tests.test_utils.output_helpers import strip_ansi
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -54,7 +54,7 @@ def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="123",
+            pr_number="123",
             url="https://github.com/owner/repo/issues/123",
             labels=(),
             objective_id=None,
@@ -77,12 +77,12 @@ last_dispatched_node_id: 'WFR_abc123'
 Implementation details"""
 
         plan = Plan(
-            plan_identifier="123",
+            pr_identifier="123",
             title="Test Implementation",
             body=plan_body,
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/123",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -113,7 +113,7 @@ Implementation details"""
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_abc123": workflow_run}
         )
         issues = FakeGitHubIssues(issues={123: plan_to_issue(plan)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={123: workflow_run},
         )
@@ -123,7 +123,7 @@ Implementation details"""
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -152,7 +152,7 @@ def test_plan_list_linkifies_workflow_run_id_with_owner_repo() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="456",
+            pr_number="456",
             url="https://github.com/testowner/testrepo/issues/456",
             labels=(),
             objective_id=None,
@@ -173,12 +173,12 @@ last_dispatched_node_id: 'WFR_def456'
 <!-- /erk:metadata-block:plan-header -->"""
 
         plan = Plan(
-            plan_identifier="456",
+            pr_identifier="456",
             title="Test with URL",
             body=plan_body,
             state=PlanState.OPEN,
             url="https://github.com/testowner/testrepo/issues/456",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -211,7 +211,7 @@ last_dispatched_node_id: 'WFR_def456'
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_def456": workflow_run}
         )
         issues = FakeGitHubIssues(issues={456: plan_to_issue(plan)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={456: workflow_run},
         )
@@ -221,7 +221,7 @@ last_dispatched_node_id: 'WFR_def456'
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -252,7 +252,7 @@ def test_plan_list_displays_plain_run_id_without_owner_repo() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="789",
+            pr_number="789",
             url="https://github.com/owner/repo/issues/789",
             labels=(),
             objective_id=None,
@@ -273,12 +273,12 @@ last_dispatched_node_id: 'WFR_ghi789'
 <!-- /erk:metadata-block:plan-header -->"""
 
         plan = Plan(
-            plan_identifier="789",
+            pr_identifier="789",
             title="Plan without URL",
             body=plan_body,
             state=PlanState.OPEN,
             url=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -308,7 +308,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             issues_data=[plan_to_issue(plan)], workflow_runs_by_node_id={"WFR_ghi789": workflow_run}
         )
         issues = FakeGitHubIssues(issues={789: plan_to_issue(plan)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={789: workflow_run},
         )
@@ -318,7 +318,7 @@ last_dispatched_node_id: 'WFR_ghi789'
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -347,7 +347,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="111",
+            pr_number="111",
             url="https://github.com/owner/repo/issues/111",
             labels=(),
             objective_id=None,
@@ -355,12 +355,12 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         )
 
         plan = Plan(
-            plan_identifier="111",
+            pr_identifier="111",
             title="Plan without workflow",
             body="",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/111",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -381,14 +381,14 @@ def test_plan_list_handles_missing_workflow_run() -> None:
         # No workflow runs
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={111: plan_to_issue(plan)}, comments={})
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -423,7 +423,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="222",
+            pr_number="222",
             url="https://github.com/owner/repo/issues/222",
             labels=(),
             objective_id=None,
@@ -431,12 +431,12 @@ def test_plan_list_handles_batch_query_failure() -> None:
         )
 
         plan = Plan(
-            plan_identifier="222",
+            pr_identifier="222",
             title="Plan with API failure",
             body="",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/222",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -457,14 +457,14 @@ def test_plan_list_handles_batch_query_failure() -> None:
         # No workflow runs configured (simulates API failure or no runs found)
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[])
         issues = FakeGitHubIssues(issues={222: plan_to_issue(plan)}, comments={})
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -494,7 +494,7 @@ def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> Non
         save_plan_ref(
             impl1,
             provider="github",
-            plan_id="301",
+            pr_number="301",
             url="https://github.com/owner/repo/issues/301",
             labels=(),
             objective_id=None,
@@ -509,7 +509,7 @@ def test_plan_list_displays_multiple_plans_with_different_workflow_runs() -> Non
         save_plan_ref(
             impl2,
             provider="github",
-            plan_id="302",
+            pr_number="302",
             url="https://github.com/owner/repo/issues/302",
             labels=(),
             objective_id=None,
@@ -542,12 +542,12 @@ last_dispatched_node_id: 'WFR_node2'
 <!-- /erk:metadata-block:plan-header -->"""
 
         plan1 = Plan(
-            plan_identifier="301",
+            pr_identifier="301",
             title="First Implementation",
             body=plan1_body,
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/301",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -556,12 +556,12 @@ last_dispatched_node_id: 'WFR_node2'
         )
 
         plan2 = Plan(
-            plan_identifier="302",
+            pr_identifier="302",
             title="Second Implementation",
             body=plan2_body,
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/302",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -600,7 +600,7 @@ last_dispatched_node_id: 'WFR_node2'
             workflow_runs_by_node_id={"WFR_node1": run1, "WFR_node2": run2},
         )
         issues = FakeGitHubIssues(issues={301: plan_to_issue(plan1), 302: plan_to_issue(plan2)})
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan1, plan2],
             workflow_runs={301: run1, 302: run2},
         )
@@ -610,7 +610,7 @@ last_dispatched_node_id: 'WFR_node2'
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -628,12 +628,12 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan WITHOUT corresponding .impl/issue.json
         plan = Plan(
-            plan_identifier="999",
+            pr_identifier="999",
             title="Plan without worktree",
             body="",
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/999",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
@@ -660,14 +660,14 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
         )
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)], workflow_runs=[workflow_run])
         issues = FakeGitHubIssues(issues={999: plan_to_issue(plan)}, comments={})
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             issues=issues,
-            plan_list_service=plan_service,
+            pr_list_service=plan_service,
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)

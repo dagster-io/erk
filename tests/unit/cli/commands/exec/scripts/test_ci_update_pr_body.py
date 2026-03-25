@@ -21,12 +21,12 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     ci_update_pr_body as ci_update_pr_body_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakePromptExecutor
 from erk_shared.core.prompt_executor import PromptResult
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.core import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # ============================================================================
@@ -63,7 +63,7 @@ def test_build_pr_body_includes_summary_and_footer() -> None:
     assert "## Summary" in body
     assert "This is the summary" in body
     assert "Closes #" not in body
-    assert "erk pr teleport 123" in body
+    assert "erk slot teleport 123" in body
 
 
 def test_build_pr_body_includes_workflow_link_when_provided() -> None:
@@ -493,7 +493,7 @@ def test_cli_success(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--plan-id", "456"],
+        ["--pr-number", "456"],
         obj=ctx,
     )
 
@@ -555,7 +555,7 @@ def test_cli_with_workflow_run(tmp_path: Path) -> None:
     result = runner.invoke(
         ci_update_pr_body_command,
         [
-            "--plan-id",
+            "--pr-number",
             "456",
             "--run-id",
             "789",
@@ -585,7 +585,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--plan-id", "456"],
+        ["--pr-number", "456"],
         obj=ctx,
     )
 
@@ -595,8 +595,8 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     assert output["error"] == "pr-not-found"
 
 
-def test_cli_requires_plan_id() -> None:
-    """Test that --plan-id is required."""
+def test_cli_requires_pr_number() -> None:
+    """Test that --pr-number is required."""
     runner = CliRunner()
 
     result = runner.invoke(ci_update_pr_body_command, [])
@@ -653,7 +653,7 @@ def test_cli_json_output_structure_success(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--plan-id", "456"],
+        ["--pr-number", "456"],
         obj=ctx,
     )
 
@@ -684,7 +684,7 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--plan-id", "456"],
+        ["--pr-number", "456"],
         obj=ctx,
     )
 
@@ -722,7 +722,7 @@ def test_build_pr_body_no_closes_reference() -> None:
     assert "## Summary" in body
     assert "This is the summary" in body
     assert "Closes #" not in body
-    assert "erk pr teleport 123" in body
+    assert "erk slot teleport 123" in body
 
 
 def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) -> None:
@@ -737,7 +737,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
     pr_details = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -748,7 +748,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
         merge_state_status="CLEAN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
     github = FakeLocalGitHub(
@@ -758,7 +758,7 @@ def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path
                 state="OPEN",
                 url="https://github.com/owner/repo/pull/42",
                 is_draft=True,
-                title="[erk-plan] Test Plan",
+                title="[erk-pr] Test Plan",
                 checks_passing=True,
                 owner="test-owner",
                 repo="test-repo",
@@ -821,7 +821,7 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
     pr_details = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -841,7 +841,7 @@ def test_impl_planned_pr_missing_plan_header_returns_error(tmp_path: Path) -> No
                 state="OPEN",
                 url="https://github.com/owner/repo/pull/42",
                 is_draft=True,
-                title="[erk-plan] Test Plan",
+                title="[erk-pr] Test Plan",
                 checks_passing=True,
                 owner="test-owner",
                 repo="test-repo",
@@ -887,7 +887,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     pr_details = PRDetails(
         number=42,
         url="https://github.com/owner/repo/pull/42",
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -898,7 +898,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
         merge_state_status="CLEAN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
     github = FakeLocalGitHub(
@@ -908,7 +908,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
                 state="OPEN",
                 url="https://github.com/owner/repo/pull/42",
                 is_draft=True,
-                title="[erk-plan] Test Plan",
+                title="[erk-pr] Test Plan",
                 checks_passing=True,
                 owner="test-owner",
                 repo="test-repo",
@@ -931,7 +931,7 @@ def test_cli_planned_pr_flag(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         ci_update_pr_body_command,
-        ["--plan-id", "42", "--planned-pr"],
+        ["--pr-number", "42", "--planned-pr"],
         obj=ctx,
     )
 

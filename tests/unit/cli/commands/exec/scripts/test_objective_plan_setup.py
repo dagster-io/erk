@@ -8,11 +8,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.objective_plan_setup import objective_plan_setup
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import RepoInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 
 _TEST_REPO_INFO = RepoInfo(owner="test-owner", name="test-repo")
 
@@ -85,7 +85,6 @@ def _make_remote(issues: dict[int, IssueInfo]) -> FakeRemoteGitHub:
         dispatch_run_id="run-1",
         issues=issues,
         issue_comments=None,
-        pr_references=None,
     )
 
 
@@ -147,7 +146,7 @@ def test_not_found_error(tmp_path: Path) -> None:
 
 
 def test_is_plan_error(tmp_path: Path) -> None:
-    issue = _make_issue(200, "Some Plan", "body", labels=["erk-plan"])
+    issue = _make_issue(200, "[erk-pr] Some Plan", "body", labels=["erk-pr"])
     fake_gh = FakeGitHubIssues(issues={200: issue})
     ctx = ErkContext.for_test(
         github=FakeLocalGitHub(issues_gateway=fake_gh),

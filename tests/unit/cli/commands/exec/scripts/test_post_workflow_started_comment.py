@@ -18,12 +18,12 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 FAKE_NOW_ISO = "2026-01-15T10:00:00Z"
@@ -54,9 +54,9 @@ def _create_test_issue(issue_number: int) -> IssueInfo:
 def test_build_comment_contains_all_fields() -> None:
     """Test that built comment contains all required fields."""
     comment = _build_workflow_started_comment(
-        plan_number=123,
+        pr_number=123,
         branch_name="my-feature",
-        pr_number=456,
+        impl_pr_number=456,
         run_id="99999",
         run_url="https://github.com/owner/repo/actions/runs/99999",
         repository="owner/repo",
@@ -65,7 +65,7 @@ def test_build_comment_contains_all_fields() -> None:
 
     assert "GitHub Action Started" in comment
     assert "branch_name: my-feature" in comment
-    assert "plan_number: 123" in comment
+    assert "pr_number: 123" in comment
     assert "workflow_run_id: '99999'" in comment
     assert "https://github.com/owner/repo/actions/runs/99999" in comment
 
@@ -73,9 +73,9 @@ def test_build_comment_contains_all_fields() -> None:
 def test_build_comment_has_metadata_block() -> None:
     """Test that comment has properly formatted metadata block."""
     comment = _build_workflow_started_comment(
-        plan_number=123,
+        pr_number=123,
         branch_name="feat-auth",
-        pr_number=456,
+        impl_pr_number=456,
         run_id="12345",
         run_url="https://github.com/acme/app/actions/runs/12345",
         repository="acme/app",
@@ -90,9 +90,9 @@ def test_build_comment_has_metadata_block() -> None:
 def test_build_comment_metadata_block_is_parseable() -> None:
     """Test that the metadata block can be parsed by the standard parser."""
     comment = _build_workflow_started_comment(
-        plan_number=123,
+        pr_number=123,
         branch_name="feat-auth",
-        pr_number=456,
+        impl_pr_number=456,
         run_id="12345",
         run_url="https://github.com/acme/app/actions/runs/12345",
         repository="acme/app",
@@ -103,7 +103,7 @@ def test_build_comment_metadata_block_is_parseable() -> None:
     assert len(result.blocks) == 1
     block = result.blocks[0]
     assert block.key == "workflow-started"
-    assert block.data["plan_number"] == 123
+    assert block.data["pr_number"] == 123
     assert block.data["status"] == "started"
     assert block.data["workflow_run_id"] == "12345"
     assert block.data["branch_name"] == "feat-auth"
@@ -112,9 +112,9 @@ def test_build_comment_metadata_block_is_parseable() -> None:
 def test_build_comment_has_pr_link() -> None:
     """Test that comment has proper PR link."""
     comment = _build_workflow_started_comment(
-        plan_number=10,
+        pr_number=10,
         branch_name="fix-bug",
-        pr_number=42,
+        impl_pr_number=42,
         run_id="888",
         run_url="https://github.com/test/repo/actions/runs/888",
         repository="test/repo",
@@ -127,9 +127,9 @@ def test_build_comment_has_pr_link() -> None:
 def test_build_comment_has_branch_display() -> None:
     """Test that comment displays branch name."""
     comment = _build_workflow_started_comment(
-        plan_number=1,
+        pr_number=1,
         branch_name="feature-xyz",
-        pr_number=2,
+        impl_pr_number=2,
         run_id="3",
         run_url="https://example.com",
         repository="o/r",
@@ -142,9 +142,9 @@ def test_build_comment_has_branch_display() -> None:
 def test_build_comment_has_workflow_link() -> None:
     """Test that comment has workflow run link."""
     comment = _build_workflow_started_comment(
-        plan_number=1,
+        pr_number=1,
         branch_name="b",
-        pr_number=2,
+        impl_pr_number=2,
         run_id="3",
         run_url="https://github.com/owner/repo/actions/runs/3",
         repository="owner/repo",
@@ -157,9 +157,9 @@ def test_build_comment_has_workflow_link() -> None:
 def test_build_comment_has_valid_timestamp() -> None:
     """Test that comment contains the injected ISO 8601 timestamp."""
     comment = _build_workflow_started_comment(
-        plan_number=1,
+        pr_number=1,
         branch_name="b",
-        pr_number=2,
+        impl_pr_number=2,
         run_id="3",
         run_url="https://example.com",
         repository="o/r",
@@ -190,18 +190,18 @@ def test_cli_success(tmp_path: Path) -> None:
     )
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
     result = runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--plan-number",
+            "--pr-number",
             "123",
             "--branch-name",
             "my-branch",
-            "--pr-number",
+            "--impl-pr-number",
             "456",
             "--run-id",
             "99999",
@@ -216,7 +216,7 @@ def test_cli_success(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 123
+    assert output["pr_number"] == 123
 
     # Verify comment was added via mutation tracking
     assert len(fake_github.pr_comments) == 1
@@ -233,18 +233,18 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh_issues)
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
     result = runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--plan-number",
+            "--pr-number",
             "123",
             "--branch-name",
             "branch",
-            "--pr-number",
+            "--impl-pr-number",
             "456",
             "--run-id",
             "999",
@@ -268,7 +268,7 @@ def test_cli_missing_required_option() -> None:
 
     result = runner.invoke(
         post_workflow_started_comment_command,
-        ["--plan-number", "123"],  # Missing other required options
+        ["--pr-number", "123"],  # Missing other required options
     )
 
     assert result.exit_code != 0
@@ -288,18 +288,18 @@ def test_cli_passes_correct_args_to_github(tmp_path: Path) -> None:
     )
     ctx = ErkContext.for_test(
         github=fake_github,
-        plan_store=PlannedPRBackend(fake_github, fake_gh_issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_gh_issues, time=FakeTime()),
         repo_root=tmp_path,
     )
 
     runner.invoke(
         post_workflow_started_comment_command,
         [
-            "--plan-number",
+            "--pr-number",
             "789",
             "--branch-name",
             "test-branch",
-            "--pr-number",
+            "--impl-pr-number",
             "101",
             "--run-id",
             "55555",

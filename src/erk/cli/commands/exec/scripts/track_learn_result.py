@@ -6,13 +6,13 @@ the learn_plan_issue if a plan was created.
 
 Usage:
     erk exec track-learn-result --plan-id 123 --status completed_no_plan
-    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
+    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-pr 456
 
 Output:
     JSON object with tracking result:
     {
         "success": true,
-        "plan_id": "123",
+        "pr_number": "123",
         "learn_status": "completed_no_plan"
     }
 
@@ -26,9 +26,9 @@ from dataclasses import asdict, dataclass
 
 import click
 
-from erk_shared.context.helpers import require_plan_backend, require_repo_root
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
 from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
-from erk_shared.plan_store.types import PlanHeaderNotFoundError
+from erk_shared.pr_store.types import PlanHeaderNotFoundError
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,7 @@ class TrackLearnResultSuccess:
     """Result of successful track-learn-result command."""
 
     success: bool
-    plan_id: str
+    pr_number: str
     learn_status: str
     learn_plan_issue: int | None
     learn_plan_pr: int | None
@@ -59,12 +59,19 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 }
 
 
+def _status_validation_error(*, error_code: str, message: str) -> None:
+    """Emit a status validation error as JSON and exit."""
+    error = TrackLearnResultError(success=False, error=error_code, message=message)
+    click.echo(json.dumps(asdict(error)))
+    raise SystemExit(1)
+
+
 @click.command(name="track-learn-result")
 @click.option(
-    "--plan-id",
+    "--pr-id",
     required=True,
     type=str,
-    help="Plan identifier (e.g., issue number)",
+    help="PR identifier (e.g., issue number)",
 )
 @click.option(
     "--status",
@@ -73,9 +80,9 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
     help="Learn workflow result status",
 )
 @click.option(
-    "--learn-plan",
+    "--learn-pr",
     type=int,
-    help="Learn plan number (required if status is completed_with_plan)",
+    help="Learn PR number (required if status is completed_with_plan)",
 )
 @click.option(
     "--plan-pr",
@@ -86,9 +93,9 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {
 def track_learn_result(
     ctx: click.Context,
     *,
-    plan_id: str,
+    pr_id: str,
     status: str,
-    learn_plan: int | None,
+    learn_pr: int | None,
     plan_pr: int | None,
 ) -> None:
     """Track learn workflow result on a plan.
@@ -97,71 +104,56 @@ def track_learn_result(
     If status is 'completed_with_plan', also records the learn_plan_issue.
     If status is 'pending_review', also records the learn_plan_pr.
     """
-    # Validate: completed_with_plan requires --learn-plan
-    if status == "completed_with_plan" and learn_plan is None:
-        error = TrackLearnResultError(
-            success=False,
-            error="missing-learn-plan",
-            message="--learn-plan is required when status is 'completed_with_plan'",
+    # Validate: completed_with_plan requires --learn-pr
+    if status == "completed_with_plan" and learn_pr is None:
+        _status_validation_error(
+            error_code="missing-learn-pr",
+            message="--learn-pr is required when status is 'completed_with_plan'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
-    # completed_no_plan should not have --learn-plan
-    if status == "completed_no_plan" and learn_plan is not None:
-        error = TrackLearnResultError(
-            success=False,
-            error="unexpected-learn-plan",
-            message="--learn-plan should not be provided when status is 'completed_no_plan'",
+    # completed_no_plan should not have --learn-pr
+    if status == "completed_no_plan" and learn_pr is not None:
+        _status_validation_error(
+            error_code="unexpected-learn-pr",
+            message="--learn-pr should not be provided when status is 'completed_no_plan'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # Validate: pending_review requires --plan-pr
     if status == "pending_review" and plan_pr is None:
-        error = TrackLearnResultError(
-            success=False,
-            error="missing-plan-pr",
+        _status_validation_error(
+            error_code="missing-plan-pr",
             message="--plan-pr is required when status is 'pending_review'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
-    # pending_review should not have --learn-plan
-    if status == "pending_review" and learn_plan is not None:
-        error = TrackLearnResultError(
-            success=False,
-            error="unexpected-learn-plan",
-            message="--learn-plan should not be provided when status is 'pending_review'",
+    # pending_review should not have --learn-pr
+    if status == "pending_review" and learn_pr is not None:
+        _status_validation_error(
+            error_code="unexpected-learn-pr",
+            message="--learn-pr should not be provided when status is 'pending_review'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # completed_with_plan should not have --plan-pr
     if status == "completed_with_plan" and plan_pr is not None:
-        error = TrackLearnResultError(
-            success=False,
-            error="unexpected-plan-pr",
+        _status_validation_error(
+            error_code="unexpected-plan-pr",
             message="--plan-pr should not be provided when status is 'completed_with_plan'",
         )
-        click.echo(json.dumps(asdict(error)))
-        raise SystemExit(1)
 
     # Get dependencies from context
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
 
     # Cast status to LearnStatusValue (already validated by click.Choice)
     learn_status: LearnStatusValue = status  # type: ignore[assignment]
 
-    # Update plan-header with learn result via PlanBackend
+    # Update plan-header with learn result via ManagedPrBackend
     try:
         backend.update_metadata(
             repo_root,
-            plan_id,
+            pr_id,
             metadata={
                 "learn_status": learn_status,
-                "learn_plan_issue": learn_plan,
+                "learn_plan_issue": learn_pr,
                 "learn_plan_pr": plan_pr,
             },
         )
@@ -169,9 +161,7 @@ def track_learn_result(
         error = TrackLearnResultError(
             success=False,
             error="no-metadata-block",
-            message=(
-                f"Plan {plan_id} has no plan-header metadata block — cannot update learn status"
-            ),
+            message=f"PR {pr_id} has no plan-header metadata block — cannot update learn status",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
@@ -179,16 +169,16 @@ def track_learn_result(
         error = TrackLearnResultError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to update learn status on plan {plan_id}: {e}",
+            message=f"Failed to update learn status on PR {pr_id}: {e}",
         )
         click.echo(json.dumps(asdict(error)), err=True)
         raise SystemExit(1) from None
 
     result = TrackLearnResultSuccess(
         success=True,
-        plan_id=plan_id,
+        pr_number=pr_id,
         learn_status=status,
-        learn_plan_issue=learn_plan,
+        learn_plan_issue=learn_pr,
         learn_plan_pr=plan_pr,
     )
 

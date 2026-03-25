@@ -9,10 +9,10 @@ from click.testing import CliRunner
 
 from erk.cli.commands.run.logs_cmd import logs_run
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import WorkflowRun
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.tests.context import create_test_context
 
 
 def test_logs_explicit_run_id(tmp_path: Path) -> None:
@@ -58,6 +58,7 @@ def test_logs_auto_detect(tmp_path: Path) -> None:
             conclusion="success",
             branch="main",
             head_sha="abc",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
         WorkflowRun(
             run_id="222",
@@ -65,6 +66,7 @@ def test_logs_auto_detect(tmp_path: Path) -> None:
             conclusion="success",
             branch="feature-x",
             head_sha="def",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
     ]
     github_ops = FakeLocalGitHub(

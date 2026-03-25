@@ -26,7 +26,6 @@ For draft-PR plans, the learn materials location (session branch) is stored as a
 
 - `src/erk/cli/commands/exec/scripts/trigger_async_learn.py` — short-circuit for draft-PR plan ID discovery
 - `src/erk/cli/commands/land_cmd.py` — comment-based fallback for learn materials retrieval
-- `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` — PR lookup utilities used by the pipeline
 
 ## Related Documentation
 

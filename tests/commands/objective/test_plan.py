@@ -11,17 +11,17 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
-from erk_shared.gateway.agent_launcher.fake import FakeAgentLauncher
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from tests.fakes.gateway.agent_launcher import FakeAgentLauncher
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.test_context import context_for_test
 
 
 def test_plan_shows_error_when_claude_not_installed() -> None:
@@ -182,7 +182,6 @@ def test_plan_with_node_flag() -> None:
             dispatch_run_id="run-1",
             issues={42: objective_issue},
             issue_comments=None,
-            pr_references=None,
         )
         ctx = build_workspace_test_context(
             env,
@@ -318,7 +317,7 @@ def _make_plan_issue(number: int, *, objective_issue: int) -> IssueInfo:
         body=body,
         state="OPEN",
         url=f"https://github.com/owner/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=NOW,
         updated_at=NOW,
@@ -352,7 +351,6 @@ def test_plan_next_with_issue_ref() -> None:
             dispatch_run_id="run-1",
             issues={42: objective_issue},
             issue_comments=None,
-            pr_references=None,
         )
         ctx = build_workspace_test_context(
             env,
@@ -412,7 +410,6 @@ def test_mark_node_planning_updates_body() -> None:
         dispatch_run_id="run-1",
         issues={42: objective_issue},
         issue_comments=None,
-        pr_references=None,
     )
 
     _mark_node_planning(
@@ -443,7 +440,6 @@ def test_mark_node_planning_silent_on_missing_issue() -> None:
         dispatch_run_id="run-1",
         issues={},
         issue_comments=None,
-        pr_references=None,
     )
 
     # Should not raise — silently returns
@@ -471,7 +467,6 @@ def test_mark_node_planning_silent_on_unknown_node() -> None:
         dispatch_run_id="run-1",
         issues={42: objective_issue},
         issue_comments=None,
-        pr_references=None,
     )
 
     # Node 9.9 doesn't exist in the roadmap
@@ -549,7 +544,6 @@ def test_plan_next_no_pending_nodes() -> None:
             dispatch_run_id="run-1",
             issues={42: objective_issue},
             issue_comments=None,
-            pr_references=None,
         )
         ctx = build_workspace_test_context(
             env,

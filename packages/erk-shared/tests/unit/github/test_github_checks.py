@@ -3,9 +3,9 @@
 from pathlib import Path
 
 from erk_shared.gateway.github.checks import GitHubChecks
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueComments
 from erk_shared.non_ideal_state import GitHubAPIFailed
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 
 def _make_comment(comment_id: int) -> IssueComment:

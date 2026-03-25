@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Git pre-push hook: runs lint, format, and type checks before push.
+# Bypass with: git push --no-verify  /  gt submit --no-verify
+set -euo pipefail
+
+echo "=== pre-push: running checks ==="
+
+if ! make pre-push-check; then
+    echo ""
+    echo "pre-push: checks failed. Push aborted."
+    echo "Bypass with: git push --no-verify"
+    exit 1
+fi
+
+echo "pre-push: all checks passed."

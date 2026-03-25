@@ -2,7 +2,7 @@
 title: Cross-Repo Plans
 read_when:
   - "setting up plans in a separate repository"
-  - "configuring [plans] repo in config.toml"
+  - "configuring [github] repo in config.toml"
   - "understanding cross-repo plan closing syntax"
 ---
 
@@ -21,7 +21,7 @@ Store plans in a dedicated repository while implementing in another.
 Add to `{erks_dir}/config.toml`:
 
 ```toml
-[plans]
+[github]
 repo = "owner/plans-repo"
 ```
 
@@ -31,7 +31,7 @@ Where `owner/plans-repo` is the GitHub repository that will hold plans.
 
 ### Issue Creation
 
-When `[plans] repo` is configured:
+When `[github] repo` is configured:
 
 - `gh issue create` commands use `-R owner/plans-repo` flag
 - Issues are created in the plans repo, not the current repo

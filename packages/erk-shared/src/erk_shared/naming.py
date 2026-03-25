@@ -79,14 +79,14 @@ def format_branch_timestamp_suffix(dt: datetime) -> str:
 
 _OBJECTIVE_SLUG_PATTERN = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 
-# Plan title constraints
+# PR title constraints
 _PLAN_TITLE_MIN_LENGTH = 5
 _PLAN_TITLE_MAX_LENGTH = 100
 
 
 @dataclass(frozen=True)
-class ValidPlanTitle:
-    """Validation success for a plan title.
+class ValidPrTitle:
+    """Validation success for a PR title.
 
     Attributes:
         title: The validated title value.
@@ -96,8 +96,8 @@ class ValidPlanTitle:
 
 
 @dataclass(frozen=True)
-class InvalidPlanTitle:
-    """Validation failure for a plan title.
+class InvalidPrTitle:
+    """Validation failure for a PR title.
 
     Attributes:
         raw_title: The original title value that failed validation.
@@ -131,12 +131,12 @@ class InvalidPlanTitle:
         )
 
 
-def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
+def validate_pr_title(title: str) -> ValidPrTitle | InvalidPrTitle:
     """Validate a plan title against minimum content requirements.
 
     Agent-facing validation gate. Ensures plan titles have enough meaningful
     content before they are used to generate filenames, branch names, or issue
-    titles. On failure, returns ``InvalidPlanTitle`` with actionable feedback
+    titles. On failure, returns ``InvalidPrTitle`` with actionable feedback
     (rules, actual value, examples) so the agent can self-correct and retry.
 
     Agent-facing callers:
@@ -149,44 +149,44 @@ def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
         bypassing this gate entirely.
 
     Args:
-        title: The plan title string to validate.
+        title: The PR title string to validate.
 
     Returns:
-        ValidPlanTitle if valid, InvalidPlanTitle if invalid.
+        ValidPrTitle if valid, InvalidPrTitle if invalid.
 
     Examples:
-        >>> validate_plan_title("Add User Authentication")
-        ValidPlanTitle(title='Add User Authentication')
-        >>> validate_plan_title("")
-        InvalidPlanTitle(raw_title='', reason='...')
-        >>> validate_plan_title("🚀🎉")
-        InvalidPlanTitle(raw_title='🚀🎉', reason='...')
+        >>> validate_pr_title("Add User Authentication")
+        ValidPrTitle(title='Add User Authentication')
+        >>> validate_pr_title("")
+        InvalidPrTitle(raw_title='', reason='...')
+        >>> validate_pr_title("🚀🎉")
+        InvalidPrTitle(raw_title='🚀🎉', reason='...')
     """
     stripped = title.strip()
 
     if not stripped:
-        return InvalidPlanTitle(raw_title=title, reason="Title is empty or whitespace-only")
+        return InvalidPrTitle(raw_title=title, reason="Title is empty or whitespace-only")
 
     if len(stripped) < _PLAN_TITLE_MIN_LENGTH:
-        return InvalidPlanTitle(
+        return InvalidPrTitle(
             raw_title=title,
             reason=f"Too short ({len(stripped)} characters, minimum {_PLAN_TITLE_MIN_LENGTH})",
         )
 
     if len(stripped) > _PLAN_TITLE_MAX_LENGTH:
-        return InvalidPlanTitle(
+        return InvalidPrTitle(
             raw_title=title,
             reason=f"Too long ({len(stripped)} characters, maximum {_PLAN_TITLE_MAX_LENGTH})",
         )
 
     if not any(c.isalpha() for c in stripped):
-        return InvalidPlanTitle(
+        return InvalidPrTitle(
             raw_title=title,
             reason="Must contain at least one alphabetic character",
         )
 
     if stripped in _FALLBACK_PLAN_TITLES:
-        return InvalidPlanTitle(
+        return InvalidPrTitle(
             raw_title=title,
             reason=f"'{stripped}' is a default fallback title, not a descriptive plan title",
         )
@@ -196,12 +196,12 @@ def validate_plan_title(title: str) -> ValidPlanTitle | InvalidPlanTitle:
     # If the result is "plan.md" (the fallback), the title has no usable content.
     filename = generate_filename_from_title(stripped)
     if filename == "plan.md":
-        return InvalidPlanTitle(
+        return InvalidPrTitle(
             raw_title=title,
             reason="No usable content after sanitization (only emojis or special characters)",
         )
 
-    return ValidPlanTitle(title=stripped)
+    return ValidPrTitle(title=stripped)
 
 
 # Worktree name constraints
@@ -506,10 +506,10 @@ def generate_filename_from_title(title: str) -> str:
 
     Human-facing silent transformation. Accepts arbitrary input (including
     emoji-only or accent-heavy strings) and produces a usable filename.
-    This is the counterpart to ``validate_plan_title``, which is the
+    This is the counterpart to ``validate_pr_title``, which is the
     agent-facing gate that rejects titles lacking meaningful content.
 
-    ``validate_plan_title`` calls this function internally: if the result
+    ``validate_pr_title`` calls this function internally: if the result
     is ``"plan.md"`` (the fallback), the title has no usable content and
     the gate rejects it.
 

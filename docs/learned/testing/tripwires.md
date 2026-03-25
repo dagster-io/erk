@@ -34,7 +34,7 @@ Rules triggered by matching actions in code.
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 
-**asserting on FakeGitHubIssues.added_comments for PlannedPRBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. PlannedPRBackend routes comments to PR comments (FakeGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
+**asserting on FakeGitHubIssues.added_comments for ManagedGitHubPrBackend.add_comment()** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. ManagedGitHubPrBackend routes comments to PR comments (FakeLocalGitHub.pr_comments), not issue comments (FakeGitHubIssues.added_comments). Check the correct fake when testing planned-PR comment operations.
 
 **asserting on YAML metadata field values with exact string matching** → Read [Erk Test Reference](testing.md) first. Assert on key-only format ('field_name:'), not 'field_name: "value"'. YAML serialization differs from Python repr.
 
@@ -48,13 +48,17 @@ Rules triggered by matching actions in code.
 
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
 
+**constructing RealRemoteGitHub in tests** → Read [Remote Paths Testing](remote-paths-testing.md) first. Use FakeRemoteGitHub injected via context_for_test(remote_github=...). Never instantiate RealRemoteGitHub in tests. See remote-paths-testing.md.
+
 **creating ErkPackageInfo directly in production code** → Read [ErkPackageInfo Value Object](erk-package-info-pattern.md) first. Use ErkPackageInfo.from_project_dir(). Direct construction is for tests only.
 
 **creating FakeSessionData without gitBranch JSONL** → Read [Testing with FakeClaudeInstallation](session-store-testing.md) first. Missing `gitBranch` field causes silent empty results from branch-filtered discovery. Always include gitBranch in fake session data.
 
 **creating a FakeLocalGitHub PR without checking auto-registration in \_pr_details** → Read [FakeLocalGitHub API Reference](fake-github-api-reference.md) first. FakeLocalGitHub.create_pr() auto-registers the PR in \_pr_details. Manually adding to \_pr_details after create_pr() causes duplicates.
 
-**creating a FakePlanBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers.
+**creating a FakeManagedPrBackend for testing caller code** → Read [Backend Testing Composition](backend-testing-composition.md) first. Use real backend + fake gateway instead. FakeLocalGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers.
+
+**creating a fake class in src/** → Read [Fakes Directory Structure](fakes-directory-structure.md) first. Fakes belong in tests/fakes/, not in production code. Production code should not contain test doubles. Move the fake to tests/fakes/gateway/ or tests/fakes/tests/ depending on whether it's a gateway fake or a test-specific double.
 
 **creating a fake gateway without constructor-injected error configuration** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Fakes must accept error variants at construction time (e.g., push_to_remote_error=PushError(...)) to enable failure injection in tests.
 
@@ -62,11 +66,11 @@ Rules triggered by matching actions in code.
 
 **creating a test file exceeding 500 lines** → Read [Test File Organization Pattern](test-file-organization.md) first. Consider splitting into a subdirectory module. See test-file-organization.md for the pattern and existing precedents.
 
-**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
+**creating custom FakeGitHubIssues without passing to build_workspace_test_context** → Read [FakeGitHubIssues Dual-Comment Parameters](fake-github-testing.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, managed_pr_backend operates on a different instance and metadata writes are invisible.
 
 **creating or modifying a hook** → Read [Hook Testing Patterns](hook-testing.md) first. Hooks fail silently (exit 0, no output) — untested hooks are invisible failures. Read docs/learned/testing/hook-testing.md first.
 
-**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PLAN_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PLAN_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
+**debugging 100+ unexpected test failures with no obvious cause** → Read [Environment Variable Isolation in Tests](environment-variable-isolation.md) first. Check ERK_PR_BACKEND first. Although the env var is now obsolete (get_plan_backend() was deleted in PR #7971), legacy code paths in context_for_test() may still read it. Use monkeypatch.delenv('ERK_PR_BACKEND', raising=False) or env_overrides={} in fixtures as a defensive measure until full cleanup in objective #7911.
 
 **duplicating the \_make_state helper between test files** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each test file has its own \_make_state with step-appropriate defaults (e.g., finalize tests default pr_number=42, extract_diff tests default pr_number=None). This is intentional — different steps need different pre-conditions.
 
@@ -76,7 +80,7 @@ Rules triggered by matching actions in code.
 
 **implementing interactive prompts with ctx.console.confirm()** → Read [Erk Test Reference](testing.md) first. Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. Array length must match prompt count exactly — too few causes IndexError, too many indicates a removed prompt. See tests/commands/submit/test_existing_branch_detection.py for examples.
 
-**importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead.
+**importing FakePromptExecutor from erk_shared.fakes.prompt_executor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.tests.prompt_executor instead.
 
 **importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
 
@@ -102,7 +106,7 @@ Rules triggered by matching actions in code.
 
 **testing branch-scoped impl directory code without configuring FakeGit current_branches** → Read [FakeGit Branch Divergence Testing](fake-git-divergence.md) first. FakeGit current_branches must be configured when testing resolve_impl_dir(). Without this, resolve_impl_dir() gets the wrong branch and resolves to the wrong directory.
 
-**testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
+**testing code that reads ERK_PR_BACKEND or other environment variables via CliRunner** → Read [CLI Testing Patterns](cli-testing.md) first. CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PR_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it.
 
 **testing code that reads from Path.home() or ~/.claude/ or ~/.erk/** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like extract_slugs_from_session() cause flakiness when they read from the user's home directory.
 
@@ -128,7 +132,7 @@ Rules triggered by matching actions in code.
 
 **using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
 
-**using isinstance() to detect plan backend type in application code** → Read [Plan Storage Testing](dual-backend-testing.md) first. Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API.
+**using isinstance() to detect plan backend type in application code** → Read [Plan Storage Testing](dual-backend-testing.md) first. Use managed_pr_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API.
 
 **using monkeypatch or unittest.mock in hook tests** → Read [Hook Testing Patterns](hook-testing.md) first. Use ErkContext.for_test() with CliRunner instead of mocking. See docs/learned/testing/hook-testing.md.
 
@@ -144,4 +148,4 @@ Rules triggered by matching actions in code.
 
 **writing a test that depends on the current time** → Read [Time Injection Testing Patterns](time-injection-patterns.md) first. Use FakeTime from context_for_test(). The default fake time is datetime(2024, 1, 15, 14, 30, 0).
 
-**writing plan storage tests that parametrize across both backends** → Read [Plan Storage Testing](dual-backend-testing.md) first. After PR #8210, only the PlannedPRBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use PlannedPRBackend directly.
+**writing plan storage tests that parametrize across both backends** → Read [Plan Storage Testing](dual-backend-testing.md) first. After PR #8210, only the ManagedGitHubPrBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use ManagedGitHubPrBackend directly.

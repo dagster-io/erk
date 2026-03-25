@@ -6,10 +6,10 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.impl_folder import get_impl_dir
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -237,12 +237,12 @@ def test_pr_check_passes_when_branch_and_plan_ref_match(tmp_path: Path) -> None:
         # Create branch-scoped impl dir with ref.json for plan 456
         impl_dir = get_impl_dir(env.cwd, branch_name="plnd/add-feature-01-04-1234")
         impl_dir.mkdir(parents=True)
-        plan_ref_json = impl_dir / "ref.json"
-        plan_ref_json.write_text(
+        pr_ref_json = impl_dir / "ref.json"
+        pr_ref_json.write_text(
             json.dumps(
                 {
                     "provider": "github",
-                    "plan_id": "456",
+                    "pr_id": "456",
                     "url": "https://github.com/owner/repo/issues/456",
                     "created_at": "2025-01-01T00:00:00Z",
                     "synced_at": "2025-01-01T00:00:00Z",

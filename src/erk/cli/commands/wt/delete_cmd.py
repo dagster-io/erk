@@ -9,7 +9,6 @@ from erk.cli.commands.navigation_helpers import (
     check_pending_learn_marker,
     find_assignment_by_worktree_path,
 )
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import (
     discover_repo_context,
     validate_worktree_name_for_deletion,
@@ -27,8 +26,9 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.metadata.schemas import WORKTREE_NAME
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import PlanQuery, PlanState
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.types import PlanQuery, PlanState
+from erk_slots.unassign_cmd import execute_unassign
 
 
 def _get_pr_info_for_branch(
@@ -62,16 +62,16 @@ def _get_plan_info_for_worktree(
         worktree_name: Name of the worktree to find a plan for
 
     Returns:
-        Tuple of (plan number, state) if found, None otherwise.
+        Tuple of (PR number, state) if found, None otherwise.
     """
     # Search ALL states (open and closed) to find the plan
-    query = PlanQuery(labels=["erk-pr", "erk-plan"])
-    plans = ctx.plan_store.list_plans(repo_root, query)
+    query = PlanQuery(labels=["erk-pr"])
+    plans = ctx.pr_store.list_managed_prs(repo_root, query)
 
     for plan in plans:
         plan_worktree_name = header_str(plan.header_fields, WORKTREE_NAME)
         if plan_worktree_name == worktree_name:
-            return (int(plan.plan_identifier), plan.state)
+            return (int(plan.pr_identifier), plan.state)
 
     return None
 
@@ -126,7 +126,7 @@ def _close_plan_for_worktree(
         worktree_name: Name of the worktree to find a plan for
 
     Returns:
-        Plan issue number if closed, None otherwise
+        PR number if closed, None otherwise
     """
     plan_info = _get_plan_info_for_worktree(ctx, repo_root, worktree_name)
 
@@ -134,16 +134,14 @@ def _close_plan_for_worktree(
         user_output(click.style("ℹ️  ", fg="blue", bold=True) + "No associated plan found")
         return None
 
-    plan_number, state = plan_info
+    pr_number, state = plan_info
     if state == PlanState.CLOSED:
-        user_output(
-            click.style("ℹ️  ", fg="blue", bold=True) + f"Plan #{plan_number} already closed"
-        )
+        user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"PR #{pr_number} already closed")
         return None
 
-    ctx.plan_store.close_plan(repo_root, str(plan_number))
-    user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"Closed plan #{plan_number}")
-    return plan_number
+    ctx.pr_store.close_managed_pr(repo_root, str(pr_number))
+    user_output(click.style("ℹ️  ", fg="blue", bold=True) + f"Closed PR #{pr_number}")
+    return pr_number
 
 
 def _try_git_worktree_delete(git_ops: Git, repo_root: Path, wt_path: Path) -> bool:
@@ -286,12 +284,12 @@ def _format_plan_text(plan_info: tuple[int, PlanState] | None) -> str:
     if plan_info is None:
         return "Close associated plan (if any)"
 
-    number, state = plan_info
+    pr_number, state = plan_info
     if state == PlanState.OPEN:
-        return f"Close plan #{number} (currently open)"
+        return f"Close plan #{pr_number} (currently open)"
     else:
         state_text = click.style("closed", fg="yellow")
-        return f"Plan #{number} already {state_text}"
+        return f"Plan #{pr_number} already {state_text}"
 
 
 def _confirm_operations(ctx: ErkContext, *, force: bool, dry_run: bool) -> bool:
@@ -531,7 +529,7 @@ def _delete_worktree(
     "--all",
     "close_all",  # Use different name to avoid shadowing builtin
     is_flag=True,
-    help="Delete branch, close associated PR and plan.",
+    help="Delete branch, close associated PRs.",
 )
 @click.option(
     "--dry-run",

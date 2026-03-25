@@ -55,9 +55,10 @@ from erk_shared.context.helpers import require_context
     help="Linked objective issue number",
 )
 @click.option(
-    "--plan-number",
+    "--linked-pr-number",
+    "learn_source_pr",
     type=int,
-    help="Linked plan number",
+    help="PR number that the learn issue will be created for",
 )
 @click.option(
     "--use-graphite",
@@ -84,7 +85,7 @@ from erk_shared.context.helpers import require_context
     "--skip-learn",
     "skip_learn",
     is_flag=True,
-    help="Skip creating a learn plan",
+    help="Skip creating a learn PR",
 )
 @click.option(
     "--script",
@@ -120,7 +121,7 @@ def land_execute(
     is_current_branch: bool,
     target_child: str | None,
     objective_number: int | None,
-    plan_number: int | None,
+    learn_source_pr: int | None,
     use_graphite: bool,
     skip_learn: bool,
     pull_flag: bool,
@@ -182,7 +183,7 @@ def land_execute(
             no_delete=no_delete,
             no_cleanup=no_cleanup,
             script=script,
-            plan_number=plan_number,
+            learn_source_pr=learn_source_pr,
             skip_learn=skip_learn,
         )
     except SystemExit as exc:

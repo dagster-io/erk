@@ -9,15 +9,15 @@ from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import (
-    FakeClaudeInstallation,
-)
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
 from erk_shared.gateway.github.objective_issues import create_objective_issue
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.claude_installation import (
+    FakeClaudeInstallation,
+)
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 
 # Valid plan content that passes validation (100+ chars with structure)
 VALID_PLAN_CONTENT = """# Feature Objective
@@ -53,7 +53,7 @@ This is a comprehensive objective that includes all the necessary details.
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 1
+    assert output["pr_number"] == 1
     assert output["title"] == "My Objective"
 
     # v2: body should contain objective-header metadata block (details format)
@@ -93,7 +93,7 @@ def test_objective_save_to_issue_no_plan() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No plan found" in output["error"]
+    assert "No PR found" in output["error"]
 
 
 def test_objective_save_to_issue_display_format() -> None:
@@ -318,7 +318,7 @@ This objective should only be created once.
         assert result1.exit_code == 0, f"First call failed: {result1.output}"
         output1 = json.loads(result1.output)
         assert output1["success"] is True
-        assert output1["plan_number"] == 1
+        assert output1["pr_number"] == 1
         assert output1.get("skipped_duplicate") is not True
 
         # Second call - should return existing issue (not create duplicate)
@@ -331,7 +331,7 @@ This objective should only be created once.
         assert result2.exit_code == 0, f"Second call failed: {result2.output}"
         output2 = json.loads(result2.output)
         assert output2["success"] is True
-        assert output2["plan_number"] == 1  # Same plan number
+        assert output2["pr_number"] == 1  # Same plan number
         assert output2["skipped_duplicate"] is True
         assert "already saved objective #1" in output2["message"]
 
@@ -462,6 +462,7 @@ def test_objective_save_to_issue_with_roadmap_creates_frontmatter() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
+    assert output["pr_number"] == 1
 
     # Body should contain both header and roadmap metadata blocks
     created_body = fake_gh.created_issues[0][1]
@@ -500,7 +501,7 @@ def test_objective_save_to_issue_validate_flag_json() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 1
+    assert output["pr_number"] == 1
     assert "validation" in output
     assert isinstance(output["validation"]["passed"], bool)
     assert isinstance(output["validation"]["checks"], list)
@@ -662,7 +663,7 @@ def test_create_objective_comment_passes_validation(tmp_path: Path) -> None:
     )
 
     assert result.success
-    assert result.plan_number is not None
+    assert result.pr_number is not None
 
     # Get the final issue body (after update_issue_body with comment_id)
     final_issue_body = fake_gh.updated_bodies[-1][1]

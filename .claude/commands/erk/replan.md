@@ -1,6 +1,6 @@
 ---
 description: Replan an existing plan against current codebase state
-argument-hint: <plan-number-or-url>
+argument-hint: <pr-number-or-url>
 ---
 
 # /erk:replan
@@ -25,28 +25,28 @@ Supports consolidating multiple plans into a single unified plan.
 
 Split `$ARGUMENTS` on whitespace. For each argument:
 
-- If numeric (e.g., `2521`), use directly as plan number
+- If numeric (e.g., `2521`), use directly as pr number
 - If URL (e.g., `https://github.com/owner/repo/pull/2521`), extract the number from the path
 
-Store all plan numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple plans provided.
+Store all pr numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple plans provided.
 
-If no argument provided, ask the user for the plan number.
+If no argument provided, ask the user for the pr number.
 
 ### Step 2: Validate Plans and Extract Metadata (Delegated)
 
-Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-plan-info` + N × `get-plan-metadata`) out of the main conversation context.
+Delegate all validation and metadata extraction to a single `general-purpose` haiku Task agent. This keeps the 2N bash calls (N × `get-pr-info` + N × `get-pr-metadata`) out of the main conversation context.
 
 Launch a Task agent with:
 
 - `subagent_type`: `general-purpose`
 - `model`: `haiku`
 
-**Agent prompt** (adapt plan numbers from Step 1):
+**Agent prompt** (adapt pr numbers from Step 1):
 
-> For each of the following plan numbers: [list plan numbers]
+> For each of the following PR numbers: [list pr numbers]
 >
-> 1. Run `erk exec get-plan-info <number>` for each plan
-> 2. Run `erk exec get-plan-metadata <number> objective_issue` for each plan
+> 1. Run `erk exec get-pr-info <number>` for each plan
+> 2. Run `erk exec get-pr-metadata <number> objective_issue` for each plan
 >
 > Then return a structured summary in EXACTLY this format:
 >
@@ -56,7 +56,7 @@ Launch a Task agent with:
 > IS_LEARN_PLAN: true or false (true if ANY plan has erk-learn label)
 >
 > PLANS:
-> # | Title | State | erk-plan | erk-learn | objective_issue
+> # | Title | State | erk-pr | erk-learn | objective_issue
 > <number> | <title> | <open/closed> | <yes/no> | <yes/no> | <number or none>
 > ...
 >
@@ -78,7 +78,7 @@ Launch a Task agent with:
 > Rules for VALIDATION:
 >
 > - FAIL if any plan does not exist
-> - FAIL if any plan is missing BOTH the erk-plan AND erk-learn labels (must have at least one)
+> - FAIL if any plan is missing BOTH the erk-pr AND erk-learn labels (must have at least one)
 > - PASS otherwise (closed plans are warnings, not failures)
 
 **After the agent returns**, parse the structured summary:
@@ -86,17 +86,17 @@ Launch a Task agent with:
 1. **If VALIDATION is FAIL**: Display each error and abort:
 
    ```
-   Error: Plan #<number> is not a valid plan (missing both erk-plan and erk-learn labels).
+   Error: PR #<number> is not a valid plan (missing both erk-pr and erk-learn labels).
    ```
 
    ```
-   Error: Plan #<number> not found.
+   Error: PR #<number> not found.
    ```
 
 2. **If WARNINGS present**: Display each warning but continue:
 
    ```
-   Warning: Plan #<number> is already closed. Proceeding with replan anyway.
+   Warning: PR #<number> is already closed. Proceeding with replan anyway.
    ```
 
 3. **Store extracted data**:
@@ -136,7 +136,7 @@ Each Explore agent MUST fetch its plan's content as its first action. This keeps
 **Fetch command:**
 
 ```bash
-erk exec get-plan-info <number> --include-body
+erk exec get-pr-info <number> --include-body
 ```
 
 **Parse the response:** The JSON response includes a `body` field containing the full plan content. Extract `body` from the JSON output.
@@ -146,7 +146,7 @@ erk exec get-plan-info <number> --include-body
 Return an error to the main agent:
 
 ```
-Error: Plan #<number> not found.
+Error: PR #<number> not found.
 ```
 
 The agent should fail early if it cannot fetch the plan content, rather than proceeding with incomplete information.
@@ -294,7 +294,7 @@ Use EnterPlanMode to create an updated plan.
 ```markdown
 # Plan: [Updated Title]
 
-> **Replans:** #<original_plan_number>
+> **Replans:** #<original_pr_number>
 
 ## What Changed Since Original Plan
 
@@ -394,32 +394,29 @@ After the user approves the plan in Plan Mode:
    - **Otherwise**: Run `/erk:plan-save` without flags
 3. **If an objective was linked**, verify the link was saved correctly:
    ```bash
-   erk exec get-plan-metadata <new_plan_number> objective_issue
+   erk exec get-pr-metadata <new_pr_number> objective_issue
    ```
    If the objective link is missing, fix it with:
    ```bash
-   erk exec update-plan-header <new_plan_number> objective_issue=<number>
+   erk exec update-pr-header <new_pr_number> objective_issue=<number>
    ```
-4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add labels:
+4. **If CONSOLIDATION_MODE** (multiple plans consolidated), add the `erk-consolidated` label:
    ```bash
-   erk exec add-plan-label <new_plan_number> --label "erk-consolidated"
-   erk exec add-plan-label <new_plan_number> --label "erk-plan"
+   echo "[{\"pr_number\": <new_pr_number>, \"label\": \"erk-consolidated\"}]" | erk exec add-pr-labels-batch
    ```
-   The `erk-consolidated` label prevents re-consolidation by `/local:replan-learn-plans`. The `erk-plan` label makes the plan dispatchable via `erk pr dispatch`.
+   This prevents the consolidated plan from being re-consolidated by `/local:replan-learn-plans`.
 5. Close original plan(s) with comment linking to the new one:
 
 **Single plan:**
 
 ```bash
-erk exec close-pr <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
+echo "[{\"pr_number\": <original_number>, \"comment\": \"Superseded by #<new_number> - see updated plan that accounts for codebase changes.\"}]" | erk exec close-prs
 ```
 
 **Consolidated plans:**
 
 ```bash
-erk exec close-pr 123 --comment "Consolidated into #<new_number> with #456, #789"
-erk exec close-pr 456 --comment "Consolidated into #<new_number> with #123, #789"
-erk exec close-pr 789 --comment "Consolidated into #<new_number> with #123, #456"
+echo '[{"pr_number": 123, "comment": "Consolidated into #<new_number> with #456, #789"}, {"pr_number": 456, "comment": "Consolidated into #<new_number> with #123, #789"}, {"pr_number": 789, "comment": "Consolidated into #<new_number> with #123, #456"}]' | erk exec close-prs
 ```
 
 Display final summary:
@@ -427,8 +424,8 @@ Display final summary:
 **Single plan:**
 
 ```
-✓ Created new plan #<new_number>
-✓ Closed original plan #<original_number>
+✓ Created new PR #<new_number>
+✓ Closed original PR #<original_number>
 
 Next steps:
 - Review the new plan: gh pr view <new_number>
@@ -438,8 +435,8 @@ Next steps:
 **Consolidated plans:**
 
 ```
-✓ Created consolidated plan #<new_number>
-✓ Closed original plans: #123, #456, #789
+✓ Created consolidated PR #<new_number>
+✓ Closed original PRs: #123, #456, #789
 
 Source plans consolidated:
 - #123: [title]
@@ -456,25 +453,25 @@ Next steps:
 After saving and closing, verify the new plan is in a healthy state:
 
 ```bash
-erk exec get-plan-info <new_plan_number>
+erk exec get-pr-info <new_pr_number>
 ```
 
 Check the returned labels:
 
-- Has `erk-plan` label (required for dispatch)
+- Has `erk-pr` label (required for dispatch)
 - If CONSOLIDATION_MODE: has `erk-consolidated` label
 - If IS_LEARN_PLAN: has `erk-learn` label
 
 If any expected label is missing, add it:
 
 ```bash
-erk exec add-plan-label <new_plan_number> --label "<missing_label>"
+erk exec add-pr-label <new_pr_number> --label "<missing_label>"
 ```
 
 Display validation result:
 
 ```
-✓ Plan #<number> validated: OPEN, labels: [list of labels]
+✓ PR #<number> validated: OPEN, labels: [list of labels]
 ```
 
 If validation finds the plan is not OPEN, report the issue and stop.
@@ -483,13 +480,13 @@ If validation finds the plan is not OPEN, report the issue and stop.
 
 ## Error Cases
 
-| Error                    | Message                                                                                   |
-| ------------------------ | ----------------------------------------------------------------------------------------- |
-| Plan not found           | `Error: Plan #<number> not found.`                                                        |
-| Not a plan               | `Error: Plan #<number> is not a valid plan (missing both erk-plan and erk-learn labels).` |
-| No plan content          | `Error: No plan content found in plan #<number>.`                                         |
-| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`             |
-| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                              |
+| Error                    | Message                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| Plan not found           | `Error: PR #<number> not found.`                                                      |
+| Not a plan               | `Error: PR #<number> is not a valid plan (missing both erk-pr and erk-learn labels).` |
+| No plan content          | `Error: No plan content found in PR #<number>.`                                       |
+| GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login`         |
+| No network               | `Error: Unable to reach GitHub. Check network connectivity.`                          |
 
 ---
 

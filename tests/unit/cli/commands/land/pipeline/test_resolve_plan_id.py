@@ -6,14 +6,14 @@ from pathlib import Path
 from erk.cli.commands.land_pipeline import (
     LandError,
     LandState,
-    resolve_plan_id,
+    resolve_pr_id,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_pr_details(*, pr_number: int, branch: str) -> PRDetails:
@@ -59,52 +59,52 @@ def _validation_state(tmp_path: Path, *, branch: str) -> LandState:
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_id=None,
+        pr_id=None,
         cleanup_confirmed=False,
         merged_pr_number=None,
     )
 
 
 def test_sets_plan_id_when_branch_has_plan(tmp_path: Path) -> None:
-    """Branch resolves to a PR → plan_id is set to the PR number string."""
+    """Branch resolves to a PR → pr_id is set to the PR number string."""
     branch = "plnd/my-feature"
     pr = _make_pr_details(pr_number=200, branch=branch)
 
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(prs_by_branch={branch: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         cwd=tmp_path,
     )
 
     state = _validation_state(tmp_path, branch=branch)
-    result = resolve_plan_id(ctx, state)
+    result = resolve_pr_id(ctx, state)
 
     assert not isinstance(result, LandError)
-    assert result.plan_id == "200"
+    assert result.pr_id == "200"
 
 
-def test_sets_plan_id_none_when_no_plan(tmp_path: Path) -> None:
-    """Branch has no PR → plan_id is None."""
+def test_sets_pr_id_none_when_no_plan(tmp_path: Path) -> None:
+    """Branch has no PR → pr_id is None."""
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     fake_time = FakeTime()
-    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         cwd=tmp_path,
     )
 
     state = _validation_state(tmp_path, branch="no-pr-branch")
-    result = resolve_plan_id(ctx, state)
+    result = resolve_pr_id(ctx, state)
 
     assert not isinstance(result, LandError)
-    assert result.plan_id is None
+    assert result.pr_id is None

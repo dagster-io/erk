@@ -217,7 +217,7 @@ export function PlanDetail({plan, onClose}: PlanDetailProps) {
               {hasPR && <CodeSnippet code={`erk pr co ${plan.pr_number}`} onCopy={showToast} />}
               <CodeSnippet code={`erk prepare ${plan.issue_number}`} onCopy={showToast} />
               <CodeSnippet
-                code={`source "$(erk prepare ${plan.issue_number} --script)" && erk implement --dangerous`}
+                code={`source <(erk prepare ${plan.issue_number} --script) && erk implement --dangerous`}
                 onCopy={showToast}
               />
               <CodeSnippet code={`erk pr dispatch ${plan.issue_number}`} onCopy={showToast} />

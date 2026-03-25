@@ -7,12 +7,12 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     _core_submit_flow,
 )
-from erk.core.context import context_for_test
 from erk_shared.gateway.git.abc import BranchDivergence
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_state(
@@ -26,7 +26,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
     was_created: bool = False,
@@ -50,7 +50,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -323,7 +323,7 @@ def test_existing_pr_adds_footer_if_missing(tmp_path: Path) -> None:
     assert isinstance(result, SubmitState)
     assert result.was_created is False
     assert result.pr_number == 42
-    # Footer should have been added (body didn't contain "erk pr teleport")
+    # Footer should have been added (body didn't contain "erk slot teleport")
     assert len(fake_github.updated_pr_bodies) == 1
     updated_body = fake_github.updated_pr_bodies[0][1]
-    assert "erk pr teleport" in updated_body
+    assert "erk slot teleport" in updated_body

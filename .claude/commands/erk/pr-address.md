@@ -35,15 +35,7 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 Determine the execution mode before any work begins:
 
-1. **Check for `erk-plan-review` label**:
-
-   ```bash
-   gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
-   ```
-
-   If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
-
-2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
+1. **Check if `.erk/impl-context/plan.md` is git-tracked**:
 
    ```bash
    git ls-files --error-unmatch .erk/impl-context/plan.md >/dev/null 2>&1
@@ -51,7 +43,18 @@ Determine the execution mode before any work begins:
 
    If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
 
-3. **Neither** → **Code Review Mode** (continue to Phase 1)
+2. **Otherwise** → **Code Review Mode** (continue to Phase 0.5)
+
+---
+
+### Phase 0.5: Reopen Contested Threads
+
+```bash
+erk exec reopen-contested-threads [--pr <number> if specified]
+```
+
+If `total_contested > 0`, report: "Reopened N contested threads — these will be included in classification below."
+If `success` is false, warn but continue (non-blocking).
 
 ---
 
@@ -399,7 +402,7 @@ This generates an AI-powered title and body from the full PR diff, preserving ex
 ### Phase 6: Upload Address Session
 
 After addressing review comments, upload the session for cross-machine learning.
-Resolve the plan_id from the current branch, then push the session:
+Resolve the pr_id from the current branch, then push the session:
 
 ```bash
 erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2>/dev/null || true

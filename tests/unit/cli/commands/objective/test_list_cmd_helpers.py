@@ -11,8 +11,8 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 
 NOW = DEFAULT_FAKE_TIME
 
@@ -23,7 +23,7 @@ def _make_plan(
     body: str = "",
 ) -> Plan:
     return Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title=title,
         body=body,
         state=PlanState.OPEN,
@@ -130,7 +130,7 @@ def test_enriched_fields_no_body() -> None:
     plan = _make_plan(body="")
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "-"
-    assert fields["state"] == "-"
+    assert fields["frontier"] == "-"
     assert fields["deps_state"] == "-"
     assert fields["deps"] == "-"
     assert fields["next_node"] == "-"
@@ -140,7 +140,7 @@ def test_enriched_fields_body_no_roadmap() -> None:
     plan = _make_plan(body="Just some text without a roadmap block.")
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "-"
-    assert fields["state"] == "-"
+    assert fields["frontier"] == "-"
 
 
 def test_enriched_fields_valid_roadmap() -> None:
@@ -148,7 +148,7 @@ def test_enriched_fields_valid_roadmap() -> None:
     plan = _make_plan(body=body)
     fields = _compute_enriched_fields(plan)
     assert fields["progress"] == "1/2"
-    assert fields["state"] != "-"
+    assert fields["frontier"] != "-"
     assert fields["next_node"] == "1.2"
     assert fields["deps_state"] == "ready"
 
@@ -191,7 +191,7 @@ def _roadmap_node(
         pr=pr,
         depends_on=depends_on,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
 
@@ -296,3 +296,28 @@ def test_rich_sparkline_passes_unknown_chars_through() -> None:
 
 def test_rich_sparkline_empty_string() -> None:
     assert _rich_sparkline("") == ""
+
+
+def test_rich_sparkline_bracket_compressed_run() -> None:
+    """Bracket-compressed run like [13x○] styles the symbol only."""
+    result = _rich_sparkline("[13x○]")
+    assert "13x" in result
+    assert "[dim]○[/dim]" in result
+
+
+def test_rich_sparkline_bracket_with_prefix() -> None:
+    """Bracket-compressed run preserves preceding individual characters."""
+    result = _rich_sparkline("✓✓[5x○]")
+    assert "[green]✓[/green]" in result
+    assert "5x" in result
+    assert "[dim]○[/dim]" in result
+
+
+def test_rich_sparkline_multiple_bracket_runs() -> None:
+    """Multiple bracket-compressed runs each get styled."""
+    result = _rich_sparkline("[7x✓]-[14x○]")
+    assert "7x" in result
+    assert "[green]✓[/green]" in result
+    assert "[dim]-[/dim]" in result
+    assert "14x" in result
+    assert "[dim]○[/dim]" in result

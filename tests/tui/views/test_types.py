@@ -4,6 +4,7 @@ from erk.tui.views.types import (
     LEARN_VIEW,
     OBJECTIVES_VIEW,
     PLANS_VIEW,
+    RUNS_VIEW,
     VIEW_CONFIGS,
     ViewConfig,
     ViewMode,
@@ -16,12 +17,13 @@ from erk.tui.views.types import (
 class TestViewMode:
     """Tests for ViewMode enum."""
 
-    def test_has_three_modes(self) -> None:
-        """ViewMode has exactly three modes."""
-        assert len(ViewMode) == 3
+    def test_has_four_modes(self) -> None:
+        """ViewMode has exactly four modes."""
+        assert len(ViewMode) == 4
         assert ViewMode.PLANS is not None
         assert ViewMode.LEARN is not None
         assert ViewMode.OBJECTIVES is not None
+        assert ViewMode.RUNS is not None
 
 
 class TestViewConfig:
@@ -48,11 +50,18 @@ class TestViewConfig:
         assert OBJECTIVES_VIEW.labels == ("erk-objective",)
         assert OBJECTIVES_VIEW.key_hint == "3"
 
+    def test_runs_view_config(self) -> None:
+        """RUNS_VIEW has correct configuration."""
+        assert RUNS_VIEW.mode == ViewMode.RUNS
+        assert RUNS_VIEW.display_name == "Runs"
+        assert RUNS_VIEW.labels == ()
+        assert RUNS_VIEW.key_hint == "4"
+
     def test_view_configs_tuple_has_all_views(self) -> None:
-        """VIEW_CONFIGS contains all three view configs."""
-        assert len(VIEW_CONFIGS) == 3
+        """VIEW_CONFIGS contains all four view configs."""
+        assert len(VIEW_CONFIGS) == 4
         modes = {c.mode for c in VIEW_CONFIGS}
-        assert modes == {ViewMode.PLANS, ViewMode.LEARN, ViewMode.OBJECTIVES}
+        assert modes == {ViewMode.PLANS, ViewMode.LEARN, ViewMode.OBJECTIVES, ViewMode.RUNS}
 
     def test_view_config_is_frozen(self) -> None:
         """ViewConfig is a frozen dataclass."""
@@ -91,6 +100,12 @@ class TestGetViewConfig:
         assert config.mode == ViewMode.OBJECTIVES
         assert config.display_name == "Objectives"
 
+    def test_returns_runs_config(self) -> None:
+        """get_view_config returns RUNS_VIEW for ViewMode.RUNS."""
+        config = get_view_config(ViewMode.RUNS)
+        assert config.mode == ViewMode.RUNS
+        assert config.display_name == "Runs"
+
 
 class TestGetNextViewMode:
     """Tests for get_next_view_mode function."""
@@ -103,17 +118,21 @@ class TestGetNextViewMode:
         """Next after LEARN is OBJECTIVES."""
         assert get_next_view_mode(ViewMode.LEARN) == ViewMode.OBJECTIVES
 
-    def test_objectives_wraps_to_plans(self) -> None:
-        """Next after OBJECTIVES wraps to PLANS."""
-        assert get_next_view_mode(ViewMode.OBJECTIVES) == ViewMode.PLANS
+    def test_objectives_to_runs(self) -> None:
+        """Next after OBJECTIVES is RUNS."""
+        assert get_next_view_mode(ViewMode.OBJECTIVES) == ViewMode.RUNS
+
+    def test_runs_wraps_to_plans(self) -> None:
+        """Next after RUNS wraps to PLANS."""
+        assert get_next_view_mode(ViewMode.RUNS) == ViewMode.PLANS
 
 
 class TestGetPreviousViewMode:
     """Tests for get_previous_view_mode function."""
 
-    def test_plans_wraps_to_objectives(self) -> None:
-        """Previous before PLANS wraps to OBJECTIVES."""
-        assert get_previous_view_mode(ViewMode.PLANS) == ViewMode.OBJECTIVES
+    def test_plans_wraps_to_runs(self) -> None:
+        """Previous before PLANS wraps to RUNS."""
+        assert get_previous_view_mode(ViewMode.PLANS) == ViewMode.RUNS
 
     def test_learn_to_plans(self) -> None:
         """Previous before LEARN is PLANS."""
@@ -122,3 +141,7 @@ class TestGetPreviousViewMode:
     def test_objectives_to_learn(self) -> None:
         """Previous before OBJECTIVES is LEARN."""
         assert get_previous_view_mode(ViewMode.OBJECTIVES) == ViewMode.LEARN
+
+    def test_runs_to_objectives(self) -> None:
+        """Previous before RUNS is OBJECTIVES."""
+        assert get_previous_view_mode(ViewMode.RUNS) == ViewMode.OBJECTIVES

@@ -3,7 +3,7 @@ name: objective
 description: >
   This skill should be used when managing objectives - coherent goals that require 2+ plans/PRs
   to complete. Use when users want to create multi-plan tracking documents, log progress across
-  related PRs, capture lessons learned, or coordinate work that spans multiple erk-plans.
+  related PRs, capture lessons learned, or coordinate work that spans multiple erk-prs.
   Objectives are human-first coordination documents, not executable plans.
 ---
 
@@ -12,7 +12,7 @@ description: >
 ## Overview
 
 Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
-erk-plans (single executable implementations), objectives track progress across related work and
+erk-prs (single executable implementations), objectives track progress across related work and
 capture lessons learned along the way.
 
 **Scope range:**
@@ -29,7 +29,7 @@ capture lessons learned along the way.
 | Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
 | Body     | Machine-parseable metadata       | Human-readable markdown             |
 | Comments | Session context dumps            | Action logs + lessons               |
-| Label    | `erk-plan`                       | `erk-objective`                     |
+| Label    | `erk-pr`                         | `erk-objective`                     |
 | Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
 
 ## Key Design Principles
@@ -121,8 +121,8 @@ erk exec update-objective-node 8470 --node 1.3 --description "Revised descriptio
 # Set slug
 erk exec update-objective-node 8470 --node 1.3 --slug "revised-slug"
 
-# Skip with reason
-erk exec update-objective-node 8470 --node 1.3 --status skipped --reason "Superseded by new approach"
+# Skip with comment
+erk exec update-objective-node 8470 --node 1.3 --status skipped --comment "Superseded by new approach"
 
 # Combine multiple updates
 erk exec update-objective-node 8470 --node 2.1 --description "New desc" --slug "new-slug" --status planning
@@ -142,10 +142,10 @@ erk exec add-objective-node 8470 --phase 2 \
   --slug integration-tests \
   --depends-on 2.1 --depends-on 2.2
 
-# With reason for adding
+# With comment for adding
 erk exec add-objective-node 8470 --phase 1 \
   --description "Handle edge case" \
-  --reason "Discovered during re-evaluation"
+  --comment "Discovered during re-evaluation"
 ```
 
 ### Updating Node Status
@@ -173,7 +173,7 @@ erk objective view <issue-number>
 
 ### Spawning an Erk-Plan
 
-To implement a specific roadmap node, create an erk-plan that references the objective:
+To implement a specific roadmap node, create an erk-pr that references the objective:
 
 ```bash
 erk pr create --file plan.md --title "Implement [node description]"
@@ -185,7 +185,7 @@ erk pr create --file plan.md --title "Implement [node description]"
 2. **Inspect progress** - View dependency graph and next node
 3. **Log actions** - After completing each significant piece of work
 4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
-5. **Spawn erk-plans** - For individual implementation nodes
+5. **Spawn erk-prs** - For individual implementation nodes
 6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
 
 ## Resources

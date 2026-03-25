@@ -260,7 +260,7 @@ class TestLoadConfig:
         assert result.post_create_shell == "bash"
 
     def test_loads_plans_repo(self, tmp_path: Path) -> None:
-        """Loads plans.repo from config."""
+        """Loads plans.repo from config (backwards compat)."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -271,10 +271,38 @@ class TestLoadConfig:
 
         result = load_config(repo_root)
 
-        assert result.plans_repo == "owner/plans-repo"
+        assert result.github_repo == "owner/plans-repo"
+
+    def test_loads_github_repo(self, tmp_path: Path) -> None:
+        """Loads github.repo from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[github]\nrepo = "owner/github-repo"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.github_repo == "owner/github-repo"
+
+    def test_github_section_takes_precedence_over_plans(self, tmp_path: Path) -> None:
+        """When both [github] and [plans] sections exist, [github] wins."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[github]\nrepo = "owner/github-repo"\n\n[plans]\nrepo = "owner/plans-repo"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.github_repo == "owner/github-repo"
 
     def test_plans_repo_defaults_to_none(self, tmp_path: Path) -> None:
-        """plans_repo defaults to None when [plans] section absent."""
+        """github_repo defaults to None when neither section present."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -285,10 +313,10 @@ class TestLoadConfig:
 
         result = load_config(repo_root)
 
-        assert result.plans_repo is None
+        assert result.github_repo is None
 
     def test_loads_full_config_with_plans_repo(self, tmp_path: Path) -> None:
-        """Loads full config including plans.repo."""
+        """Loads full config including plans.repo (backwards compat)."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -312,38 +340,10 @@ repo = "owner/plans-repo"
         assert result.env == {"FOO": "bar"}
         assert result.post_create_shell == "bash"
         assert result.post_create_commands == ["cmd1"]
-        assert result.plans_repo == "owner/plans-repo"
+        assert result.github_repo == "owner/plans-repo"
 
-    def test_loads_pool_max_slots(self, tmp_path: Path) -> None:
-        """Loads pool.max_slots from config."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.toml").write_text(
-            "[pool]\nmax_slots = 8\n",
-            encoding="utf-8",
-        )
-
-        result = load_config(repo_root)
-
-        assert result.pool_size == 8
-
-    def test_pool_size_defaults_to_none(self, tmp_path: Path) -> None:
-        """pool_size defaults to None when [pool] section absent."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.toml").write_text(
-            '[env]\nFOO = "bar"\n',
-            encoding="utf-8",
-        )
-
-        result = load_config(repo_root)
-
-        assert result.pool_size is None
-
-    def test_loads_full_config_with_pool(self, tmp_path: Path) -> None:
-        """Loads full config including pool.max_slots."""
+    def test_loads_full_config_with_github_repo(self, tmp_path: Path) -> None:
+        """Loads full config including github.repo."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
@@ -352,11 +352,12 @@ repo = "owner/plans-repo"
 [env]
 FOO = "bar"
 
-[pool]
-max_slots = 6
+[post_create]
+shell = "bash"
+commands = ["cmd1"]
 
-[plans]
-repo = "owner/plans-repo"
+[github]
+repo = "owner/github-repo"
 """,
             encoding="utf-8",
         )
@@ -364,78 +365,9 @@ repo = "owner/plans-repo"
         result = load_config(repo_root)
 
         assert result.env == {"FOO": "bar"}
-        assert result.pool_size == 6
-        assert result.plans_repo == "owner/plans-repo"
-
-    def test_loads_pool_checkout_commands(self, tmp_path: Path) -> None:
-        """Loads pool.checkout.commands from config."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.toml").write_text(
-            '[pool.checkout]\ncommands = ["git fetch origin", "echo hello"]\n',
-            encoding="utf-8",
-        )
-
-        result = load_config(repo_root)
-
-        assert result.pool_checkout_commands == ["git fetch origin", "echo hello"]
-
-    def test_loads_pool_checkout_shell(self, tmp_path: Path) -> None:
-        """Loads pool.checkout.shell from config."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.toml").write_text(
-            '[pool.checkout]\nshell = "zsh"\n',
-            encoding="utf-8",
-        )
-
-        result = load_config(repo_root)
-
-        assert result.pool_checkout_shell == "zsh"
-
-    def test_pool_checkout_defaults_to_empty(self, tmp_path: Path) -> None:
-        """pool_checkout_commands defaults to empty list when section absent."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.toml").write_text(
-            '[env]\nFOO = "bar"\n',
-            encoding="utf-8",
-        )
-
-        result = load_config(repo_root)
-
-        assert result.pool_checkout_commands == []
-        assert result.pool_checkout_shell is None
-
-    def test_loads_full_pool_config(self, tmp_path: Path) -> None:
-        """Loads full pool config including checkout section."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.toml").write_text(
-            """
-[pool]
-max_slots = 4
-
-[pool.checkout]
-shell = "bash"
-commands = ["git fetch origin", "uv sync"]
-""",
-            encoding="utf-8",
-        )
-
-        result = load_config(repo_root)
-
-        assert result.pool_size == 4
-        assert result.pool_checkout_shell == "bash"
-        assert result.pool_checkout_commands == ["git fetch origin", "uv sync"]
-
-
-class TestLoadLocalConfig:
-    """Tests for load_local_config function."""
+        assert result.post_create_shell == "bash"
+        assert result.post_create_commands == ["cmd1"]
+        assert result.github_repo == "owner/github-repo"
 
     def test_returns_defaults_when_file_missing(self, tmp_path: Path) -> None:
         """Returns empty defaults when local.toml doesn't exist."""
@@ -447,10 +379,7 @@ class TestLoadLocalConfig:
         assert result.env == {}
         assert result.post_create_commands == []
         assert result.post_create_shell is None
-        assert result.plans_repo is None
-        assert result.pool_size is None
-        assert result.pool_checkout_commands == []
-        assert result.pool_checkout_shell is None
+        assert result.github_repo is None
 
     def test_loads_from_local_toml(self, tmp_path: Path) -> None:
         """Loads config from .erk/config.local.toml."""
@@ -465,49 +394,6 @@ class TestLoadLocalConfig:
         result = load_local_config(repo_root)
 
         assert result.env == {"MY_VAR": "my_value"}
-
-    def test_loads_pool_size(self, tmp_path: Path) -> None:
-        """Loads pool.max_slots from local config."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.local.toml").write_text(
-            "[pool]\nmax_slots = 10\n",
-            encoding="utf-8",
-        )
-
-        result = load_local_config(repo_root)
-
-        assert result.pool_size == 10
-
-    def test_loads_plans_repo(self, tmp_path: Path) -> None:
-        """Loads plans.repo from local config."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.local.toml").write_text(
-            '[plans]\nrepo = "my-org/my-plans"\n',
-            encoding="utf-8",
-        )
-
-        result = load_local_config(repo_root)
-
-        assert result.plans_repo == "my-org/my-plans"
-
-    def test_loads_post_create_commands(self, tmp_path: Path) -> None:
-        """Loads post_create commands from local config."""
-        repo_root = tmp_path / "repo"
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir(parents=True)
-        (erk_dir / "config.local.toml").write_text(
-            '[post_create]\nshell = "zsh"\ncommands = ["source ~/.zshrc"]\n',
-            encoding="utf-8",
-        )
-
-        result = load_local_config(repo_root)
-
-        assert result.post_create_shell == "zsh"
-        assert result.post_create_commands == ["source ~/.zshrc"]
 
 
 class TestMergeConfigsWithLocal:
@@ -529,29 +415,17 @@ class TestMergeConfigsWithLocal:
             "VAR3": "local3",  # From local
         }
 
-    def test_local_pool_size_overrides_base(self) -> None:
-        """Local pool_size overrides base pool_size."""
-        base_config = LoadedConfig.test(pool_size=4)
-        local_config = LoadedConfig.test(pool_size=10)
-
-        result = merge_configs_with_local(
-            base_config=base_config,
-            local_config=local_config,
-        )
-
-        assert result.pool_size == 10
-
     def test_local_plans_repo_overrides_base(self) -> None:
         """Local plans_repo overrides base plans_repo."""
-        base_config = LoadedConfig.test(plans_repo="base-org/base-plans")
-        local_config = LoadedConfig.test(plans_repo="local-org/local-plans")
+        base_config = LoadedConfig.test(github_repo="base-org/base-plans")
+        local_config = LoadedConfig.test(github_repo="local-org/local-plans")
 
         result = merge_configs_with_local(
             base_config=base_config,
             local_config=local_config,
         )
 
-        assert result.plans_repo == "local-org/local-plans"
+        assert result.github_repo == "local-org/local-plans"
 
     def test_commands_concatenate_base_then_local(self) -> None:
         """Post-create commands concatenate: base first, then local."""
@@ -565,25 +439,11 @@ class TestMergeConfigsWithLocal:
 
         assert result.post_create_commands == ["base_cmd1", "base_cmd2", "local_cmd1"]
 
-    def test_pool_checkout_commands_concatenate(self) -> None:
-        """Pool checkout commands concatenate: base first, then local."""
-        base_config = LoadedConfig.test(pool_checkout_commands=["git fetch"])
-        local_config = LoadedConfig.test(pool_checkout_commands=["yarn install"])
-
-        result = merge_configs_with_local(
-            base_config=base_config,
-            local_config=local_config,
-        )
-
-        assert result.pool_checkout_commands == ["git fetch", "yarn install"]
-
     def test_uses_base_when_local_none(self) -> None:
         """Uses base values when local values are None."""
         base_config = LoadedConfig.test(
             post_create_shell="bash",
-            plans_repo="base/repo",
-            pool_size=4,
-            pool_checkout_shell="bash",
+            github_repo="base/repo",
         )
         local_config = LoadedConfig.test()  # All None
 
@@ -593,19 +453,15 @@ class TestMergeConfigsWithLocal:
         )
 
         assert result.post_create_shell == "bash"
-        assert result.plans_repo == "base/repo"
-        assert result.pool_size == 4
-        assert result.pool_checkout_shell == "bash"
+        assert result.github_repo == "base/repo"
 
     def test_local_shell_overrides_base(self) -> None:
         """Local shell settings override base shell settings."""
         base_config = LoadedConfig.test(
             post_create_shell="bash",
-            pool_checkout_shell="bash",
         )
         local_config = LoadedConfig.test(
             post_create_shell="zsh",
-            pool_checkout_shell="zsh",
         )
 
         result = merge_configs_with_local(
@@ -614,7 +470,6 @@ class TestMergeConfigsWithLocal:
         )
 
         assert result.post_create_shell == "zsh"
-        assert result.pool_checkout_shell == "zsh"
 
     def test_merges_empty_configs(self) -> None:
         """Handles merging empty configs."""
@@ -629,7 +484,4 @@ class TestMergeConfigsWithLocal:
         assert result.env == {}
         assert result.post_create_commands == []
         assert result.post_create_shell is None
-        assert result.plans_repo is None
-        assert result.pool_size is None
-        assert result.pool_checkout_commands == []
-        assert result.pool_checkout_shell is None
+        assert result.github_repo is None

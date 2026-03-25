@@ -76,7 +76,7 @@ class StatusOrchestrator:
             DependencyStatus,
             EnvironmentStatus,
             GitStatus,
-            PlanStatus,
+            PrStatus,
             PullRequestStatus,
             StackPosition,
         )
@@ -95,7 +95,7 @@ class StatusOrchestrator:
             pr_status=pr_result if isinstance(pr_result, PullRequestStatus) else None,
             environment=env_result if isinstance(env_result, EnvironmentStatus) else None,
             dependencies=deps_result if isinstance(deps_result, DependencyStatus) else None,
-            plan=plan_result if isinstance(plan_result, PlanStatus) else None,
+            plan=plan_result if isinstance(plan_result, PrStatus) else None,
             related_worktrees=related_worktrees,
         )
 

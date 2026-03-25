@@ -7,10 +7,10 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     link_pr_to_objective_nodes,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.test_utils.test_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""
@@ -66,7 +66,7 @@ def _make_state(
         session_id="test-session",
         skip_description=False,
         quiet=False,
-        plan_id=None,
+        pr_id=None,
         pr_number=pr_number,
         pr_url=f"https://github.com/owner/repo/pull/{pr_number}" if pr_number else None,
         was_created=True,
@@ -104,7 +104,7 @@ def _setup_impl(cwd: Path, *, objective_id: int, node_ids: tuple[str, ...]) -> N
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="100",
+        pr_number="100",
         url="https://github.com/owner/repo/issues/100",
         labels=(),
         objective_id=objective_id,

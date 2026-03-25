@@ -51,11 +51,7 @@ The command layer uses `gh pr list` because simplicity matters more than quota o
 
 ## The Branch Name Must Match
 
-<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_for_plan.py, lines 88-99 -->
-
 GitHub's PR query matches the **exact branch name** including owner prefix (`owner:branch`). If your branch naming changes (e.g., different timestamp suffixes for the same feature), each branch can have its own PR. This is intentional — erk branches are immutable once created.
-
-The `erk exec get-pr-for-plan` script (see `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py`) demonstrates fallback logic when `branch_name` is missing from plan metadata: it infers the branch from the current git context if it matches the plan's naming pattern (e.g., `plnd/` prefix).
 
 ## Integration: Plan Metadata and PR Discovery
 

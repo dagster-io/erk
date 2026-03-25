@@ -1,0 +1,84 @@
+"""Fetch erk-prs linked to an objective.
+
+Usage:
+    erk exec get-prs-for-objective <OBJECTIVE_NUMBER>
+
+Output:
+    JSON with {success, objective_number, prs: [{number, state, title}]}
+
+Exit Codes:
+    0: Success - prs fetched
+    1: Error - API error
+"""
+
+import json
+
+import click
+
+from erk_shared.context.helpers import (
+    require_issues as require_github_issues,
+)
+from erk_shared.context.helpers import (
+    require_repo_root,
+)
+from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.types import BlockKeys
+
+
+@click.command(name="get-prs-for-objective")
+@click.argument("objective_number", type=int)
+@click.pass_context
+def get_prs_for_objective(ctx: click.Context, objective_number: int) -> None:
+    """Fetch erk-prs linked to an objective.
+
+    Lists all erk-pr issues with [erk-pr] title prefix, then filters
+    to those whose plan-header metadata contains objective_id matching the
+    given objective number.
+    """
+    github = require_github_issues(ctx)
+    repo_root = require_repo_root(ctx)
+
+    try:
+        all_prs = github.list_issues(
+            repo_root=repo_root,
+            labels=["erk-pr"],
+            state="all",
+        )
+    except RuntimeError as e:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": f"Failed to list erk-prs: {e}",
+                }
+            )
+        )
+        raise SystemExit(1) from e
+
+    # Filter prs that reference this objective
+    linked_prs = []
+    for pr in all_prs:
+        block = find_metadata_block(pr.body, BlockKeys.PLAN_HEADER)
+        if block is None:
+            continue
+
+        # Check both objective_id (new) and objective_issue (legacy)
+        obj_id = block.data.get("objective_id") or block.data.get("objective_issue")
+        if obj_id == objective_number:
+            linked_prs.append(
+                {
+                    "number": pr.number,
+                    "state": pr.state,
+                    "title": pr.title,
+                }
+            )
+
+    click.echo(
+        json.dumps(
+            {
+                "success": True,
+                "objective_number": objective_number,
+                "prs": linked_prs,
+            }
+        )
+    )

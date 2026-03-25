@@ -10,7 +10,7 @@ from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import GitHubRepoId
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 @click.command("close")
@@ -18,9 +18,9 @@ from erk_shared.plan_store.types import PlanNotFound
 @resolved_repo_option
 @click.pass_obj
 def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None:
-    """Close a plan by plan number or GitHub URL.
+    """Close a PR by PR number or GitHub URL.
 
-    Closes all OPEN PRs linked to the plan in addition to closing the plan itself.
+    Closes all OPEN PRs linked to the issue in addition to closing the issue itself.
 
     Examples:
         erk pr close 42
@@ -33,26 +33,16 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     # Verify plan exists
     issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=number)
     if isinstance(issue, IssueNotFound):
-        raise click.ClickException(f"Plan #{number} not found")
-
-    # Close all OPEN PRs linked to this plan (unified via RemoteGitHub)
-    linked_prs = remote.get_prs_referencing_issue(
-        owner=repo_id.owner, repo=repo_id.repo, number=number
-    )
-    closed_prs: list[int] = []
-    for pr in linked_prs:
-        if pr.state == "OPEN":
-            remote.close_pr(owner=repo_id.owner, repo=repo_id.repo, number=pr.number)
-            closed_prs.append(pr.number)
+        raise click.ClickException(f"PR #{number} not found")
 
     # Close the plan + optional local enrichments
     objective_id: int | None = None
     if not isinstance(ctx.repo, NoRepoSentinel):
         repo_root = ctx.repo.root
-        result = ctx.plan_store.get_plan(repo_root, str(number))
-        if not isinstance(result, PlanNotFound):
+        result = ctx.pr_store.get_managed_pr(repo_root, str(number))
+        if not isinstance(result, PrNotFound):
             objective_id = result.objective_id
-        ctx.plan_store.close_plan(repo_root, identifier)
+        ctx.pr_store.close_managed_pr(repo_root, identifier)
     else:
         remote.close_issue(owner=repo_id.owner, repo=repo_id.repo, number=number)
 
@@ -60,12 +50,9 @@ def pr_close(ctx: ErkContext, identifier: str, *, repo_id: GitHubRepoId) -> None
     if objective_id is not None:
         run_objective_update_after_close(
             ctx,
-            plan_number=number,
+            pr_number=number,
             objective=objective_id,
         )
 
     # Output
-    user_output(f"Closed plan #{number}")
-    if closed_prs:
-        pr_list_str = ", ".join(f"#{pr}" for pr in closed_prs)
-        user_output(f"Closed {len(closed_prs)} linked PR(s): {pr_list_str}")
+    user_output(f"Closed PR #{number}")

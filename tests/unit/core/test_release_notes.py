@@ -2,6 +2,8 @@
 
 from unittest.mock import patch
 
+from tests.fakes.gateway.erk_installation import FakeErkInstallation
+
 from erk.core.release_notes import (
     ReleaseEntry,
     _is_upgrade,
@@ -9,7 +11,6 @@ from erk.core.release_notes import (
     check_for_version_change,
     parse_changelog,
 )
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 
 SAMPLE_CHANGELOG = """\
 # Changelog

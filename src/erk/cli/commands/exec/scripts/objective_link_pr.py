@@ -114,7 +114,7 @@ def objective_link_pr(
                 status=None,
                 description=None,
                 slug=None,
-                reason=None,
+                comment=None,
             )
 
             if updated_block_content is None:

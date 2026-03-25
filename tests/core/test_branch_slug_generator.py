@@ -4,7 +4,7 @@ from erk.core.branch_slug_generator import (
     BranchSlugGenerator,
     generate_branch_slug,
 )
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
 def test_successful_slug_generation() -> None:

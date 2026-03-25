@@ -11,19 +11,19 @@ from typing import Any
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
-from tests.fakes.prompt_executor import FakePromptExecutor
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -68,7 +68,7 @@ def _make_issue_info(
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -281,7 +281,7 @@ def test_generates_footer_with_checkout_command() -> None:
 
         # Verify footer with teleport command is generated
         _, updated_body = github.updated_pr_bodies[0]
-        assert "erk pr teleport" in updated_body
+        assert "erk slot teleport" in updated_body
         # No issue closing reference (planned-PR only)
         assert "Closes #" not in updated_body
 
@@ -365,11 +365,11 @@ def test_uses_graphite_parent() -> None:
 def test_no_plan_context_after_pxxxx_removal() -> None:
     """Test that plan content from old issue-comment mechanism is NOT embedded.
 
-    With PlannedPRBackend, get_plan_for_branch returns the feature PR on the branch
+    With ManagedGitHubPrBackend, get_plan_for_branch returns the feature PR on the branch
     (PR #42 with empty body). The plan content from issue #123's comment is NOT used.
     The "Fix the bug." text from comment #1000 should not appear in the PR description.
 
-    Note: plan-ref.json exists in .impl/ but PlannedPRBackend.get_plan_for_branch
+    Note: plan-ref.json exists in .impl/ but ManagedGitHubPrBackend.get_plan_for_branch
     doesn't read it. Future work may restore plan context via plan-ref.json lookup.
     """
     runner = CliRunner()
@@ -394,7 +394,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
         )
 
         # Create branch-scoped impl dir with ref.json
-        # (not currently used by PlannedPRBackend.get_plan_for_branch)
+        # (not currently used by ManagedGitHubPrBackend.get_plan_for_branch)
         impl_dir = get_impl_dir(env.cwd, branch_name="plnd/fix-bug-123-01-01-1200")
         impl_dir.mkdir(parents=True, exist_ok=True)
         from erk_shared.impl_folder import save_plan_ref
@@ -402,9 +402,9 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="123",
+            pr_number="123",
             url="https://github.com/test-owner/test-repo/issues/123",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             objective_id=None,
             node_ids=None,
         )
@@ -415,7 +415,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=PlannedPRBackend(github, fake_github_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, fake_github_issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -449,7 +449,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
-            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)

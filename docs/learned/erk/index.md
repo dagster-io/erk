@@ -12,7 +12,6 @@
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[graphite-divergence-detection.md](graphite-divergence-detection.md)** — debugging remote divergence errors during erk pr submit, understanding the Graphite-first submit flow's pre-checks, resolving 'branch is behind remote' errors, using --force flag with erk pr submit
 - **[graphite-stack-troubleshooting.md](graphite-stack-troubleshooting.md)** — debugging Graphite stack operation failures, recovering from gt sync or gt submit errors, fixing stack ordering or parent tracking issues
-- **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its plan, working with .erk/impl-context/plan-ref.json or .erk/impl-context/ref.json, creating PRs that close plans
 - **[placeholder-branches.md](placeholder-branches.md)** — working with worktree pool slots or slot commands, understanding why placeholder branches bypass BranchManager, debugging slot cleanup during erk land
 - **[pr-address-workflows.md](pr-address-workflows.md)** — addressing PR review comments, choosing between local and remote PR addressing, understanding erk launch pr-address, understanding /erk:pr-address command
 - **[pr-commands.md](pr-commands.md)** — generating or modifying PR body footers, debugging `erk pr check` footer validation failures
@@ -20,6 +19,7 @@
 - **[remote-workflow-template.md](remote-workflow-template.md)** — creating a new remote workflow command, triggering GitHub Actions from CLI, building commands like erk launch pr-address
 - **[same-worktree-navigation.md](same-worktree-navigation.md)** — modifying navigation commands (up/down), activation instructions, worktree deletion in same-worktree scenarios
 - **[slot-pool-architecture.md](slot-pool-architecture.md)** — understanding slot pool design, implementing slot-related features, debugging slot assignment issues
+- **[stack-sync.md](stack-sync.md)** — working with erk stack sync, syncing stack branches with remote, implementing or testing stack-wide divergence resolution
 - **[stub-branch-lifecycle.md](stub-branch-lifecycle.md)** — working with slot pool or branch cleanup, debugging Graphite branch tracking
 - **[workspace-activation.md](workspace-activation.md)** — modifying worktree activation scripts, debugging stale package versions in worktrees, understanding how workspace packages are refreshed, changing activation script generation
 - **[worktree-branch-mismatch.md](worktree-branch-mismatch.md)** — debugging erk up/down navigation failures, understanding how erk handles manual git checkout in worktrees, working with find_worktree_for_branch_or_path()

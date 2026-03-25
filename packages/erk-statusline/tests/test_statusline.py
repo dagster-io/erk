@@ -9,12 +9,13 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+from tests.fakes.gateway.branch_manager import FakeBranchManager
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+
 from erk_shared.gateway.branch_manager.types import PrInfo
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
     CACHE_TTL_SECONDS,
@@ -38,9 +39,10 @@ from erk_statusline.statusline import (
     get_git_root_via_gateway,
     get_git_status_via_gateway,
     get_github_repo_via_gateway,
+    get_model_code,
     get_objective_issue,
-    get_plan_number,
     get_pr_info_via_branch_manager,
+    get_pr_number,
     get_repo_info,
     get_worktree_info_via_gateway,
     main,
@@ -376,7 +378,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -406,7 +408,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -436,7 +438,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=456, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -458,7 +460,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         # Render TokenSeq to text to verify format
         result_text = result.render()
@@ -486,7 +488,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -514,7 +516,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" in result_text
@@ -542,7 +544,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         assert "cmts:" not in result_text
@@ -569,7 +571,7 @@ class TestBuildGhLabel:
             from_fallback=False,
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=789)
+        result = build_gh_label(repo_info, github_data, pr_number=456, objective_issue=789)
 
         result_text = result.render()
         # Note: render() includes ANSI codes between labels and numbers
@@ -590,7 +592,7 @@ class TestBuildGhLabel:
         )
         github_data = None
 
-        result = build_gh_label(repo_info, github_data, plan_number=456, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=456, objective_issue=None)
 
         result_text = result.render()
         assert "obj:" not in result_text
@@ -622,7 +624,7 @@ class TestBuildGhLabel:
             from_fallback=True,  # Data came from GitHub API fallback
         )
 
-        result = build_gh_label(repo_info, github_data, plan_number=None, objective_issue=None)
+        result = build_gh_label(repo_info, github_data, pr_number=None, objective_issue=None)
 
         result_text = result.render()
         # Should NOT contain warning emoji - fallback indicator was removed
@@ -631,42 +633,42 @@ class TestBuildGhLabel:
         assert "#123" in result_text
 
 
-class TestGetPlanNumber:
-    """Test plan number loading from .impl/plan-ref.json."""
+class TestGetPrNumber:
+    """Test PR number loading from .impl/plan-ref.json."""
 
     def test_no_git_root_returns_none(self) -> None:
         """Empty git root should return None."""
-        result = get_plan_number("")
+        result = get_pr_number("")
         assert result is None
 
     def test_missing_plan_file_returns_none(self) -> None:
         """Missing plan file should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = get_plan_number(tmpdir)
+            result = get_pr_number(tmpdir)
             assert result is None
 
     def test_plan_ref_json_returns_number(self) -> None:
-        """Valid plan-ref.json with plan_id field should return the number."""
+        """Valid plan-ref.json with pr_id field should return the number."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
             plan_ref_file.write_text(
-                '{"provider": "github", "plan_id": "42", "url": "https://example.com"}'
+                '{"provider": "github", "pr_id": "42", "url": "https://example.com"}'
             )
 
-            result = get_plan_number(tmpdir)
+            result = get_pr_number(tmpdir)
             assert result == 42
 
-    def test_plan_ref_json_non_numeric_plan_id_returns_none(self) -> None:
-        """plan-ref.json with non-numeric plan_id returns None."""
+    def test_plan_ref_json_non_numeric_pr_id_returns_none(self) -> None:
+        """plan-ref.json with non-numeric pr_id returns None."""
         with tempfile.TemporaryDirectory() as tmpdir:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text('{"provider": "linear", "plan_id": "PROJ-123", "url": "u"}')
+            plan_ref_file.write_text('{"provider": "linear", "pr_id": "PROJ-123", "url": "u"}')
 
-            result = get_plan_number(tmpdir)
+            result = get_pr_number(tmpdir)
             assert result is None
 
 
@@ -691,7 +693,7 @@ class TestGetObjectiveIssue:
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
             plan_ref_file.write_text(
-                '{"provider": "github", "plan_id": "42", "url": "u", "objective_id": 789}'
+                '{"provider": "github", "pr_id": "42", "url": "u", "objective_id": 789}'
             )
 
             result = get_objective_issue(tmpdir)
@@ -703,7 +705,7 @@ class TestGetObjectiveIssue:
             impl_dir = Path(tmpdir) / ".impl"
             impl_dir.mkdir()
             plan_ref_file = impl_dir / "plan-ref.json"
-            plan_ref_file.write_text('{"provider": "github", "plan_id": "42", "url": "u"}')
+            plan_ref_file.write_text('{"provider": "github", "pr_id": "42", "url": "u"}')
 
             result = get_objective_issue(tmpdir)
             assert result is None
@@ -713,12 +715,29 @@ class TestFindNewPlanFile:
     """Test new plan file detection."""
 
     def test_finds_file_with_correct_frontmatter(self) -> None:
-        """Should find plan file with erk_plan: true."""
+        """Should find plan file with erk_pr: true."""
         with tempfile.TemporaryDirectory() as tmpdir:
             plan_file = Path(tmpdir) / "add-lorem-ipsum-impl.md"
             plan_file.write_text(
                 """---
 erk_plan: true
+---
+
+## Implementation Plan
+"""
+            )
+
+            result = find_new_plan_file(tmpdir)
+            assert result is not None
+            assert result == "add-lorem-ipsum-impl.md"
+
+    def test_finds_file_with_erk_pr_frontmatter(self) -> None:
+        """Should find plan file with erk_pr: true (primary key)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            plan_file = Path(tmpdir) / "add-lorem-ipsum-impl.md"
+            plan_file.write_text(
+                """---
+erk_pr: true
 ---
 
 ## Implementation Plan
@@ -750,7 +769,7 @@ Just content, no frontmatter.
             assert result is None
 
     def test_returns_none_when_frontmatter_has_false(self) -> None:
-        """Should return None when erk_plan is false."""
+        """Should return None when erk_pr is false."""
         with tempfile.TemporaryDirectory() as tmpdir:
             plan_file = Path(tmpdir) / "feature-impl.md"
             plan_file.write_text(
@@ -1655,3 +1674,39 @@ class TestMainSetsGitOptionalLocks:
             with patch("builtins.print"):
                 main()
         assert os.environ["GIT_OPTIONAL_LOCKS"] == "0"
+
+
+class TestGetModelCode:
+    """Test model indicator code generation."""
+
+    def test_opus_1m(self) -> None:
+        result = get_model_code(display_name="Claude Opus 4.6", model_id="claude-opus-4-6[1m]")
+        assert result == "O¹ᴹ"
+
+    def test_sonnet_1m(self) -> None:
+        result = get_model_code(display_name="Claude Sonnet 4.6", model_id="claude-sonnet-4-6[1m]")
+        assert result == "S¹ᴹ"
+
+    def test_haiku_1m(self) -> None:
+        result = get_model_code(display_name="Claude Haiku 4.5", model_id="claude-haiku-4-5[1m]")
+        assert result == "H¹ᴹ"
+
+    def test_sonnet_standard(self) -> None:
+        result = get_model_code(display_name="Claude Sonnet 4.6", model_id="claude-sonnet-4-6")
+        assert result == "S"
+
+    def test_opus_standard(self) -> None:
+        result = get_model_code(display_name="Claude Opus 4.6", model_id="claude-opus-4-6")
+        assert result == "O"
+
+    def test_haiku_standard(self) -> None:
+        result = get_model_code(display_name="Claude Haiku 4.5", model_id="claude-haiku-4-5")
+        assert result == "H"
+
+    def test_unknown_model(self) -> None:
+        result = get_model_code(display_name="Gemini Pro", model_id="gemini-pro")
+        assert result == "G"
+
+    def test_empty_display_name(self) -> None:
+        result = get_model_code(display_name="", model_id="unknown")
+        assert result == "?"

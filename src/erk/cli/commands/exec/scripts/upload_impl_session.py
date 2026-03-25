@@ -8,7 +8,7 @@ Usage:
 
 Output:
     JSON with upload result:
-    {"uploaded": true, "plan_id": 2521}
+    {"uploaded": true, "pr_number": 2521}
     {"uploaded": false, "reason": "no_plan_tracking"}
     {"uploaded": false, "reason": "no_session_found"}
 
@@ -17,7 +17,7 @@ Exit Codes:
 
 Examples:
     $ erk exec upload-impl-session --session-id abc-123
-    {"uploaded": true, "plan_id": 2521}
+    {"uploaded": true, "pr_number": 2521}
 """
 
 import json
@@ -51,7 +51,7 @@ def _output_not_uploaded(reason: str) -> None:
 def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     """Upload current implementation session for async learn.
 
-    Reads plan reference from .erk/impl-context/ to get the plan_id, captures
+    Reads plan reference from .erk/impl-context/ to get the pr_id, captures
     session info from Claude installation, and delegates to push-session
     for preprocessed XML upload with branch accumulation.
 
@@ -72,11 +72,11 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
         _output_not_uploaded("no_plan_tracking")
         return
 
-    if not plan_ref.plan_id.isdigit():
-        _output_not_uploaded("non_numeric_plan_id")
+    if not plan_ref.pr_id.isdigit():
+        _output_not_uploaded("non_numeric_pr_id")
         return
 
-    plan_id = int(plan_ref.plan_id)
+    pr_number = int(plan_ref.pr_id)
 
     # Capture session info
     installation = require_claude_installation(ctx)
@@ -107,8 +107,8 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
             "impl",
             "--source",
             "local",
-            "--plan-id",
-            str(plan_id),
+            "--pr-number",
+            str(pr_number),
         ],
         cwd=str(repo_root),
         capture_output=True,
@@ -118,7 +118,7 @@ def upload_impl_session(ctx: click.Context, session_id: str) -> None:
     if result.returncode == 0 and result.stdout.strip():
         push_output = json.loads(result.stdout.strip())
         if push_output.get("uploaded"):
-            click.echo(json.dumps({"uploaded": True, "plan_id": plan_id}))
+            click.echo(json.dumps({"uploaded": True, "pr_number": pr_number}))
             return
 
     # push-session failed or returned not-uploaded — report gracefully

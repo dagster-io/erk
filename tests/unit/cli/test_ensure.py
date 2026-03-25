@@ -6,11 +6,11 @@ from unittest import mock
 import pytest
 
 from erk.cli.ensure import Ensure, UserFacingCliError
-from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
     GraphiteDisabledReason,
 )
+from tests.fakes.tests.shared_context import context_for_test
 
 
 class TestEnsureNotNone:
@@ -157,8 +157,8 @@ class TestEnsureBranchGraphiteTrackedOrNew:
 
     def test_succeeds_when_branch_does_not_exist(self) -> None:
         """No-op when branch doesn't exist locally (will be created+tracked)."""
-        from erk_shared.gateway.git.fake import FakeGit
-        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from tests.fakes.gateway.git import FakeGit
+        from tests.fakes.gateway.graphite import FakeGraphite
 
         repo_root = Path("/fake/repo")
         # Branch "feature" does not exist in local_branches
@@ -171,9 +171,9 @@ class TestEnsureBranchGraphiteTrackedOrNew:
 
     def test_succeeds_when_branch_exists_and_tracked(self) -> None:
         """No-op when branch exists and is already tracked by Graphite."""
-        from erk_shared.gateway.git.fake import FakeGit
-        from erk_shared.gateway.graphite.fake import FakeGraphite
         from erk_shared.gateway.graphite.types import BranchMetadata
+        from tests.fakes.gateway.git import FakeGit
+        from tests.fakes.gateway.graphite import FakeGraphite
 
         repo_root = Path("/fake/repo")
         # Branch "feature" exists locally AND is tracked by Graphite
@@ -196,8 +196,8 @@ class TestEnsureBranchGraphiteTrackedOrNew:
 
     def test_exits_when_branch_exists_but_not_tracked(self) -> None:
         """UserFacingCliError when branch exists locally but is not tracked by Graphite."""
-        from erk_shared.gateway.git.fake import FakeGit
-        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from tests.fakes.gateway.git import FakeGit
+        from tests.fakes.gateway.graphite import FakeGraphite
 
         repo_root = Path("/fake/repo")
         # Branch "feature" exists locally but NOT tracked by Graphite
@@ -210,8 +210,8 @@ class TestEnsureBranchGraphiteTrackedOrNew:
 
     def test_error_message_includes_remediation_steps(self) -> None:
         """Error message includes all three remediation options."""
-        from erk_shared.gateway.git.fake import FakeGit
-        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from tests.fakes.gateway.git import FakeGit
+        from tests.fakes.gateway.graphite import FakeGraphite
 
         repo_root = Path("/fake/repo")
         git = FakeGit(local_branches={repo_root: ["main", "feature"]})

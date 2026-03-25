@@ -1,4 +1,4 @@
-"""Tests for plan log command."""
+"""Tests for pr log command."""
 
 import json
 from datetime import UTC, datetime
@@ -6,8 +6,6 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     create_implementation_status_block,
@@ -16,14 +14,16 @@ from erk_shared.gateway.github.metadata.core import (
     create_workflow_started_block,
     render_metadata_block,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.plan_helpers import (
-    create_plan_store_with_plans,
+    create_pr_backend_with_plans,
     issue_info_to_pr_details,
 )
 
@@ -32,7 +32,7 @@ def _make_issue_info(plan: Plan) -> IssueInfo:
     """Helper to convert Plan to IssueInfo for tests needing custom FakeGitHubIssues config."""
     state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state=state,
@@ -59,7 +59,6 @@ def _make_fake_remote(
         dispatch_run_id="run-1",
         issues=issues,
         issue_comments=issue_comments,
-        pr_references=None,
     )
 
 
@@ -67,12 +66,12 @@ def test_log_displays_timeline_chronologically() -> None:
     """Test log command displays events in chronological order."""
     # Arrange: Create plan and comments with metadata blocks
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -85,11 +84,11 @@ def test_log_displays_timeline_chronologically() -> None:
         started_at="2024-01-15T12:35:00Z",
         workflow_run_id="123456",
         workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
-        plan_number=42,
+        pr_number=42,
     )
 
     plan_block = create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -97,8 +96,8 @@ def test_log_displays_timeline_chronologically() -> None:
     submission_block = create_submission_queued_block(
         queued_at="2024-01-15T12:32:00Z",
         submitted_by="user",
-        plan_number=42,
-        validation_results={"issue_is_open": True},
+        pr_number=42,
+        validation_results={"pr_is_open": True},
         expected_workflow="implement-plan",
     )
 
@@ -116,13 +115,13 @@ def test_log_displays_timeline_chronologically() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment1, comment2, comment3]),
         )
@@ -132,7 +131,7 @@ def test_log_displays_timeline_chronologically() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Plan #42 Event Timeline" in result.output
+        assert "PR #42 Event Timeline" in result.output
 
         # Verify chronological order (plan created → queued → workflow started)
         output_lines = result.output.split("\n")
@@ -152,12 +151,12 @@ def test_log_json_output() -> None:
     """Test log command with --json flag outputs valid JSON."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -166,7 +165,7 @@ def test_log_json_output() -> None:
     )
 
     plan_block = create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -182,13 +181,13 @@ def test_log_json_output() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment]),
         )
@@ -215,12 +214,12 @@ def test_log_with_no_events() -> None:
     """Test log command when issue has no comments."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -237,13 +236,13 @@ def test_log_with_no_events() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, []),
         )
@@ -253,19 +252,19 @@ def test_log_with_no_events() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "No events found for plan #42" in result.output
+        assert "No events found for PR #42" in result.output
 
 
 def test_log_with_all_event_types() -> None:
     """Test log command displays all supported event types."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -275,7 +274,7 @@ def test_log_with_all_event_types() -> None:
 
     # Create all event types
     plan_block = create_plan_block(
-        plan_number=42,
+        pr_number=42,
         worktree_name="test-plan",
         timestamp="2024-01-15T12:30:00Z",
     )
@@ -283,8 +282,8 @@ def test_log_with_all_event_types() -> None:
     submission_block = create_submission_queued_block(
         queued_at="2024-01-15T12:32:00Z",
         submitted_by="testuser",
-        plan_number=42,
-        validation_results={"issue_is_open": True},
+        pr_number=42,
+        validation_results={"pr_is_open": True},
         expected_workflow="implement-plan",
     )
 
@@ -292,7 +291,7 @@ def test_log_with_all_event_types() -> None:
         started_at="2024-01-15T12:35:00Z",
         workflow_run_id="123456",
         workflow_run_url="https://github.com/owner/repo/actions/runs/123456",
-        plan_number=42,
+        pr_number=42,
     )
 
     status_block = create_implementation_status_block(
@@ -316,13 +315,13 @@ def test_log_with_all_event_types() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, comments),
         )
@@ -334,10 +333,67 @@ def test_log_with_all_event_types() -> None:
         assert result.exit_code == 0
 
         # Verify all event types are displayed
-        assert "Plan created" in result.output
+        assert "PR created" in result.output
         assert "Queued for execution" in result.output
         assert "GitHub Actions workflow started" in result.output
         assert "Implementation in progress" in result.output
+
+
+def test_log_backward_compat_erk_plan_key() -> None:
+    """Test that metadata blocks with old 'erk-plan' key are parsed as plan-created events."""
+    # Arrange: Create a comment body using the old 'erk-plan' key format
+    plan = Plan(
+        pr_identifier="42",
+        title="Test Plan",
+        body="Implementation plan",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-pr"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    # Create a plan block and render it, then replace erk-pr with erk-plan
+    # to simulate comments written before the rename
+    plan_block = create_plan_block(
+        pr_number=42,
+        worktree_name="test-plan",
+        timestamp="2024-01-15T12:30:00Z",
+    )
+    comment = render_metadata_block(plan_block).replace("erk-pr", "erk-plan")
+
+    issue = _make_issue_info(plan)
+    fake_issues = FakeGitHubIssues(
+        issues={42: issue},
+        comments={42: [comment]},
+    )
+    fake_github = FakeLocalGitHub(
+        pr_details={42: issue_info_to_pr_details(issue)},
+        issues_gateway=fake_issues,
+    )
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        ctx = build_workspace_test_context(
+            env,
+            pr_store=store,
+            issues=fake_issues,
+            remote_github=_make_fake_remote(issue, [comment]),
+        )
+
+        # Act: Use JSON output to verify the event was extracted
+        result = runner.invoke(cli, ["pr", "log", "42", "--json"], obj=ctx)
+
+        # Assert: The old erk-plan key should produce a plan-created event
+        assert result.exit_code == 0
+        events = json.loads(result.output)
+        assert len(events) == 1
+        assert events[0]["event_type"] == "plan-created"
+        assert events[0]["timestamp"] == "2024-01-15T12:30:00Z"
 
 
 def test_log_with_invalid_plan_identifier() -> None:
@@ -345,8 +401,8 @@ def test_log_with_invalid_plan_identifier() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
+        store, _ = create_pr_backend_with_plans({})
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=_make_fake_remote())
 
         # Act
         result = runner.invoke(cli, ["pr", "log", "999"], obj=ctx)
@@ -360,12 +416,12 @@ def test_log_multiple_status_updates() -> None:
     """Test log command with multiple implementation status updates."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -404,13 +460,13 @@ def test_log_multiple_status_updates() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, comments),
         )
@@ -430,12 +486,12 @@ def test_log_json_structure() -> None:
     """Test JSON output has correct structure with metadata."""
     # Arrange
     plan = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Plan",
         body="Implementation plan",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -446,8 +502,8 @@ def test_log_json_structure() -> None:
     submission_block = create_submission_queued_block(
         queued_at="2024-01-15T12:32:00Z",
         submitted_by="testuser",
-        plan_number=42,
-        validation_results={"issue_is_open": True},
+        pr_number=42,
+        validation_results={"pr_is_open": True},
         expected_workflow="implement-plan",
     )
 
@@ -462,13 +518,13 @@ def test_log_json_structure() -> None:
         pr_details={42: issue_info_to_pr_details(issue)},
         issues_gateway=fake_issues,
     )
-    store = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    store = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment]),
         )

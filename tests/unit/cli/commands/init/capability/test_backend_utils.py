@@ -4,8 +4,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.init.capability.backend_utils import resolve_backend
 from erk_shared.context.types import GlobalConfig, InteractiveAgentConfig
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.erk_installation import FakeErkInstallation
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

@@ -7,16 +7,16 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_update import plan_update
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import (
     format_plan_header_body_for_test,
     issue_info_to_pr_details,
@@ -36,7 +36,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -56,7 +56,7 @@ def _make_comment(comment_id: int, body: str) -> IssueComment:
 
 def test_plan_update_success() -> None:
     """Test successful plan update."""
-    issue = _make_issue(42, "Test Plan [erk-plan]", "metadata body")
+    issue = _make_issue(42, "Test Plan [erk-pr]", "metadata body")
     comment = _make_comment(12345, "old plan content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -75,10 +75,10 @@ def test_plan_update_success() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -86,11 +86,11 @@ def test_plan_update_success() -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 42
+    assert output["pr_number"] == 42
 
-    assert output["title"] == "[erk-plan] Updated Plan"
+    assert output["title"] == "[erk-pr] Updated Plan"
 
-    # Verify update_plan_content was called (updates PR body with PlannedPRBackend)
+    # Verify update_plan_content was called (updates PR body with ManagedGitHubPrBackend)
     content_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 42]
     assert len(content_bodies) >= 1
     updated_body = content_bodies[-1]
@@ -99,12 +99,12 @@ def test_plan_update_success() -> None:
 
     # Verify update_plan_title was called
     assert len(fake_github.updated_pr_titles) == 1
-    assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] Updated Plan")
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-pr] Updated Plan")
 
 
 def test_plan_update_display_format() -> None:
     """Test display output format."""
-    issue = _make_issue(99, "My Feature [erk-plan]", "body")
+    issue = _make_issue(99, "My Feature [erk-pr]", "body")
     comment = _make_comment(55555, "plan content")
     fake_gh = FakeGitHubIssues(
         issues={99: issue},
@@ -122,23 +122,23 @@ def test_plan_update_display_format() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "99", "--format", "display"],
+        ["--pr-number", "99", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
 
     assert result.exit_code == 0
-    assert "Plan #99 updated" in result.output
-    assert "Title: [erk-plan] Display Test" in result.output
+    assert "PR #99 updated" in result.output
+    assert "Title: [erk-pr] Display Test" in result.output
     assert "URL: " in result.output
 
 
 def test_plan_update_no_plan_found() -> None:
     """Test error when no plan found."""
-    issue = _make_issue(42, "Test [erk-plan]", "body")
+    issue = _make_issue(42, "Test [erk-pr]", "body")
     comment = _make_comment(12345, "plan content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -154,10 +154,10 @@ def test_plan_update_no_plan_found() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -181,10 +181,10 @@ def test_plan_update_issue_not_found() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "999", "--format", "json"],
+        ["--pr-number", "999", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -197,7 +197,7 @@ def test_plan_update_issue_not_found() -> None:
 
 def test_plan_update_formats_plan_content() -> None:
     """Test that plan content is properly formatted with metadata block."""
-    issue = _make_issue(42, "Test [erk-plan]", "body")
+    issue = _make_issue(42, "Test [erk-pr]", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -215,10 +215,10 @@ def test_plan_update_formats_plan_content() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42"],
+        ["--pr-number", "42"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -229,14 +229,14 @@ def test_plan_update_formats_plan_content() -> None:
     content_bodies = [b for n, b in fake_github.updated_pr_bodies if n == 42]
     assert len(content_bodies) >= 1
     updated_body = content_bodies[-1]
-    # PlannedPRBackend stores content directly (no comment wrapper)
+    # ManagedGitHubPrBackend stores content directly (no comment wrapper)
     assert "# My Plan" in updated_body
     assert "Step 1" in updated_body
 
 
 def test_plan_update_updates_title_from_plan() -> None:
     """Test that issue title is updated from plan H1 heading."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -255,21 +255,21 @@ def test_plan_update_updates_title_from_plan() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["title"] == "[erk-plan] New Feature Name"
+    assert output["title"] == "[erk-pr] New Feature Name"
 
     # Verify update_plan_title was called
     assert len(fake_github.updated_pr_titles) == 1
-    assert fake_github.updated_pr_titles[0] == (42, "[erk-plan] New Feature Name")
+    assert fake_github.updated_pr_titles[0] == (42, "[erk-pr] New Feature Name")
 
 
 def test_plan_update_learn_plan_gets_learn_tag() -> None:
@@ -304,10 +304,10 @@ def test_plan_update_learn_plan_gets_learn_tag() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
@@ -321,7 +321,7 @@ def test_plan_update_learn_plan_gets_learn_tag() -> None:
 
 def test_plan_update_strips_plan_prefix_from_title() -> None:
     """Test that 'Plan: ' prefix is stripped from extracted title."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -339,22 +339,22 @@ def test_plan_update_strips_plan_prefix_from_title() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["title"] == "[erk-plan] Add Feature X"
+    assert output["title"] == "[erk-pr] Add Feature X"
 
 
 def test_plan_update_display_format_shows_new_title() -> None:
     """Test display format shows the updated title."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -372,20 +372,20 @@ def test_plan_update_display_format_shows_new_title() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "display"],
+        ["--pr-number", "42", "--format", "display"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )
 
     assert result.exit_code == 0
-    assert "Title: [erk-plan] Updated Feature" in result.output
+    assert "Title: [erk-pr] Updated Feature" in result.output
 
 
 # ============================================================================
-# Branch push tests (PR-backed plans with PlannedPRBackend)
+# Branch push tests (PR-backed plans with ManagedGitHubPrBackend)
 # ============================================================================
 
 
@@ -396,7 +396,7 @@ def _make_pr_details(
     branch_name: str,
 ) -> PRDetails:
     """Create PRDetails with a plan-header metadata block containing branch_name."""
-    from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 
     metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
     plan_content = "# Old Plan Content"
@@ -416,14 +416,14 @@ def _make_pr_details(
         merge_state_status="UNKNOWN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
 def test_plan_update_pushes_to_branch() -> None:
     """Test that plan update pushes to branch when branch_name is in header_fields."""
     branch_name = "plnd/my-feature-branch"
-    pr = _make_pr_details(42, "[erk-plan] Old Title", branch_name=branch_name)
+    pr = _make_pr_details(42, "[erk-pr] Old Title", branch_name=branch_name)
     fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_git = FakeGit()
     plan_content = """# Updated Plan
@@ -431,16 +431,16 @@ def test_plan_update_pushes_to_branch() -> None:
 - New step 1
 - New step 2"""
     fake_store = FakeClaudeInstallation.for_test(plans={"test-plan": plan_content})
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
-            plan_store=backend,
+            pr_store=backend,
             claude_installation=fake_store,
         ),
     )
@@ -470,23 +470,23 @@ def test_plan_update_pushes_to_branch() -> None:
 def test_plan_update_branch_push_failure_still_succeeds() -> None:
     """Test that push failure still reports success (PR body was updated)."""
     branch_name = "plnd/my-feature-branch"
-    pr = _make_pr_details(42, "[erk-plan] Old Title", branch_name=branch_name)
+    pr = _make_pr_details(42, "[erk-pr] Old Title", branch_name=branch_name)
     fake_github = FakeLocalGitHub(pr_details={42: pr})
     fake_git = FakeGit(push_to_remote_error=PushError(message="rejected"))
     plan_content = """# Updated Plan
 
 - Step 1"""
     fake_store = FakeClaudeInstallation.for_test(plans={"test-plan": plan_content})
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     runner = CliRunner()
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
-            plan_store=backend,
+            pr_store=backend,
             claude_installation=fake_store,
         ),
     )
@@ -503,7 +503,7 @@ def test_plan_update_branch_push_failure_still_succeeds() -> None:
 
 def test_plan_update_no_branch_skips_push() -> None:
     """Test that issue-backed plans (no branch_name) skip branch push entirely."""
-    issue = _make_issue(42, "[erk-plan] Old Title", "body")
+    issue = _make_issue(42, "[erk-pr] Old Title", "body")
     comment = _make_comment(12345, "old content")
     fake_gh = FakeGitHubIssues(
         issues={42: issue},
@@ -522,11 +522,11 @@ def test_plan_update_no_branch_skips_push() -> None:
 
     result = runner.invoke(
         plan_update,
-        ["--plan-number", "42", "--format", "json"],
+        ["--pr-number", "42", "--format", "json"],
         obj=ErkContext.for_test(
             github=fake_github,
             git=fake_git,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
             claude_installation=fake_store,
         ),
     )

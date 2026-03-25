@@ -1,8 +1,8 @@
 """Tests for Graphite helper methods."""
 
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.paths import sentinel_path
 
 

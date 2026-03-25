@@ -9,10 +9,10 @@ import base64
 import pytest
 
 from erk_shared.gateway.http.abc import HttpError
-from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.remote_github.real import RealRemoteGitHub, _parse_pr_response
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.http import FakeHttpClient
+from tests.fakes.gateway.time import FakeTime
 
 
 def _make_remote(
@@ -198,12 +198,12 @@ def test_update_pull_request_body_patches_correct_endpoint() -> None:
 def test_add_labels_posts_correct_data() -> None:
     remote, http, _ = _make_remote()
 
-    remote.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr", "erk-plan"))
+    remote.add_labels(owner="o", repo="r", issue_number=42, labels=("erk-pr",))
 
     req = http.requests[0]
     assert req.method == "POST"
     assert req.endpoint == "repos/o/r/issues/42/labels"
-    assert req.data == {"labels": ["erk-pr", "erk-plan"]}
+    assert req.data == {"labels": ["erk-pr"]}
 
 
 # --- dispatch_workflow ---
@@ -320,7 +320,7 @@ def test_get_issue_returns_parsed_issue() -> None:
             "body": "Issue body",
             "state": "open",
             "html_url": "https://github.com/o/r/issues/42",
-            "labels": [{"name": "erk-plan"}],
+            "labels": [{"name": "erk-pr"}],
             "assignees": [{"login": "alice"}],
             "user": {"login": "bob"},
             "created_at": "2024-01-15T10:00:00Z",
@@ -337,7 +337,7 @@ def test_get_issue_returns_parsed_issue() -> None:
     assert result.title == "Test Issue"
     assert result.body == "Issue body"
     assert result.state == "OPEN"
-    assert result.labels == ["erk-plan"]
+    assert result.labels == ["erk-pr"]
     assert result.assignees == ["alice"]
     assert result.author == "bob"
 
@@ -524,7 +524,7 @@ def test_get_issue_comments_returns_empty_for_no_comments() -> None:
 def test_list_issues_constructs_correct_query() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-pr,erk-plan&per_page=100",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100",
         response=[
             {
                 "number": 1,
@@ -542,7 +542,7 @@ def test_list_issues_constructs_correct_query() -> None:
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-pr", "erk-plan"), state="open", limit=None, creator=None
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=None, creator=None
     )
     assert len(result) == 1
     assert result[0].number == 1
@@ -551,7 +551,7 @@ def test_list_issues_constructs_correct_query() -> None:
 def test_list_issues_skips_pull_requests() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100",
         response=[
             {
                 "number": 1,
@@ -582,7 +582,7 @@ def test_list_issues_skips_pull_requests() -> None:
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-plan",), state="open", limit=None, creator=None
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=None, creator=None
     )
     assert len(result) == 1
     assert result[0].number == 1
@@ -591,7 +591,7 @@ def test_list_issues_skips_pull_requests() -> None:
 def test_list_issues_respects_limit() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100",
         response=[
             {
                 "number": i,
@@ -610,7 +610,7 @@ def test_list_issues_respects_limit() -> None:
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-plan",), state="open", limit=2, creator=None
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=2, creator=None
     )
     assert len(result) == 2
 
@@ -618,93 +618,17 @@ def test_list_issues_respects_limit() -> None:
 def test_list_issues_includes_creator_param() -> None:
     remote, http, _ = _make_remote()
     http.set_list_response(
-        "repos/o/r/issues?state=open&labels=erk-plan&per_page=100&creator=alice",
+        "repos/o/r/issues?state=open&labels=erk-pr&per_page=100&creator=alice",
         response=[],
     )
 
     result = remote.list_issues(
-        owner="o", repo="r", labels=("erk-plan",), state="open", limit=None, creator="alice"
+        owner="o", repo="r", labels=("erk-pr",), state="open", limit=None, creator="alice"
     )
     assert result == []
 
     req = http.requests[0]
     assert "creator=alice" in req.endpoint
-
-
-# --- get_prs_referencing_issue ---
-
-
-def test_get_prs_referencing_issue_parses_cross_references() -> None:
-    remote, http, _ = _make_remote()
-    http.set_list_response(
-        "repos/o/r/issues/42/timeline?per_page=100",
-        response=[
-            {
-                "event": "cross-referenced",
-                "source": {
-                    "issue": {
-                        "number": 100,
-                        "state": "open",
-                        "draft": False,
-                        "pull_request": {"merged_at": None},
-                    }
-                },
-            },
-            {
-                "event": "cross-referenced",
-                "source": {
-                    "issue": {
-                        "number": 101,
-                        "state": "closed",
-                        "draft": False,
-                        "pull_request": {"merged_at": "2024-01-15T00:00:00Z"},
-                    }
-                },
-            },
-            {"event": "labeled"},  # Non-cross-reference event, should be skipped
-        ],
-    )
-
-    result = remote.get_prs_referencing_issue(owner="o", repo="r", number=42)
-    assert len(result) == 2
-    assert result[0].number == 100
-    assert result[0].state == "OPEN"
-    assert result[1].number == 101
-    assert result[1].state == "MERGED"
-
-
-def test_get_prs_referencing_issue_deduplicates() -> None:
-    remote, http, _ = _make_remote()
-    http.set_list_response(
-        "repos/o/r/issues/42/timeline?per_page=100",
-        response=[
-            {
-                "event": "cross-referenced",
-                "source": {
-                    "issue": {
-                        "number": 100,
-                        "state": "open",
-                        "draft": False,
-                        "pull_request": {"merged_at": None},
-                    }
-                },
-            },
-            {
-                "event": "cross-referenced",
-                "source": {
-                    "issue": {
-                        "number": 100,
-                        "state": "open",
-                        "draft": False,
-                        "pull_request": {"merged_at": None},
-                    }
-                },
-            },
-        ],
-    )
-
-    result = remote.get_prs_referencing_issue(owner="o", repo="r", number=42)
-    assert len(result) == 1
 
 
 # --- close_issue ---

@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 import os
 import sys
@@ -5,7 +6,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.alias import register_with_aliases
 from erk.cli.capability_check import is_learned_docs_available
 from erk.cli.commands.admin import admin_group
 from erk.cli.commands.artifact.group import artifact_group
@@ -16,27 +16,24 @@ from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
 from erk.cli.commands.doctor import doctor_cmd
 from erk.cli.commands.doctor_workflow import workflow_group
-from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.implement import implement
 from erk.cli.commands.info.release_notes_cmd import release_notes_cmd
 from erk.cli.commands.init import init_group
+from erk.cli.commands.json import json_group
 from erk.cli.commands.land_cmd import land
 from erk.cli.commands.launch_cmd import launch
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group
-from erk.cli.commands.one_shot import one_shot
+from erk.cli.commands.one_shot.cli import one_shot
 from erk.cli.commands.pr import pr_group
-from erk.cli.commands.pr.list_cmd import dash
+from erk.cli.commands.pr.list.cli import dash
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
 from erk.cli.commands.reconcile_cmd import reconcile
-from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
-from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
-from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.command_log import get_cli_args, log_command_start, register_exit_handler
 from erk.core.context import create_context
 from erk.core.release_notes import check_for_version_change, get_current_version
@@ -45,6 +42,8 @@ from erk.core.version_check import (
     get_required_version,
     is_version_mismatch,
 )
+from erk_shared.cli_alias import register_with_aliases
+from erk_shared.cli_group import ErkCommandGroup
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.git.real import RealGit
@@ -159,7 +158,7 @@ def _show_version_warning() -> None:
         logging.warning("Failed to check version: %s", e)
 
 
-@click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
+@click.group(cls=ErkCommandGroup, grouped=True, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.pass_context
@@ -188,7 +187,6 @@ cli.add_command(codespace_group)
 cli.add_command(completion_group)
 cli.add_command(config_group)
 cli.add_command(doctor_cmd)
-cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_group)
 cli.add_command(land)
@@ -204,9 +202,7 @@ cli.add_command(release_notes_cmd)
 cli.add_command(objective_group)
 cli.add_command(one_shot)
 cli.add_command(project_group)
-cli.add_command(slot_group)
 cli.add_command(stack_group)
-cli.add_command(up_cmd)
 cli.add_command(launch)
 cli.add_command(workflow_group)
 cli.add_command(wt_group)
@@ -217,7 +213,12 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
     from erk.cli.commands.docs.group import docs_group
 
     cli.add_command(docs_group)
+if importlib.util.find_spec("erk_slots") is not None:
+    from erk_slots.group import slot_group
+
+    cli.add_command(slot_group)
 cli.add_command(exec_group)
+cli.add_command(json_group)
 cli.add_command(md_group)
 
 

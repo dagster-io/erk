@@ -8,9 +8,9 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     prepare_state,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import get_impl_dir
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""
@@ -27,7 +27,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = None,
     pr_url: str | None = None,
     was_created: bool = False,
@@ -50,7 +50,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -104,7 +104,7 @@ def test_detached_head_returns_error(tmp_path: Path) -> None:
 def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no mismatch possible.
 
-    P-prefix branches cannot provide an issue number. The test verifies plan_id
+    P-prefix branches cannot provide an issue number. The test verifies pr_id
     comes from ref.json without any mismatch error.
     """
     # Create branch-scoped impl dir with ref.json
@@ -115,7 +115,7 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
         json.dumps(
             {
                 "provider": "github",
-                "plan_id": "99",
+                "pr_id": "99",
                 "url": "https://github.com/owner/repo/issues/99",
                 "created_at": "2025-01-01T00:00:00+00:00",
                 "synced_at": "2025-01-01T00:00:00+00:00",
@@ -136,14 +136,14 @@ def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -> None:
 
     # No mismatch error since branch cannot provide issue number
     assert isinstance(result, SubmitState)
-    assert result.plan_id == "99"  # From ref.json
+    assert result.pr_id == "99"  # From ref.json
 
 
 def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
     """Branch with P-prefix cannot extract issue number, no auto-repair possible.
 
     P-prefix branches cannot provide an issue number for auto-repair. Without
-    plan-ref.json, plan_id remains None.
+    plan-ref.json, pr_id remains None.
     """
     impl_dir = get_impl_dir(tmp_path, branch_name="P42-some-feature")
     impl_dir.mkdir(parents=True)
@@ -161,14 +161,14 @@ def test_auto_repair_creates_plan_ref_json(tmp_path: Path) -> None:
 
     assert isinstance(result, SubmitState)
     # No auto-repair since branch cannot provide issue number
-    assert result.plan_id is None
+    assert result.pr_id is None
     # Verify ref.json was NOT created
     plan_ref_json = impl_dir / "ref.json"
     assert not plan_ref_json.exists()
 
 
 def test_no_plan_id_from_branch(tmp_path: Path) -> None:
-    """Regular branch (no P-prefix) => plan_id=None."""
+    """Regular branch (no P-prefix) => pr_id=None."""
     fake_git = FakeGit(
         repository_roots={tmp_path: tmp_path},
         current_branches={tmp_path: "feature-branch"},
@@ -180,11 +180,11 @@ def test_no_plan_id_from_branch(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.plan_id is None
+    assert result.pr_id is None
 
 
 def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
-    """Branch-scoped impl dir with ref.json present => plan_id populated."""
+    """Branch-scoped impl dir with ref.json present => pr_id populated."""
     impl_dir = get_impl_dir(tmp_path, branch_name="feature-branch")
     impl_dir.mkdir(parents=True)
     ref_json = impl_dir / "ref.json"
@@ -192,7 +192,7 @@ def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
         json.dumps(
             {
                 "provider": "github",
-                "plan_id": "55",
+                "pr_id": "55",
                 "url": "https://github.com/owner/repo/issues/55",
                 "created_at": "2025-01-01T00:00:00+00:00",
                 "synced_at": "2025-01-01T00:00:00+00:00",
@@ -212,7 +212,7 @@ def test_plan_id_from_impl_folder(tmp_path: Path) -> None:
     result = prepare_state(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result.plan_id == "55"
+    assert result.pr_id == "55"
 
 
 def test_parent_falls_back_to_trunk(tmp_path: Path) -> None:

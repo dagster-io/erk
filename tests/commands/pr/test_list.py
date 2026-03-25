@@ -5,12 +5,12 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -19,7 +19,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -35,12 +35,12 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 def test_plan_list_no_filters() -> None:
     """Test listing all plan issues with no filters."""
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -48,12 +48,12 @@ def test_plan_list_no_filters() -> None:
         objective_id=None,
     )
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue 2",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -65,15 +65,15 @@ def test_plan_list_no_filters() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
-        plan_service = build_fake_plan_list_service([plan1, plan2])
+        plan_service = build_fake_pr_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" in result.output
 
@@ -81,12 +81,12 @@ def test_plan_list_no_filters() -> None:
 def test_plan_list_filter_by_state() -> None:
     """Test filtering plan issues by state."""
     open_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Open Issue",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -94,12 +94,12 @@ def test_plan_list_filter_by_state() -> None:
         objective_id=None,
     )
     closed_plan = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Closed Issue",
         body="",
         state=PlanState.CLOSED,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -113,15 +113,15 @@ def test_plan_list_filter_by_state() -> None:
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
         github = FakeLocalGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
-        plan_service = build_fake_plan_list_service([open_plan, closed_plan])
+        plan_service = build_fake_pr_list_service([open_plan, closed_plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list", "--state", "open"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
@@ -129,12 +129,12 @@ def test_plan_list_filter_by_state() -> None:
 def test_plan_list_filter_by_labels() -> None:
     """Test filtering plan issues by labels with AND logic."""
     plan_with_both = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue with both labels",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan", "erk-queue"],
+        labels=["erk-pr", "erk-queue"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -142,12 +142,12 @@ def test_plan_list_filter_by_labels() -> None:
         objective_id=None,
     )
     plan_with_one = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue with one label",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -163,19 +163,19 @@ def test_plan_list_filter_by_labels() -> None:
         github = FakeLocalGitHub(
             issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
         )
-        plan_service = build_fake_plan_list_service([plan_with_both, plan_with_one])
+        plan_service = build_fake_pr_list_service([plan_with_both, plan_with_one])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(
             cli,
-            ["pr", "list", "--label", "erk-plan", "--label", "erk-queue"],
+            ["pr", "list", "--label", "erk-pr", "--label", "erk-queue"],
             obj=ctx,
         )
 
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
@@ -187,12 +187,12 @@ def test_plan_list_with_limit() -> None:
     all_plans: list[Plan] = []
     for i in range(1, 6):
         plan = Plan(
-            plan_identifier=str(i),
+            pr_identifier=str(i),
             title=f"Issue {i}",
             body="",
             state=PlanState.OPEN,
             url=f"https://github.com/owner/repo/issues/{i}",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2024, 1, i, tzinfo=UTC),
             updated_at=datetime(2024, 1, i, tzinfo=UTC),
@@ -208,26 +208,26 @@ def test_plan_list_with_limit() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
         github = FakeLocalGitHub(issues_data=issues_list)
-        plan_service = build_fake_plan_list_service(all_plans)
+        plan_service = build_fake_pr_list_service(all_plans)
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list", "--limit", "2"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
 
 def test_plan_list_empty_results() -> None:
     """Test querying with filters that match no issues."""
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -239,15 +239,15 @@ def test_plan_list_empty_results() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list", "--state", "closed"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "No plans found matching the criteria" in result.output
+        assert "No PRs found matching the criteria" in result.output
 
 
 def test_plan_list_run_columns_always_shown() -> None:
@@ -267,12 +267,12 @@ last_dispatched_node_id: 'WFR_all_flag'
 <!-- /erk:metadata-block:plan-header -->"""
 
     plan = Plan(
-        plan_identifier="200",
+        pr_identifier="200",
         title="Plan with Run",
         body=plan_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/200",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -295,12 +295,12 @@ last_dispatched_node_id: 'WFR_all_flag'
             issues_data=[plan_to_issue(plan)],
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             workflow_runs={200: workflow_run},
         )
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -313,12 +313,12 @@ last_dispatched_node_id: 'WFR_all_flag'
 def test_plan_list_sort_issue_default() -> None:
     """Test that --sort issue (default) returns plans sorted by issue number descending."""
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="First Issue",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -326,12 +326,12 @@ def test_plan_list_sort_issue_default() -> None:
         objective_id=None,
     )
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Second Issue",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -343,15 +343,15 @@ def test_plan_list_sort_issue_default() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
-        plan_service = build_fake_plan_list_service([plan1, plan2])
+        plan_service = build_fake_pr_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
-        result = runner.invoke(cli, ["pr", "list", "--sort", "plan"], obj=ctx)
+        result = runner.invoke(cli, ["pr", "list", "--sort", "pr"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
         # Both issues appear (order determined by API, not by sorting since "issue" sort
         # uses the natural API order which is already by issue number descending)
         assert "#1" in result.output
@@ -365,12 +365,12 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
 
     # Plan 1: older issue, but has local branch with recent activity
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Older Issue with Activity",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -379,12 +379,12 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
     )
     # Plan 2: newer issue, no local branch
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Newer Issue no Activity",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -409,7 +409,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="1",
+            pr_number="1",
             url="https://github.com/owner/repo/issues/1",
             labels=(),
             objective_id=None,
@@ -417,7 +417,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         )
 
         # Build FakeGit with worktree and branch commit times
-        from erk_shared.gateway.git.fake import FakeGit
+        from tests.fakes.gateway.git import FakeGit
 
         git = FakeGit(
             worktrees={
@@ -443,15 +443,15 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
 
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
-        plan_service = build_fake_plan_list_service([plan1, plan2])
+        plan_service = build_fake_pr_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
-            env, git=git, issues=issues, github=github, plan_list_service=plan_service
+            env, git=git, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list", "--sort", "activity"], obj=ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
         # Plan 1 (with activity) should appear before Plan 2 (no activity)
         # Use plan IDs since title column is no longer displayed
@@ -472,12 +472,12 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
 
     # Plan 1: has local branch with older commit
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue with Older Commit",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -486,12 +486,12 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
     )
     # Plan 2: has local branch with newer commit
     plan2 = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Issue with Newer Commit",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -515,7 +515,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         save_plan_ref(
             impl1,
             provider="github",
-            plan_id="1",
+            pr_number="1",
             url="https://github.com/owner/repo/issues/1",
             labels=(),
             objective_id=None,
@@ -531,7 +531,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         save_plan_ref(
             impl2,
             provider="github",
-            plan_id="2",
+            pr_number="2",
             url="https://github.com/owner/repo/issues/2",
             labels=(),
             objective_id=None,
@@ -539,7 +539,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         )
 
         # Build FakeGit - issue 2's branch has MORE RECENT commit
-        from erk_shared.gateway.git.fake import FakeGit
+        from tests.fakes.gateway.git import FakeGit
 
         git = FakeGit(
             worktrees={
@@ -574,15 +574,15 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
 
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
-        plan_service = build_fake_plan_list_service([plan1, plan2])
+        plan_service = build_fake_pr_list_service([plan1, plan2])
         ctx = build_workspace_test_context(
-            env, git=git, issues=issues, github=github, plan_list_service=plan_service
+            env, git=git, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list", "--sort", "activity"], obj=ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Found 2 plan(s)" in result.output
+        assert "Found 2 PR(s)" in result.output
 
         # Plan 2 (newer commit) should appear before Plan 1 (older commit)
         # Use plan IDs since title column is no longer displayed
@@ -615,12 +615,12 @@ def test_pr_list_stage_filter() -> None:
     """Test that --stage filters plans by lifecycle stage."""
     # Plan 1: lifecycle_stage=planned via plan-header metadata
     planned_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Planned Issue",
         body=_make_plan_body_with_stage("planned"),
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -630,12 +630,12 @@ def test_pr_list_stage_filter() -> None:
     )
     # Plan 2: lifecycle_stage=impl via plan-header metadata → lifecycle_display resolves to "impl"
     impl_plan = Plan(
-        plan_identifier="2",
+        pr_identifier="2",
         title="Impl Issue",
         body=_make_plan_body_with_stage("impl"),
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/2",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -652,29 +652,29 @@ def test_pr_list_stage_filter() -> None:
         github = FakeLocalGitHub(
             issues_data=[plan_to_issue(planned_plan), plan_to_issue(impl_plan)]
         )
-        plan_service = build_fake_plan_list_service([planned_plan, impl_plan])
+        plan_service = build_fake_pr_list_service([planned_plan, impl_plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Filter to only "planned" stage
         result = runner.invoke(cli, ["pr", "list", "--stage", "planned"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Found 1 plan(s)" in result.output
+        assert "Found 1 PR(s)" in result.output
         assert "#1" in result.output
         assert "#2" not in result.output
 
 
 def test_pr_list_displays_enrichment_warnings() -> None:
-    """Test that enrichment warnings from PlanListData are displayed to the user."""
+    """Test that enrichment warnings from PrListData are displayed to the user."""
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -686,7 +686,7 @@ def test_pr_list_displays_enrichment_warnings() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
-        plan_service = build_fake_plan_list_service(
+        plan_service = build_fake_pr_list_service(
             [plan],
             warnings=(
                 "GraphQL enrichment failed for 2/5 PRs "
@@ -694,7 +694,7 @@ def test_pr_list_displays_enrichment_warnings() -> None:
             ),
         )
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)
@@ -707,12 +707,12 @@ def test_pr_list_displays_enrichment_warnings() -> None:
 def test_pr_list_no_warnings_when_enrichment_succeeds() -> None:
     """Test that no warnings are displayed when enrichment succeeds fully."""
     plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Issue 1",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -724,9 +724,9 @@ def test_pr_list_no_warnings_when_enrichment_succeeds() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         result = runner.invoke(cli, ["pr", "list"], obj=ctx)

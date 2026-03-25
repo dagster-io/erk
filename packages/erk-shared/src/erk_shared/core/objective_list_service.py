@@ -1,6 +1,6 @@
 """Objective list service abstraction - ABC for fetching objective list data.
 
-Symmetric with PlanListService but encapsulates the knowledge that objectives
+Symmetric with PrListService but encapsulates the knowledge that objectives
 are GitHub issues with the 'erk-objective' label. No labels parameter is exposed.
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class ObjectiveListService(ABC):
     """Abstract interface for fetching objective list data.
 
-    Unlike PlanListService, this has no labels parameter — the implementation
+    Unlike PrListService, this has no labels parameter — the implementation
     knows that objectives use the 'erk-objective' label internally.
     """
 
@@ -34,7 +34,7 @@ class ObjectiveListService(ABC):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
+    ) -> PrListData:
         """Fetch all data needed for objective listing.
 
         Args:
@@ -46,6 +46,6 @@ class ObjectiveListService(ABC):
             exclude_labels: Labels to exclude from results
 
         Returns:
-            PlanListData containing objectives as plans, PR linkages, and workflow runs
+            PrListData containing objectives as plans, PR linkages, and workflow runs
         """
         ...

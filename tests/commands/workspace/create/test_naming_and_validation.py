@@ -3,7 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -124,7 +124,7 @@ def test_create_with_long_name_truncation() -> None:
         assert result.exit_code == 0, result.output
         # Worktree base name should be truncated to 31 chars
         # Note: worktree name doesn't include sanitize_worktree_name truncation in this flow
-        # as create without --from-plan-file uses sanitize_worktree_name which truncates to 31
+        # as create without --from-pr-file uses sanitize_worktree_name which truncates to 31
         expected_truncated = "this-is-a-very-long-worktree-na"  # 31 chars
         repo_dir / expected_truncated
         assert len(expected_truncated) == 31, "Truncated base name should be exactly 31 chars"

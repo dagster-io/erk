@@ -102,6 +102,21 @@ After a plumbing commit to a checked-out branch, the index may contain stale sta
 
 See the index sync section of `incremental_dispatch()` in `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`. After committing, if the branch is checked out it runs `git checkout HEAD --` on the committed `impl_context_paths` via `run_subprocess_with_context()` to bring the index back in sync.
 
+### `sync_branch_to_sha`: Safe SHA Sync for Dispatch and Checkout
+
+<!-- Source: src/erk/cli/commands/pr/dispatch_helpers.py:12-40 -->
+
+`sync_branch_to_sha()` in `src/erk/cli/commands/pr/dispatch_helpers.py` wraps `update_local_ref` and `reset_hard` with checkout-state detection:
+
+1. Calls `is_branch_checked_out()` — if not checked out, uses `update_local_ref()` directly
+2. Early returns if `local_sha == target_sha` (already in sync)
+3. If checked out and dirty — prints error and `raise SystemExit(1)`
+4. If checked out and clean — calls `reset_hard()` to atomically sync ref + index + working tree
+
+This prevents index desynchronization when a branch is checked out in a worktree. Used at 4 call sites: `dispatch_cmd.py:237`, `incremental_dispatch.py:113`, `branch/checkout_cmd.py:430`, `pr/checkout_cmd.py:269`.
+
+See [sync-branch-to-sha-pattern.md](sync-branch-to-sha-pattern.md) for full details.
+
 ### Implementation
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:282-294 -->

@@ -16,7 +16,7 @@ from pathlib import Path
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int) -> None:
+def create_plan_saved_marker(session_id: str, repo_root: Path, pr_number: int) -> None:
     """Create marker file to indicate plan was saved to GitHub.
 
     The plan number is stored on the first line so the hook can read it
@@ -25,12 +25,12 @@ def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int)
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        plan_number: The plan PR number.
+        pr_number: The plan PR number.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
     marker_file.write_text(
-        f"{plan_number}\n"
+        f"{pr_number}\n"
         "Created by: /erk:plan-save\n"
         "Trigger: Plan was successfully saved to GitHub\n"
         "Effect: Next ExitPlanMode call will be BLOCKED with Step 2 prompt\n"
@@ -61,7 +61,7 @@ def read_plan_saved_marker(session_id: str, repo_root: Path) -> int | None:
 
 
 def create_plan_saved_issue_marker(
-    session_id: str, repo_root: Path, plan_number: int, *, title: str
+    session_id: str, repo_root: Path, pr_number: int, *, title: str
 ) -> None:
     """Create marker file storing the issue number and title of the saved plan.
 
@@ -74,12 +74,12 @@ def create_plan_saved_issue_marker(
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        plan_number: The plan number where the plan was saved.
+        pr_number: The plan number where the plan was saved.
         title: The plan title (used for per-title dedup).
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "plan-saved-issue.marker"
-    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")
+    marker_file.write_text(f"{pr_number}\n{title}", encoding="utf-8")
 
 
 def read_objective_context_marker(session_id: str, repo_root: Path) -> int | None:
@@ -128,6 +128,33 @@ def read_roadmap_step_marker(session_id: str, repo_root: Path) -> str | None:
     if not content:
         return None
     return content
+
+
+def read_roadmap_step_markers(session_id: str, repo_root: Path) -> tuple[str, ...] | None:
+    """Read all roadmap node IDs from session's roadmap-step marker.
+
+    Supports comma-separated node IDs for multi-node planning
+    (e.g., "3.1,3.2,3.3" returns ("3.1", "3.2", "3.3")).
+    Falls back gracefully to single-node format.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        Tuple of node ID strings if marker exists and is non-empty, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "roadmap-step.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    if not content:
+        return None
+    node_ids = tuple(part.strip() for part in content.split(",") if part.strip())
+    if not node_ids:
+        return None
+    return node_ids
 
 
 def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_name: str) -> None:

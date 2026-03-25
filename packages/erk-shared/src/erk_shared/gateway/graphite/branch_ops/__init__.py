@@ -7,6 +7,5 @@ while keeping query operations on the main Graphite gateway.
 Import from submodules:
 - abc: GraphiteBranchOps
 - real: RealGraphiteBranchOps
-- fake: FakeGraphiteBranchOps
 - dry_run: DryRunGraphiteBranchOps
 """

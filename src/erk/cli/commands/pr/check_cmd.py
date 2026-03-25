@@ -28,7 +28,7 @@ from erk_shared.gateway.pr.submit import has_checkout_footer_for_pr
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.planned_pr_lifecycle import (
     extract_plan_content,
     has_original_plan_section,
 )
@@ -72,7 +72,7 @@ def validate_plan_format(
     *,
     owner: str,
     repo: str,
-    plan_number: int,
+    pr_number: int,
 ) -> PlanValidationResult:
     """Validate plan format programmatically.
 
@@ -88,7 +88,7 @@ def validate_plan_format(
         remote: RemoteGitHub instance
         owner: Repository owner
         repo: Repository name
-        plan_number: GitHub issue number to validate
+        pr_number: GitHub issue number to validate
 
     Returns:
         PlanValidationSuccess if validation completed (may have passed or failed checks)
@@ -96,9 +96,9 @@ def validate_plan_format(
     """
     checks: list[tuple[bool, str]] = []
 
-    issue = remote.get_issue(owner=owner, repo=repo, number=plan_number)
+    issue = remote.get_issue(owner=owner, repo=repo, number=pr_number)
     if isinstance(issue, IssueNotFound):
-        return PlanValidationError(error=f"Plan #{plan_number} not found")
+        return PlanValidationError(error=f"PR #{pr_number} not found")
 
     issue_body = issue.body if issue.body else ""
 
@@ -127,7 +127,7 @@ def validate_plan_format(
             checks.append((False, "plan content extractable from body"))
     else:
         # Issue-based format: plan content is in first comment
-        comments = remote.get_issue_comments(owner=owner, repo=repo, number=plan_number)
+        comments = remote.get_issue_comments(owner=owner, repo=repo, number=pr_number)
 
         if not comments:
             checks.append((False, "First comment exists"))
@@ -219,15 +219,15 @@ def _check_plan_format(
     owner, repo_name = resolve_owner_repo(ctx, target_repo=target_repo)
     remote = get_remote_github(ctx)
 
-    plan_number = parse_issue_identifier(identifier)
+    pr_number = parse_issue_identifier(identifier)
 
-    user_output(f"Validating plan #{plan_number}...")
+    user_output(f"Validating PR #{pr_number}...")
     user_output("")
 
-    result = validate_plan_format(remote, owner=owner, repo=repo_name, plan_number=plan_number)
+    result = validate_plan_format(remote, owner=owner, repo=repo_name, pr_number=pr_number)
 
     if isinstance(result, PlanValidationError):
-        user_output(click.style("Error: ", fg="red") + f"Failed to validate plan: {result.error}")
+        user_output(click.style("Error: ", fg="red") + f"Failed to validate PR: {result.error}")
         raise SystemExit(1)
 
     for passed, description in result.checks:
@@ -237,13 +237,13 @@ def _check_plan_format(
     user_output("")
 
     if result.passed:
-        user_output(click.style("Plan validation passed", fg="green"))
+        user_output(click.style("PR validation passed", fg="green"))
         raise SystemExit(0)
     else:
         check_word = "checks" if result.failed_count > 1 else "check"
         user_output(
             click.style(
-                f"Plan validation failed ({result.failed_count} {check_word} failed)", fg="red"
+                f"PR validation failed ({result.failed_count} {check_word} failed)", fg="red"
             )
         )
         raise SystemExit(1)
@@ -299,15 +299,15 @@ def _check_pr_body(ctx: ErkContext, stage: str | None) -> None:
             )
 
     # Check 0: Plan reference exists
-    expected_plan_number: int | None = None
+    expected_pr_number: int | None = None
     plan_ref = read_plan_ref(impl_dir) if impl_dir is not None else None
 
     if plan_ref is not None:
-        expected_plan_number = int(plan_ref.plan_id)
+        expected_pr_number = int(plan_ref.pr_id)
         checks.append(
             PrCheck(
                 passed=True,
-                description=f"Plan reference found (#{expected_plan_number})",
+                description=f"Plan reference found (#{expected_pr_number})",
             )
         )
 

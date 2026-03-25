@@ -1,34 +1,34 @@
 ---
-title: PlanRowData Field Reference
+title: PrRowData Field Reference
 read_when:
   - "writing command availability predicates"
   - "understanding what data is available for TUI commands"
-  - "checking which PlanRowData fields are nullable"
-last_audited: "2026-02-23 00:15 PT"
+  - "checking which PrRowData fields are nullable"
+last_audited: "2026-03-20 00:00 PT"
 audit_result: edited
 ---
 
-# PlanRowData Field Reference
+# PrRowData Field Reference
 
 Quick reference for writing command availability predicates and understanding
-`PlanRowData` usage patterns.
+`PrRowData` usage patterns (formerly `PlanRowData` — renamed as part of the plan→PR rename).
 
 ## Overview
 
-`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+`PrRowData` is a frozen dataclass containing all data for a single plan/PR row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
 
 **Location:** `src/erk/tui/data/types.py`
 
 ## Field Categories
 
-### Plan Info
+### Plan/PR Info
 
-| Field        | Type          | Description                   | Nullable?                     |
-| ------------ | ------------- | ----------------------------- | ----------------------------- |
-| `plan_id`    | `int`         | Plan identifier               | Never                         |
-| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
-| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
-| `plan_body`  | `str`         | Raw plan body text (markdown) | Never (empty string possible) |
+| Field        | Type          | Description                 | Nullable?                     |
+| ------------ | ------------- | --------------------------- | ----------------------------- |
+| `pr_number`  | `int`         | Plan/PR identifier          | Never                         |
+| `pr_url`     | `str \| None` | Full URL to the PR          | Yes                           |
+| `full_title` | `str`         | Complete plan title         | Never (empty string possible) |
+| `pr_body`    | `str`         | Raw PR body text (markdown) | Never (empty string possible) |
 
 ### PR Info
 
@@ -100,19 +100,19 @@ Quick reference for writing command availability predicates and understanding
 
 ### Objective Info
 
-| Field                         | Type                          | Description                                           | Nullable?             |
-| ----------------------------- | ----------------------------- | ----------------------------------------------------- | --------------------- |
-| `objective_issue`             | `int \| None`                 | Objective issue number (linking plans to objectives)  | Yes                   |
-| `objective_url`               | `str \| None`                 | URL to the objective issue                            | Yes                   |
-| `objective_display`           | `str`                         | Formatted display string (e.g., "#123" or "-")        | Never (dash possible) |
-| `objective_slug_display`      | `str`                         | Objective slug for compact display                    | Never (dash possible) |
-| `objective_state_display`     | `str`                         | Objective state display string                        | Never (dash possible) |
-| `objective_done_nodes`        | `int`                         | Count of done nodes in objective roadmap              | Never (0 if no obj)   |
-| `objective_total_nodes`       | `int`                         | Total nodes in objective roadmap                      | Never (0 if no obj)   |
-| `objective_progress_display`  | `str`                         | Progress display (e.g., "3/7" or "-")                 | Never (dash possible) |
-| `objective_next_node_display` | `str`                         | Next pending node (e.g., "1.3 Add tests" or "-")      | Never (dash possible) |
-| `objective_deps_display`      | `str`                         | Dep status of next node ("ready", "in progress", "-") | Never (dash possible) |
-| `objective_deps_plans`        | `tuple[tuple[str, str], ...]` | Dependency plan references (plan_id, status) tuples   | Never (empty tuple)   |
+| Field                         | Type                          | Description                                                                               | Nullable?             |
+| ----------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------- | --------------------- |
+| `objective_issue`             | `int \| None`                 | Objective issue number (linking plans to objectives)                                      | Yes                   |
+| `objective_url`               | `str \| None`                 | URL to the objective issue                                                                | Yes                   |
+| `objective_display`           | `str`                         | Formatted display string (e.g., "#123" or "-")                                            | Never (dash possible) |
+| `objective_slug_display`      | `str`                         | Objective slug for compact display                                                        | Never (dash possible) |
+| `objective_frontier_display`  | `str`                         | Frontier sparkline starting at first non-done node (e.g., '▶▶○○○○'). '-' when all done. | Never (dash possible) |
+| `objective_done_nodes`        | `int`                         | Count of done nodes in objective roadmap                                                  | Never (0 if no obj)   |
+| `objective_total_nodes`       | `int`                         | Total nodes in objective roadmap                                                          | Never (0 if no obj)   |
+| `objective_progress_display`  | `str`                         | Progress display (e.g., "3/7" or "-")                                                     | Never (dash possible) |
+| `objective_next_node_display` | `str`                         | Next pending node (e.g., "1.3 Add tests" or "-")                                          | Never (dash possible) |
+| `objective_deps_display`      | `str`                         | Dep status of next node ("ready", "in progress", "-")                                     | Never (dash possible) |
+| `objective_deps_plans`        | `tuple[tuple[str, str], ...]` | Dependency plan references (plan_id, status) tuples                                       | Never (empty tuple)   |
 
 ### Metadata
 
@@ -193,10 +193,10 @@ Many pieces of data have both a raw value and a display value:
 
 ## Testing with make_plan_row()
 
-The test helper `make_plan_row()` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` creates `PlanRowData` instances with sensible defaults. Override only the fields you need:
+The test helper `make_plan_row()` in `tests/fakes/gateway/plan_data_provider.py` creates `PrRowData` instances with sensible defaults. Override only the fields you need:
 
 ```python
-from erk_shared.gateway.plan_data_provider.fake import make_plan_row
+from tests.fakes.gateway.plan_data_provider import make_plan_row
 
 # Minimal row
 row = make_plan_row(123, "Test Plan")

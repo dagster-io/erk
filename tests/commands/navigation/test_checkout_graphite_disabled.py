@@ -4,14 +4,12 @@ This file verifies that branch checkout works correctly when Graphite
 is disabled (use_graphite=False), proving graceful degradation.
 """
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -54,9 +52,7 @@ def test_checkout_succeeds_without_graphite() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Should generate activation script
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(feature_wt) in script_content
 
 
@@ -105,7 +101,11 @@ def test_checkout_does_not_call_ensure_graphite_tracking() -> None:
 
 
 def test_checkout_auto_creates_worktree_without_graphite() -> None:
-    """Auto-creating worktree for unchecked-out branch works without Graphite."""
+    """Checking out unchecked-out branch works without Graphite.
+
+    Default behavior checks out the branch in the current worktree rather
+    than creating a new one.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -140,9 +140,10 @@ def test_checkout_auto_creates_worktree_without_graphite() -> None:
             catch_exceptions=False,
         )
 
-        # Should auto-create worktree
+        # Default behavior: checkout in current worktree (no new worktree created)
         assert result.exit_code == 0, result.output
-        assert len(git_ops.added_worktrees) == 1
+        assert len(git_ops.added_worktrees) == 0
+        assert (env.cwd, "unchecked-branch") in git_ops.checked_out_branches
 
 
 def test_checkout_no_graphite_errors_in_output() -> None:

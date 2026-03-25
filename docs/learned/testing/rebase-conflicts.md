@@ -68,7 +68,7 @@ git add tests/commands/
 
 ### Step 4: Fix Constructor Calls
 
-The preferred test factory is `context_for_test()` from `src/erk/core/context.py`. There is also `ErkContext.for_test()` on the class itself (defined in `erk_shared`), but it has a more limited parameter set. Most CLI tests should use `context_for_test()`.
+The preferred test factory is `context_for_test()` from `tests/test_utils/test_context.py`. There is also `ErkContext.for_test()` on the class itself (defined in `erk_shared`), but it has a more limited parameter set. Most CLI tests should use `context_for_test()`.
 
 ### Step 5: Fix Hardcoded Paths
 
@@ -102,10 +102,10 @@ git rebase --continue
 
 There are two factory approaches for creating test contexts:
 
-**1. `context_for_test()` (preferred for CLI tests)** -- defined in `src/erk/core/context.py`:
+**1. `context_for_test()` (preferred for CLI tests)** -- defined in `tests/test_utils/test_context.py`:
 
 ```python
-from erk.core.context import context_for_test
+from tests.test_utils.test_context import context_for_test
 
 test_ctx = context_for_test(
     git=git,
@@ -133,7 +133,7 @@ This static method accepts a smaller set of parameters (`github_issues`, `git`, 
 | ------------------------------------------------------ | ----------------------- | ---------------------------------------------- |
 | CLI command tests needing `global_config`              | `context_for_test()`    | Only factory that accepts `global_config`      |
 | CLI command tests with `erk_isolated_fs_env`           | `env.build_context()`   | Wraps `context_for_test()` with env defaults   |
-| Tests in `erk_shared` or without `global_config` needs | `ErkContext.for_test()` | Available without depending on `erk.core`      |
+| Tests in `erk_shared` or without `global_config` needs | `ErkContext.for_test()` | Available without depending on test_utils      |
 | Default choice for most tests                          | `context_for_test()`    | Broadest parameter set, fills in fake defaults |
 
 **Key points**:
@@ -333,9 +333,9 @@ sed -i '' 's/old_name=/new_name=/g' tests/commands/**/*.py
 - **`tests/test_utils/builders.py`**
   - Test data builders (GraphiteCacheBuilder, PullRequestInfoBuilder, etc.)
 
-- **`src/erk/core/context.py`**
+- **`tests/test_utils/test_context.py`**
   - `context_for_test()` factory function (preferred for CLI tests)
-  - Re-exports `ErkContext` from `erk_shared`
+  - `minimal_context()` factory function (for minimal test context)
 
 - **`packages/erk-shared/src/erk_shared/context/context.py`**
   - `ErkContext` class definition

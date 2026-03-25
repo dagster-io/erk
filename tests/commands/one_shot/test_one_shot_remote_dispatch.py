@@ -5,10 +5,11 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDryRunResult,
     dispatch_one_shot_remote,
 )
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.gateway.time import FakeTime
 
 
 def test_remote_dispatch_happy_path() -> None:
@@ -21,7 +22,6 @@ def test_remote_dispatch_happy_path() -> None:
         dispatch_run_id="run-99",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -75,7 +75,7 @@ def test_remote_dispatch_happy_path() -> None:
     # Verify labels were added
     assert len(remote.added_labels) == 1
     labels = remote.added_labels[0]
-    assert labels.labels == ("erk-pr", "erk-plan")
+    assert labels.labels == ("erk-pr",)
 
     # Verify workflow was dispatched
     assert len(remote.dispatched_workflows) == 1
@@ -84,8 +84,8 @@ def test_remote_dispatch_happy_path() -> None:
     assert wf.inputs["prompt"] == "fix the bug in config.py"
     assert wf.inputs["pr_number"] == "42"
     assert wf.inputs["submitted_by"] == "alice"
-    # Dispatch ref should be trunk (default) when ref=None
-    assert wf.ref == "main"
+    # Dispatch ref should be the feature branch so workflow file comes from branch
+    assert wf.ref == result.branch_name
 
 
 def test_remote_dispatch_dry_run() -> None:
@@ -98,7 +98,6 @@ def test_remote_dispatch_dry_run() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -120,7 +119,12 @@ def test_remote_dispatch_dry_run() -> None:
         prompt_executor=None,
     )
 
-    assert result is None
+    assert isinstance(result, OneShotDryRunResult)
+    assert result.prompt == "fix the bug"
+    assert result.target == "test-owner/test-repo"
+    assert result.base_branch == "main"
+    assert result.submitted_by == "test-user"
+    assert result.workflow == "one-shot.yml"
 
     # Verify no mutations occurred
     assert len(remote.created_refs) == 0
@@ -139,7 +143,6 @@ def test_remote_dispatch_with_model() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -176,7 +179,6 @@ def test_remote_dispatch_with_explicit_ref() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -213,7 +215,6 @@ def test_remote_dispatch_with_plan_only() -> None:
         dispatch_run_id="run-1",
         issues=None,
         issue_comments=None,
-        pr_references=None,
     )
     time = FakeTime()
 
@@ -242,8 +243,8 @@ def test_remote_dispatch_with_plan_only() -> None:
 
 def test_cli_repo_flag_rejects_invalid_format() -> None:
     """Test --repo flag rejects invalid owner/repo format."""
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
     from tests.test_utils.context_builders import build_workspace_test_context
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -271,8 +272,8 @@ def test_cli_repo_flag_rejects_invalid_format() -> None:
 
 def test_cli_repo_flag_rejects_ref_current() -> None:
     """Test --repo + --ref-current is rejected."""
-    from erk_shared.gateway.git.fake import FakeGit
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
     from tests.test_utils.context_builders import build_workspace_test_context
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 

@@ -6,12 +6,13 @@ from pathlib import Path
 
 import click
 
+from erk.cli.constants import has_pr_title_prefix
 from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.repo_resolution import get_remote_github, resolved_repo_option
 from erk.core.context import ErkContext
-from erk.core.plan_duplicate_checker import PlanDuplicateChecker
-from erk.core.plan_relevance_checker import PlanRelevanceChecker
+from erk.core.pr_duplicate_checker import PrDuplicateChecker
+from erk.core.pr_relevance_checker import PrRelevanceChecker
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
@@ -23,20 +24,20 @@ from erk_shared.output.output import user_output
     "--file",
     "-f",
     type=click.Path(exists=True, path_type=Path),
-    help="Plan file to read",
+    help="PR file to read",
 )
 @click.option(
-    "--plan",
+    "--pr",
     "-p",
     type=str,
-    help="Existing plan ID to check (fetches body and excludes self from comparison)",
+    help="Existing PR ID to check (fetches body and excludes self from comparison)",
 )
 @resolved_repo_option
 @click.pass_obj
 def duplicate_check_plan(
     ctx: ErkContext,
     file: Path | None,
-    plan: str | None,
+    pr: str | None,
     *,
     repo_id: GitHubRepoId,
 ) -> None:
@@ -49,7 +50,7 @@ def duplicate_check_plan(
     via recent commits merged to the trunk branch (local mode only).
 
     Supports three input modes:
-    - Plan ID: --plan ID (fetches plan body, excludes self from comparison)
+    - Plan ID: --pr ID (fetches plan body, excludes self from comparison)
     - File: --file PATH (recommended for automation)
     - Stdin: pipe content via shell (for Unix composability)
 
@@ -58,27 +59,27 @@ def duplicate_check_plan(
         1: Duplicates found, already implemented, or error
 
     Examples:
-        erk pr duplicate-check --plan 200
+        erk pr duplicate-check --pr 200
         erk pr duplicate-check --file plan.md
-        erk pr duplicate-check --plan 200 --repo owner/repo
+        erk pr duplicate-check --pr 200 --repo owner/repo
         cat plan.md | erk pr duplicate-check
     """
-    if plan is not None and file is not None:
-        Ensure.invariant(False, "Cannot use both --plan and --file. Choose one input mode.")
+    if pr is not None and file is not None:
+        Ensure.invariant(False, "Cannot use both --pr and --file. Choose one input mode.")
 
     # Resolve plan content
-    exclude_plan_id: str | None = None
+    exclude_pr_id: str | None = None
     content: str
 
-    if plan is not None:
+    if pr is not None:
         remote = get_remote_github(ctx)
-        plan_number = parse_issue_identifier(plan)
-        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+        pr_number = parse_issue_identifier(pr)
+        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
         if isinstance(issue, IssueNotFound):
-            user_output(click.style("Error: ", fg="red") + f"Plan {plan_number} not found.")
+            user_output(click.style("Error: ", fg="red") + f"PR {pr_number} not found.")
             raise SystemExit(1)
         content = issue.body
-        exclude_plan_id = str(issue.number)
+        exclude_pr_id = str(issue.number)
     elif file is not None:
         Ensure.path_exists(ctx, file, f"File not found: {file}")
         try:
@@ -93,9 +94,9 @@ def duplicate_check_plan(
             user_output(click.style("Error: ", fg="red") + f"Failed to read stdin: {e}")
             raise SystemExit(1) from e
     else:
-        Ensure.invariant(False, "No input provided. Use --plan, --file, or pipe content to stdin.")
+        Ensure.invariant(False, "No input provided. Use --pr, --file, or pipe content to stdin.")
 
-    Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
+    Ensure.not_empty(content.strip(), "PR content is empty. Provide a non-empty PR.")
 
     has_problems = False
 
@@ -114,29 +115,30 @@ def duplicate_check_plan(
         root=root,
         repo_id=repo_id,
     )
-    plan_data = ctx.plan_list_service.get_plan_list_data(
+    plan_data = ctx.pr_list_service.get_pr_list_data(
         location=location,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         state="open",
         skip_workflow_runs=True,
         http_client=http_client,
     )
-    existing_plans = plan_data.plans
+    # Filter to plans only (title prefix check)
+    existing_plans = [p for p in plan_data.plans if has_pr_title_prefix(p.title)]
 
-    if exclude_plan_id is not None:
-        existing_plans = [p for p in existing_plans if p.plan_identifier != exclude_plan_id]
+    if exclude_pr_id is not None:
+        existing_plans = [p for p in existing_plans if p.pr_identifier != exclude_pr_id]
 
     if not existing_plans:
-        user_output("No existing open plans to compare against.")
+        user_output("No existing open PRs to compare against.")
     else:
-        user_output(f"Checking against {len(existing_plans)} open plan(s):")
+        user_output(f"Checking against {len(existing_plans)} open PR(s):")
         for p in existing_plans:
-            user_output(f"  #{p.plan_identifier}: {p.title}")
+            user_output(f"  #{p.pr_identifier}: {p.title}")
         user_output("")
         user_output("Analyzing for semantic duplicates...")
         user_output("")
 
-        checker = PlanDuplicateChecker(ctx.prompt_executor)
+        checker = PrDuplicateChecker(ctx.prompt_executor)
         dup_result = checker.check(content, existing_plans)
 
         if dup_result.error is not None:
@@ -148,7 +150,7 @@ def duplicate_check_plan(
             user_output(click.style("Potential duplicate(s) found:", fg="yellow"))
             user_output("")
             for match in dup_result.matches:
-                user_output(f'  #{match.plan_id}: "{match.title}"')
+                user_output(f'  #{match.pr_id}: "{match.title}"')
                 user_output(f"    {match.explanation}")
                 user_output(f"    {match.url}")
                 user_output("")
@@ -167,7 +169,7 @@ def duplicate_check_plan(
             )
             user_output("")
 
-            relevance_checker = PlanRelevanceChecker(ctx.prompt_executor)
+            relevance_checker = PrRelevanceChecker(ctx.prompt_executor)
             rel_result = relevance_checker.check(content, recent_commits)
 
             if rel_result.error is not None:

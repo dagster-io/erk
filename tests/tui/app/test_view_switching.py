@@ -3,11 +3,11 @@
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
+from erk.tui.data.types import PrFilters
 from erk.tui.views.types import ViewMode, get_view_config
 from erk.tui.widgets.view_bar import ViewBar
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
+from tests.fakes.gateway.pr_service import FakePrService
 
 
 class TestViewSwitching:
@@ -16,10 +16,10 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_app_has_view_bar(self) -> None:
         """App composes a ViewBar widget."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test():
@@ -29,10 +29,10 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_default_view_is_plans(self) -> None:
         """App starts in Plans view mode."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -42,15 +42,15 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_pressing_2_switches_to_learn_view(self) -> None:
         """Pressing '2' switches to Learn view."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Regular Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Regular Plan")],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -58,7 +58,7 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.PLANS
             # Plans view shows only regular plans
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 1
+            assert app._rows[0].pr_number == 1
 
             # Switch to Learn view
             await pilot.press("2")
@@ -67,23 +67,23 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.LEARN
             # Learn view shows only learn plans
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 2
+            assert app._rows[0].pr_number == 2
 
     @pytest.mark.asyncio
     async def test_plans_view_excludes_learn_plans(self) -> None:
         """Plans view filters out learn plans (via server-side labels)."""
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(1, "Regular Plan A"),
-                make_plan_row(3, "Regular Plan B"),
+                make_pr_row(1, "Regular Plan A"),
+                make_pr_row(3, "Regular Plan B"),
             ],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -91,25 +91,25 @@ class TestViewSwitching:
             assert app._view_mode == ViewMode.PLANS
             # Plans view should only have non-learn plans
             assert len(app._rows) == 2
-            issue_numbers = {r.plan_id for r in app._rows}
+            issue_numbers = {r.pr_number for r in app._rows}
             assert issue_numbers == {1, 3}
 
     @pytest.mark.asyncio
     async def test_pressing_3_switches_to_objectives_view(self) -> None:
         """Pressing '3' switches to Objectives view."""
         objective_plans = [
-            make_plan_row(10, "Objective A"),
-            make_plan_row(20, "Objective B"),
+            make_pr_row(10, "Objective A"),
+            make_pr_row(20, "Objective B"),
         ]
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Regular Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Regular Plan")],
             plans_by_labels={
                 ("erk-objective",): objective_plans,
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -127,15 +127,15 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_pressing_1_returns_to_plans_view(self) -> None:
         """Pressing '1' returns to Plans view from another view."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -158,10 +158,10 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_same_view_key_is_noop(self) -> None:
         """Pressing '1' while already in Plans view does nothing."""
-        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider(plans=[make_pr_row(1, "Plan A")])
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -179,10 +179,10 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_view_bar_updates_on_switch(self) -> None:
         """ViewBar shows the active view after switching."""
-        provider = FakePlanDataProvider()
-        filters = PlanFilters.default()
+        provider = FakePrDataProvider()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -198,33 +198,35 @@ class TestViewSwitching:
 
     @pytest.mark.asyncio
     async def test_right_arrow_wraps_from_last_to_first(self) -> None:
-        """Right arrow wraps from Objectives back to Plans."""
-        objective_plans = [make_plan_row(10, "Objective A")]
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")],
+        """Right arrow wraps from Runs back to Plans."""
+        objective_plans = [make_pr_row(10, "Objective A")]
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")],
             plans_by_labels={
                 ("erk-objective",): objective_plans,
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
 
-            # Plans -> Learn -> Objectives
+            # Plans -> Learn -> Objectives -> Runs
             await pilot.press("right")
             await pilot.pause()
             await pilot.press("right")
             await pilot.pause()
             await pilot.pause()
+            await pilot.press("right")
+            await pilot.pause()
 
-            assert app._view_mode == ViewMode.OBJECTIVES
+            assert app._view_mode == ViewMode.RUNS
 
-            # Objectives -> Plans (wrap)
+            # Runs -> Plans (wrap)
             await pilot.press("right")
             await pilot.pause()
 
@@ -233,15 +235,15 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_left_arrow_wraps_from_first_to_last(self) -> None:
         """Left arrow from Learn goes to Plans."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -261,15 +263,15 @@ class TestViewSwitching:
     @pytest.mark.asyncio
     async def test_data_cache_avoids_refetch(self) -> None:
         """Switching back to a cached view does not refetch."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -297,18 +299,18 @@ class TestViewSwitching:
         should remain unchanged.
         """
         objective_plans = [
-            make_plan_row(10, "Objective A"),
-            make_plan_row(20, "Objective B"),
+            make_pr_row(10, "Objective A"),
+            make_pr_row(20, "Objective B"),
         ]
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Plan A")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Plan A")],
             plans_by_labels={
                 ("erk-objective",): objective_plans,
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -317,7 +319,7 @@ class TestViewSwitching:
             # Initial state: Plans view with 1 row
             assert app._view_mode == ViewMode.PLANS
             assert len(app._rows) == 1
-            assert app._rows[0].plan_id == 1
+            assert app._rows[0].pr_number == 1
 
             # Switch to Objectives view
             await pilot.press("3")
@@ -326,12 +328,12 @@ class TestViewSwitching:
 
             assert app._view_mode == ViewMode.OBJECTIVES
             assert len(app._rows) == 2
-            displayed_issues = {r.plan_id for r in app._rows}
+            displayed_issues = {r.pr_number for r in app._rows}
             assert displayed_issues == {10, 20}
 
             # Simulate a stale fetch arriving: data fetched for Plans view
             # but user already switched to Objectives
-            stale_plans = [make_plan_row(99, "Stale Plan")]
+            stale_plans = [make_pr_row(99, "Stale Plan")]
             app._update_table(
                 stale_plans,
                 "12:00:00",
@@ -342,27 +344,27 @@ class TestViewSwitching:
             # Display should NOT have changed - still showing Objectives
             assert app._view_mode == ViewMode.OBJECTIVES
             assert len(app._rows) == 2
-            assert {r.plan_id for r in app._rows} == {10, 20}
+            assert {r.pr_number for r in app._rows} == {10, 20}
 
             # But the stale data should be cached under Plans labels
             plans_labels = get_view_config(ViewMode.PLANS).labels
             assert plans_labels in app._data_cache
             assert len(app._data_cache[plans_labels]) == 1
-            assert app._data_cache[plans_labels][0].plan_id == 99
+            assert app._data_cache[plans_labels][0].pr_number == 99
 
     @pytest.mark.asyncio
     async def test_right_arrow_cycles_to_next_view(self) -> None:
-        """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → PLANS."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Regular Plan")],
+        """Right arrow cycles through views: PLANS → LEARN → OBJECTIVES → RUNS → PLANS."""
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Regular Plan")],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
-                ("erk-objective",): [make_plan_row(10, "Objective A")],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-objective",): [make_pr_row(10, "Objective A")],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
@@ -380,31 +382,41 @@ class TestViewSwitching:
             await pilot.pause()
             assert app._view_mode == ViewMode.OBJECTIVES
 
-            # Right arrow: OBJECTIVES → PLANS (wrap-around)
+            # Right arrow: OBJECTIVES → RUNS
+            await pilot.press("right")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.RUNS
+
+            # Right arrow: RUNS → PLANS (wrap-around)
             await pilot.press("right")
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
 
     @pytest.mark.asyncio
     async def test_left_arrow_cycles_to_previous_view(self) -> None:
-        """Left arrow cycles through views: PLANS → OBJECTIVES → LEARN → PLANS."""
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(1, "Regular Plan")],
+        """Left arrow cycles through views: PLANS → RUNS → OBJECTIVES → LEARN → PLANS."""
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(1, "Regular Plan")],
             plans_by_labels={
-                ("erk-learn",): [make_plan_row(2, "Learn Plan", is_learn_plan=True)],
-                ("erk-objective",): [make_plan_row(10, "Objective A")],
+                ("erk-learn",): [make_pr_row(2, "Learn Plan", is_learn_plan=True)],
+                ("erk-objective",): [make_pr_row(10, "Objective A")],
             },
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
-            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+            provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
         )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             assert app._view_mode == ViewMode.PLANS
 
-            # Left arrow: PLANS → OBJECTIVES (wrap-around)
+            # Left arrow: PLANS → RUNS (wrap-around)
+            await pilot.press("left")
+            await pilot.pause()
+            assert app._view_mode == ViewMode.RUNS
+
+            # Left arrow: RUNS → OBJECTIVES
             await pilot.press("left")
             await pilot.pause()
             await pilot.pause()
@@ -423,20 +435,20 @@ class TestViewSwitching:
 
 def test_display_name_plans_view() -> None:
     """PLANS view returns 'PRs'."""
-    provider = FakePlanDataProvider()
-    filters = PlanFilters.default()
+    provider = FakePrDataProvider()
+    filters = PrFilters.default()
     app = ErkDashApp(
-        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
     )
     assert app._display_name_for_view(ViewMode.PLANS) == "PRs"
 
 
 def test_display_name_non_plans_view() -> None:
     """Non-PLANS mode returns default display name."""
-    provider = FakePlanDataProvider()
-    filters = PlanFilters.default()
+    provider = FakePrDataProvider()
+    filters = PrFilters.default()
     app = ErkDashApp(
-        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        provider=provider, service=FakePrService(), filters=filters, refresh_interval=0
     )
     expected_learn = get_view_config(ViewMode.LEARN).display_name
     assert app._display_name_for_view(ViewMode.LEARN) == expected_learn

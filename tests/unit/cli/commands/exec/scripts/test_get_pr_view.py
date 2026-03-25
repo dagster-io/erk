@@ -8,9 +8,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_pr_view import get_pr_view
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 
 def _make_pr_details(
@@ -160,7 +160,7 @@ def test_get_pr_view_labels() -> None:
     pr = _make_pr_details(
         number=55,
         head_ref_name="labeled-branch",
-        labels=("erk-plan", "erk-plan-review", "bug"),
+        labels=("erk-pr", "bug"),
     )
     fake_gh = FakeLocalGitHub(pr_details={55: pr})
     runner = CliRunner()
@@ -173,4 +173,4 @@ def test_get_pr_view_labels() -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
-    assert output["labels"] == ["erk-plan", "erk-plan-review", "bug"]
+    assert output["labels"] == ["erk-pr", "bug"]

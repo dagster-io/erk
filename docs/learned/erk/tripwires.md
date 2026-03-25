@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **embedding single quotes in a remote erk command argument** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. The bootstrap wraps the entire command in single quotes. Single quotes in arguments will break the shell string.
 
+**expecting erk stack sync to be user-visible in help output** → Read [Stack Sync Command](stack-sync.md) first. erk stack sync is a hidden command (hidden=True). It does not appear in `erk stack --help`. It is primarily used internally by CI workflows and automation.
+
 **implementing branch deletion during automated cleanup** → Read [Branch Cleanup Guide](branch-cleanup.md) first. Use force=True (git branch -D) for post-merge cleanup. Non-force delete refuses squash-merged branches because the SHA differs.
 
 **passing both --ref and --ref-current to a dispatch command** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. --ref and --ref-current are mutually exclusive. resolve_dispatch_ref() raises UsageError if both are provided.
@@ -47,6 +49,8 @@ Rules triggered by matching actions in code.
 **removing uv sync --quiet from activation** → Read [Workspace Activation and Package Refresh](workspace-activation.md) first. uv sync --quiet refreshes workspace packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches.
 
 **resolving a review thread when the comment is a discussion comment (not a review thread)** → Read [PR Address Workflows](pr-address-workflows.md) first. Review threads and discussion comments use different GitHub APIs. resolve-review-threads only handles review threads. Discussion comments are resolved differently (or not at all).
+
+**running erk stack sync without Graphite** → Read [Stack Sync Command](stack-sync.md) first. erk stack sync uses GraphiteCommand and requires gt to be installed and configured. If the branch is not tracked by Graphite, the command exits with an error.
 
 **running gt commands without --no-interactive** → Read [Graphite Divergence Detection](graphite-divergence-detection.md) first. All gt commands MUST use --no-interactive. Without it, gt may prompt for input and hang indefinitely.
 

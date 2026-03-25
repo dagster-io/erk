@@ -4,29 +4,29 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.metadata_helpers import (
-    maybe_update_plan_dispatch_metadata,
+    maybe_update_pr_dispatch_metadata,
     write_dispatch_metadata,
 )
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
 from tests.commands.dispatch.conftest import create_plan, make_plan_body
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
+from tests.test_utils.test_context import context_for_test
 
 
-def _register_branch_alias(fake_github: FakeLocalGitHub, plan_id: str, branch: str) -> None:
+def _register_branch_alias(fake_github: FakeLocalGitHub, pr_id: str, branch: str) -> None:
     """Register an additional branch name for an existing PR in FakeLocalGitHub.
 
-    PlannedPRBackend resolves plans via get_pr_for_branch, which requires
+    ManagedGitHubPrBackend resolves plans via get_pr_for_branch, which requires
     the PR to be registered under the actual branch name.
     """
-    synthetic_branch = f"plan-{plan_id}"
+    synthetic_branch = f"plan-{pr_id}"
     fake_github._prs[branch] = fake_github._prs[synthetic_branch]
-    fake_github._prs_by_branch[branch] = fake_github._pr_details[int(plan_id)]
+    fake_github._prs_by_branch[branch] = fake_github._pr_details[int(pr_id)]
 
 
 def _make_repo(tmp_path: Path) -> RepoContext:
@@ -49,10 +49,10 @@ def _create_backend_with_raw_body(
     *,
     branch: str = "",
     author: str = "test-author",
-) -> tuple[PlannedPRBackend, FakeLocalGitHub]:
-    """Create PlannedPRBackend with a PR that has the exact given body (no auto-synthesis).
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
+    """Create ManagedGitHubPrBackend with a PR that has the exact given body (no auto-synthesis).
 
-    This bypasses create_plan_store_with_plans which auto-synthesizes a plan-header
+    This bypasses create_pr_backend_with_plans which auto-synthesizes a plan-header
     when the body doesn't contain one. Use this to test ensure_plan_header on PRs
     that genuinely lack a plan-header block.
     """
@@ -92,11 +92,11 @@ def _create_backend_with_raw_body(
         pr_details={pr_number: pr_details},
         prs=prs,
     )
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     return backend, fake_github
 
 
-# --- Tests for maybe_update_plan_dispatch_metadata ---
+# --- Tests for maybe_update_pr_dispatch_metadata ---
 
 
 class _FakeGitHubNoNodeId(FakeLocalGitHub):
@@ -110,10 +110,10 @@ def test_update_non_plan_branch_skips_update(tmp_path: Path) -> None:
     """Branch without P{number} prefix causes early return with no metadata update."""
     repo = _make_repo(tmp_path)
     plan = create_plan("123", "Test plan")
-    plan_store, fake_github = create_plan_store_with_plans({"123": plan})
-    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo)
+    pr_store, fake_github = create_pr_backend_with_plans({"123": plan})
+    ctx = context_for_test(cwd=repo.root, pr_store=pr_store, repo=repo)
 
-    maybe_update_plan_dispatch_metadata(ctx, repo, "feature-branch", "run-99")
+    maybe_update_pr_dispatch_metadata(ctx, repo, "feature-branch", "run-99")
 
     assert fake_github.updated_pr_bodies == []
 
@@ -122,16 +122,16 @@ def test_update_missing_node_id_skips_update(tmp_path: Path) -> None:
     """Run ID exists but node_id fetch returns None — skips metadata update."""
     repo = _make_repo(tmp_path)
     plan = create_plan("456", "Test plan", body=make_plan_body())
-    plan_store, fake_github = create_plan_store_with_plans({"456": plan})
+    pr_store, fake_github = create_pr_backend_with_plans({"456": plan})
     _register_branch_alias(fake_github, "456", "P456-fix-bug")
     ctx = context_for_test(
         cwd=repo.root,
-        plan_store=plan_store,
+        pr_store=pr_store,
         repo=repo,
         github=_FakeGitHubNoNodeId(),
     )
 
-    maybe_update_plan_dispatch_metadata(ctx, repo, "P456-fix-bug", "run-99")
+    maybe_update_pr_dispatch_metadata(ctx, repo, "P456-fix-bug", "run-99")
 
     assert fake_github.updated_pr_bodies == []
 
@@ -142,11 +142,11 @@ def test_update_successful_writes_metadata(tmp_path: Path) -> None:
     fake_time = FakeTime(current_time=fixed_time)
     repo = _make_repo(tmp_path)
     plan = create_plan("321", "Test plan", body=make_plan_body())
-    plan_store, fake_github = create_plan_store_with_plans({"321": plan})
+    pr_store, fake_github = create_pr_backend_with_plans({"321": plan})
     _register_branch_alias(fake_github, "321", "P321-fix-bug")
-    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo, time=fake_time)
+    ctx = context_for_test(cwd=repo.root, pr_store=pr_store, repo=repo, time=fake_time)
 
-    maybe_update_plan_dispatch_metadata(ctx, repo, "P321-fix-bug", "run-42")
+    maybe_update_pr_dispatch_metadata(ctx, repo, "P321-fix-bug", "run-42")
 
     assert len(fake_github.updated_pr_bodies) == 1
     _, updated_body = fake_github.updated_pr_bodies[0]
@@ -162,9 +162,9 @@ def test_ensure_plan_header_noop_when_exists(tmp_path: Path) -> None:
     """PR with existing plan-header is unchanged by ensure_plan_header."""
     repo = _make_repo(tmp_path)
     plan = create_plan("100", "Test plan", body=make_plan_body())
-    plan_store, fake_github = create_plan_store_with_plans({"100": plan})
+    pr_store, fake_github = create_pr_backend_with_plans({"100": plan})
 
-    plan_store.ensure_plan_header(repo.root, "100")
+    pr_store.ensure_plan_header(repo.root, "100")
 
     # No body update should have been made (the header already exists)
     assert fake_github.updated_pr_bodies == []
@@ -174,9 +174,9 @@ def test_ensure_plan_header_creates_when_missing(tmp_path: Path) -> None:
     """PR with no plan-header gets one created by ensure_plan_header."""
     repo = _make_repo(tmp_path)
     raw_body = "# Plan\n\nImplementation details..."
-    plan_store, fake_github = _create_backend_with_raw_body(200, raw_body)
+    pr_store, fake_github = _create_backend_with_raw_body(200, raw_body)
 
-    plan_store.ensure_plan_header(repo.root, "200")
+    pr_store.ensure_plan_header(repo.root, "200")
 
     assert len(fake_github.updated_pr_bodies) == 1
     _, updated_body = fake_github.updated_pr_bodies[0]
@@ -194,13 +194,13 @@ def test_write_dispatch_metadata_succeeds_without_plan_header(tmp_path: Path) ->
     """write_dispatch_metadata auto-creates plan-header when missing."""
     repo = _make_repo(tmp_path)
     raw_body = "# Plan\n\nImplementation details..."
-    plan_store, fake_github = _create_backend_with_raw_body(300, raw_body)
+    pr_store, fake_github = _create_backend_with_raw_body(300, raw_body)
 
     write_dispatch_metadata(
-        plan_backend=plan_store,
+        pr_backend=pr_store,
         github=fake_github,
         repo_root=repo.root,
-        plan_number=300,
+        pr_number=300,
         run_id="run-55",
         dispatched_at="2024-06-15T12:00:00+00:00",
     )
@@ -211,20 +211,20 @@ def test_write_dispatch_metadata_succeeds_without_plan_header(tmp_path: Path) ->
     assert "last_dispatched_run_id: run-55" in final_body
 
 
-# --- Tests for maybe_update with missing plan-header ---
+# --- Tests for maybe_update with missing PR header ---
 
 
 def test_maybe_update_creates_header_when_missing(tmp_path: Path) -> None:
-    """maybe_update_plan_dispatch_metadata creates header when missing (instead of skipping)."""
+    """maybe_update_pr_dispatch_metadata creates header when missing (instead of skipping)."""
     fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
     fake_time = FakeTime(current_time=fixed_time)
     repo = _make_repo(tmp_path)
     branch = "P400-fix-bug"
     raw_body = "# Plan\n\nImplementation details..."
-    plan_store, fake_github = _create_backend_with_raw_body(400, raw_body, branch=branch)
-    ctx = context_for_test(cwd=repo.root, plan_store=plan_store, repo=repo, time=fake_time)
+    pr_store, fake_github = _create_backend_with_raw_body(400, raw_body, branch=branch)
+    ctx = context_for_test(cwd=repo.root, pr_store=pr_store, repo=repo, time=fake_time)
 
-    maybe_update_plan_dispatch_metadata(ctx, repo, branch, "run-77")
+    maybe_update_pr_dispatch_metadata(ctx, repo, branch, "run-77")
 
     # Should have body updates: ensure_plan_header + update_metadata
     assert len(fake_github.updated_pr_bodies) >= 2

@@ -4,12 +4,16 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_create_detects_branch_already_checked_out() -> None:
-    """Test that create detects when branch is already checked out."""
+def test_create_from_branch_allocates_slot_when_branch_in_external_worktree() -> None:
+    """Test that --from-branch allocates a slot even when branch is in a non-slot worktree.
+
+    With slot allocation, --from-branch creates a pool slot for the branch regardless
+    of whether the branch is already checked out elsewhere.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -17,7 +21,7 @@ def test_create_detects_branch_already_checked_out() -> None:
         config_toml = repo_dir / "config.toml"
         config_toml.write_text("", encoding="utf-8")
 
-        # Setup: feature-branch is already checked out in an existing worktree
+        # Setup: feature-branch is already checked out in an existing non-slot worktree
         existing_wt_path = repo_dir / "worktrees" / "existing-feature"
         existing_wt_path.mkdir(parents=True)
 
@@ -25,6 +29,7 @@ def test_create_detects_branch_already_checked_out() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main"),
@@ -38,8 +43,8 @@ def test_create_detects_branch_already_checked_out() -> None:
             cli, ["wt", "create", "new-feature", "--from-branch", "feature-branch"], obj=test_ctx
         )
 
-        assert result.exit_code == 1
-        assert "already checked out" in result.output
+        # Slot allocation succeeds - assigns feature-branch to a pool slot
+        assert result.exit_code == 0, result.output
         assert "feature-branch" in result.output
 
 

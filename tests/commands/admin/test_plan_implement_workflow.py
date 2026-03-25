@@ -7,11 +7,11 @@ from typing import Any
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import WorkflowRun
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -104,7 +104,7 @@ def test_creates_empty_commit_before_pr() -> None:
         # Run the command
         result = runner.invoke(
             cli,
-            ["admin", "test-plan-implement-gh-workflow", "--plan", "999"],
+            ["admin", "test-plan-implement-gh-workflow", "--pr", "999"],
             obj=ctx,
             catch_exceptions=False,
         )
@@ -200,5 +200,5 @@ def test_creates_issue_when_not_provided() -> None:
         assert "test" in labels
 
         # Verify output shows success
-        assert "Created test plan #1" in result.output
+        assert "Created test PR #1" in result.output
         assert "Workflow dispatched successfully!" in result.output

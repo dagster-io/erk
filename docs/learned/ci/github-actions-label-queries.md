@@ -69,7 +69,7 @@ Example:
   run: |
     LABELS=$(gh api "repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }}" \
       --jq '[.labels[].name] | join(\",\")')
-    if printf '%s' "$LABELS" | grep -q 'erk-plan-review'; then
+    if printf '%s' "$LABELS" | grep -q 'skip-ci'; then
       echo "skip=true" >> "$GITHUB_OUTPUT"
     else
       echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -80,7 +80,7 @@ Example:
 
 **Q: Why not skip job-level conditions and use only step-level API queries?**
 
-A: Job-level conditions are evaluated before runner allocation. If a pull_request event has the `erk-plan-review` label, the job-level condition prevents GitHub from even starting a runner, saving CI minutes and reducing queue pressure.
+A: Job-level conditions are evaluated before runner allocation. If a pull_request event has a skip label, the job-level condition prevents GitHub from even starting a runner, saving CI minutes and reducing queue pressure.
 
 Step-level queries require a runner to be allocated, checkout to complete, and API calls to execute. This wastes resources for cases that could be rejected earlier.
 
@@ -102,7 +102,7 @@ Use `gh api` instead of `gh pr view` because the latter requires being in a repo
 ```yaml
 if: |
   github.event_name == 'push' &&
-  !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+  !contains(github.event.pull_request.labels.*.name, 'skip-ci')
 ```
 
 This condition will always evaluate to true for push events because `github.event.pull_request` is null. The `contains()` function returns false when the array is empty/null, so the negation becomes true.

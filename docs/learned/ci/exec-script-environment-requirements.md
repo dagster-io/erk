@@ -56,7 +56,7 @@ Exec scripts use typed dependency injection via Click context helpers in `packag
 def my_exec_script(ctx: click.Context) -> None:
     executor = require_prompt_executor(ctx)  # needs ANTHROPIC_API_KEY
     repo_root = require_repo_root(ctx)       # needs git repo
-    backend = require_plan_backend(ctx)      # needs GH_TOKEN
+    backend = require_pr_backend(ctx)        # needs GH_TOKEN
     time = require_time(ctx)                 # no external deps
 ```
 

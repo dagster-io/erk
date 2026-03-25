@@ -31,9 +31,37 @@ GET_PR_REVIEW_THREADS_QUERY = """query($owner: String!, $repo: String!, $number:
   }
 }"""
 
+# Query to fetch PR-level reviews (not inline threads)
+# Excludes PENDING (draft reviews) and DISMISSED (superseded reviews)
+GET_PR_REVIEWS_QUERY = """query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      reviews(first: 100, states: [CHANGES_REQUESTED, APPROVED, COMMENTED]) {
+        nodes {
+          id
+          author { login }
+          body
+          state
+          submittedAt
+        }
+      }
+    }
+  }
+}"""
+
 # Mutation to resolve a PR review thread
 RESOLVE_REVIEW_THREAD_MUTATION = """mutation($threadId: ID!) {
   resolveReviewThread(input: {threadId: $threadId}) {
+    thread {
+      id
+      isResolved
+    }
+  }
+}"""
+
+# Mutation to unresolve a PR review thread
+UNRESOLVE_REVIEW_THREAD_MUTATION = """mutation($threadId: ID!) {
+  unresolveReviewThread(input: {threadId: $threadId}) {
     thread {
       id
       isResolved
@@ -188,7 +216,7 @@ GET_PR_CHECK_RUNS_QUERY = """query($owner: String!, $repo: String!, $number: Int
 }"""
 
 # Query for draft plan PRs with rich details (checks, review threads, mergeability)
-# Used by PlannedPRPlanListService for single-call data fetching.
+# Used by ManagedPrListService for single-call data fetching.
 # Note: pullRequests connection does not support filterBy for creator or draft status,
 # so those filters must be applied client-side.
 GET_PLAN_PRS_WITH_DETAILS_QUERY = """query(

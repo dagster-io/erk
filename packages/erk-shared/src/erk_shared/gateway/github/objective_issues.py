@@ -5,7 +5,7 @@ This module contains:
 - Label management utilities (definitions, ensuring labels exist)
 - CreateObjectiveIssueResult: Result type shared by objective issue creation
 
-Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+Plan creation now uses create_plan_draft_pr() from pr_store.create_plan_draft_pr.
 """
 
 from dataclasses import dataclass
@@ -30,13 +30,9 @@ from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import InvalidObjectiveSlug, validate_objective_slug
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.pr_utils import extract_title_from_pr
 
 # Label configurations
-_LABEL_ERK_PLAN = "erk-plan"
-_LABEL_ERK_PLAN_DESC = "Implementation plan for manual execution"
-_LABEL_ERK_PLAN_COLOR = "0E8A16"
-
 _LABEL_ERK_PR = "erk-pr"
 _LABEL_ERK_PR_DESC = "Plan managed as a draft PR"
 _LABEL_ERK_PR_COLOR = "1D76DB"
@@ -60,7 +56,7 @@ class CreateObjectiveIssueResult:
 
     Attributes:
         success: Whether the entire operation completed successfully
-        plan_number: Plan number if created (may be set even on failure if
+        pr_number: PR number if created (may be set even on failure if
             partial success - issue created but comment failed)
         plan_url: Plan URL if created
         title: The title used for the issue (extracted or provided)
@@ -68,7 +64,7 @@ class CreateObjectiveIssueResult:
     """
 
     success: bool
-    plan_number: int | None
+    pr_number: int | None
     plan_url: str | None
     title: str
     error: str | None
@@ -125,7 +121,7 @@ def create_objective_issue(
     Objectives use the same pattern as plans:
     - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
     - First comment: objective content wrapped in objective-body metadata block
-    - Labels: erk-objective (NOT erk-plan)
+    - Labels: erk-objective (NOT erk-pr)
     - No title suffix, no commands section
 
     Args:
@@ -147,7 +143,7 @@ def create_objective_issue(
     if username is None:
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=None,
+            pr_number=None,
             plan_url=None,
             title="",
             error="Could not get GitHub username (gh CLI not authenticated?)",
@@ -155,7 +151,7 @@ def create_objective_issue(
 
     # Step 2: Extract or use provided title
     if title is None:
-        title = extract_title_from_plan(plan_content)
+        title = extract_title_from_pr(plan_content)
 
     # Step 2b: Validate slug if provided (gate - reject invalid, don't transform)
     if slug is not None:
@@ -163,13 +159,13 @@ def create_objective_issue(
         if isinstance(slug_result, InvalidObjectiveSlug):
             return CreateObjectiveIssueResult(
                 success=False,
-                plan_number=None,
+                pr_number=None,
                 plan_url=None,
                 title=title,
                 error=slug_result.message,
             )
 
-    # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)
+    # Step 3: Build labels - objectives only use erk-objective (NOT erk-pr)
     labels = [_LABEL_ERK_OBJECTIVE]
 
     # Add any extra labels
@@ -183,7 +179,7 @@ def create_objective_issue(
     if label_errors:
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=None,
+            pr_number=None,
             plan_url=None,
             title=title,
             error=label_errors,
@@ -215,7 +211,7 @@ def create_objective_issue(
     except RuntimeError as e:
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=None,
+            pr_number=None,
             plan_url=None,
             title=title,
             error=f"Failed to create GitHub issue: {e}",
@@ -229,7 +225,7 @@ def create_objective_issue(
         # Partial success - issue created but comment failed
         return CreateObjectiveIssueResult(
             success=False,
-            plan_number=result.number,
+            pr_number=result.number,
             plan_url=result.url,
             title=title,
             error=f"Issue #{result.number} created but failed to add objective comment: {e}",
@@ -250,7 +246,7 @@ def create_objective_issue(
 
     return CreateObjectiveIssueResult(
         success=True,
-        plan_number=result.number,
+        pr_number=result.number,
         plan_url=result.url,
         title=title,
         error=None,
@@ -280,13 +276,6 @@ def _ensure_labels_exist(
                     label=_LABEL_ERK_PR,
                     description=_LABEL_ERK_PR_DESC,
                     color=_LABEL_ERK_PR_COLOR,
-                )
-            elif label == _LABEL_ERK_PLAN:
-                github_issues.ensure_label_exists(
-                    repo_root=repo_root,
-                    label=_LABEL_ERK_PLAN,
-                    description=_LABEL_ERK_PLAN_DESC,
-                    color=_LABEL_ERK_PLAN_COLOR,
                 )
             elif label == _LABEL_ERK_LEARN:
                 github_issues.ensure_label_exists(
@@ -328,7 +317,7 @@ class LabelDefinition:
 def get_erk_label_definitions() -> list[LabelDefinition]:
     """Get all erk label definitions.
 
-    Returns list of LabelDefinition for all erk labels (erk-plan,
+    Returns list of LabelDefinition for all erk labels (erk-pr,
     erk-learn, erk-objective, no-changes). Used by init command to set up
     labels in target issue repositories.
     """
@@ -337,11 +326,6 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
             name=_LABEL_ERK_PR,
             description=_LABEL_ERK_PR_DESC,
             color=_LABEL_ERK_PR_COLOR,
-        ),
-        LabelDefinition(
-            name=_LABEL_ERK_PLAN,
-            description=_LABEL_ERK_PLAN_DESC,
-            color=_LABEL_ERK_PLAN_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_LEARN,
@@ -374,11 +358,6 @@ def get_required_erk_labels() -> list[LabelDefinition]:
             name=_LABEL_ERK_PR,
             description=_LABEL_ERK_PR_DESC,
             color=_LABEL_ERK_PR_COLOR,
-        ),
-        LabelDefinition(
-            name=_LABEL_ERK_PLAN,
-            description=_LABEL_ERK_PLAN_DESC,
-            color=_LABEL_ERK_PLAN_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_OBJECTIVE,

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME, FakeTime
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME, FakeTime
 
 
 def test_now_returns_default_time() -> None:

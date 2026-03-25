@@ -7,7 +7,7 @@ is disabled (use_graphite=False), proving graceful degradation.
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -63,6 +63,7 @@ def test_wt_create_with_from_branch_without_graphite() -> None:
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing"]},
         )
 
         test_ctx = env.build_context(git=git_ops, use_graphite=False)

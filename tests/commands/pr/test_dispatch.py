@@ -4,17 +4,17 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import build_plan_ref_json
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -23,9 +23,9 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
     """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
 
     Planned-PR plans already have a branch and PR. Dispatch should:
-    - Validate the PR has the erk-plan label and is OPEN
+    - Validate the PR has the erk-pr label and is OPEN
     - Sync local branch ref to remote and commit impl-context via git plumbing
-    - Trigger workflow with plan_backend="planned_pr" in inputs
+    - Trigger workflow with pr_backend="planned_pr" in inputs
     - NOT create a new branch or PR
     """
     runner = CliRunner()
@@ -53,7 +53,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         pr_42 = PRDetails(
             number=42,
             url="https://github.com/test-owner/test-repo/pull/42",
-            title="[erk-plan] Test Draft PR Plan",
+            title="[erk-pr] Test Draft PR Plan",
             body=pr_body,
             state="OPEN",
             is_draft=True,
@@ -64,7 +64,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             merge_state_status="UNKNOWN",
             owner="test-owner",
             repo="test-repo",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
         )
 
         fake_gh = FakeLocalGitHub(
@@ -76,8 +76,8 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
 
-        # PlannedPRBackend makes get_provider_name() return "github-draft-pr"
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        # ManagedGitHubPrBackend makes get_provider_name() return "github-draft-pr"
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -110,19 +110,19 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
 
-        # Verify: workflow was triggered with plan_backend="planned_pr"
+        # Verify: workflow was triggered with pr_backend="planned_pr"
         assert len(fake_gh.triggered_workflows) >= 1, (
             f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
             f"Output: {result.output}"
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
-        assert inputs["plan_backend"] == "planned_pr"
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_backend"] == "planned_pr"
+        assert inputs["pr_number"] == "42"
         assert inputs["branch_name"] == plan_branch
 
         # Verify: no new PR was created (planned-PR already exists)
@@ -161,7 +161,7 @@ def _make_pr_42(*, plan_branch: str) -> PRDetails:
     return PRDetails(
         number=42,
         url="https://github.com/test-owner/test-repo/pull/42",
-        title="[erk-plan] Auto-detect Test",
+        title="[erk-pr] Auto-detect Test",
         body=pr_body,
         state="OPEN",
         is_draft=True,
@@ -172,7 +172,7 @@ def _make_pr_42(*, plan_branch: str) -> PRDetails:
         merge_state_status="UNKNOWN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
@@ -188,15 +188,15 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
 
         impl_dir = get_impl_dir(env.cwd, branch_name="main")
         impl_dir.mkdir(parents=True, exist_ok=True)
-        plan_ref_content = build_plan_ref_json(
+        pr_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
-            plan_id="42",
+            pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             objective_id=None,
             node_ids=None,
         )
-        (impl_dir / "plan-ref.json").write_text(plan_ref_content, encoding="utf-8")
+        (impl_dir / "plan-ref.json").write_text(pr_ref_content, encoding="utf-8")
 
         fake_gh = FakeLocalGitHub(
             authenticated=True,
@@ -206,7 +206,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -235,7 +235,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         # Invoke WITHOUT issue number argument
@@ -247,7 +247,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             f"Output: {result.output}"
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_number"] == "42"
         assert "Traceback" not in result.output
 
 
@@ -262,15 +262,15 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         # resolve_impl_dir() requires plan.md to exist for discovery (step 3)
         impl_context_dir = env.cwd / ".erk" / "impl-context" / "main"
         impl_context_dir.mkdir(parents=True)
-        plan_ref_content = build_plan_ref_json(
+        pr_ref_content = build_plan_ref_json(
             provider="github-draft-pr",
-            plan_id="42",
+            pr_id="42",
             url="https://github.com/test-owner/test-repo/pull/42",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
             objective_id=None,
             node_ids=None,
         )
-        (impl_context_dir / "ref.json").write_text(plan_ref_content, encoding="utf-8")
+        (impl_context_dir / "ref.json").write_text(pr_ref_content, encoding="utf-8")
         (impl_context_dir / "plan.md").write_text("# Test plan\n", encoding="utf-8")
 
         fake_gh = FakeLocalGitHub(
@@ -281,7 +281,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -310,7 +310,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "--base", "main"], obj=ctx)
@@ -321,7 +321,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             f"Output: {result.output}"
         )
         _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
-        assert inputs["plan_id"] == "42"
+        assert inputs["pr_number"] == "42"
         assert "Traceback" not in result.output
 
 
@@ -335,7 +335,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -364,7 +364,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch"], obj=ctx)
@@ -401,7 +401,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
         pr_42 = PRDetails(
             number=42,
             url="https://github.com/test-owner/test-repo/pull/42",
-            title="[erk-plan] Test Ref Option",
+            title="[erk-pr] Test Ref Option",
             body=pr_body,
             state="OPEN",
             is_draft=True,
@@ -412,7 +412,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
             merge_state_status="UNKNOWN",
             owner="test-owner",
             repo="test-repo",
-            labels=("erk-plan",),
+            labels=("erk-pr",),
         )
 
         fake_gh = FakeLocalGitHub(
@@ -423,7 +423,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -456,7 +456,7 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(
@@ -492,7 +492,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         # Simulate: plan branch is checked out in the current worktree
         git = FakeGit(
@@ -532,7 +532,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
@@ -542,7 +542,7 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
             f"Expected workflow trigger\nOutput: {result.output}"
         )
         inputs = fake_gh.triggered_workflows[0][1]
-        assert inputs["plan_backend"] == "planned_pr"
+        assert inputs["pr_backend"] == "planned_pr"
         assert inputs["branch_name"] == plan_branch
 
         # Verify: create_branch was NOT called (branch was checked out)
@@ -580,7 +580,7 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
         )
         fake_issues = FakeGitHubIssues()
         fake_time = FakeTime()
-        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+        pr_backend = ManagedGitHubPrBackend(fake_gh, fake_issues, time=fake_time)
 
         # Simulate: plan branch is checked out with dirty worktree
         git = FakeGit(
@@ -621,7 +621,7 @@ def test_dispatch_rejects_dirty_checked_out_worktree() -> None:
             github=fake_gh,
             issues=fake_issues,
             use_graphite=True,
-            plan_store=planned_pr_backend,
+            pr_store=pr_backend,
         )
 
         result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)

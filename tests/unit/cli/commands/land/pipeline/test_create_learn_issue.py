@@ -10,20 +10,20 @@ from erk.cli.commands.land_pipeline import (
     LandState,
     create_learn_pr,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+from tests.test_utils.test_context import context_for_test
 
 
 def _execution_state(
     tmp_path: Path,
     *,
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     merged_pr_number: int | None = None,
 ) -> LandState:
     """Create LandState as if in execution pipeline."""
@@ -47,18 +47,18 @@ def _execution_state(
         use_graphite=False,
         target_child_branch=None,
         objective_number=None,
-        plan_id=plan_id,
+        pr_id=pr_id,
         cleanup_confirmed=True,
         merged_pr_number=merged_pr_number,
     )
 
 
 def test_returns_state_unchanged_when_plan_id_none(tmp_path: Path) -> None:
-    """No-op when plan_id is None — returns state unchanged."""
+    """No-op when pr_id is None — returns state unchanged."""
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _execution_state(tmp_path, plan_id=None, merged_pr_number=99)
+    state = _execution_state(tmp_path, pr_id=None, merged_pr_number=99)
 
     result = create_learn_pr(ctx, state)
 
@@ -72,7 +72,7 @@ def test_returns_state_unchanged_when_merged_pr_none(tmp_path: Path) -> None:
     fake_issues = FakeGitHubIssues(username="testuser")
     fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
     ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
-    state = _execution_state(tmp_path, plan_id="100", merged_pr_number=None)
+    state = _execution_state(tmp_path, pr_id="100", merged_pr_number=None)
 
     result = create_learn_pr(ctx, state)
 
@@ -85,7 +85,7 @@ def test_returns_state_after_creating_pr(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """With plan_id and merged_pr_number set, delegates to learn PR creation."""
+    """With pr_id and merged_pr_number set, delegates to learn PR creation."""
     from erk.cli.commands import land_learn as learn_mod
 
     now = datetime(2024, 1, 1, tzinfo=UTC)
@@ -105,25 +105,25 @@ def test_returns_state_after_creating_pr(
         is_cross_repository=False,
         owner="owner",
         repo="repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         created_at=now,
         updated_at=now,
     )
-    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn"})
     fake_github = FakeLocalGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
     fake_time = FakeTime()
     fake_git = FakeGit(trunk_branches={tmp_path: "main"})
-    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_issues, time=fake_time)
 
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=plan_store,
+        pr_store=pr_store,
         time=fake_time,
         cwd=tmp_path,
     )
-    state = _execution_state(tmp_path, plan_id="100", merged_pr_number=42)
+    state = _execution_state(tmp_path, pr_id="100", merged_pr_number=42)
 
     # Patch _log_session_discovery to return non-empty xml_files
     # so the skip-empty-sessions guard is not triggered

@@ -3,7 +3,7 @@
 import click
 
 from erk.cli.commands.codespace.run.objective.plan_cmd import run_plan
-from erk.cli.help_formatter import ErkCommandGroup
+from erk_shared.cli_group import ErkCommandGroup
 
 
 @click.group("objective", cls=ErkCommandGroup, grouped=False)

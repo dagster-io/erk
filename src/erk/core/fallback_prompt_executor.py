@@ -36,6 +36,12 @@ class FallbackPromptExecutor(PromptExecutor):
     api_executor: PromptExecutor
     cli_executor: PromptExecutor
 
+    @property
+    def prompt_label(self) -> str:
+        if self.api_executor.is_available():
+            return self.api_executor.prompt_label
+        return self.cli_executor.prompt_label
+
     def is_available(self) -> bool:
         """Available if either executor is available."""
         return self.api_executor.is_available() or self.cli_executor.is_available()

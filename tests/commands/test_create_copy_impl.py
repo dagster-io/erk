@@ -1,15 +1,15 @@
-"""Tests for erk create --copy-plan flag."""
+"""Tests for erk create --copy-pr flag."""
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_create_copy_plan_success() -> None:
-    """Test --copy-plan copies plan directory to new worktree."""
+    """Test --copy-pr copies plan directory to new worktree."""
     from erk_shared.impl_folder import get_impl_dir
 
     runner = CliRunner()
@@ -38,10 +38,10 @@ def test_create_copy_plan_success() -> None:
 
         test_ctx = env.build_context(git=git)
 
-        # Act: Create worktree with --copy-plan
+        # Act: Create worktree with --copy-pr
         result = runner.invoke(
             cli,
-            ["wt", "create", "new-feature", "--copy-plan"],
+            ["wt", "create", "new-feature", "--copy-pr"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -75,7 +75,7 @@ def test_create_copy_plan_success() -> None:
 
 
 def test_create_copy_plan_missing_plan_error() -> None:
-    """Test --copy-plan errors when current directory has no .impl/."""
+    """Test --copy-pr errors when current directory has no .impl/."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: No .impl directory exists
@@ -92,10 +92,10 @@ def test_create_copy_plan_missing_plan_error() -> None:
 
         test_ctx = env.build_context(git=git)
 
-        # Act: Try to create worktree with --copy-plan
+        # Act: Try to create worktree with --copy-pr
         result = runner.invoke(
             cli,
-            ["wt", "create", "new-feature", "--copy-plan"],
+            ["wt", "create", "new-feature", "--copy-pr"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -109,7 +109,7 @@ def test_create_copy_plan_missing_plan_error() -> None:
 
 
 def test_create_copy_plan_mutual_exclusion_with_plan_file() -> None:
-    """Test --copy-plan and --from-plan-file are mutually exclusive."""
+    """Test --copy-pr and --from-pr-file are mutually exclusive."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Setup: Create .impl directory and plan file
@@ -133,10 +133,10 @@ def test_create_copy_plan_mutual_exclusion_with_plan_file() -> None:
 
         test_ctx = env.build_context(git=git)
 
-        # Act: Try to use both --copy-plan and --from-plan-file
+        # Act: Try to use both --copy-pr and --from-pr-file
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file), "--copy-plan"],
+            ["wt", "create", "--from-pr-file", str(plan_file), "--copy-pr"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -146,12 +146,12 @@ def test_create_copy_plan_mutual_exclusion_with_plan_file() -> None:
 
         # Assert: Error message explains mutual exclusion
         assert "mutually exclusive" in result.output
-        assert "--copy-plan" in result.output
-        assert "--from-plan-file" in result.output
+        assert "--copy-pr" in result.output
+        assert "--from-pr-file" in result.output
 
 
 def test_create_copy_plan_preserves_progress() -> None:
-    """Test --copy-plan preserves progress.md checkboxes exactly."""
+    """Test --copy-pr preserves progress.md checkboxes exactly."""
     from erk_shared.impl_folder import get_impl_dir
 
     runner = CliRunner()
@@ -190,10 +190,10 @@ total_steps: 6
 
         test_ctx = env.build_context(git=git)
 
-        # Act: Create worktree with --copy-plan
+        # Act: Create worktree with --copy-pr
         result = runner.invoke(
             cli,
-            ["wt", "create", "phase-2", "--copy-plan"],
+            ["wt", "create", "phase-2", "--copy-pr"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -210,7 +210,7 @@ total_steps: 6
 
 
 def test_create_copy_plan_preserves_yaml_front_matter() -> None:
-    """Test --copy-plan preserves YAML front matter in progress.md."""
+    """Test --copy-pr preserves YAML front matter in progress.md."""
     from erk_shared.impl_folder import get_impl_dir
 
     runner = CliRunner()
@@ -246,10 +246,10 @@ custom_field: some_value
 
         test_ctx = env.build_context(git=git)
 
-        # Act: Create worktree with --copy-plan
+        # Act: Create worktree with --copy-pr
         result = runner.invoke(
             cli,
-            ["wt", "create", "next-phase", "--copy-plan"],
+            ["wt", "create", "next-phase", "--copy-pr"],
             obj=test_ctx,
             catch_exceptions=False,
         )

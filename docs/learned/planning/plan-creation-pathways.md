@@ -12,28 +12,28 @@ Plans can be created through multiple entry points, all routing to the planned-P
 
 ## Entry Points
 
-| Entry Point                             | Backend Used                    | Creates            |
-| --------------------------------------- | ------------------------------- | ------------------ |
-| `/erk:plan-save`                        | Planned PR (PlannedPRBackend)   | Draft pull request |
-| `erk pr create --file <path>`           | Planned PR (PlannedPRBackend)   | Draft pull request |
-| One-shot dispatch (`one_shot_dispatch`) | Planned PR (`ctx.plan_backend`) | Draft pull request |
-| `PlannedPRBackend.create_plan()`        | Planned PR                      | Draft pull request |
-| `register_one_shot_plan`                | Planned PR (updates existing)   | Updates skeleton   |
+| Entry Point                             | Backend Used                  | Creates            |
+| --------------------------------------- | ----------------------------- | ------------------ |
+| `/erk:plan-save`                        | Planned PR (PlannedPRBackend) | Draft pull request |
+| `erk pr create --file <path>`           | Planned PR (PlannedPRBackend) | Draft pull request |
+| One-shot dispatch (`one_shot_dispatch`) | Planned PR (`ctx.pr_backend`) | Draft pull request |
+| `PlannedPRBackend.create_plan()`        | Planned PR                    | Draft pull request |
+| `register_one_shot_plan`                | Planned PR (updates existing) | Updates skeleton   |
 
 ## Backend Routing
 
 The plan backend is hardcoded to `"planned_pr"`. All plan creation routes through PlannedPRBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1).
 
-The `ERK_PLAN_BACKEND` environment variable is no longer read by application code.
+The `ERK_PR_BACKEND` environment variable (formerly `ERK_PLAN_BACKEND`) is no longer read by application code.
 
 ## Label Application
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py, get_title_tag_from_labels -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_utils.py, get_title_tag_from_labels -->
 
-All plan creation pathways apply a title tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py`:
+All plan creation pathways apply a title tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/pr_utils.py`:
 
 - `"erk-learn"` label → `[erk-learn]` prefix
-- All other plans → `[erk-plan]` prefix
+- All other plans → `[erk-pr]` prefix
 
 ## Lifecycle Stage at Creation
 

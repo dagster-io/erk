@@ -13,36 +13,16 @@ Exit Codes:
     1: Error (missing repo info, API error)
 """
 
-import dataclasses
 import json
-from datetime import datetime
-from typing import Any
 
 import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.tui.data.real_provider import RealPlanDataProvider
-from erk.tui.data.types import PlanFilters, PlanRowData
+from erk.tui.data.real_provider import RealPrDataProvider
+from erk.tui.data.types import PrFilters, serialize_pr_row
 from erk_shared.context.helpers import require_context
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
-
-
-def _serialize_plan_row(row: PlanRowData) -> dict[str, Any]:
-    """Convert PlanRowData to JSON-serializable dict.
-
-    Handles datetime fields (to ISO 8601 strings) and tuple fields
-    (log_entries) to lists for JSON compatibility.
-    """
-    data = dataclasses.asdict(row)
-    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
-        if isinstance(data[key], datetime):
-            data[key] = data[key].isoformat()
-    # Convert log_entries tuple of tuples to list of lists
-    data["log_entries"] = [list(entry) for entry in row.log_entries]
-    # Convert objective_deps_plans tuple of tuples to list of lists
-    data["objective_deps_plans"] = [list(entry) for entry in row.objective_deps_plans]
-    return data
 
 
 @click.command(name="dash-data")
@@ -87,7 +67,7 @@ def dash_data(
         click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
         raise SystemExit(1)
 
-    provider = RealPlanDataProvider(
+    provider = RealPrDataProvider(
         erk_ctx,
         location=location,
         http_client=http_client,
@@ -95,7 +75,7 @@ def dash_data(
 
     effective_state: IssueFilterState = "closed" if state == "closed" else "open"
 
-    filters = PlanFilters(
+    filters = PrFilters(
         labels=label,
         state=effective_state,
         run_state=run_state,
@@ -106,7 +86,7 @@ def dash_data(
         creator=creator,
     )
 
-    rows, _timings = provider.fetch_plans(filters)
-    plans = [_serialize_plan_row(row) for row in rows]
+    rows, _timings = provider.fetch_prs(filters)
+    plans = [serialize_pr_row(row) for row in rows]
 
     click.echo(json.dumps({"success": True, "plans": plans, "count": len(plans)}))

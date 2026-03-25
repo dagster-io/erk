@@ -201,7 +201,7 @@ def nodes_from_graph(graph: DependencyGraph) -> list[RoadmapNode]:
             pr=node.pr,
             depends_on=node.depends_on,
             slug=node.slug,
-            reason=None,
+            comment=None,
         )
         for node in graph.nodes
     ]
@@ -244,6 +244,56 @@ def build_state_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
         Sparkline string like "✓✓✓▶▶○○○○"
     """
     return "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in nodes)
+
+
+def _compress_sparkline(raw: str) -> str:
+    """Compress runs of >4 identical symbols with bracket notation.
+
+    Runs of more than 4 identical characters become "[Nx symbol]" (e.g., "[13x○]").
+    Shorter runs are left as individual characters.
+
+    Args:
+        raw: Uncompressed sparkline string
+
+    Returns:
+        Compressed sparkline string.
+    """
+    if not raw:
+        return raw
+    parts: list[str] = []
+    i = 0
+    while i < len(raw):
+        char = raw[i]
+        count = 1
+        while i + count < len(raw) and raw[i + count] == char:
+            count += 1
+        if count > 4:
+            parts.append(f"[{count}x{char}]")
+        else:
+            parts.append(char * count)
+        i += count
+    return "".join(parts)
+
+
+def build_frontier_sparkline(nodes: tuple[ObjectiveNode, ...]) -> str:
+    """Build compressed sparkline showing all nodes' status.
+
+    Shows every node with bracket-compressed runs of >4 identical symbols
+    (e.g., "[7x✓]-[14x○]"). Returns "-" when all nodes are done/skipped
+    or the tuple is empty.
+
+    Args:
+        nodes: Objective nodes in graph order
+
+    Returns:
+        Compressed sparkline of all nodes, or "-" if all done/empty.
+    """
+    if not nodes:
+        return "-"
+    if all(node.status in _TERMINAL_STATUSES for node in nodes):
+        return "-"
+    raw = "".join(_STATUS_SYMBOLS.get(node.status, "?") for node in nodes)
+    return _compress_sparkline(raw)
 
 
 def _find_node_by_status(

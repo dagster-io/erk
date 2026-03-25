@@ -23,7 +23,7 @@ class RealCommandExecutor(CommandExecutor):
         *,
         browser_launch: Callable[[str], Any],
         clipboard_copy: Callable[[str], Any],
-        close_plan_fn: Callable[[int, str], list[int]],
+        close_pr_fn: Callable[[int, str], list[int]],
         notify_fn: NotifyFn,
         refresh_fn: Callable[[], None],
         dispatch_to_queue_fn: Callable[[int, str], None],
@@ -33,14 +33,14 @@ class RealCommandExecutor(CommandExecutor):
         Args:
             browser_launch: Function to launch URL in browser (return value ignored)
             clipboard_copy: Function to copy text to clipboard (return value ignored)
-            close_plan_fn: Function to close plan and linked PRs
+            close_pr_fn: Function to close plan and linked PRs
             notify_fn: Function to show notification
             refresh_fn: Function to trigger data refresh
             dispatch_to_queue_fn: Function to dispatch plan to implementation queue
         """
         self._browser_launch = browser_launch
         self._clipboard_copy = clipboard_copy
-        self._close_plan_fn = close_plan_fn
+        self._close_pr_fn = close_pr_fn
         self._notify_fn = notify_fn
         self._refresh_fn = refresh_fn
         self._dispatch_to_queue_fn = dispatch_to_queue_fn
@@ -53,9 +53,9 @@ class RealCommandExecutor(CommandExecutor):
         """Copy text to clipboard."""
         self._clipboard_copy(text)
 
-    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
+    def close_plan(self, pr_number: int, pr_url: str) -> list[int]:
         """Close plan and linked PRs."""
-        return self._close_plan_fn(plan_id, plan_url)
+        return self._close_pr_fn(pr_number, pr_url)
 
     def notify(self, message: str, *, severity: str | None) -> None:
         """Show notification to user."""
@@ -65,6 +65,6 @@ class RealCommandExecutor(CommandExecutor):
         """Trigger data refresh."""
         self._refresh_fn()
 
-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
+    def dispatch_to_queue(self, pr_number: int, pr_url: str) -> None:
         """Dispatch plan to implementation queue."""
-        self._dispatch_to_queue_fn(plan_id, plan_url)
+        self._dispatch_to_queue_fn(pr_number, pr_url)

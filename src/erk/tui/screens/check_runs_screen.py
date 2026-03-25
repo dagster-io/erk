@@ -9,7 +9,7 @@ from textual.widgets import Label, Markdown
 
 from erk.tui.formatting.ci_checks import format_check_runs
 from erk_shared.gateway.github.types import PRCheckRun
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 
 class CheckRunsScreen(ModalScreen):
@@ -96,7 +96,7 @@ class CheckRunsScreen(ModalScreen):
     def __init__(
         self,
         *,
-        service: PlanService,
+        service: PrService,
         pr_number: int,
         full_title: str,
         passing_count: int,

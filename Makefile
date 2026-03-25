@@ -1,10 +1,10 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp docs-v2-build docs-v2-serve
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve exec-reference-check mcp mcp-dev test-erk-mcp pre-push-check install-hooks
 
 prettier:
-	prettier --write '**/*.md' --ignore-path .gitignore
+	prettier --write '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore
 
 prettier-check:
-	prettier --check '**/*.md' --ignore-path .gitignore
+	prettier --check '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore
 
 format-check:
 	uv run ruff format --check
@@ -15,7 +15,7 @@ lint:
 fix:
 	uv run ruff check --fix --unsafe-fixes
 	uv run ruff format
-	prettier --write '**/*.md' --ignore-path .gitignore
+	prettier --write '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore
 
 ty:
 	uv run ty check
@@ -98,7 +98,7 @@ fast-ci:
 	exit_code=0; \
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
+	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
 	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
@@ -114,7 +114,7 @@ all-ci:
 	exit_code=0; \
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
+	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore --ignore-path .prettierignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
 	echo "\n--- Docs Check ---" && uv run erk docs check || exit_code=1; \
 	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
@@ -157,16 +157,13 @@ publish: build
 # === Documentation ===
 
 docs:
-	uv run mkdocs build
+	cd docs-site && npm install && npm run build
 
 docs-serve:
-	uv run mkdocs serve
-
-docs-deploy:
-	uv run mkdocs gh-deploy --force
+	cd docs-site && npm install && npm run dev
 
 pull_master:
-	git -C /Users/schrockn/code/erk pull origin master
+	git -C /Users/schrockn/code/erk fetch origin master:master
 
 # === MCP Server ===
 
@@ -180,10 +177,18 @@ clear_impl_context:
 	rm -rf .impl
 	rm -rf .erk/impl-context
 
-# === Documentation v2 (Astro/Starlight) ===
+# === Git Hooks ===
 
-docs-v2-build:
-	cd docs-v2 && npm install && npm run build
+# Pre-push checks: lint, format, type check (called by githooks/pre-push)
+pre-push-check:
+	@echo "=== Pre-push Checks ===" && \
+	exit_code=0; \
+	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
+	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
+	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
+	exit $$exit_code
 
-docs-v2-serve:
-	cd docs-v2 && npm install && npm run dev
+# Install git hooks by setting core.hooksPath
+install-hooks:
+	git config core.hooksPath githooks
+	@echo "Git hooks installed (core.hooksPath = githooks)"

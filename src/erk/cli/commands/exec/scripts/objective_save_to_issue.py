@@ -4,7 +4,7 @@ Usage:
     erk exec objective-save-to-issue [OPTIONS]
 
 This command extracts a plan and creates a GitHub issue with:
-- erk-objective label only (NOT erk-plan - objectives are not plans)
+- erk-objective label only (NOT erk-pr - objectives are not plans)
 - No title suffix
 - Plan content directly in body (no metadata block)
 - No commands section
@@ -25,7 +25,7 @@ from typing import Any, cast
 
 import click
 
-from erk.cli.commands.objective.check_cmd import (
+from erk.cli.commands.objective.check.validation import (
     ObjectiveValidationError,
     ObjectiveValidationSuccess,
     validate_objective,
@@ -46,10 +46,8 @@ from erk_shared.gateway.github.objective_issues import create_objective_issue
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def _create_objective_saved_issue_marker(
-    session_id: str, repo_root: Path, plan_number: int
-) -> None:
-    """Create marker file storing the plan number of the saved objective.
+def _create_objective_saved_issue_marker(session_id: str, repo_root: Path, pr_number: int) -> None:
+    """Create marker file storing the PR number of the saved objective.
 
     This marker enables idempotency - when the agent calls objective-save-to-issue
     multiple times in the same session, subsequent calls return the existing issue
@@ -58,11 +56,11 @@ def _create_objective_saved_issue_marker(
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
-        plan_number: The GitHub issue number where the objective was saved.
+        pr_number: The GitHub issue number where the objective was saved.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "objective-saved-issue.marker"
-    marker_file.write_text(str(plan_number), encoding="utf-8")
+    marker_file.write_text(str(pr_number), encoding="utf-8")
 
 
 def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | None:
@@ -99,7 +97,7 @@ def _get_existing_saved_objective(session_id: str, repo_root: Path) -> int | Non
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for scoped plan lookup",
+    help="Session ID for scoped PR lookup",
 )
 @click.option(
     "--slug",
@@ -123,7 +121,7 @@ def objective_save_to_issue(
 ) -> None:
     """Save plan as objective GitHub issue.
 
-    Creates a GitHub issue with only the erk-objective label (NOT erk-plan).
+    Creates a GitHub issue with only the erk-objective label (NOT erk-pr).
     """
     # Get dependencies from context
     github = require_github_issues(ctx)
@@ -152,7 +150,7 @@ def objective_save_to_issue(
                 json.dumps(
                     {
                         "success": True,
-                        "plan_number": existing_issue,
+                        "pr_number": existing_issue,
                         "skipped_duplicate": True,
                         "message": f"Session already saved objective #{existing_issue}",
                     }
@@ -176,13 +174,13 @@ def objective_save_to_issue(
 
     if not plan:
         if output_format == "display":
-            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+            click.echo("Error: No PR found in ~/.claude/plans/", err=True)
             click.echo("\nTo fix:", err=True)
             click.echo("1. Create a plan (enter Plan mode if needed)", err=True)
             click.echo("2. Exit Plan mode using ExitPlanMode tool", err=True)
             click.echo("3. Run this command again", err=True)
         else:
-            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+            click.echo(json.dumps({"success": False, "error": "No PR found in ~/.claude/plans/"}))
         raise SystemExit(1)
 
     # Create objective issue
@@ -204,12 +202,12 @@ def objective_save_to_issue(
         raise SystemExit(1)
 
     # Guard for type narrowing
-    if result.plan_number is None:
-        raise RuntimeError("Unexpected: plan_number is None after success")
+    if result.pr_number is None:
+        raise RuntimeError("Unexpected: pr_number is None after success")
 
     # Create marker file to enable idempotency
     if session_id is not None:
-        _create_objective_saved_issue_marker(session_id, repo_root, result.plan_number)
+        _create_objective_saved_issue_marker(session_id, repo_root, result.pr_number)
 
     # Optional validation
     validation_data: dict[str, Any] | None = None
@@ -225,7 +223,7 @@ def objective_save_to_issue(
             remote,
             owner=owner,
             repo=repo_name,
-            issue_number=result.plan_number,
+            issue_number=result.pr_number,
         )
         if isinstance(validation_result, ObjectiveValidationError):
             validation_data = {
@@ -244,7 +242,7 @@ def objective_save_to_issue(
             }
 
     if output_format == "display":
-        click.echo(f"Objective saved to GitHub issue #{result.plan_number}")
+        click.echo(f"Objective saved to GitHub issue #{result.pr_number}")
         click.echo(f"Title: {result.title}")
         click.echo(f"URL: {result.plan_url}")
         if validation_data is not None:
@@ -262,7 +260,7 @@ def objective_save_to_issue(
     else:
         output_data: dict[str, object] = {
             "success": True,
-            "plan_number": result.plan_number,
+            "pr_number": result.pr_number,
             "issue_url": result.plan_url,
             "title": result.title,
         }

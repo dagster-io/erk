@@ -154,7 +154,7 @@ class PreAnalysisResult:
     has_conflicts: bool = False
     conflict_details: dict[str, str] | None = None
     commit_messages: list[str] | None = None  # Full commit messages for AI context
-    plan_number: int | None = None  # Plan number if linked via plan ref
+    pr_number: int | None = None  # PR number if linked via plan ref
 
 
 @dataclass(frozen=True)

@@ -15,11 +15,11 @@ from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
     reply_to_discussion_comment,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 
 def make_pr_details(pr_number: int, branch: str = "feature-branch") -> PRDetails:

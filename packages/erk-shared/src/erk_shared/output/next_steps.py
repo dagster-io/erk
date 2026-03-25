@@ -4,11 +4,12 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class PlanNextSteps:
+class PrNextSteps:
     """Canonical commands for plan operations."""
 
-    plan_number: int
+    pr_number: int
     url: str
+    branch_name: str
 
     @property
     def view(self) -> str:
@@ -16,15 +17,15 @@ class PlanNextSteps:
 
     @property
     def dispatch(self) -> str:
-        return f"erk pr dispatch {self.plan_number}"
+        return f"erk pr dispatch {self.pr_number}"
 
     @property
-    def checkout(self) -> str:
-        return f"erk br co --for-plan {self.plan_number}"
+    def checkout_current_wt(self) -> str:
+        return f"git checkout {self.branch_name}"
 
     @property
-    def checkout_new_slot(self) -> str:
-        return f"erk br co --new-slot --for-plan {self.plan_number}"
+    def checkout_new_wt(self) -> str:
+        return f"source <(erk slot co {self.branch_name} --script)"
 
     @property
     def dispatch_slash_command(self) -> str:
@@ -32,25 +33,19 @@ class PlanNextSteps:
 
     @property
     def implement_current_wt(self) -> str:
-        return f"erk br co --for-plan {self.plan_number} && erk implement"
+        return f"git checkout {self.branch_name} && erk implement"
 
     @property
     def implement_current_wt_dangerous(self) -> str:
-        return f"erk br co --for-plan {self.plan_number} && erk implement -d"
+        return f"git checkout {self.branch_name} && erk implement -d"
 
     @property
     def implement_new_wt(self) -> str:
-        return (
-            f'source "$(erk br co --new-slot --for-plan {self.plan_number} --script)"'
-            " && erk implement"
-        )
+        return f"source <(erk slot co {self.branch_name} --script) && erk implement"
 
     @property
     def implement_new_wt_dangerous(self) -> str:
-        return (
-            f'source "$(erk br co --new-slot --for-plan {self.plan_number} --script)"'
-            " && erk implement -d"
-        )
+        return f"source <(erk slot co {self.branch_name} --script) && erk implement -d"
 
 
 # Slash commands (static, don't need plan number)
@@ -58,27 +53,27 @@ DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"
 CHECKOUT_SLASH_COMMAND = "/erk:prepare"
 
 
-def format_plan_next_steps_plain(plan_number: int, *, url: str) -> str:
+def format_pr_next_steps_plain(pr_number: int, *, url: str, branch_name: str) -> str:
     """Format for CLI output (plain text)."""
-    s = PlanNextSteps(plan_number=plan_number, url=url)
-    return f"""Implement plan #{plan_number}:
+    s = PrNextSteps(pr_number=pr_number, url=url, branch_name=branch_name)
+    return f"""Implement PR #{pr_number}:
   In current wt:    {s.implement_current_wt}
     (dangerously):  {s.implement_current_wt_dangerous}
   In new wt:        {s.implement_new_wt}
     (dangerously):  {s.implement_new_wt_dangerous}
 
-Checkout plan #{plan_number}:
-  In current wt:  {s.checkout}
-  In new wt:      {s.checkout_new_slot}
+Checkout PR #{pr_number}:
+  In current wt:  {s.checkout_current_wt}
+  In new wt:      {s.checkout_new_wt}
 
-Dispatch plan #{plan_number}:
+Dispatch PR #{pr_number}:
   CLI command:    {s.dispatch}
   Slash command:  {s.dispatch_slash_command}"""
 
 
-def format_next_steps_markdown(plan_number: int, *, url: str) -> str:
+def format_next_steps_markdown(pr_number: int, *, url: str, branch_name: str) -> str:
     """Format for PR body (markdown)."""
-    s = PlanNextSteps(plan_number=plan_number, url=url)
+    s = PrNextSteps(pr_number=pr_number, url=url, branch_name=branch_name)
     return f"""## Execution Commands
 
 **Dispatch to Erk Queue:**
@@ -90,7 +85,7 @@ def format_next_steps_markdown(plan_number: int, *, url: str) -> str:
 
 ### Local Execution
 
-**Checkout plan branch:**
+**Checkout PR branch:**
 ```bash
-{s.checkout}
+{s.checkout_new_wt}
 ```"""

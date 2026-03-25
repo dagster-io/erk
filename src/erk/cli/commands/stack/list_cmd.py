@@ -4,11 +4,11 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.cli.graphite_command import GraphiteCommand
 from erk.core.context import ErkContext
+from erk_shared.cli_alias import alias
 
 
 @alias("ls")

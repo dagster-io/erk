@@ -7,7 +7,6 @@ providing reliable test doubles for CLI tests.
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import (
     GitHubRepoId,
@@ -19,6 +18,7 @@ from erk_shared.gateway.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.paths import sentinel_path
 
 TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))
@@ -261,7 +261,7 @@ def test_fake_github_list_workflow_runs_empty() -> None:
 
 
 def test_fake_github_list_workflow_runs_configured() -> None:
-    """Test list_workflow_runs returns pre-configured runs."""
+    """Test list_workflow_runs returns runs matching workflow_path."""
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -269,6 +269,7 @@ def test_fake_github_list_workflow_runs_configured() -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
         WorkflowRun(
             run_id="456",
@@ -276,6 +277,7 @@ def test_fake_github_list_workflow_runs_configured() -> None:
             conclusion="failure",
             branch="feat-2",
             head_sha="def456",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
@@ -291,8 +293,8 @@ def test_fake_github_list_workflow_runs_configured() -> None:
     assert result[1].conclusion == "failure"
 
 
-def test_fake_github_list_workflow_runs_ignores_workflow_param() -> None:
-    """Test list_workflow_runs returns all configured runs regardless of workflow."""
+def test_fake_github_list_workflow_runs_filters_by_workflow() -> None:
+    """Test list_workflow_runs filters runs by workflow_path suffix."""
     workflow_runs = [
         WorkflowRun(
             run_id="123",
@@ -300,20 +302,30 @@ def test_fake_github_list_workflow_runs_ignores_workflow_param() -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
+            workflow_path=".github/workflows/implement-plan.yml",
+        ),
+        WorkflowRun(
+            run_id="456",
+            status="completed",
+            conclusion="success",
+            branch="feat-2",
+            head_sha="def456",
+            workflow_path=".github/workflows/pr-address.yml",
         ),
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
-    # Should return same data regardless of workflow parameter
     result1 = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml")
-    result2 = ops.list_workflow_runs(sentinel_path(), "other-workflow.yml")
+    result2 = ops.list_workflow_runs(sentinel_path(), "pr-address.yml")
 
-    assert result1 == result2
     assert len(result1) == 1
+    assert result1[0].run_id == "123"
+    assert len(result2) == 1
+    assert result2[0].run_id == "456"
 
 
 def test_fake_github_list_workflow_runs_ignores_limit_param() -> None:
-    """Test list_workflow_runs returns all configured runs regardless of limit."""
+    """Test list_workflow_runs returns all matching runs regardless of limit."""
     workflow_runs = [
         WorkflowRun(
             run_id=str(i),
@@ -321,12 +333,13 @@ def test_fake_github_list_workflow_runs_ignores_limit_param() -> None:
             conclusion="success",
             branch=f"feat-{i}",
             head_sha=f"sha{i}",
+            workflow_path=".github/workflows/implement-plan.yml",
         )
         for i in range(10)
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
 
-    # Should return all runs regardless of limit parameter
+    # Should return all matching runs regardless of limit parameter
     result = ops.list_workflow_runs(sentinel_path(), "implement-plan.yml", limit=5)
 
     assert len(result) == 10  # All runs returned, limit ignored
@@ -341,6 +354,7 @@ def test_fake_github_list_workflow_runs_with_in_progress() -> None:
             conclusion=None,  # No conclusion yet
             branch="feat-1",
             head_sha="abc123",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
         WorkflowRun(
             run_id="456",
@@ -348,6 +362,7 @@ def test_fake_github_list_workflow_runs_with_in_progress() -> None:
             conclusion=None,
             branch="feat-2",
             head_sha="def456",
+            workflow_path=".github/workflows/implement-plan.yml",
         ),
     ]
     ops = FakeLocalGitHub(workflow_runs=workflow_runs)
@@ -431,7 +446,7 @@ def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     assert issues == []
@@ -447,7 +462,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
         body="",
         state="OPEN",
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -469,7 +484,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     assert len(issues) == 1
@@ -485,7 +500,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         body="",
         state="OPEN",
         url="",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -497,7 +512,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         body="",
         state="CLOSED",
         url="",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -507,7 +522,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         state="open",
     )
 
@@ -524,7 +539,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
         body="",
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -547,7 +562,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     assert len(issues) == 1
@@ -565,7 +580,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
             body="",
             state="OPEN",
             url=f"https://github.com/owner/repo/issues/{i}",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -577,7 +592,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
 
     result_issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         limit=3,
     )
 
@@ -593,7 +608,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
         body="",
         state="OPEN",
         url="",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -629,7 +644,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     # Only issue 1 matches, so no PR linkages should be returned
@@ -924,6 +939,43 @@ def test_fake_github_create_pr_comment_tracks_mutation() -> None:
     ops.create_pr_comment(sentinel_path(), 123, "Summary comment body")
 
     assert ops.pr_comments == [(123, "Summary comment body")]
+
+
+# Tests for fetch_pr_comments
+
+
+def test_fake_github_fetch_pr_comments_returns_empty_when_none() -> None:
+    """Test fetch_pr_comments returns empty list when no comments."""
+    ops = FakeLocalGitHub()
+
+    result = ops.fetch_pr_comments(sentinel_path(), 123)
+
+    assert result == []
+
+
+def test_fake_github_fetch_pr_comments_returns_comment_dicts() -> None:
+    """Test fetch_pr_comments returns list of dicts with id and body."""
+    ops = FakeLocalGitHub()
+
+    body = "Header\n\n<!-- my-marker -->\n\n### Activity Log\n- entry 1"
+    ops.create_pr_comment(sentinel_path(), 123, body)
+
+    result = ops.fetch_pr_comments(sentinel_path(), 123)
+
+    assert len(result) == 1
+    assert result[0]["body"] == body
+    assert "id" in result[0]
+
+
+def test_fake_github_fetch_pr_comments_filters_by_pr_number() -> None:
+    """Test fetch_pr_comments only returns comments for specified PR."""
+    ops = FakeLocalGitHub()
+
+    ops.create_pr_comment(sentinel_path(), 123, "<!-- marker -->\nOn PR 123")
+
+    result = ops.fetch_pr_comments(sentinel_path(), 456)
+
+    assert result == []
 
 
 # Tests for find_pr_comment_by_marker

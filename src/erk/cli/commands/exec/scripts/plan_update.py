@@ -5,7 +5,7 @@ Usage:
 
 This command updates the plan content comment on an existing GitHub issue:
 1. Find plan file (from session scratch, --plan-path, or ~/.claude/plans/)
-2. Update plan content via PlanBackend
+2. Update plan content via ManagedPrBackend
 3. Update issue title from plan H1 heading
 
 Options:
@@ -31,22 +31,22 @@ from erk_shared.context.helpers import (
     require_claude_installation,
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.schemas import BRANCH_NAME
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_store.types import PlanNotFound
-from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_labels
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.types import PrNotFound
+from erk_shared.pr_utils import extract_title_from_pr, get_title_tag_from_labels
 
 
 @click.command(name="plan-update")
 @click.option(
-    "--plan-number",
+    "--pr-number",
     type=int,
     required=True,
-    help="Plan number to update",
+    help="PR number to update",
 )
 @click.option(
     "--format",
@@ -58,21 +58,21 @@ from erk_shared.plan_utils import extract_title_from_plan, get_title_tag_from_la
 @click.option(
     "--plan-path",
     type=click.Path(exists=True, path_type=Path),
-    help="Direct path to plan file (overrides session lookup)",
+    help="Direct path to PR file (overrides session lookup)",
 )
 @click.option(
     "--session-id",
-    help="Session ID to find plan file in scratch storage",
+    help="Session ID to find PR file in scratch storage",
 )
 @click.option(
     "--summary",
-    help="AI-generated summary to display above the collapsed plan in the PR body",
+    help="AI-generated summary to display above the collapsed PR in the PR body",
 )
 @click.pass_context
 def plan_update(
     ctx: click.Context,
     *,
-    plan_number: int,
+    pr_number: int,
     output_format: str,
     plan_path: Path | None,
     session_id: str | None,
@@ -91,7 +91,7 @@ def plan_update(
         raise SystemExit(1)
 
     # Get dependencies from context
-    backend = require_plan_backend(ctx)
+    backend = require_pr_backend(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
     claude_installation = require_claude_installation(ctx)
@@ -108,28 +108,30 @@ def plan_update(
     # Narrow type for type checker (None case handled above)
     assert plan_content is not None
 
-    # Step 2: Check plan exists via PlanBackend
-    plan_id = str(plan_number)
-    plan_result = backend.get_plan(repo_root, plan_id)
-    if isinstance(plan_result, PlanNotFound):
-        _handle_update_error(f"Plan #{plan_number} not found")
+    # Step 2: Check plan exists via ManagedPrBackend
+    pr_id = str(pr_number)
+    plan_result = backend.get_managed_pr(repo_root, pr_id)
+    if isinstance(plan_result, PrNotFound):
+        _handle_update_error(f"PR #{pr_number} not found")
 
-    # Narrow type for type checker (PlanNotFound case exits above)
-    assert not isinstance(plan_result, PlanNotFound)
+    # Narrow type for type checker (PrNotFound case exits above)
+    assert not isinstance(plan_result, PrNotFound)
 
-    # Step 3: Update plan content via PlanBackend
+    # Step 3: Update plan content via ManagedPrBackend
     try:
-        backend.update_plan_content(repo_root, plan_id, plan_content.strip(), summary=summary or "")
+        backend.update_managed_pr_content(
+            repo_root, pr_id, plan_content.strip(), summary=summary or ""
+        )
     except RuntimeError as e:
         _handle_update_error(f"Failed to update comment: {e}", cause=e)
 
     # Step 4: Update issue title from plan content
-    new_title = extract_title_from_plan(plan_content)
+    new_title = extract_title_from_pr(plan_content)
     title_tag = get_title_tag_from_labels(plan_result.labels)
     full_title = f"{title_tag} {new_title}"
 
     try:
-        backend.update_plan_title(repo_root, plan_id, full_title)
+        backend.update_managed_pr_title(repo_root, pr_id, full_title)
     except RuntimeError as e:
         _handle_update_error(f"Failed to update title: {e}", cause=e)
 
@@ -153,7 +155,7 @@ def plan_update(
 
     # Step 6: Output success
     if output_format == "display":
-        click.echo(f"Plan #{plan_number} updated")
+        click.echo(f"PR #{pr_number} updated")
         click.echo(f"Title: {full_title}")
         click.echo(f"URL: {plan_result.url}")
         if branch_updated:
@@ -165,8 +167,8 @@ def plan_update(
             json.dumps(
                 {
                     "success": True,
-                    "plan_number": plan_number,
-                    "plan_url": plan_result.url,
+                    "pr_number": pr_number,
+                    "pr_url": plan_result.url,
                     "title": full_title,
                     "branch_name": branch_name,
                     "branch_updated": branch_updated,

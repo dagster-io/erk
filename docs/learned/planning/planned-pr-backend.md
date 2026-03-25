@@ -6,11 +6,11 @@ read_when:
   - "understanding how plans are stored as planned pull requests"
   - "modifying plan-save or land pipeline for plan handling"
 tripwires:
-  - action: "validating plan_id in exec scripts without checking provider type"
-    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics."
+  - action: "validating pr_id in exec scripts without checking provider type"
+    warning: "Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics."
     score: 4
-  - action: "using gh issue view on a plan ID without checking plan backend type"
-    warning: "Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+  - action: "using gh issue view on a PR ID without checking plan backend type"
+    warning: "Planned PR PR IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
     score: 7
   - action: "checking erk exec plan-save --format json output for empty result"
     warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture."
@@ -28,7 +28,7 @@ PlannedPRBackend stores plans as GitHub draft pull requests. It is the only acti
 
 The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
 
-The `ERK_PLAN_BACKEND` environment variable is no longer read by application code. Setting it has no effect.
+The `ERK_PR_BACKEND` environment variable (formerly `ERK_PLAN_BACKEND`) is no longer read by application code. Setting it has no effect.
 
 <!-- Source: src/erk/core/context.py, create_context -->
 
@@ -47,7 +47,7 @@ Key design decisions:
 Plan PRs use a structured body format: metadata block + separator + plan content.
 
 - **Separator**: `"\n\n---\n\n"`
-- **Label**: `"erk-plan"`
+- **Label**: `"erk-pr"`
 - **Structure**: `<!-- plan-header metadata -->` + separator + `# Plan: Title` + content
 
 Helper functions `build_plan_stage_body()` and `extract_plan_content()` (public, in `planned_pr_lifecycle.py`) handle composition and extraction.
@@ -72,7 +72,7 @@ Planned PR plans don't have separate review PRs, so the land pipeline skips revi
 
 ## Learn Pipeline Integration
 
-The learn pipeline detects planned-PR plans via `plan_backend.get_provider_name()`. For planned-PR plans, `plan_id` is the PR number — the learn pipeline can call `github.get_pr(plan_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.
+The learn pipeline detects planned-PR plans via `pr_backend.get_provider_name()`. For planned-PR plans, `pr_id` is the PR number — the learn pipeline can call `github.get_pr(pr_id)` directly without metadata extraction. See [Plan ID Semantics](plan-id-semantics.md) for details.
 
 ## Metadata API Asymmetry
 
@@ -91,11 +91,11 @@ The backend uses explicit `isinstance()` checks and conditional type conversion 
 
 ## Title Prefixing Behavior
 
-Planned PR titles are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
+Planned PR titles are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/pr_utils.py:178-190`.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py:178-190, get_title_tag_from_labels -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_utils.py:178-190, get_title_tag_from_labels -->
 
-The function returns `"[erk-learn]"` if `"erk-learn"` is in the labels list, otherwise `"[erk-plan]"`. The prefix is prepended to the plan title during PR creation (e.g., `[erk-plan] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
+The function returns `"[erk-learn]"` if `"erk-learn"` is in the labels list, otherwise `"[erk-pr]"`. The prefix is prepended to the plan title during PR creation (e.g., `[erk-pr] My Feature`). For erk-learn plans, the prefix becomes `[erk-learn]` to distinguish documentation/learning plans from implementation plans in the PR list.
 
 ## GraphQL Refactor: `list_plan_prs_with_details()`
 
@@ -122,7 +122,7 @@ For full details, see [Impl-Context Staging Directory](impl-context.md).
 
 ## plan-save Duplicate Detection Output Routing
 
-When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved` marker), it returns `{"skipped_duplicate": true, "plan_number": <N>}`. This JSON is written to **stderr**, not stdout.
+When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved` marker), it returns `{"skipped_duplicate": true, "pr_number": <N>}`. This JSON is written to **stderr**, not stdout.
 
 Empty stdout from `plan-save` does not indicate failure. Always capture both streams:
 

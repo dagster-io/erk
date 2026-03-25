@@ -45,7 +45,7 @@ The early `_get_learn_materials_branch()` call short-circuits the entire discove
 
 <!-- Source: src/erk/cli/commands/learn/learn_cmd.py, _get_learn_materials_branch -->
 
-See `_get_learn_materials_branch()` in `src/erk/cli/commands/learn/learn_cmd.py:237-257`. Checks the plan's metadata for a `learn_materials_branch` field via `ctx.plan_backend.get_metadata_field()`. Returns `str | None`.
+See `_get_learn_materials_branch()` in `src/erk/cli/commands/learn/learn_cmd.py:237-257`. Checks the plan's metadata for a `learn_materials_branch` field via `ctx.pr_backend.get_metadata_field()`. Returns `str | None`.
 
 Uses LBYL pattern: checks `isinstance(result, PlanNotFound)` and `isinstance(result, str)` before returning the branch name.
 

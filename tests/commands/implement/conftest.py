@@ -2,18 +2,18 @@
 
 from datetime import UTC, datetime
 
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def create_sample_plan_issue(issue_number: str = "42") -> Plan:
     """Create a sample plan issue for testing."""
     return Plan(
-        plan_identifier=issue_number,
-        title="Add Authentication Feature",
+        pr_identifier=issue_number,
+        title="[erk-pr] Add Authentication Feature",
         body="# Implementation Plan\n\nAdd user authentication to the application.",
         state=PlanState.OPEN,
         url=f"https://github.com/owner/repo/issues/{issue_number}",
-        labels=["erk-plan", "enhancement"],
+        labels=["erk-pr"],
         assignees=["alice"],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),

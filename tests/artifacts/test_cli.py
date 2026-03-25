@@ -13,7 +13,8 @@ from erk.cli.commands.artifact.list_cmd import list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
 from erk.core.claude_settings import add_erk_hooks
-from erk.core.context import ErkContext, context_for_test
+from erk.core.context import ErkContext
+from tests.test_utils.test_context import context_for_test
 
 
 class TestListCommand:

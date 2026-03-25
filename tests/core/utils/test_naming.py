@@ -3,14 +3,13 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
-    InvalidPlanTitle,
+    InvalidPrTitle,
     InvalidWorktreeName,
     ValidObjectiveSlug,
-    ValidPlanTitle,
+    ValidPrTitle,
     ValidWorktreeName,
     default_branch_for_worktree,
     ensure_unique_worktree_name,
@@ -21,9 +20,10 @@ from erk_shared.naming import (
     slugify_node_description,
     strip_plan_from_filename,
     validate_objective_slug,
-    validate_plan_title,
+    validate_pr_title,
     validate_worktree_name,
 )
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 
 # Deterministic date suffix for tests that call ensure_unique_worktree_name with now=
 _FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
@@ -475,9 +475,9 @@ def test_validate_objective_slug_error_message_includes_pattern() -> None:
     ],
 )
 def test_validate_plan_title_valid(title: str) -> None:
-    """Valid titles return ValidPlanTitle."""
-    result = validate_plan_title(title)
-    assert isinstance(result, ValidPlanTitle)
+    """Valid titles return ValidPrTitle."""
+    result = validate_pr_title(title)
+    assert isinstance(result, ValidPrTitle)
     assert result.title == title.strip()
 
 
@@ -498,16 +498,16 @@ def test_validate_plan_title_valid(title: str) -> None:
     ],
 )
 def test_validate_plan_title_invalid(title: str, reason_fragment: str) -> None:
-    """Invalid titles return InvalidPlanTitle with matching reason."""
-    result = validate_plan_title(title)
-    assert isinstance(result, InvalidPlanTitle)
+    """Invalid titles return InvalidPrTitle with matching reason."""
+    result = validate_pr_title(title)
+    assert isinstance(result, InvalidPrTitle)
     assert reason_fragment in result.reason
 
 
 def test_validate_plan_title_error_message_includes_rules() -> None:
     """Error message includes rules for agent self-correction."""
-    result = validate_plan_title("")
-    assert isinstance(result, InvalidPlanTitle)
+    result = validate_pr_title("")
+    assert isinstance(result, InvalidPrTitle)
     assert "5-100 characters" in result.message
     assert "at least one alphabetic" in result.message
     assert "Valid examples" in result.message
@@ -516,22 +516,22 @@ def test_validate_plan_title_error_message_includes_rules() -> None:
 
 def test_validate_plan_title_error_type() -> None:
     """Error type is machine-readable."""
-    result = validate_plan_title("")
-    assert isinstance(result, InvalidPlanTitle)
+    result = validate_pr_title("")
+    assert isinstance(result, InvalidPrTitle)
     assert result.error_type == "invalid-plan-title"
 
 
 def test_validate_plan_title_strips_whitespace() -> None:
     """Leading/trailing whitespace is stripped before validation."""
-    result = validate_plan_title("  Add Feature  ")
-    assert isinstance(result, ValidPlanTitle)
+    result = validate_pr_title("  Add Feature  ")
+    assert isinstance(result, ValidPrTitle)
     assert result.title == "Add Feature"
 
 
 def test_validate_plan_title_preserves_original_in_error() -> None:
     """Error includes the original unmodified title."""
-    result = validate_plan_title("   ab   ")
-    assert isinstance(result, InvalidPlanTitle)
+    result = validate_pr_title("   ab   ")
+    assert isinstance(result, InvalidPrTitle)
     assert result.raw_title == "   ab   "
 
 

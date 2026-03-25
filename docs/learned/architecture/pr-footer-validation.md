@@ -41,7 +41,7 @@ Every format change requires updating three synchronized components:
 
 **CRITICAL:** Add new format support to parser/validator BEFORE updating generator. This ensures old PRs remain parseable during migration.
 
-See `build_pr_body_footer()`, `extract_footer_from_body()`, and `extract_closing_reference()` in `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py`.
+See `build_pr_body_footer()` and `extract_footer_from_body()` in `packages/erk-shared/src/erk_shared/gateway/github/pr_footer.py`.
 
 ## Current Format Structure
 
@@ -53,20 +53,16 @@ The footer follows a three-section pattern:
 Closes #123
 
 To checkout this PR in a fresh worktree and environment locally, run:
-```
 
-source "$(erk pr checkout 1895 --script)"
-
-```
-
+erk slot teleport 1895
 ```
 
 **Key format rules:**
 
 - Footer starts after last `\n---\n` delimiter in PR body
 - Closing reference comes first (if present): `Closes #N` or `Closes owner/repo#N`
-- Checkout command uses `source "$(erk pr checkout <N> --script)"` format
-- PR number in checkout command must match actual PR number (initially 0, updated after creation)
+- Teleport command uses `erk slot teleport <N>` format for quick PR checkout
+- PR number in teleport command must match actual PR number (initially 0, updated after creation)
 
 **Cross-repo variation:** When `plans_repo` is set, closing reference uses `owner/repo#N` format instead of `#N`.
 

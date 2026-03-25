@@ -6,7 +6,7 @@ read_when:
   - "understanding issues_explicitly_passed flag"
 tripwires:
   - action: "creating custom FakeGitHubIssues without passing to test context builder"
-    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible."
+    warning: "Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, pr_backend operates on a different instance and metadata writes are invisible."
 ---
 
 # Test Context Composition
@@ -18,9 +18,9 @@ When building test contexts with custom fakes, the composition matters — parti
 `build_workspace_test_context()` creates a default `FakeGitHubIssues` if none is passed. If you create your own `FakeGitHubIssues` but don't pass it to the context builder, two separate instances exist:
 
 1. Your instance (which you assert against)
-2. The context builder's internal instance (which `plan_backend` uses)
+2. The context builder's internal instance (which `pr_backend` uses)
 
-Metadata writes through `plan_backend` go to instance #2, invisible to your assertions on instance #1.
+Metadata writes through `pr_backend` go to instance #2, invisible to your assertions on instance #1.
 
 ## Correct Pattern
 
@@ -34,17 +34,17 @@ def test_metadata_is_written(env: ErkInMemEnv) -> None:
         env, issues=issues,  # Share the instance
     )
 
-    # Now plan_backend and direct assertions use the same instance
-    ctx.plan_backend.update_metadata(repo_root, "42", {"key": "value"})
+    # Now pr_backend and direct assertions use the same instance
+    ctx.pr_backend.update_metadata(repo_root, "42", {"key": "value"})
     assert any("key" in body for _, body in issues.updated_bodies)
 ```
 
 ## When issues is Auto-Created vs Explicitly Shared
 
-| Scenario | issues parameter   | Result                                             |
-| -------- | ------------------ | -------------------------------------------------- |
-| Default  | omitted            | Context creates its own FakeGitHubIssues           |
-| Shared   | `issues=my_issues` | Context uses your instance; plan_backend shares it |
+| Scenario | issues parameter   | Result                                           |
+| -------- | ------------------ | ------------------------------------------------ |
+| Default  | omitted            | Context creates its own FakeGitHubIssues         |
+| Shared   | `issues=my_issues` | Context uses your instance; pr_backend shares it |
 
 ## Related Documentation
 

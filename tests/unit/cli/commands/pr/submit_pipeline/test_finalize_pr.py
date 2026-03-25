@@ -9,22 +9,22 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     finalize_pr,
 )
-from erk.core.context import context_for_test
-from erk.core.plan_context_provider import PlanContext
+from erk.core.pr_context_provider import PrContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import (
     create_backend_from_issues,
     format_plan_header_body_for_test,
 )
+from tests.test_utils.test_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""
@@ -42,14 +42,14 @@ def _make_state(
     debug: bool = False,
     session_id: str = "test-session",
     skip_description: bool = False,
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = 42,
     pr_url: str | None = "https://github.com/owner/repo/pull/42",
     was_created: bool = True,
     base_branch: str | None = "main",
     graphite_url: str | None = None,
     diff_file: Path | None = None,
-    plan_context: PlanContext | None = None,
+    plan_context: PrContext | None = None,
     title: str | None = "My PR Title",
     body: str | None = "My PR body",
     existing_pr_body: str = "",
@@ -66,7 +66,7 @@ def _make_state(
         session_id=session_id,
         skip_description=skip_description,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,
@@ -150,7 +150,7 @@ def test_adds_learn_plan_label(tmp_path: Path) -> None:
 
     plan_ref_content = build_plan_ref_json(
         provider="github",
-        plan_id="42",
+        pr_id="42",
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-learn",),
         objective_id=None,
@@ -227,8 +227,8 @@ def test_cleans_up_diff_file(tmp_path: Path) -> None:
 def test_embeds_plan_in_pr_body(tmp_path: Path) -> None:
     """Plan context embedded in PR body but NOT in commit message."""
     plan_content = "# My Plan\n\nSome implementation details"
-    plan_ctx = PlanContext(
-        plan_id="1234",
+    plan_ctx = PrContext(
+        pr_id="1234",
         plan_content=plan_content,
         objective_summary=None,
     )
@@ -322,7 +322,7 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
-        plan_store=PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
     state = _make_state(
@@ -335,8 +335,8 @@ def test_finalize_pr_planned_pr_backend_extracts_metadata(tmp_path: Path) -> Non
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # Planned PR backend sets plan_id to None (no self-close)
-    assert result.plan_id is None
+    # Planned PR backend sets pr_id to None (no self-close)
+    assert result.pr_id is None
     # PR body should contain metadata prefix
     updated_body = fake_github.updated_pr_bodies[0][1]
     assert "plan-header" in updated_body
@@ -435,7 +435,7 @@ def test_skip_description_returns_state_unchanged(tmp_path: Path) -> None:
 
 
 def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
-    """finalize_pr with a PlanContext triggers lifecycle update to 'impl'."""
+    """finalize_pr with a PrContext triggers lifecycle update to 'impl'."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,
@@ -443,7 +443,7 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
         body=plan_body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/321",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
@@ -459,12 +459,12 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
         git=fake_git,
         github=fake_github,
         issues=fake_issues,
-        plan_store=backend,
+        pr_store=backend,
         cwd=tmp_path,
     )
 
-    plan_ctx = PlanContext(
-        plan_id="321",
+    plan_ctx = PrContext(
+        pr_id="321",
         plan_content="# Plan\n\nImplement the thing.",
         objective_summary=None,
     )
@@ -480,8 +480,8 @@ def test_updates_lifecycle_stage_for_linked_plan(tmp_path: Path) -> None:
     assert "lifecycle_stage: impl" in lifecycle_bodies[0]
 
 
-def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
-    """finalize_pr does NOT update lifecycle when only plan_id is set (no plan_context)."""
+def test_no_lifecycle_update_with_only_pr_id(tmp_path: Path) -> None:
+    """finalize_pr does NOT update lifecycle when only pr_id is set (no plan_context)."""
     plan_body = format_plan_header_body_for_test(lifecycle_stage="planned")
     plan_issue = IssueInfo(
         number=321,
@@ -489,7 +489,7 @@ def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
         body=plan_body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/321",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
         updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
@@ -509,12 +509,12 @@ def test_no_lifecycle_update_with_only_plan_id(tmp_path: Path) -> None:
     )
     ctx = context_for_test(git=fake_git, github=fake_github, issues=fake_issues, cwd=tmp_path)
 
-    state = _make_state(cwd=tmp_path, plan_id="321", plan_context=None)
+    state = _make_state(cwd=tmp_path, pr_id="321", plan_context=None)
 
     result = finalize_pr(ctx, state)
 
     assert isinstance(result, SubmitState)
-    # plan_id alone should NOT trigger lifecycle update
+    # pr_id alone should NOT trigger lifecycle update
     assert len(fake_issues.updated_bodies) == 0
 
 
@@ -536,7 +536,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
     ctx = context_for_test(
         git=fake_git,
         github=fake_github,
-        plan_store=PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()),
+        pr_store=ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime()),
         cwd=tmp_path,
     )
     state = _make_state(
@@ -544,7 +544,7 @@ def test_updates_lifecycle_stage_for_draft_pr_backend(tmp_path: Path) -> None:
         title="Implement feature",
         body="Summary of work",
         plan_context=None,
-        plan_id=None,
+        pr_id=None,
         existing_pr_body=pr_body,
     )
 

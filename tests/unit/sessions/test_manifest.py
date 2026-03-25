@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.sessions.manifest import read_session_manifest
+from tests.fakes.gateway.git import FakeGit
 
 
 def test_returns_none_when_ref_not_found(tmp_path: Path) -> None:
@@ -41,7 +41,7 @@ def test_returns_parsed_dict_for_valid_json(tmp_path: Path) -> None:
     """Returns parsed manifest dict for valid JSON content."""
     manifest = {
         "version": 1,
-        "plan_id": 100,
+        "pr_id": 100,
         "sessions": [
             {
                 "session_id": "test-session-1",
@@ -66,6 +66,6 @@ def test_returns_parsed_dict_for_valid_json(tmp_path: Path) -> None:
 
     assert result is not None
     assert result["version"] == 1
-    assert result["plan_id"] == 100
+    assert result["pr_id"] == 100
     assert len(result["sessions"]) == 1
     assert result["sessions"][0]["session_id"] == "test-session-1"

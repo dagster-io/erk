@@ -1,13 +1,16 @@
 """Shared constants for erk CLI commands."""
 
-# GitHub issue label for erk plans
-ERK_PLAN_LABEL = "erk-plan"
+# Title prefix for erk-pr issues (with trailing space for easy stripping)
+ERK_PR_TITLE_PREFIX = "[erk-pr] "
 
-# Title prefix for erk-plan issues (with trailing space for easy stripping)
-ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+# Title prefix for erk-learn issues (with trailing space for easy stripping)
+ERK_LEARN_TITLE_PREFIX = "[erk-learn] "
 
-# Plan markdown heading prefix (with trailing space for easy stripping)
-PLAN_HEADING_PREFIX = "Plan: "
+
+def has_pr_title_prefix(title: str) -> bool:
+    """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
+    return title.startswith(ERK_PR_TITLE_PREFIX) or title.startswith(ERK_LEARN_TITLE_PREFIX)
+
 
 # PR title prefix for plan-originated PRs
 PLANNED_PR_TITLE_PREFIX = "plnd/"
@@ -60,5 +63,5 @@ ERK_PR_LABEL = "erk-pr"
 # Learn plan label (for plans that learn from sessions)
 ERK_LEARN_LABEL = "erk-learn"
 
-ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
+ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning PR"
 ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red

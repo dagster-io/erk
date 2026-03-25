@@ -19,14 +19,14 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     build_step2_message,
     determine_exit_action,
     exit_plan_mode_hook,
-    extract_plan_title,
+    extract_pr_title,
     is_terminal_editor,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.branch_manager import FakeBranchManager
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.shared_context import context_for_test
 
 # ============================================================================
 # Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED
@@ -131,29 +131,30 @@ class TestDetermineExitAction:
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
-                plan_saved_plan_number=42,
+                plan_saved_pr_number=42,
+                plan_saved_branch_name="plnd/my-feature",
                 plan_file_path=Path("/some/plan.md"),
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan #42 saved" in result.message
-        assert "erk br co --for-plan 42" in result.message
+        assert "PR #42 saved" in result.message
+        assert "erk slot co plnd/my-feature" in result.message
         assert "erk pr dispatch 42" in result.message
         assert "Session complete" in result.message
         assert result.delete_plan_saved_marker is True
         assert result.delete_implement_now_marker is False
 
-    def test_plan_saved_marker_without_plan_number_fallback(self) -> None:
+    def test_plan_saved_marker_without_pr_number_fallback(self) -> None:
         """Plan-saved marker without plan number uses fallback message."""
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
-                plan_saved_plan_number=None,
+                plan_saved_pr_number=None,
                 plan_file_path=Path("/some/plan.md"),
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan PR saved" in result.message
+        assert "PR saved" in result.message
         assert "Planning session complete" in result.message
         assert result.delete_plan_saved_marker is True
 
@@ -205,18 +206,18 @@ class TestDetermineExitAction:
 
 
 # ============================================================================
-# Pure Logic Tests for extract_plan_title() - NO MOCKING REQUIRED
+# Pure Logic Tests for extract_pr_title() - NO MOCKING REQUIRED
 # ============================================================================
 
 
 class TestExtractPlanTitle:
-    """Tests for the pure extract_plan_title() function."""
+    """Tests for the pure extract_pr_title() function."""
 
     def test_extracts_h1_heading(self, tmp_path: Path) -> None:
         """Extract title from first H1 heading."""
         plan_file = tmp_path / "plan.md"
         plan_file.write_text("# My Plan Title\n\nSome content here.\n", encoding="utf-8")
-        assert extract_plan_title(plan_file) == "My Plan Title"
+        assert extract_pr_title(plan_file) == "My Plan Title"
 
     def test_extracts_from_task_section(self, tmp_path: Path) -> None:
         """Extract title from ## Task section when no H1."""
@@ -225,13 +226,13 @@ class TestExtractPlanTitle:
             "## Task\nDo the thing with feature X\n\n## Details\nMore info.",
             encoding="utf-8",
         )
-        assert extract_plan_title(plan_file) == "Do the thing with feature X"
+        assert extract_pr_title(plan_file) == "Do the thing with feature X"
 
     def test_skips_generic_plan_heading(self, tmp_path: Path) -> None:
         """Skip generic '# Plan' heading and fall back to ## Task."""
         plan_file = tmp_path / "plan.md"
         plan_file.write_text("# Plan\n\n## Task\nActual task description\n", encoding="utf-8")
-        assert extract_plan_title(plan_file) == "Actual task description"
+        assert extract_pr_title(plan_file) == "Actual task description"
 
     def test_skips_generic_implementation_plan_heading(self, tmp_path: Path) -> None:
         """Skip generic '# Implementation Plan' heading."""
@@ -239,22 +240,22 @@ class TestExtractPlanTitle:
         plan_file.write_text(
             "# Implementation Plan\n\n## Task\nBuild the widget\n", encoding="utf-8"
         )
-        assert extract_plan_title(plan_file) == "Build the widget"
+        assert extract_pr_title(plan_file) == "Build the widget"
 
     def test_returns_none_for_no_file(self) -> None:
         """Return None when plan_file_path is None."""
-        assert extract_plan_title(None) is None
+        assert extract_pr_title(None) is None
 
     def test_returns_none_for_nonexistent_file(self, tmp_path: Path) -> None:
         """Return None when file doesn't exist."""
         nonexistent = tmp_path / "does_not_exist.md"
-        assert extract_plan_title(nonexistent) is None
+        assert extract_pr_title(nonexistent) is None
 
     def test_returns_none_for_empty_file(self, tmp_path: Path) -> None:
         """Return None when file is empty."""
         plan_file = tmp_path / "plan.md"
         plan_file.write_text("", encoding="utf-8")
-        assert extract_plan_title(plan_file) is None
+        assert extract_pr_title(plan_file) is None
 
     def test_returns_none_when_no_title_found(self, tmp_path: Path) -> None:
         """Return None when no valid title pattern found."""
@@ -262,13 +263,13 @@ class TestExtractPlanTitle:
         plan_file.write_text(
             "Some random content\nwithout any headings\nor task section.", encoding="utf-8"
         )
-        assert extract_plan_title(plan_file) is None
+        assert extract_pr_title(plan_file) is None
 
     def test_prefers_h1_over_task_section(self, tmp_path: Path) -> None:
         """H1 heading takes precedence over ## Task section."""
         plan_file = tmp_path / "plan.md"
         plan_file.write_text("# Better Title\n\n## Task\nTask description\n", encoding="utf-8")
-        assert extract_plan_title(plan_file) == "Better Title"
+        assert extract_pr_title(plan_file) == "Better Title"
 
 
 # ============================================================================
@@ -382,10 +383,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "PLAN SAVE PROMPT" in message
@@ -409,10 +410,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # Extract the instruction block
@@ -439,10 +440,10 @@ class TestBuildBlockingMessage:
             current_branch="P4535-add-feature",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name="erk-slot-02",
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # Should have both question: and header: instructions
@@ -458,10 +459,10 @@ class TestBuildBlockingMessage:
             current_branch=None,
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert 'header: "Plan Action"' in message
@@ -474,16 +475,16 @@ class TestBuildBlockingMessage:
             current_branch="main",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "WARNING" in message
         assert "main" in message
         assert "trunk branch" in message
-        assert "dedicated worktree" in message
+        assert "planned PR" in message
 
     def test_trunk_branch_master_shows_warning(self) -> None:
         """Warning shown when on master branch."""
@@ -493,10 +494,10 @@ class TestBuildBlockingMessage:
             current_branch="master",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "WARNING" in message
@@ -511,10 +512,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "WARNING" not in message
@@ -528,10 +529,10 @@ class TestBuildBlockingMessage:
             current_branch=None,
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "WARNING" not in message
@@ -545,10 +546,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "View/Edit the Plan" in message
@@ -562,10 +563,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "Implement without saving" in message
@@ -582,10 +583,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "If user chooses 'View/Edit the Plan':" in message
@@ -600,10 +601,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=None,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # The option is still listed (as it's hardcoded), but no instructions
@@ -618,10 +619,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "/erk:plan-save" in message
@@ -635,10 +636,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title="Add Feature X",
+            pr_title="Add Feature X",
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "📋 Add Feature X" in message
@@ -652,10 +653,10 @@ class TestBuildBlockingMessage:
             current_branch="P4224-add-feature",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title="Add Feature X",
+            pr_title="Add Feature X",
             worktree_name="erk-slot-02",
             pr_number=4230,
-            plan_number=4224,
+            pr_number_from_plan_ref=4224,
             editor=None,
         )
         # Title should be present
@@ -676,10 +677,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name="erk-slot-02",
             pr_number=None,
-            plan_number=4224,
+            pr_number_from_plan_ref=4224,
             editor=None,
         )
         # No title emoji
@@ -697,10 +698,10 @@ class TestBuildBlockingMessage:
             current_branch=None,
             branch_has_commits=False,
             plan_file_path=None,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # Should still have the basic question
@@ -718,10 +719,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor="vim",
         )
         assert "If user chooses 'View/Edit the Plan':" in message
@@ -741,10 +742,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor="/opt/homebrew/bin/nvim",
         )
         assert "nvim is a terminal-based editor" in message
@@ -758,10 +759,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor="code",
         )
         assert "If user chooses 'View/Edit the Plan':" in message
@@ -778,10 +779,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "If user chooses 'View/Edit the Plan':" in message
@@ -797,10 +798,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title="My Plan",
+            pr_title="My Plan",
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "DISPLAY PLAN" in message
@@ -817,10 +818,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=None,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "DISPLAY PLAN" not in message
@@ -835,13 +836,13 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
-        assert '  1. "Create new branch and planned PR. Stays on current branch."' in message
+        assert '  1. "Create new branch and planned PR"' in message
         assert '  2. "Implement without saving"' in message
         assert '  3. "Make current empty branch a planned PR"' in message
         assert '  4. "View/Edit the Plan"' in message
@@ -854,10 +855,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "Create a plan PR on new branch" not in message
@@ -873,10 +874,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "If user chooses 'Implement without saving':" in message
@@ -896,10 +897,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=True,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # Option should NOT be present
@@ -921,10 +922,10 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # Option should be present
@@ -940,10 +941,10 @@ class TestBuildBlockingMessage:
             current_branch="master",
             branch_has_commits=False,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         assert "Make current empty branch a planned PR" not in message
@@ -960,14 +961,14 @@ class TestBuildBlockingMessage:
             current_branch="feature-branch",
             branch_has_commits=True,
             plan_file_path=plan_path,
-            plan_title=None,
+            pr_title=None,
             worktree_name=None,
             pr_number=None,
-            plan_number=None,
+            pr_number_from_plan_ref=None,
             editor=None,
         )
         # With branch_has_commits=True, should be 3 options numbered 1-3
-        assert '  1. "Create new branch and planned PR. Stays on current branch."' in message
+        assert '  1. "Create new branch and planned PR"' in message
         assert '  2. "Implement without saving"' in message
         assert '  3. "View/Edit the Plan"' in message
         # Should NOT have option 4
@@ -982,52 +983,53 @@ class TestBuildBlockingMessage:
 class TestBuildStep2Message:
     """Tests for the pure build_step2_message() function (Step 2: plain text next-steps)."""
 
-    def test_contains_plan_number(self) -> None:
-        """Step 2 message includes the plan number."""
-        message = build_step2_message(plan_number=42, url="")
-        assert "Plan #42 saved" in message
+    def test_contains_pr_number(self) -> None:
+        """Step 2 message includes the PR number."""
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "PR #42 saved" in message
 
     def test_contains_implement_current_wt_command(self) -> None:
         """Step 2 shows implement-in-current-worktree command."""
-        message = build_step2_message(plan_number=42, url="")
-        assert "erk br co --for-plan 42 && erk implement" in message
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "git checkout plnd/my-feature && erk implement" in message
 
     def test_contains_implement_new_wt_command(self) -> None:
         """Step 2 shows implement-in-new-worktree command."""
-        message = build_step2_message(plan_number=42, url="")
-        assert "--new-slot --for-plan 42" in message
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "source <(erk slot co plnd/my-feature --script) && erk implement" in message
 
     def test_contains_checkout_commands(self) -> None:
         """Step 2 shows checkout commands."""
-        message = build_step2_message(plan_number=42, url="")
-        assert "erk br co --for-plan 42" in message
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
+        assert "git checkout plnd/my-feature" in message
+        assert "erk slot co plnd/my-feature" in message
 
     def test_contains_dispatch_command(self) -> None:
         """Step 2 shows dispatch commands (CLI and slash command)."""
-        message = build_step2_message(plan_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "erk pr dispatch 42" in message
         assert "/erk:pr-dispatch" in message
-        assert "Dispatch plan #42:" in message
+        assert "Dispatch PR #42:" in message
 
     def test_session_complete_no_exit_plan_mode(self) -> None:
         """Step 2 tells Claude not to call ExitPlanMode again."""
-        message = build_step2_message(plan_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "Session complete. Do NOT call ExitPlanMode again." in message
 
     def test_no_ask_user_question(self) -> None:
         """Step 2 does NOT use AskUserQuestion."""
-        message = build_step2_message(plan_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "do NOT use AskUserQuestion" in message
 
     def test_no_implement_now_marker(self) -> None:
         """Step 2 does NOT reference implement-now marker creation."""
-        message = build_step2_message(plan_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "implement-now" not in message
         assert "marker create" not in message
 
     def test_no_plan_implement_slash_command(self) -> None:
         """Step 2 does NOT reference /erk:plan-implement."""
-        message = build_step2_message(plan_number=42, url="")
+        message = build_step2_message(pr_number=42, url="", branch_name="plnd/my-feature")
         assert "/erk:plan-implement" not in message
 
 
@@ -1080,6 +1082,9 @@ class TestHookIntegration:
         marker_dir.mkdir(parents=True)
         plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
         plan_saved_marker.write_text("42\nCreated by test", encoding="utf-8")
+        # Create plan-saved-branch marker
+        branch_marker = marker_dir / "plan-saved-branch.marker"
+        branch_marker.write_text("plnd/my-feature", encoding="utf-8")
 
         # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
@@ -1088,7 +1093,7 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2
-        assert "Plan #42 saved" in result.output
+        assert "PR #42 saved" in result.output
         assert "erk pr dispatch 42" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted after session ends
 
@@ -1182,6 +1187,9 @@ class TestHookIntegration:
         marker_dir.mkdir(parents=True)
         plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
         plan_saved_marker.write_text("42\nCreated by test", encoding="utf-8")
+        # Create plan-saved-branch marker
+        branch_marker = marker_dir / "plan-saved-branch.marker"
+        branch_marker.write_text("plnd/my-feature", encoding="utf-8")
         objective_context_marker = marker_dir / "objective-context.marker"
         objective_context_marker.write_text("3679", encoding="utf-8")
 
@@ -1192,7 +1200,7 @@ class TestHookIntegration:
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2
-        assert "Plan #42 saved" in result.output
+        assert "PR #42 saved" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted
         assert not objective_context_marker.exists()  # Objective marker also deleted
 

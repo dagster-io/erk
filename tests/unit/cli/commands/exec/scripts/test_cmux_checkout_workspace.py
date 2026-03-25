@@ -6,9 +6,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_open_pr
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.cmux.fake import FakeCmux
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.cmux import FakeCmux
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 
 def _make_pr_details(*, pr_number: int, head_ref_name: str) -> PRDetails:
@@ -130,7 +130,7 @@ def test_cmux_open_pr_teleport_mode() -> None:
 
     assert result.exit_code == 0
     assert len(fake_cmux.create_calls) == 1
-    assert "erk pr teleport" in fake_cmux.create_calls[0].command
+    assert "erk slot teleport" in fake_cmux.create_calls[0].command
     assert "--new-slot --script --sync" in fake_cmux.create_calls[0].command
 
 

@@ -11,13 +11,13 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.track_learn_evaluation import track_learn_evaluation
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import (
     format_plan_header_body_for_test,
@@ -49,7 +49,7 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -58,7 +58,7 @@ def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path)
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 42
+    assert output["pr_number"] == 42
     assert output["tracked"] is True
 
     # Verify comment was posted
@@ -97,7 +97,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -106,7 +106,7 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 100
+    assert output["pr_number"] == 100
 
     # Verify comment was posted
     assert len(fake_github.pr_comments) == 1
@@ -143,7 +143,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -152,7 +152,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No plan specified" in output["message"]
+    assert "No PR specified" in output["message"]
 
 
 def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
@@ -175,7 +175,7 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -184,7 +184,7 @@ def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_number"] == 789
+    assert output["pr_number"] == 789
 
 
 # ============================================================================
@@ -210,7 +210,7 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -219,7 +219,7 @@ def test_track_learn_evaluation_fails_without_issue(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "No plan specified" in output["message"]
+    assert "No PR specified" in output["message"]
 
 
 def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None:
@@ -237,7 +237,7 @@ def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -274,7 +274,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -285,12 +285,12 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify required fields
     assert "success" in output
-    assert "plan_number" in output
+    assert "pr_number" in output
     assert "tracked" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["plan_number"], int)
+    assert isinstance(output["pr_number"], int)
     assert isinstance(output["tracked"], bool)
 
 
@@ -309,7 +309,7 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),

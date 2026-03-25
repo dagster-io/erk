@@ -1,15 +1,22 @@
 [tool.uv.workspace]
-members = ["packages/*"]
+members = [
+    "packages/erk-dev",
+    "packages/erk-mcp",
+    "packages/erk-shared",
+    "packages/erk-slots",
+    "packages/erk-statusline",
+]
 
 [tool.uv.sources]
 erk-dev = { workspace = true }
 erk-mcp = { workspace = true }
 erk-shared = { workspace = true }
+erk-slots = { workspace = true }
 erk-statusline = { workspace = true }
 
 [project]
 name = "erk"
-version = "0.9.9"
+version = "0.9.11"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -20,6 +27,7 @@ dependencies = [
     "anthropic>=0.40.0",
     "click>=8.1.7",
     "erk-shared",
+    "erk-slots",
     "erk-statusline",
     "packaging>=21.0",
     "pathspec>=0.12.0",
@@ -41,6 +49,8 @@ erk = "erk.cli.cli:main"
 [dependency-groups]
 dev = [
     "erk-dev",
+    "erk-mcp",
+    "erk-slots",
     "ruff>=0.5.0",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
@@ -48,8 +58,6 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "libcst>=1.8.6",
     "ty>=0.0.1a7",
-    "mkdocs>=1.6.0",
-    "mkdocs-material>=9.5.0",
 ]
 
 [build-system]
@@ -65,17 +73,17 @@ packages = ["src/erk"]
 # Commands: erk namespace only (not local)
 ".claude/commands/erk" = "erk/data/claude/commands/erk"
 # Skills (bundled to claude path; codex backend falls back to claude path at runtime)
-".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
-".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
 ".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
 ".claude/skills/erk-exec" = "erk/data/claude/skills/erk-exec"
-".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
 ".claude/skills/objective" = "erk/data/claude/skills/objective"
 ".claude/skills/gh" = "erk/data/claude/skills/gh"
-".claude/skills/gt" = "erk/data/claude/skills/gt"
+".claude/skills/graphite" = "erk/data/claude/skills/graphite"
+".claude/skills/erk-gt" = "erk/data/claude/skills/erk-gt"
 ".claude/skills/dignified-code-simplifier" = "erk/data/claude/skills/dignified-code-simplifier"
 ".claude/skills/pr-operations" = "erk/data/claude/skills/pr-operations"
 ".claude/skills/pr-feedback-classifier" = "erk/data/claude/skills/pr-feedback-classifier"
+# Tombstone: overwrites stale skill in customer repos on next sync
+".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
 # Agents: devrun and learn
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 ".claude/agents/learn" = "erk/data/claude/agents/learn"
@@ -98,7 +106,7 @@ packages = ["src/erk"]
 target-version = "py311"
 line-length = 100
 src = ["src"]
-exclude = [".claude/skills/"]
+exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.ruff.lint]
 select = [
@@ -110,22 +118,23 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "erk_mcp", "erk_shared", "erk_statusline"]
+known-first-party = ["erk", "erk_dev", "erk_mcp", "erk_shared", "erk_slots", "erk_statusline"]
 
 [tool.ty.src]
-include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]
-exclude = [".claude/skills/"]
+include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-slots/src", "packages/erk-statusline/src"]
+exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.ty.environment]
 python-version = "3.11"
 python = ".venv"
 
 [tool.erk.reviews]
-exclude = [".claude/skills/"]
+exclude = [".claude/skills/", ".agents/skills/"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
-testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
+pythonpath = ["."]
+testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-slots/tests", "packages/erk-statusline/tests", "packages/erk-shared/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [

@@ -1,6 +1,6 @@
 """Tests for FakeCommandExecutor."""
 
-from erk_shared.gateway.command_executor.fake import FakeCommandExecutor
+from tests.fakes.gateway.command_executor import FakeCommandExecutor
 
 
 def test_tracks_opened_urls() -> None:
@@ -19,12 +19,12 @@ def test_tracks_copied_texts() -> None:
     assert executor.copied_texts == ["erk implement 123", "erk pr dispatch 456"]
 
 
-def test_tracks_closed_plans() -> None:
-    """Fake executor tracks plans that were closed."""
+def test_tracks_closed_prs() -> None:
+    """Fake executor tracks PRs that were closed."""
     executor = FakeCommandExecutor()
     executor.close_plan(123, "https://github.com/test/repo/issues/123")
     executor.close_plan(456, "https://github.com/test/repo/issues/456")
-    assert executor.closed_plans == [
+    assert executor.closed_prs == [
         (123, "https://github.com/test/repo/issues/123"),
         (456, "https://github.com/test/repo/issues/456"),
     ]
@@ -34,10 +34,10 @@ def test_tracks_notifications() -> None:
     """Fake executor tracks notifications shown."""
     executor = FakeCommandExecutor()
     executor.notify("Copied: erk implement 123", severity=None)
-    executor.notify("Closed plan #456", severity=None)
+    executor.notify("Closed PR #456", severity=None)
     assert executor.notifications == [
         "Copied: erk implement 123",
-        "Closed plan #456",
+        "Closed PR #456",
     ]
 
 
@@ -62,7 +62,7 @@ def test_close_plan_returns_empty_list_by_default() -> None:
 def test_close_plan_returns_configured_pr_numbers() -> None:
     """close_plan returns configured PR numbers when set."""
     executor = FakeCommandExecutor()
-    executor.set_close_plan_return([789, 790])
+    executor.set_close_pr_return([789, 790])
     result = executor.close_plan(123, "https://github.com/test/repo/issues/123")
     assert result == [789, 790]
 

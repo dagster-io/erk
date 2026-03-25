@@ -17,12 +17,12 @@ Testing patterns for `erk admin` subcommands using the fake-driven architecture.
 
 ## FakeGitHubAdmin Setup
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py, FakeGitHubAdmin -->
+<!-- Source: tests/fakes/gateway/github_admin.py, FakeGitHubAdmin -->
 
 `FakeGitHubAdmin` accepts keyword arguments to configure initial state:
 
 ```python
-from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
+from tests.fakes.gateway.github_admin import FakeGitHubAdmin
 
 admin = FakeGitHubAdmin(
     workflow_permissions={"can_approve_pull_request_reviews": True},
@@ -77,4 +77,4 @@ The `env.build_context()` method accepts gateway fakes as keyword arguments, inj
 
 - `tests/unit/cli/commands/test_admin_github_pr_setting.py` — 5 test cases (display enabled/disabled, enable/disable mutation, no GitHub remote)
 - `tests/unit/cli/commands/test_admin_test_workflow.py` — 4 test cases (happy path with/without issue, no GitHub remote, detached HEAD)
-- `packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py` — FakeGitHubAdmin implementation
+- `tests/fakes/gateway/github_admin.py` — FakeGitHubAdmin implementation

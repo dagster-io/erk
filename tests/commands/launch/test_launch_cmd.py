@@ -3,15 +3,15 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo
 
 
@@ -28,7 +28,6 @@ def _make_fake_remote(
         dispatch_run_id="run-123",
         issues=None,
         issue_comments=None,
-        pr_references=None,
         prs=prs,
     )
 
@@ -302,7 +301,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
 
         ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
-        result = runner.invoke(cli, ["launch", "learn", "--plan", "123"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "learn", "--pr", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Workflow dispatched" in result.output
@@ -311,11 +310,11 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
         assert len(fake_remote.dispatched_workflows) == 1
         dispatched = fake_remote.dispatched_workflows[0]
         assert dispatched.workflow == WORKFLOW_COMMAND_MAP["learn"]
-        assert dispatched.inputs["plan_number"] == "123"
+        assert dispatched.inputs["pr_number"] == "123"
 
 
-def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
-    """Test learn requires --plan option."""
+def test_workflow_launch_learn_requires_pr_option(tmp_path: Path) -> None:
+    """Test learn requires --pr option."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -331,7 +330,7 @@ def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -> None:
         result = runner.invoke(cli, ["launch", "learn"], obj=ctx)
 
         assert result.exit_code == 1
-        assert "--plan is required for learn" in result.output
+        assert "--pr is required for learn" in result.output
 
 
 def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> None:
@@ -348,7 +347,7 @@ def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -> Non
         fake_remote = _make_fake_remote()
         ctx = build_workspace_test_context(env, git=git, remote_github=fake_remote)
 
-        result = runner.invoke(cli, ["launch", "plan-implement", "--plan", "123"], obj=ctx)
+        result = runner.invoke(cli, ["launch", "plan-implement", "--pr", "123"], obj=ctx)
 
         assert result.exit_code == 2
         assert "erk pr dispatch" in result.output

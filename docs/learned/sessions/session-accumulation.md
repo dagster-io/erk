@@ -24,7 +24,7 @@ Each plan gets a dedicated branch: `planned-pr-context/<plan-id>` (e.g., `planne
 ```json
 {
   "version": 1,
-  "plan_id": 2521,
+  "pr_number": 2521,
   "sessions": [
     {
       "session_id": "abc-123",

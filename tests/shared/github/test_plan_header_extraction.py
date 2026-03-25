@@ -11,22 +11,20 @@ from erk_shared.gateway.github.metadata.plan_header import (
     create_plan_header_block,
     extract_plan_header_branch_name,
     extract_plan_header_ci_summary_comment_id,
-    extract_plan_header_last_learn_at,
-    extract_plan_header_last_learn_session,
     extract_plan_header_learn_materials_branch,
     extract_plan_header_learn_plan_issue,
     extract_plan_header_learn_plan_pr,
-    extract_plan_header_learn_status,
     extract_plan_header_learned_from_issue,
+    extract_plan_header_node_ids,
     extract_plan_header_objective_issue,
-    extract_plan_header_remote_impl_run_id,
-    extract_plan_header_remote_impl_session_id,
     update_plan_header_ci_summary_comment_id,
     update_plan_header_learn_event,
     update_plan_header_learn_materials_branch,
     update_plan_header_learn_plan_completed,
     update_plan_header_learn_result,
     update_plan_header_learn_status,
+    update_plan_header_node_ids,
+    update_plan_header_objective_issue,
     update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
 )
@@ -105,11 +103,54 @@ def test_plan_header_schema_accepts_all_optional_fields() -> None:
         "last_dispatched_at": "2024-01-15T11:00:00Z",
         "source_repo": "owner/repo",
         "objective_issue": 42,
+        "node_ids": ["1.1", "1.2"],
         "created_from_session": "session-abc",
     }
 
     # Should not raise
     schema.validate(data)
+
+
+def test_plan_header_schema_accepts_node_ids_null() -> None:
+    """Schema accepts node_ids as null."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "node_ids": None,
+    }
+
+    # Should not raise
+    schema.validate(data)
+
+
+def test_plan_header_schema_rejects_node_ids_non_list() -> None:
+    """Schema rejects node_ids that is not a list."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "node_ids": "1.1",
+    }
+
+    with pytest.raises(ValueError, match="node_ids must be a list or null"):
+        schema.validate(data)
+
+
+def test_plan_header_schema_rejects_node_ids_non_string_items() -> None:
+    """Schema rejects node_ids with non-string items."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "node_ids": [1, 2],
+    }
+
+    with pytest.raises(ValueError, match="node_ids items must be strings"):
+        schema.validate(data)
 
 
 def test_plan_header_schema_rejects_missing_schema_version() -> None:
@@ -171,6 +212,7 @@ def test_create_plan_header_block_minimal() -> None:
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -208,6 +250,7 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=42,
+        node_ids=None,
         created_from_session="session-abc",
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -247,6 +290,7 @@ def test_create_plan_header_block_omits_none_values() -> None:
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -358,6 +402,7 @@ def test_render_and_extract_round_trip() -> None:
         last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=100,
+        node_ids=None,
         created_from_session="session-xyz",
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -449,6 +494,7 @@ def test_create_plan_header_block_with_learn_fields() -> None:
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session="learn-session-abc",
@@ -593,138 +639,6 @@ def test_update_plan_header_learn_event_raises_for_missing_block() -> None:
             learn_at="2024-01-16T14:00:00Z",
             session_id="session-123",
         )
-
-
-def test_extract_plan_header_last_learn_session() -> None:
-    """extract_plan_header_last_learn_session extracts session from body."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session="learn-session-extract",
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    session_id = extract_plan_header_last_learn_session(body)
-    assert session_id == "learn-session-extract"
-
-
-def test_extract_plan_header_last_learn_session_returns_none_when_missing() -> None:
-    """extract_plan_header_last_learn_session returns None when field is absent."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    session_id = extract_plan_header_last_learn_session(body)
-    assert session_id is None
-
-
-def test_extract_plan_header_last_learn_session_returns_none_for_invalid_body() -> None:
-    """extract_plan_header_last_learn_session returns None for invalid body."""
-    body = "No metadata block here"
-
-    session_id = extract_plan_header_last_learn_session(body)
-    assert session_id is None
-
-
-def test_extract_plan_header_last_learn_at() -> None:
-    """extract_plan_header_last_learn_at extracts timestamp from body."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at="2024-01-16T14:00:00Z",
-        learn_status=None,
-    )
-
-    timestamp = extract_plan_header_last_learn_at(body)
-    assert timestamp == "2024-01-16T14:00:00Z"
-
-
-def test_extract_plan_header_last_learn_at_returns_none_when_missing() -> None:
-    """extract_plan_header_last_learn_at returns None when field is absent."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    timestamp = extract_plan_header_last_learn_at(body)
-    assert timestamp is None
 
 
 # === Branch Name Field Tests ===
@@ -1009,6 +923,7 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
         last_remote_impl_session_id="remote-session-abc",
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -1024,138 +939,6 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
     assert block.data["last_remote_impl_at"] == "2024-01-15T14:00:00Z"
     assert block.data["last_remote_impl_run_id"] == "12345678"
     assert block.data["last_remote_impl_session_id"] == "remote-session-abc"
-
-
-def test_extract_plan_header_remote_impl_run_id() -> None:
-    """extract_plan_header_remote_impl_run_id extracts run ID from body."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id="run-12345",
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    run_id = extract_plan_header_remote_impl_run_id(body)
-    assert run_id == "run-12345"
-
-
-def test_extract_plan_header_remote_impl_run_id_returns_none_when_missing() -> None:
-    """extract_plan_header_remote_impl_run_id returns None when field is absent."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    run_id = extract_plan_header_remote_impl_run_id(body)
-    assert run_id is None
-
-
-def test_extract_plan_header_remote_impl_run_id_returns_none_for_invalid_body() -> None:
-    """extract_plan_header_remote_impl_run_id returns None for invalid body."""
-    body = "No metadata block here"
-
-    run_id = extract_plan_header_remote_impl_run_id(body)
-    assert run_id is None
-
-
-def test_extract_plan_header_remote_impl_session_id() -> None:
-    """extract_plan_header_remote_impl_session_id extracts session ID from body."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id="remote-session-xyz",
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    session_id = extract_plan_header_remote_impl_session_id(body)
-    assert session_id == "remote-session-xyz"
-
-
-def test_extract_plan_header_remote_impl_session_id_returns_none_when_missing() -> None:
-    """extract_plan_header_remote_impl_session_id returns None when field is absent."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    session_id = extract_plan_header_remote_impl_session_id(body)
-    assert session_id is None
 
 
 def test_update_plan_header_remote_impl_event() -> None:
@@ -1302,76 +1085,6 @@ def test_plan_header_schema_rejects_invalid_learn_status() -> None:
 
     with pytest.raises(ValueError, match="learn_status must be one of"):
         schema.validate(data)
-
-
-def test_extract_plan_header_learn_status() -> None:
-    """extract_plan_header_learn_status extracts status from body."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status="pending",
-    )
-
-    status = extract_plan_header_learn_status(body)
-    assert status == "pending"
-
-
-def test_extract_plan_header_learn_status_returns_none_when_missing() -> None:
-    """extract_plan_header_learn_status returns None when field is absent."""
-    body = format_plan_header_body_for_test(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        created_from_workflow_run_url=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
-    )
-
-    status = extract_plan_header_learn_status(body)
-    assert status is None
-
-
-def test_extract_plan_header_learn_status_returns_none_for_invalid_body() -> None:
-    """extract_plan_header_learn_status returns None for invalid body."""
-    body = "No metadata block here"
-
-    status = extract_plan_header_learn_status(body)
-    assert status is None
 
 
 def test_update_plan_header_learn_status() -> None:
@@ -1777,3 +1490,98 @@ def test_update_plan_header_ci_summary_comment_id_raises_for_missing_block() -> 
 
     with pytest.raises(ValueError, match="plan-header block not found"):
         update_plan_header_ci_summary_comment_id(body, 12345)
+
+
+# === Objective Issue Update Tests ===
+
+
+def test_update_plan_header_objective_issue_sets_field() -> None:
+    """update_plan_header_objective_issue sets the objective_issue field."""
+    body = format_plan_header_body_for_test()
+
+    updated_body = update_plan_header_objective_issue(body, 9009)
+
+    result = extract_plan_header_objective_issue(updated_body)
+    assert result == 9009
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "test-user"
+
+
+def test_update_plan_header_objective_issue_overwrites_existing() -> None:
+    """update_plan_header_objective_issue overwrites an existing value."""
+    body = format_plan_header_body_for_test(objective_issue=100)
+
+    updated_body = update_plan_header_objective_issue(body, 200)
+
+    result = extract_plan_header_objective_issue(updated_body)
+    assert result == 200
+
+
+def test_update_plan_header_objective_issue_raises_for_missing_block() -> None:
+    """update_plan_header_objective_issue raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_objective_issue(body, 9009)
+
+
+# === Node IDs Tests ===
+
+
+def test_extract_plan_header_node_ids_returns_tuple() -> None:
+    """extract_plan_header_node_ids returns tuple of node ID strings."""
+    body = format_plan_header_body_for_test(node_ids=["1.1", "1.2", "2.1"])
+
+    result = extract_plan_header_node_ids(body)
+
+    assert result == ("1.1", "1.2", "2.1")
+
+
+def test_extract_plan_header_node_ids_returns_none_when_absent() -> None:
+    """extract_plan_header_node_ids returns None when field is not set."""
+    body = format_plan_header_body_for_test()
+
+    result = extract_plan_header_node_ids(body)
+
+    assert result is None
+
+
+def test_extract_plan_header_node_ids_returns_none_for_missing_block() -> None:
+    """extract_plan_header_node_ids returns None when no plan-header block."""
+    result = extract_plan_header_node_ids("No plan-header here")
+
+    assert result is None
+
+
+def test_update_plan_header_node_ids_sets_new_value() -> None:
+    """update_plan_header_node_ids sets node_ids in existing plan-header."""
+    body = format_plan_header_body_for_test(objective_issue=100)
+
+    updated_body = update_plan_header_node_ids(body, ["1.1", "1.2"])
+
+    result = extract_plan_header_node_ids(updated_body)
+    assert result == ("1.1", "1.2")
+
+    # Other fields preserved
+    assert extract_plan_header_objective_issue(updated_body) == 100
+
+
+def test_update_plan_header_node_ids_overwrites_existing() -> None:
+    """update_plan_header_node_ids overwrites an existing value."""
+    body = format_plan_header_body_for_test(node_ids=["1.1"])
+
+    updated_body = update_plan_header_node_ids(body, ["2.1", "2.2"])
+
+    result = extract_plan_header_node_ids(updated_body)
+    assert result == ("2.1", "2.2")
+
+
+def test_update_plan_header_node_ids_raises_for_missing_block() -> None:
+    """update_plan_header_node_ids raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_node_ids(body, ["1.1"])

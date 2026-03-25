@@ -26,4 +26,4 @@ When deleting a backend selector function (or feature flag reader) that has many
 
 ## Reference Implementation
 
-Objective #7911 nodes 1.1-1.3 used this pattern to eliminate the `get_plan_backend()` / `PlanBackendType` dual-backend system. Node 1.1 (PR #7971) deleted definitions and replaced 24 files. Node 1.2 removes dead branches. Node 1.3 removes `plan_backend` parameters from TUI.
+Objective #7911 nodes 1.1-1.3 used this pattern to eliminate the `get_plan_backend()` / `PlanBackendType` dual-backend system. Node 1.1 (PR #7971) deleted definitions and replaced 24 files. Node 1.2 removes dead branches. Node 1.3 removes `pr_backend` parameters from TUI.

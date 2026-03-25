@@ -40,7 +40,7 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -63,7 +63,7 @@ from erk_shared.objective_fetch_context_result import (
     PlanInfoDict,
     PRInfoDict,
 )
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 def _error_json(error: str) -> str:
@@ -96,7 +96,7 @@ def _update_nodes_in_body(
             explicit_status="done",
             description=None,
             slug=None,
-            reason=None,
+            comment=None,
         )
         if new_body is None:
             continue
@@ -186,7 +186,7 @@ def objective_apply_landed_update(
     erk_ctx = require_context(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
     time = require_time(ctx)
     remote = get_remote_github(erk_ctx)
 
@@ -215,17 +215,17 @@ def objective_apply_landed_update(
         pr_number = pr_result.number
 
     # --- Resolve plan using PR number (the PR IS the plan) ---
-    plan_result = plan_backend.get_plan(repo_root, str(pr_number))
-    if isinstance(plan_result, PlanNotFound):
-        click.echo(_error_json(f"Plan #{pr_number} not found"))
+    plan_result = pr_backend.get_managed_pr(repo_root, str(pr_number))
+    if isinstance(plan_result, PrNotFound):
+        click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)
 
-    plan_id = plan_result.plan_identifier
+    pr_id = plan_result.pr_identifier
 
     # --- Discovery: auto-fill objective from plan metadata ---
     if objective_number is None:
         if plan_result.objective_id is None:
-            msg = f"Plan #{plan_id} has no objective_issue in plan-header metadata"
+            msg = f"Plan #{pr_id} has no objective_issue in plan-header metadata"
             click.echo(_error_json(msg))
             raise SystemExit(1)
         objective_number = plan_result.objective_id
@@ -243,11 +243,13 @@ def objective_apply_landed_update(
         raise SystemExit(1)
 
     # --- Build roadmap context ---
-    roadmap = _build_roadmap_context(objective.body, plan_id)
+    roadmap = _build_roadmap_context(objective.body, pr_id)
     pr_ref = f"#{pr_number}"
 
     if node_ids:
         matched_steps = list(node_ids)
+    elif plan_result.node_ids:
+        matched_steps = list(plan_result.node_ids)
     else:
         matched_steps = [
             node["id"]
@@ -278,7 +280,7 @@ def objective_apply_landed_update(
         _update_comment_table(remote, owner=owner, repo=repo_name, updated_body=updated_body)
 
         # Rebuild roadmap from the updated body
-        roadmap = _build_roadmap_context(updated_body, plan_id)
+        roadmap = _build_roadmap_context(updated_body, pr_id)
 
     # --- Auto-close if all nodes complete ---
     auto_closed = auto_close and roadmap["all_complete"]
@@ -319,7 +321,7 @@ def objective_apply_landed_update(
         "objective_content": objective_content,
     }
     plan_info: PlanInfoDict = {
-        "number": plan_id,
+        "number": pr_id,
         "title": plan_result.title,
         "body": plan_result.body,
     }

@@ -1,6 +1,7 @@
 """Unit tests for objective-render-roadmap command."""
 
 import json
+import re
 
 from click.testing import CliRunner
 
@@ -242,6 +243,25 @@ def test_render_roadmap_no_optional_fields() -> None:
     assert "### Phase 1: Phase (1 PR)" in result
     assert "| 1.1 | Do thing | pending | - |" in result
     assert "**Test:**" not in result
+
+
+def test_render_roadmap_escapes_pipe_in_description() -> None:
+    """Pipe characters in descriptions are escaped to avoid breaking markdown tables."""
+    phases: list[dict[str, object]] = [
+        {
+            "name": "Test",
+            "steps": [
+                {"id": "1.1", "description": "SuccessType | ErrorType"},
+            ],
+        },
+    ]
+    result = _render_roadmap(phases)
+    assert r"SuccessType \| ErrorType" in result
+    for line in result.strip().splitlines():
+        if line.startswith("|") and "---" not in line and "Node" not in line:
+            # Count unescaped pipes (not preceded by backslash)
+            unescaped = len(re.findall(r"(?<!\\)\|", line))
+            assert unescaped == 5  # 4 columns = 5 pipe delimiters
 
 
 # --- CLI integration tests ---

@@ -83,7 +83,6 @@ See `_extract_closing_ref_from_pr()` in `src/erk/cli/commands/pr/submit_pipeline
 
 ## Related Documentation
 
-- [Issue-PR Closing Integration](../integrations/issue-pr-closing-integration.md) — Full cross-repo closing reference patterns and plan number discovery
 - [PR Validation Rules](../pr-operations/pr-validation-rules.md) — Complete `erk pr check` validation ruleset and regex patterns
 - [Source Investigation Over Trial-and-Error](debugging-patterns.md) — When to stop guessing and read validator source
 - [Plan Lifecycle](lifecycle.md) — Full plan lifecycle including PR creation phases

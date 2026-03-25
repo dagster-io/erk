@@ -4,15 +4,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.cli.commands.pr.shared import assemble_pr_body, recover_plan_header
-from erk.core.plan_context_provider import PlanContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from erk.core.pr_context_provider import PrContext
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ def _pr_with_plan_header(
         owner="owner",
         repo="repo",
         author=author,
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
@@ -73,15 +73,15 @@ def _pr_without_plan_header(
         owner="owner",
         repo="repo",
         author=author,
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         created_at=datetime(2024, 6, 1, 12, 0, tzinfo=UTC),
     )
 
 
-def _backend_from_pr(pr: PRDetails) -> tuple[PlannedPRBackend, FakeLocalGitHub]:
-    """Create PlannedPRBackend from a single PRDetails."""
+def _backend_from_pr(pr: PRDetails) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
+    """Create ManagedGitHubPrBackend from a single PRDetails."""
     fake_github = FakeLocalGitHub(pr_details={pr.number: pr})
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     return backend, fake_github
 
 
@@ -94,7 +94,7 @@ def test_recover_returns_none_for_missing_plan(tmp_path: Path) -> None:
     """Returns None when the plan does not exist in the backend."""
     ctx = context_for_test(cwd=tmp_path)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="999")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="999")
 
     assert result is None
 
@@ -103,9 +103,9 @@ def test_recover_uses_header_fields_when_present(tmp_path: Path) -> None:
     """Returns MetadataBlock from header_fields when plan-header is intact."""
     pr = _pr_with_plan_header(number=100, author="alice", lifecycle_stage="impl")
     backend, _fg = _backend_from_pr(pr)
-    ctx = context_for_test(cwd=tmp_path, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, pr_store=backend)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="100")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
     assert result is not None
     assert result.key == "plan-header"
@@ -118,9 +118,9 @@ def test_recover_constructs_minimal_header_when_destroyed(tmp_path: Path) -> Non
     """Constructs minimal plan-header from PR metadata when header is gone."""
     pr = _pr_without_plan_header(number=100, author="alice")
     backend, _fg = _backend_from_pr(pr)
-    ctx = context_for_test(cwd=tmp_path, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, pr_store=backend)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="100")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
     assert result is not None
     assert result.key == "plan-header"
@@ -133,9 +133,9 @@ def test_recover_uses_unknown_when_author_empty(tmp_path: Path) -> None:
     """Falls back to 'unknown' when PR author is empty string."""
     pr = _pr_without_plan_header(number=100, author="")
     backend, _fg = _backend_from_pr(pr)
-    ctx = context_for_test(cwd=tmp_path, plan_store=backend)
+    ctx = context_for_test(cwd=tmp_path, pr_store=backend)
 
-    result = recover_plan_header(ctx, repo_root=tmp_path, plan_id="100")
+    result = recover_plan_header(ctx, repo_root=tmp_path, pr_id="100")
 
     assert result is not None
     assert result.data["created_by"] == "unknown"
@@ -225,10 +225,10 @@ def test_no_header_no_recovery_produces_no_plan_header() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _plan_context(*, objective_summary: str | None = None) -> PlanContext:
-    """Create a minimal PlanContext for objective link tests."""
-    return PlanContext(
-        plan_id="100",
+def _plan_context(*, objective_summary: str | None = None) -> PrContext:
+    """Create a minimal PrContext for objective link tests."""
+    return PrContext(
+        pr_id="100",
         plan_content="# Plan\n\nDo the thing.",
         objective_summary=objective_summary,
     )

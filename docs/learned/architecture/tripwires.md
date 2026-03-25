@@ -18,7 +18,7 @@ Rules triggered by matching actions in code.
 
 **accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
 
-**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+**accessing plan_ref.pr_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. pr_id is a string. Use LBYL: `plan_ref.pr_id.isdigit()` before `int(plan_ref.pr_id)`. Supports future non-numeric providers like 'PROJ-123'.
 
 **accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
 
@@ -41,6 +41,8 @@ Rules triggered by matching actions in code.
 **adding a new CLI entry point that calls plan or objective services** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. Must validate ctx.http_client is not None before calling service methods. Follow the pattern in existing entry points (pr list, pr duplicate-check, objective list, exec dash-data).
 
 **adding a new call site for run_commit_message_generation without time parameter** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. The time parameter is required for test isolation. Pass time=ctx.time from the ErkContext.
+
+**adding a new dispatch handler that does not return (branch_name, run_id)** → Read [Unified Dispatch Pattern](unified-dispatch-pattern.md) first. All PR-targeting dispatch handlers must return (branch_name, run_id) for post-dispatch metadata enrichment. learn and consolidate-learn-plans are exceptions (no branch/run_id needed for metadata). See unified-dispatch-pattern.md.
 
 **adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
 
@@ -90,7 +92,7 @@ Rules triggered by matching actions in code.
 
 **auto-enabling a flag without informing the user** → Read [Derived Flags Pattern](derived-flags.md) first. When deriving a flag from auto-detection, always print a dim-styled informational message explaining why the behavior was activated. Users should never be surprised by automatic actions.
 
-**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+**bypassing PrListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PrListService handles HTTP API calls. Direct API calls bypass caching and error handling.
 
 **calling .read_text() or .write_text() without encoding parameter** → Read [Erk Architecture Patterns](erk-architecture.md) first. Always pass encoding='utf-8' to .read_text() and .write_text(). Python's default encoding varies by platform.
 
@@ -122,7 +124,7 @@ Rules triggered by matching actions in code.
 
 **calling gh CLI for GitHub API operations in remote mode** → Read [RemoteGitHub Gateway](remote-github-gateway.md) first. use RemoteGitHub gateway instead. Remote mode has no local git/gh CLI.
 
-**calling gh api directly in an exec script for plan metadata updates** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. Use `require_plan_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
+**calling gh api directly in an exec script for plan metadata updates** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. Use `require_pr_backend(ctx)` + backend methods instead. Direct gh calls bypass the abstraction and testability layers.
 
 **calling graphite.track_branch() with a remote ref like origin/main** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch().
 
@@ -135,6 +137,8 @@ Rules triggered by matching actions in code.
 **calling save_plan_ref with positional arguments** → Read [PlanRef Architecture](plan-ref-architecture.md) first. All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.
 
 **calling time.sleep() or time.monotonic() directly in progress feedback code** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. Use ctx.time.sleep() and ctx.time.monotonic() for testability. All production call sites pass time=ctx.time.
+
+**calling update_local_ref on a branch without checking if it is checked out** → Read [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) first. Use sync_branch_to_sha instead. It detects checkout state and handles dirty worktrees. Direct update_local_ref on a checked-out branch desynchronizes the index. See sync-branch-to-sha-pattern.md.
 
 **changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
 
@@ -156,7 +160,7 @@ Rules triggered by matching actions in code.
 
 **choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 
-**choosing between post_event and update_metadata** → Read [PlanBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
+**choosing between post_event and update_metadata** → Read [ManagedPrBackend Migration Pattern](plan-backend-migration.md) first. post_event = metadata update + optional comment. update_metadata = metadata only. Use post_event when the operation should be visible to users in the issue timeline.
 
 **committing files to a branch that may be checked out in a worktree** → Read [Checked-Out Branch Handling Pattern](checked-out-branch-handling.md) first. git branch -f fails on checked-out branches. Use is_branch_checked_out() to detect, then update_local_ref() instead of create_branch(). Sync working tree with 'git checkout HEAD --'. See checked-out-branch-handling.md.
 
@@ -174,7 +178,7 @@ Rules triggered by matching actions in code.
 
 **creating a gateway named ShellRunner, CommandRunner, SubprocessGateway, or similar mechanism-named gateway** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Gateway names must reflect the TOOL being wrapped, not the execution mechanism. Use LocalGitHub for gh calls, Git for git calls, CmuxGateway for cmux calls, PromptExecutor for claude calls. A mechanism-named gateway is just moving the mock up one layer without gaining abstraction.
 
-**creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support.
+**creating a new ABC without deciding gateway vs backend pattern** → Read [Gateway vs Backend ABC Pattern](gateway-vs-backend.md) first. Read gateway-vs-backend.md first. Gateways wrap external tools (4-place: abc, real, fake, dry_run). Backends abstract business logic (3-place: abc, real, fake). Wrong choice creates unnecessary boilerplate or missing test support. Note: the plan backend ABC is ManagedPrBackend (not PlanBackend — that name was retired).
 
 **creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
 
@@ -184,7 +188,7 @@ Rules triggered by matching actions in code.
 
 **creating branches in erk code** → Read [Branch Manager Decision Tree](branch-manager-decision-tree.md) first. Use the decision tree to determine whether to use ctx.branch_manager (with Graphite tracking) or ctx.git.branch (low-level git). Placeholder/ephemeral branches bypass branch_manager.
 
-**creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, plan_backend operates on a different instance and metadata writes are invisible.
+**creating custom FakeGitHubIssues without passing to test context builder** → Read [Test Context Composition](test-context-composition.md) first. Always pass issues=issues to build_workspace_test_context when using custom FakeGitHubIssues. Without it, pr_backend operates on a different instance and metadata writes are invisible.
 
 **creating fake subgateway without shared state** → Read [Flatten Subgateway Pattern](flatten-subgateway-pattern.md) first. Fake subgateways must share state containers with parent via constructor parameters and call link_mutation_tracking(). Without this, mutations through subgateway won't be visible to parent queries.
 
@@ -197,6 +201,8 @@ Rules triggered by matching actions in code.
 **detecting current worktree using path comparisons on cwd** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile.
 
 **detecting mode after Phase 0 has already executed** → Read [Phase 0 Detection Pattern](phase-zero-detection-pattern.md) first. Late detection wastes work and creates scattered conditionals across all phases
+
+**dispatching a workflow directly from the launch command body without a handler** → Read [Unified Dispatch Pattern](unified-dispatch-pattern.md) first. Add a dedicated _dispatch_<workflow> handler function. The handler pattern separates PR lookup, validation, input building, and dispatch. See unified-dispatch-pattern.md.
 
 **duplicating environment setup in remote commands** → Read [Composable Remote Commands Pattern](composable-remote-commands.md) first. build_codespace_ssh_command() bootstraps the environment - don't duplicate setup
 
@@ -252,13 +258,13 @@ Rules triggered by matching actions in code.
 
 **parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
 
-**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PrListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
 
 **passing array or object variables to gh api graphql with -F and json.dumps()** [pattern: `json\.dumps\(.*-F`] → Read [GitHub GraphQL API Patterns](github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 
 **passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunLocalGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
-**passing multiple labels to a GitHub GraphQL label filter expecting OR semantics** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. GitHub GraphQL uses AND semantics for label filters. Passing labels=['erk-plan', 'erk-learn'] returns only items with BOTH labels, not either. Query by type-specific labels separately.
+**passing multiple labels to a GitHub GraphQL label filter expecting OR semantics** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. GitHub GraphQL uses AND semantics for label filters. Passing labels=['erk-pr', 'erk-learn'] returns only items with BOTH labels, not either. Query by type-specific labels separately.
 
 **passing secret values as command-line arguments** → Read [GitHub Admin Gateway](github-admin-gateway.md) first. Secret values must be passed via stdin (input= parameter) to avoid process list exposure. See github-admin-gateway.md.
 
@@ -270,7 +276,7 @@ Rules triggered by matching actions in code.
 
 **proposing branch-based session storage as a new idea** → Read [Session Storage Architecture](session-storage-revert-rationale.md) first. Session storage IS branch-based (planned-pr-context/{plan_id} branches). An earlier attempt at a different branch-based approach was tried and reverted in PR #7757→#7765. The current branch-based approach (push_session.py) is the stable implementation.
 
-**querying plans by base label erk-planned-pr instead of type-specific labels** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by type-specific labels (erk-plan, erk-learn) not base label. AND semantics means querying erk-planned-pr + erk-plan returns only items with both, which may silently exclude items.
+**querying plans by combining multiple type-specific labels in a single query** → Read [GitHub GraphQL Label Semantics](github-graphql-label-semantics.md) first. Query by ONE type-specific label per query (erk-pr, erk-learn). AND semantics means querying labels=['erk-pr', 'erk-learn'] returns only items with BOTH labels, which may silently exclude items.
 
 **re-exporting symbols from **init**.py after splitting a module** → Read [Monolith-to-Subpackage Refactoring Pattern](monolith-to-subpackage-pattern.md) first. No re-exports. Each submodule has a canonical import path. The **init**.py is an orchestrator, not a facade.
 
@@ -322,7 +328,7 @@ Rules triggered by matching actions in code.
 
 **using Path.cwd() directly in an exec script without CWD injection** → Read [Command Composition Pattern](command-composition.md) first. Use `cwd: Path | None = None` parameter defaulting to `Path.cwd()` for testability. This allows tests to override the working directory.
 
-**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+**using PrContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PrContextProvider returns None on any failure (graceful degradation). Always handle the None case.
 
 **using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
 
@@ -374,6 +380,8 @@ Rules triggered by matching actions in code.
 
 **using subprocess.run with git command outside of a gateway** [pattern: `subprocess\.run\(\s*\[.*["']git`] → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations.
 
+**using sync_branch_to_sha when merge-base analysis is needed** → Read [sync_branch_to_sha Pattern](sync-branch-to-sha-pattern.md) first. sync_branch_to_sha moves a branch to a known SHA. For trunk sync with divergence detection, use ensure_trunk_synced(). See sync-branch-to-sha-pattern.md.
+
 **using this pattern** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. Using run_ssh_command() for interactive TUI processes causes apparent hangs
 
 **using this pattern** → Read [SSH Command Execution Patterns](ssh-command-execution.md) first. SSH command must be a single string argument, not multiple shell words
@@ -397,6 +405,8 @@ Rules triggered by matching actions in code.
 **writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
 
 **writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has >3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+
+**writing manual JSON serialization/deserialization for exec scripts** → Read [JSON/Dataclass Utilities in erk-shared](json-dataclass-utilities.md) first. Use @json_command or the utilities in erk_shared.agentclick.dataclass_json instead. They handle schema generation, type coercion, and error formatting automatically.
 
 **writing multi-phase commands without testing in --print mode** → Read [Claude CLI Execution Modes](claude-cli-execution-modes.md) first. context: fork creates true isolation in interactive mode but loads inline in --print mode. Use Task tool for guaranteed isolation in all modes.
 

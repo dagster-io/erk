@@ -9,7 +9,7 @@ import secrets
 import string
 from datetime import datetime
 
-from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound, PRReference
+from erk_shared.gateway.github.issues.types import IssueInfo, IssueNotFound
 from erk_shared.gateway.http.abc import HttpClient, HttpError
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo, RemotePRNotFound
@@ -297,45 +297,6 @@ class RealRemoteGitHub(RemoteGitHub):
             if limit is not None and len(results) >= limit:
                 break
         return results
-
-    def get_prs_referencing_issue(
-        self,
-        *,
-        owner: str,
-        repo: str,
-        number: int,
-    ) -> list[PRReference]:
-        """Get PRs that reference an issue via timeline API."""
-        events = self._http.get_list(f"repos/{owner}/{repo}/issues/{number}/timeline?per_page=100")
-
-        pr_refs: list[PRReference] = []
-        seen_numbers: set[int] = set()
-        for event in events:
-            if event.get("event") != "cross-referenced":
-                continue
-            source = event.get("source", {})
-            issue = source.get("issue", {})
-            pr_data = issue.get("pull_request")
-            if pr_data is None:
-                continue
-            pr_number = issue.get("number")
-            if pr_number is None or pr_number in seen_numbers:
-                continue
-            seen_numbers.add(pr_number)
-            state = issue.get("state", "").upper()
-            if state == "OPEN" and issue.get("draft", False):
-                pass  # state stays OPEN
-            merged_at = pr_data.get("merged_at")
-            if merged_at is not None:
-                state = "MERGED"
-            pr_refs.append(
-                PRReference(
-                    number=pr_number,
-                    state=state,
-                    is_draft=issue.get("draft", False),
-                )
-            )
-        return pr_refs
 
     def get_comment_by_id(
         self,

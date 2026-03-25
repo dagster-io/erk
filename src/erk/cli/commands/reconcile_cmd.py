@@ -20,10 +20,10 @@ from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 
 
-@click.command("reconcile")
+@click.command("reconcile", hidden=True)
 @click.option("--force", is_flag=True, help="Skip confirmation prompts")
 @click.option("--dry-run", is_flag=True, help="Preview without making changes")
-@click.option("--skip-learn", is_flag=True, help="Skip creating learn plans")
+@click.option("--skip-learn", is_flag=True, help="Skip creating learn PRs")
 @click.pass_obj
 def reconcile(ctx: ErkContext, *, force: bool, dry_run: bool, skip_learn: bool) -> None:
     """Reconcile branches merged outside erk land.
@@ -117,7 +117,7 @@ def _display_candidates(candidates: list[ReconcileBranchInfo], *, dry_run: bool)
     table.add_column("Branch", no_wrap=True)
     table.add_column("PR", no_wrap=True)
     table.add_column("Title", no_wrap=True)
-    table.add_column("Plan", no_wrap=True)
+    table.add_column("PR", no_wrap=True)
     table.add_column("Objective", no_wrap=True)
     table.add_column("Worktree", no_wrap=True)
 
@@ -126,7 +126,7 @@ def _display_candidates(candidates: list[ReconcileBranchInfo], *, dry_run: bool)
             info.branch,
             f"#{info.pr_number}",
             info.pr_title or "",
-            f"#{info.plan_id}" if info.plan_id else "-",
+            f"#{info.pr_id}" if info.pr_id else "-",
             f"#{info.objective_number}" if info.objective_number else "-",
             str(info.worktree_path) if info.worktree_path else "-",
         )

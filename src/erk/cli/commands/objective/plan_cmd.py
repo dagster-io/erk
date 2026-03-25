@@ -8,7 +8,7 @@ from erk.cli.commands.exec.scripts.update_objective_node import (
     _replace_node_refs_in_body,
 )
 from erk.cli.commands.implement_shared import normalize_model_name
-from erk.cli.commands.objective.check_cmd import (
+from erk.cli.commands.objective.check.validation import (
     ObjectiveValidationError,
     ObjectiveValidationSuccess,
     validate_objective,
@@ -16,6 +16,7 @@ from erk.cli.commands.objective.check_cmd import (
 from erk.cli.commands.objective_helpers import get_objective_for_branch
 from erk.cli.commands.one_shot_remote_dispatch import (
     OneShotDispatchParams,
+    OneShotDispatchResult,
     dispatch_one_shot_remote,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
@@ -112,7 +113,7 @@ def _resolve_next(
     from the current branch via plan store metadata.
 
     Args:
-        ctx: ErkContext with git, issues, and plan_store
+        ctx: ErkContext with git, issues, and pr_store
         issue_ref: Optional issue reference (number or URL)
         target_repo: Optional "owner/repo" for remote operation
 
@@ -198,7 +199,7 @@ def _resolve_all_unblocked(
     from the current branch via plan store metadata.
 
     Args:
-        ctx: ErkContext with git, issues, and plan_store
+        ctx: ErkContext with git, issues, and pr_store
         issue_ref: Optional issue reference (number or URL)
         target_repo: Optional "owner/repo" for remote operation
 
@@ -337,7 +338,7 @@ def _handle_all_unblocked(
             prompt_executor=ctx.prompt_executor,
         )
 
-        if dispatch_result is not None:
+        if isinstance(dispatch_result, OneShotDispatchResult):
             successful_dispatches.append((node.id, dispatch_result.pr_number))
             dispatched_count += 1
 
@@ -389,7 +390,7 @@ def _update_objective_node(
         explicit_status="planning",
         description=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
     if updated_body is None:
@@ -443,7 +444,7 @@ def _batch_update_objective_nodes(
             explicit_status="planning",
             description=None,
             slug=None,
-            reason=None,
+            comment=None,
         )
         if new_body is not None:
             updated_body = new_body
@@ -495,7 +496,7 @@ def _mark_node_planning(
         explicit_status="planning",
         description=None,
         slug=None,
-        reason=None,
+        comment=None,
     )
 
     if updated_body is None:
@@ -734,7 +735,7 @@ def _handle_interactive(
     config = ia_config.with_overrides(
         permission_mode_override="plan",
         model_override=None,
-        dangerous_override=None,
+        dangerous_override=True if dangerous else None,
         allow_dangerous_override=allow_dangerous_override,
     )
 
@@ -869,7 +870,7 @@ def _handle_one_shot(
     )
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
-    if dispatch_result is not None:
+    if isinstance(dispatch_result, OneShotDispatchResult):
         user_output("Updating objective roadmap...")
         _update_objective_node(
             remote,

@@ -8,7 +8,6 @@ from erk_shared.gateway.github.issues.types import (
     IssueComment,
     IssueInfo,
     IssueNotFound,
-    PRReference,
 )
 from erk_shared.gateway.github.types import BodyContent
 
@@ -262,28 +261,6 @@ class GitHubIssues(ABC):
         Note:
             This is a global operation (not repository-specific).
             Used for attribution in plan creation (created_by field).
-        """
-        ...
-
-    @abstractmethod
-    def get_prs_referencing_issue(
-        self,
-        repo_root: Path,
-        plan_number: int,
-    ) -> list[PRReference]:
-        """Get PRs that reference a plan via REST timeline API.
-
-        Returns lightweight PR info (number, state, is_draft) for PRs
-        that cross-reference this plan. Does not filter by willCloseTarget.
-
-        For erk-plan issues, any referencing PR is considered linked.
-
-        Args:
-            repo_root: Path to repository root
-            plan_number: Plan number to find referencing PRs for
-
-        Returns:
-            List of PRReference objects for PRs that reference the plan
         """
         ...
 

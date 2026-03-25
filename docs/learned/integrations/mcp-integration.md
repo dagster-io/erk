@@ -21,44 +21,65 @@ packages/erk-mcp/
 └── src/erk_mcp/
     ├── __init__.py
     ├── __main__.py          # Entry point: parses --transport/--host/--port, calls create_mcp().run()
-    └── server.py            # Tool definitions and _run_erk() wrapper
+    └── server.py            # Tool definitions and _run_erk_json() wrapper
 ```
 
 The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp>=2.0`) and is a thin wrapper that delegates to the `erk` CLI.
 
-## The `_run_erk()` Wrapper
+## CLI Wrappers
 
-<!-- Source: packages/erk-mcp/src/erk_mcp/server.py, _run_erk -->
+<!-- Source: packages/erk-mcp/src/erk_mcp/server.py -->
 
-All tools delegate to the erk CLI via `_run_erk()`. See `_run_erk()` in `packages/erk-mcp/src/erk_mcp/server.py` for the implementation.
-
-Non-zero exit codes raise `RuntimeError` with the stderr message. MCP clients receive this as a tool error.
+The MCP server uses a JSON wrapper that runs `erk json <command>` and pipes params as JSON stdin. It does NOT raise on non-zero exit — machine commands guarantee structured error output flows through to the agent.
 
 ## MCP Tools
 
-Three tools are registered:
+Tools are auto-discovered from the `erk json` command tree:
 
-| Tool        | Delegates To             | Purpose                                       |
-| ----------- | ------------------------ | --------------------------------------------- |
-| `plan_list` | `erk exec dash-data`     | List plans with status, labels, metadata      |
-| `plan_view` | `erk exec get-plan-info` | View a specific plan's metadata and body      |
-| `one_shot`  | `erk one-shot <prompt>`  | Submit a task for autonomous remote execution |
+| Tool       | Delegates To        | Purpose                                       |
+| ---------- | ------------------- | --------------------------------------------- |
+| `one_shot` | `erk json one-shot` | Submit a task for autonomous remote execution |
+| `pr_list`  | `erk json pr list`  | List plans with status, labels, metadata      |
+| `pr_view`  | `erk json pr view`  | View a specific plan's metadata and body      |
 
-### `plan_list(state: str | None = None) -> str`
+### Auto-Discovery from Click Command Tree
 
-Returns structured JSON from the erk dashboard. The optional `state` parameter filters by `"open"` or `"closed"`.
+<!-- Source: packages/erk-shared/src/erk_shared/agentclick/mcp_exposed.py, packages/erk-mcp/src/erk_mcp/server.py -->
 
-### `plan_view(plan_id: int) -> str`
+CLI commands decorated with both `@machine_command` and `@mcp_exposed` are automatically discovered and registered as MCP tools. One source of truth (request dataclass), two interfaces (CLI and MCP).
 
-Returns plan title, state, labels, and full markdown body for the given plan ID. Uses `--include-body` flag.
+### Adding a new MCP tool
 
-### `one_shot(prompt: str) -> str`
+1. Create an operation file with `Request` and `Result` dataclasses
+2. Create a machine adapter in the command's own subpackage (e.g., `src/erk/cli/commands/foo/json_cli.py`) with `@mcp_exposed` + `@machine_command` + `@click.command`
+3. Register it in the `json_group`
+4. Done — the server walks the Click tree at startup and registers it automatically
 
-Dispatches a task for fully autonomous execution: creates a branch, draft PR, and triggers a GitHub Actions workflow. Returns after dispatch (~10-30s) with PR and workflow run URLs.
+See `src/erk/cli/commands/one_shot/json_cli.py` for the canonical example.
+
+### How it works
+
+- The `@mcp_exposed` decorator attaches MCP metadata (name, description) to the Click command
+- The `@machine_command` decorator attaches machine command metadata (request_type, output_types) to the Click command
+- At startup, the server walks the Click tree to find all commands with both decorators applied
+- Each command's request type is converted to a JSON Schema via `request_schema()`
+- Each discovered command is wrapped as a FastMCP `Tool` (`MachineCommandTool`)
+
+At runtime, each tool pipes input parameters as JSON stdin to `erk json <command>`.
+
+### Parity tests
+
+<!-- Source: tests/unit/cli/ -->
+
+Parity tests enforce:
+
+- Every `@mcp_exposed` command is registered as an MCP tool
+- Each tool's schema matches the request-derived schema
+- No orphaned tools exist without a corresponding `@mcp_exposed` command
 
 ## Configuration
 
-The MCP server is configured in `.mcp.json` at the repository root:
+The repository does not ship a default `.mcp.json`. To use the MCP server locally, create a `.mcp.json` in the project root (it is gitignored) or add the server to your user-level Claude Code settings:
 
 ```json
 {
@@ -72,7 +93,7 @@ The MCP server is configured in `.mcp.json` at the repository root:
 }
 ```
 
-This uses `uv run` to execute the `erk-mcp` entry point via stdio IPC (the `"type": "stdio"` in `.mcp.json` describes the Claude-to-server protocol). Internally, `__main__.py` defaults to `streamable-http` transport when no `--transport` arg is given.
+This uses `uv run` to execute the `erk-mcp` entry point via stdio IPC. Internally, `__main__.py` defaults to `streamable-http` transport when no `--transport` arg is given.
 
 ## Makefile Targets
 

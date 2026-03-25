@@ -3,9 +3,18 @@
 This module defines all available commands and their availability predicates.
 Commands are organized by category: Actions, Opens, Copies.
 Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+Run commands appear only in Runs view.
 """
 
-from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from erk.tui.commands.types import (
+    CommandCategory,
+    CommandContext,
+    CommandDefinition,
+    RunCommandContext,
+)
 from erk.tui.views.types import ViewMode
 
 CATEGORY_EMOJI: dict[CommandCategory, str] = {
@@ -31,14 +40,14 @@ def _is_objectives_view(ctx: CommandContext) -> bool:
 # === Display Name Generators (Plan Commands) ===
 
 
-def _display_close_plan(ctx: CommandContext) -> str:
-    """Display name for close_plan command."""
-    return f"erk pr close {ctx.row.plan_id}"
+def _display_close_pr(ctx: CommandContext) -> str:
+    """Display name for close_pr command."""
+    return f"erk pr close {ctx.row.pr_number}"
 
 
 def _display_dispatch_to_queue(ctx: CommandContext) -> str:
     """Display name for dispatch_to_queue command."""
-    return f"erk pr dispatch {ctx.row.plan_id}"
+    return f"erk pr dispatch {ctx.row.pr_number}"
 
 
 def _display_land_pr(ctx: CommandContext) -> str:
@@ -58,8 +67,8 @@ def _display_address_remote(ctx: CommandContext) -> str:
 
 def _display_open_issue(ctx: CommandContext) -> str:
     """Display name for open_issue command."""
-    if ctx.row.plan_url:
-        return ctx.row.plan_url
+    if ctx.row.pr_url:
+        return ctx.row.pr_url
     return "Issue"
 
 
@@ -80,16 +89,16 @@ def _display_open_run(ctx: CommandContext) -> str:
 def _display_copy_checkout(ctx: CommandContext) -> str:
     """Display name for copy_checkout command."""
     if ctx.row.worktree_branch:
-        return f"erk br co {ctx.row.worktree_branch}"
+        return f"erk slot co {ctx.row.worktree_branch}"
     if ctx.row.pr_number:
         return f"erk pr co {ctx.row.pr_number}"
-    return "erk br co <branch>"
+    return "erk slot co <branch>"
 
 
 def _display_copy_pr_checkout_script(ctx: CommandContext) -> str:
     """Display name for copy_pr_checkout_script command."""
     if ctx.row.pr_number:
-        return f'source "$(erk pr checkout {ctx.row.pr_number} --script)"'
+        return f"source <(erk pr checkout {ctx.row.pr_number} --script)"
     return "checkout"
 
 
@@ -102,12 +111,12 @@ def _display_copy_pr_checkout_plain(ctx: CommandContext) -> str:
 
 def _display_copy_teleport(ctx: CommandContext) -> str:
     """Display name for copy_teleport command."""
-    return f"erk pr teleport {ctx.row.pr_number}"
+    return f"erk slot teleport {ctx.row.pr_number}"
 
 
 def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
     """Display name for copy_teleport_new_slot command."""
-    return f"erk pr teleport {ctx.row.pr_number} --new-slot"
+    return f"erk slot teleport {ctx.row.pr_number} --new-slot"
 
 
 def _display_cmux_checkout(ctx: CommandContext) -> str:
@@ -117,22 +126,22 @@ def _display_cmux_checkout(ctx: CommandContext) -> str:
 
 def _display_cmux_teleport(ctx: CommandContext) -> str:
     """Display name for cmux_teleport command."""
-    return f"erk pr teleport {ctx.row.pr_number} --new-slot --script --sync"
+    return f"erk slot teleport {ctx.row.pr_number} --new-slot --script --sync"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
     """Display name for copy_implement_local command."""
-    return f'source "$(erk pr checkout {ctx.row.pr_number} --script)" && erk implement --dangerous'
+    return f"source <(erk pr checkout {ctx.row.pr_number} --script) && erk implement --dangerous"
 
 
 def _display_copy_dispatch(ctx: CommandContext) -> str:
     """Display name for copy_dispatch command."""
-    return f"erk pr dispatch {ctx.row.plan_id}"
+    return f"erk pr dispatch {ctx.row.pr_number}"
 
 
 def _display_copy_replan(ctx: CommandContext) -> str:
     """Display name for copy_replan command."""
-    return f"erk pr replan {ctx.row.plan_id}"
+    return f"erk pr replan {ctx.row.pr_number}"
 
 
 def _display_copy_land(ctx: CommandContext) -> str:
@@ -140,9 +149,9 @@ def _display_copy_land(ctx: CommandContext) -> str:
     return f"erk land {ctx.row.pr_number}"
 
 
-def _display_copy_close_plan(ctx: CommandContext) -> str:
-    """Display name for copy_close_plan command."""
-    return f"erk pr close {ctx.row.plan_id}"
+def _display_copy_close_pr(ctx: CommandContext) -> str:
+    """Display name for copy_close_pr command."""
+    return f"erk pr close {ctx.row.pr_number}"
 
 
 def _display_copy_rebase_remote(ctx: CommandContext) -> str:
@@ -175,39 +184,39 @@ def _display_incremental_dispatch(ctx: CommandContext) -> str:
 
 def _display_one_shot_plan(ctx: CommandContext) -> str:
     """Display name for one_shot_plan command."""
-    return f"erk objective plan {ctx.row.plan_id} --one-shot"
+    return f"erk objective plan {ctx.row.pr_number} --one-shot"
 
 
 def _display_check_objective(ctx: CommandContext) -> str:
     """Display name for check_objective command."""
-    return f"erk objective check {ctx.row.plan_id}"
+    return f"erk objective check {ctx.row.pr_number}"
 
 
 def _display_close_objective(ctx: CommandContext) -> str:
     """Display name for close_objective command."""
-    return f"erk objective close {ctx.row.plan_id} --force"
+    return f"erk objective close {ctx.row.pr_number} --force"
 
 
 def _display_codespace_run_plan(ctx: CommandContext) -> str:
     """Display name for codespace_run_plan command."""
-    return f"erk codespace run objective plan {ctx.row.plan_id}"
+    return f"erk codespace run objective plan {ctx.row.pr_number}"
 
 
 def _display_open_objective(ctx: CommandContext) -> str:
     """Display name for open_objective command."""
-    if ctx.row.plan_url:
-        return ctx.row.plan_url
+    if ctx.row.objective_url is not None:
+        return ctx.row.objective_url
     return "Objective"
 
 
 def _display_copy_plan(ctx: CommandContext) -> str:
     """Display name for copy_plan command."""
-    return f"erk objective plan {ctx.row.plan_id}"
+    return f"erk objective plan {ctx.row.pr_number}"
 
 
 def _display_copy_view(ctx: CommandContext) -> str:
     """Display name for copy_view command."""
-    return f"erk objective view {ctx.row.plan_id}"
+    return f"erk objective view {ctx.row.pr_number}"
 
 
 def get_all_commands() -> list[CommandDefinition]:
@@ -227,14 +236,14 @@ def get_all_commands() -> list[CommandDefinition]:
     return [
         # === PLAN ACTIONS ===
         CommandDefinition(
-            id="close_plan",
+            id="close_pr",
             name="Close Plan",
             description="close",
             category=CommandCategory.ACTION,
             shortcut=None,
             launch_key="c",
             is_available=lambda ctx: _is_plan_view(ctx),
-            get_display_name=_display_close_plan,
+            get_display_name=_display_close_pr,
         ),
         CommandDefinition(
             id="dispatch_to_queue",
@@ -243,7 +252,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.ACTION,
             shortcut="d",
             launch_key="d",
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_dispatch_to_queue,
         ),
         CommandDefinition(
@@ -369,7 +378,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.OPEN,
             shortcut="i",
             launch_key=None,
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_open_issue,
         ),
         CommandDefinition(
@@ -400,13 +409,13 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.OPEN,
             shortcut="p",
             launch_key=None,
-            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_objectives_view(ctx) and ctx.row.objective_url is not None,
             get_display_name=_display_open_objective,
         ),
         # === PLAN COPIES ===
         CommandDefinition(
             id="copy_checkout",
-            name="erk br co <branch>",
+            name="erk slot co <branch>",
             description="checkout",
             category=CommandCategory.COPY,
             shortcut="c",
@@ -436,7 +445,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_teleport",
-            name="erk pr teleport",
+            name="erk slot teleport",
             description="teleport",
             category=CommandCategory.COPY,
             shortcut=None,
@@ -446,7 +455,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_teleport_new_slot",
-            name="erk pr teleport --new-slot",
+            name="erk slot teleport --new-slot",
             description="teleport (new slot)",
             category=CommandCategory.COPY,
             shortcut=None,
@@ -455,14 +464,14 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_teleport_new_slot,
         ),
         CommandDefinition(
-            id="copy_close_plan",
+            id="copy_close_pr",
             name="erk pr close",
             description="close",
             category=CommandCategory.COPY,
             shortcut=None,
             launch_key=None,
             is_available=lambda ctx: _is_plan_view(ctx),
-            get_display_name=_display_copy_close_plan,
+            get_display_name=_display_copy_close_pr,
         ),
         CommandDefinition(
             id="copy_cmux_checkout",
@@ -531,7 +540,7 @@ def get_all_commands() -> list[CommandDefinition]:
             category=CommandCategory.COPY,
             shortcut="6",
             launch_key=None,
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.plan_url is not None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_url is not None,
             get_display_name=_display_copy_replan,
         ),
         CommandDefinition(
@@ -646,3 +655,164 @@ def get_copy_text(command_id: str, ctx: CommandContext) -> str | None:
                 return cmd.get_display_name(ctx)
             break
     return None
+
+
+# === Run Command Definitions ===
+# Run commands use RunCommandContext instead of CommandContext.
+# They share CommandCategory and display formatting but have their own
+# availability predicates operating on RunRowData.
+
+
+@dataclass(frozen=True)
+class RunCommandDefinition:
+    """Definition of a command for the Runs tab.
+
+    Attributes:
+        id: Unique identifier for the command
+        name: Display name
+        description: Brief description for palette display
+        category: Command category for emoji prefix
+        is_available: Predicate function to check if command is available
+        get_display_name: Optional function to generate context-aware display name
+    """
+
+    id: str
+    name: str
+    description: str
+    category: CommandCategory
+    is_available: Callable[[RunCommandContext], bool]
+    get_display_name: Callable[[RunCommandContext], str] | None
+
+
+def _run_is_cancellable(ctx: RunCommandContext) -> bool:
+    """True when run is queued or in_progress."""
+    return ctx.row.status in ("queued", "in_progress")
+
+
+def _run_is_retryable(ctx: RunCommandContext) -> bool:
+    """True when run is completed with failure or cancelled conclusion."""
+    return ctx.row.status == "completed" and ctx.row.conclusion in ("failure", "cancelled")
+
+
+def _display_cancel_run(ctx: RunCommandContext) -> str:
+    return f"erk workflow run cancel {ctx.row.run_id}"
+
+
+def _display_retry_run(ctx: RunCommandContext) -> str:
+    return f"erk workflow run retry {ctx.row.run_id}"
+
+
+def _display_retry_failed_run(ctx: RunCommandContext) -> str:
+    return f"erk workflow run retry {ctx.row.run_id} --failed"
+
+
+def _display_open_run_url(ctx: RunCommandContext) -> str:
+    return ctx.row.run_url or "Run"
+
+
+def _display_open_run_pr(ctx: RunCommandContext) -> str:
+    return ctx.row.pr_url or "PR"
+
+
+def _display_copy_cancel_cmd(ctx: RunCommandContext) -> str:
+    return f"erk workflow run cancel {ctx.row.run_id}"
+
+
+def _display_copy_retry_cmd(ctx: RunCommandContext) -> str:
+    return f"erk workflow run retry {ctx.row.run_id}"
+
+
+def get_all_run_commands() -> list[RunCommandDefinition]:
+    """Return all run command definitions.
+
+    Returns:
+        List of all run-specific command definitions
+    """
+    return [
+        # === RUN ACTIONS ===
+        RunCommandDefinition(
+            id="cancel_run",
+            name="Cancel Run",
+            description="cancel",
+            category=CommandCategory.ACTION,
+            is_available=_run_is_cancellable,
+            get_display_name=_display_cancel_run,
+        ),
+        RunCommandDefinition(
+            id="retry_run",
+            name="Retry Run",
+            description="retry",
+            category=CommandCategory.ACTION,
+            is_available=_run_is_retryable,
+            get_display_name=_display_retry_run,
+        ),
+        RunCommandDefinition(
+            id="retry_failed_run",
+            name="Retry Failed Jobs",
+            description="retry failed",
+            category=CommandCategory.ACTION,
+            is_available=_run_is_retryable,
+            get_display_name=_display_retry_failed_run,
+        ),
+        # === RUN OPENS ===
+        RunCommandDefinition(
+            id="open_run_url",
+            name="Run",
+            description="run",
+            category=CommandCategory.OPEN,
+            is_available=lambda ctx: ctx.row.run_url is not None,
+            get_display_name=_display_open_run_url,
+        ),
+        RunCommandDefinition(
+            id="open_run_pr",
+            name="PR",
+            description="pr",
+            category=CommandCategory.OPEN,
+            is_available=lambda ctx: ctx.row.pr_url is not None,
+            get_display_name=_display_open_run_pr,
+        ),
+        # === RUN COPIES ===
+        RunCommandDefinition(
+            id="copy_cancel_cmd",
+            name="erk workflow run cancel",
+            description="cancel",
+            category=CommandCategory.COPY,
+            is_available=_run_is_cancellable,
+            get_display_name=_display_copy_cancel_cmd,
+        ),
+        RunCommandDefinition(
+            id="copy_retry_cmd",
+            name="erk workflow run retry",
+            description="retry",
+            category=CommandCategory.COPY,
+            is_available=_run_is_retryable,
+            get_display_name=_display_copy_retry_cmd,
+        ),
+    ]
+
+
+def get_available_run_commands(ctx: RunCommandContext) -> list[RunCommandDefinition]:
+    """Return run commands available in current context.
+
+    Args:
+        ctx: Run command context containing the run row data
+
+    Returns:
+        List of run commands that are available for the given context
+    """
+    return [cmd for cmd in get_all_run_commands() if cmd.is_available(ctx)]
+
+
+def get_run_display_name(cmd: RunCommandDefinition, ctx: RunCommandContext) -> str:
+    """Get the display name for a run command in the given context.
+
+    Args:
+        cmd: The run command definition
+        ctx: The run command context
+
+    Returns:
+        The dynamic display name if get_display_name is set, otherwise the static name
+    """
+    if cmd.get_display_name is not None:
+        return cmd.get_display_name(ctx)
+    return cmd.name

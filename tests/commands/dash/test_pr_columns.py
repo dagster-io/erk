@@ -8,12 +8,12 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import (
-    build_fake_plan_list_service,
+    build_fake_pr_list_service,
     build_workspace_test_context,
 )
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -23,12 +23,12 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
     """Test PR column shows '-' when no PR is linked to issue."""
     # Arrange
     plan = Plan(
-        plan_identifier="106",
+        pr_identifier="106",
         title="Plan without PR",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/106",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -41,9 +41,9 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         issues = FakeGitHubIssues(issues={106: plan_to_issue(plan)})
         github = FakeLocalGitHub(issues_data=[plan_to_issue(plan)])
         # No PR linkages configured
-        plan_service = build_fake_plan_list_service([plan])
+        plan_service = build_fake_pr_list_service([plan])
         ctx = build_workspace_test_context(
-            env, issues=issues, github=github, plan_list_service=plan_service
+            env, issues=issues, github=github, pr_list_service=plan_service
         )
 
         # Act

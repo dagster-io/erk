@@ -5,7 +5,7 @@ Usage:
 
 Commits the plan as impl-context to the PR's branch and triggers the
 plan-implement workflow. Unlike regular dispatch, this does not require
-the erk-plan label — just an OPEN PR.
+the erk-pr label — just an OPEN PR.
 """
 
 import json
@@ -23,7 +23,7 @@ from erk_shared.context.helpers import (
     require_context,
     require_git,
     require_github,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
     require_time,
 )
@@ -43,7 +43,7 @@ from erk_shared.output.output import user_output
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
     required=True,
-    help="Path to plan markdown file",
+    help="Path to PR markdown file",
 )
 @click.option("--pr", "pr_number", type=int, required=True, help="PR number to dispatch against")
 @click.option("--ref", "dispatch_ref", default=None, help="Branch to dispatch workflow from")
@@ -113,10 +113,11 @@ def incremental_dispatch(
             sync_branch_to_sha(erk_ctx, repo_root, branch_name, remote_sha)
 
     # Build and commit impl-context files to branch
-    user_output("Committing plan to branch...")
+    user_output("Committing PR to branch...")
+    pr_id = str(pr_number)
     files = build_impl_context_files(
         plan_content=plan_content,
-        plan_id=str(pr_number),
+        pr_number=pr_id,
         url=pr_result.url,
         provider="incremental-dispatch",
         objective_id=None,
@@ -162,13 +163,12 @@ def incremental_dispatch(
     workflow_config = load_workflow_config(repo_root, DISPATCH_WORKFLOW_NAME)
 
     inputs = {
-        "plan_id": str(pr_number),
         "submitted_by": submitted_by,
-        "plan_title": pr_result.title,
+        "pr_title": pr_result.title,
         "branch_name": branch_name,
         "pr_number": str(pr_number),
         "base_branch": trunk,
-        "plan_backend": "planned_pr",
+        "pr_backend": "planned_pr",
         "dispatch_type": "incremental",
         **workflow_config,
     }
@@ -182,14 +182,14 @@ def incremental_dispatch(
     )
     user_output(click.style("✓", fg="green") + " Workflow dispatched")
 
-    # Update plan-header dispatch metadata (best-effort)
+    # Update PR header dispatch metadata (best-effort)
     try:
-        plan_backend = require_plan_backend(ctx)
+        pr_backend = require_pr_backend(ctx)
         write_dispatch_metadata(
-            plan_backend=plan_backend,
+            pr_backend=pr_backend,
             github=github,
             repo_root=repo_root,
-            plan_number=pr_number,
+            pr_number=pr_number,
             run_id=run_id,
             dispatched_at=time.now().isoformat(),
         )

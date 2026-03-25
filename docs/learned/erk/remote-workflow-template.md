@@ -54,7 +54,7 @@ def action_remote(ctx: ErkContext, pr_number: int, *, model_name: str | None) ->
     )
 
     # 5. Update plan dispatch metadata (if applicable)
-    maybe_update_plan_dispatch_metadata(ctx, repo, pr.head_ref_name, run_id)
+    maybe_update_pr_dispatch_metadata(ctx, repo, pr.head_ref_name, run_id)
 
     # 6. Display run URL
     run_url = f"https://github.com/{pr.owner}/{pr.repo}/actions/runs/{run_id}"
@@ -76,9 +76,9 @@ Use `Ensure` helpers for consistent error messages:
 Use the shared helper from `erk.cli.commands.pr.metadata_helpers`:
 
 ```python
-from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.commands.pr.metadata_helpers import maybe_update_pr_dispatch_metadata
 
-maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
+maybe_update_pr_dispatch_metadata(ctx, repo, branch_name, run_id)
 ```
 
 This automatically:

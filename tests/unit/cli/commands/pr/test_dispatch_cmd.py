@@ -2,11 +2,11 @@
 
 from pathlib import Path
 
-from erk.cli.commands.pr.dispatch_cmd import _detect_plan_number_from_context
-from erk_shared.context.testing import context_for_test
+from erk.cli.commands.pr.dispatch_cmd import _detect_pr_number_from_context
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.tests.shared_context import context_for_test
 
 
 def _repo_context(tmp_path: Path) -> RepoContext:
@@ -34,12 +34,12 @@ def _make_pr_details(*, number: int, branch: str) -> PRDetails:
         merge_state_status="UNKNOWN",
         owner="test-owner",
         repo="test-repo",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
     )
 
 
-def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
-    """When resolve_impl_dir returns None, falls back to plan_backend.resolve_plan_id_for_branch."""
+def test_fallback_to_pr_backend_when_no_impl_dir(tmp_path: Path) -> None:
+    """When resolve_impl_dir returns None, falls back to pr_backend.resolve_pr_id_for_branch."""
     branch = "plnd/fix-something-01-01-1200"
     pr_details = _make_pr_details(number=42, branch=branch)
 
@@ -47,17 +47,17 @@ def test_fallback_to_plan_backend_when_no_impl_dir(tmp_path: Path) -> None:
     ctx = context_for_test(github=github, cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 
-    result = _detect_plan_number_from_context(ctx, repo, branch_name=branch)
+    result = _detect_pr_number_from_context(ctx, repo, branch_name=branch)
 
     assert result == 42
 
 
-def test_returns_none_when_no_impl_dir_and_no_plan_backend_match(tmp_path: Path) -> None:
-    """When both resolve_impl_dir and plan_backend return nothing, returns None."""
+def test_returns_none_when_no_impl_dir_and_no_pr_backend_match(tmp_path: Path) -> None:
+    """When both resolve_impl_dir and pr_backend return nothing, returns None."""
     ctx = context_for_test(cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 
-    result = _detect_plan_number_from_context(ctx, repo, branch_name="feature/unrelated")
+    result = _detect_pr_number_from_context(ctx, repo, branch_name="feature/unrelated")
 
     assert result is None
 
@@ -67,6 +67,6 @@ def test_returns_none_when_branch_is_none(tmp_path: Path) -> None:
     ctx = context_for_test(cwd=tmp_path, repo_root=tmp_path)
     repo = _repo_context(tmp_path)
 
-    result = _detect_plan_number_from_context(ctx, repo, branch_name=None)
+    result = _detect_pr_number_from_context(ctx, repo, branch_name=None)
 
     assert result is None

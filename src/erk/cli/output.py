@@ -24,7 +24,6 @@ from erk.core.prompt_executor import (
     ErrorEvent,
     NoOutputEvent,
     NoTurnsEvent,
-    PlanNumberEvent,
     PrNumberEvent,
     ProcessErrorEvent,
     PromptExecutor,
@@ -72,13 +71,11 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
     pr_url: str | None = None
     pr_number: int | None = None
     pr_title: str | None = None
-    plan_number: int | None = None
     for result in results:
         if result.pr_url:
             pr_url = result.pr_url
             pr_number = result.pr_number
             pr_title = result.pr_title
-            plan_number = result.plan_number
             break
 
     if pr_url:
@@ -97,13 +94,6 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
 
         # Show PR URL
         lines.append(Text(f"   {pr_url}", style="dim"))
-
-        # Show linked plan (if any)
-        if plan_number:
-            lines.append(Text(""))
-            lines.append(
-                Text(f"📋 Linked Plan: #{plan_number} (will auto-close on merge)", style="yellow")
-            )
 
     # Error details (if failed)
     if not overall_success:
@@ -175,7 +165,6 @@ def stream_command_with_feedback(
     pr_url: str | None = None
     pr_number: int | None = None
     pr_title: str | None = None
-    plan_number: int | None = None
     error_message: str | None = None
     success = True
     last_spinner_update: str | None = None
@@ -219,8 +208,6 @@ def stream_command_with_feedback(
                 pr_number = num  # Already int, no conversion needed
             case PrTitleEvent(title=title):
                 pr_title = title
-            case PlanNumberEvent(number=num):
-                plan_number = num  # Already int, no conversion needed
             case ErrorEvent(message=msg):
                 click.echo(click.style(f"  ! {msg}", fg="red"), err=True)
                 error_message = msg
@@ -256,128 +243,10 @@ def stream_command_with_feedback(
         pr_url=pr_url,
         pr_number=pr_number,
         pr_title=pr_title,
-        plan_number=plan_number,
         duration_seconds=duration,
         error_message=error_message,
         filtered_messages=filtered_messages,
     )
-
-
-@dataclass(frozen=True)
-class RebaseResult:
-    """Result from rebase streaming execution."""
-
-    success: bool
-    error_message: str | None = None
-    requires_interactive: bool = False
-
-
-def stream_rebase(
-    executor: PromptExecutor,
-    worktree_path: Path,
-) -> RebaseResult:
-    """Stream rebase command via Claude executor with live feedback.
-
-    Handles the /erk:pr-rebase command execution with:
-    - Live output streaming with visual feedback
-    - Semantic conflict detection (AskUserQuestion)
-    - Deduped spinner updates
-    - Rich console output with start/end markers
-
-    Args:
-        executor: Prompt executor
-        worktree_path: Path to run the rebase in
-
-    Returns:
-        RebaseResult with success status and error details
-    """
-    error_message: str | None = None
-    success = True
-    has_work_events = False
-    last_spinner: str | None = None
-    start_time = time.time()
-
-    # Print start marker with bold styling
-    click.echo(click.style("--- /erk:pr-rebase ---", bold=True))
-    click.echo("")
-
-    for event in executor.execute_command_streaming(
-        command="/erk:pr-rebase",
-        worktree_path=worktree_path,
-        dangerous=True,  # Rebase modifies git state
-        permission_mode="edits",
-    ):
-        match event:
-            case TextEvent(content=content):
-                has_work_events = True
-                click.echo(content)
-            case ToolEvent(summary=summary):
-                has_work_events = True
-                # Check for user input prompts (semantic conflict requiring decision)
-                if "AskUserQuestion" in summary:
-                    click.echo("")
-                    click.echo(
-                        click.style(
-                            "Semantic conflict detected - requires interactive resolution",
-                            fg="yellow",
-                            bold=True,
-                        )
-                    )
-                    click.echo("")
-                    click.echo("Claude needs your input to resolve this conflict.")
-                    click.echo("Run rebase interactively:")
-                    click.echo("")
-                    click.echo(click.style("    claude /erk:pr-rebase", fg="cyan"))
-                    click.echo("")
-                    return RebaseResult(
-                        success=False,
-                        requires_interactive=True,
-                    )
-                # Tool summaries with icon
-                click.echo(click.style(f"   {summary}", fg="cyan", dim=True))
-            case SpinnerUpdateEvent(status=status):
-                if status != last_spinner:
-                    click.echo(click.style(f"   {status}", dim=True))
-                    last_spinner = status
-            case ErrorEvent(message=msg):
-                click.echo(click.style(f"   {msg}", fg="red"))
-                error_message = msg
-                success = False
-            case NoOutputEvent(diagnostic=diag):
-                click.echo(click.style(f"   {diag}", fg="yellow"))
-                error_message = diag
-                success = False
-            case NoTurnsEvent(diagnostic=diag):
-                click.echo(click.style(f"   {diag}", fg="yellow"))
-                error_message = diag
-                success = False
-            case ProcessErrorEvent(message=msg):
-                click.echo(click.style(f"   {msg}", fg="red"))
-                error_message = msg
-                success = False
-            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
-                pass  # PR metadata not relevant for rebase
-
-    # Check for no-work-events failure mode
-    if success and not has_work_events:
-        success = False
-        error_message = (
-            "Claude completed without producing any output - "
-            "check hooks or run 'claude /erk:pr-rebase' directly to debug"
-        )
-        click.echo(click.style(f"   {error_message}", fg="yellow"))
-
-    # Calculate duration and print end marker
-    duration = time.time() - start_time
-    duration_str = format_duration(duration)
-
-    click.echo("")
-    if success:
-        click.echo(click.style(f"--- Done ({duration_str}) ---", fg="green", bold=True))
-    else:
-        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
-
-    return RebaseResult(success=success, error_message=error_message)
 
 
 @dataclass(frozen=True)
@@ -474,7 +343,7 @@ def stream_diverge_fix(
                 click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
-            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent():
                 pass  # PR metadata not relevant for diverge-fix
 
     # Check for no-work-events failure mode

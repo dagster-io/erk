@@ -6,14 +6,14 @@ from pathlib import Path
 import pytest
 
 from erk.cli.commands.land_cmd import _cleanup_and_navigate
-from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.test_utils.test_context import context_for_test
 
 
 def _create_test_assignment(

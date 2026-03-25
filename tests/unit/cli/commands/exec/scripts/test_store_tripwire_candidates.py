@@ -10,9 +10,9 @@ from erk.cli.commands.exec.scripts.store_tripwire_candidates import (
     store_tripwire_candidates,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 
 def _write_candidates_file(tmp_path: Path, candidates: list[dict[str, str]]) -> Path:
@@ -38,7 +38,7 @@ def _make_issue(number: int) -> IssueInfo:
         body="body",
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -68,7 +68,7 @@ def test_store_success(tmp_path: Path) -> None:
     result = runner.invoke(
         store_tripwire_candidates,
         [
-            "--plan-number",
+            "--pr-number",
             "42",
             "--candidates-file",
             str(candidates_file),
@@ -95,7 +95,7 @@ def test_store_empty_candidates(tmp_path: Path) -> None:
     result = runner.invoke(
         store_tripwire_candidates,
         [
-            "--plan-number",
+            "--pr-number",
             "42",
             "--candidates-file",
             str(candidates_file),
@@ -117,7 +117,7 @@ def test_store_missing_file(tmp_path: Path) -> None:
     result = runner.invoke(
         store_tripwire_candidates,
         [
-            "--plan-number",
+            "--pr-number",
             "42",
             "--candidates-file",
             str(tmp_path / "nonexistent.json"),
@@ -139,7 +139,7 @@ def test_store_invalid_json(tmp_path: Path) -> None:
     result = runner.invoke(
         store_tripwire_candidates,
         [
-            "--plan-number",
+            "--pr-number",
             "42",
             "--candidates-file",
             str(json_file),
@@ -164,7 +164,7 @@ def test_store_invalid_structure(tmp_path: Path) -> None:
     result = runner.invoke(
         store_tripwire_candidates,
         [
-            "--plan-number",
+            "--pr-number",
             "42",
             "--candidates-file",
             str(json_file),
@@ -198,7 +198,7 @@ def test_store_normalizes_root_key_drift(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         store_tripwire_candidates,
-        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        ["--pr-number", "42", "--candidates-file", str(candidates_file)],
         obj=ctx,
     )
 
@@ -231,7 +231,7 @@ def test_store_normalizes_field_aliases(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         store_tripwire_candidates,
-        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        ["--pr-number", "42", "--candidates-file", str(candidates_file)],
         obj=ctx,
     )
 
@@ -266,7 +266,7 @@ def test_store_strips_extra_fields(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(
         store_tripwire_candidates,
-        ["--plan-number", "42", "--candidates-file", str(candidates_file)],
+        ["--pr-number", "42", "--candidates-file", str(candidates_file)],
         obj=ctx,
     )
 

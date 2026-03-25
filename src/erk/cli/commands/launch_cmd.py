@@ -8,7 +8,7 @@ Usage examples:
     erk launch pr-address --pr 456
     erk launch pr-rebase --pr 456
     erk launch pr-rebase --pr 456 --no-squash
-    erk launch learn --plan 789
+    erk launch learn --pr 789
     erk launch one-shot --pr 456 --prompt "fix the auth bug"
     erk launch one-shot --pr 456 -f prompt.md
     erk launch pr-rebase --pr 456 --repo owner/repo
@@ -22,7 +22,7 @@ import click
 from erk.cli.commands.consolidate_learn_plans_dispatch import (
     dispatch_consolidate_learn_plans,
 )
-from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.commands.pr.metadata_helpers import maybe_update_pr_dispatch_metadata
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure, UserFacingCliError
@@ -93,7 +93,6 @@ def _dispatch_pr_rebase(
     repo_name: str,
     pr_number: int,
     no_squash: bool,
-    plan_id: str | None,
     model: str | None,
     ref: str,
 ) -> tuple[str, str]:
@@ -120,7 +119,6 @@ def _dispatch_pr_rebase(
         "base_branch": pr.base_ref_name,
         "pr_number": str(pr_number),
         "squash": "false" if no_squash else "true",
-        "plan_number": plan_id if plan_id is not None else "",
     }
     _add_optional_model(inputs, model=model)
 
@@ -142,7 +140,6 @@ def _dispatch_pr_address(
     owner: str,
     repo_name: str,
     pr_number: int,
-    plan_id: str | None,
     model: str | None,
     ref: str,
 ) -> tuple[str, str]:
@@ -165,7 +162,6 @@ def _dispatch_pr_address(
 
     inputs: dict[str, str] = {
         "pr_number": str(pr_number),
-        "plan_number": plan_id if plan_id is not None else "",
     }
     _add_optional_model(inputs, model=model)
 
@@ -187,7 +183,6 @@ def _dispatch_pr_rewrite(
     owner: str,
     repo_name: str,
     pr_number: int,
-    plan_id: str | None,
     model: str | None,
     ref: str,
 ) -> tuple[str, str]:
@@ -213,7 +208,6 @@ def _dispatch_pr_rewrite(
         "branch_name": pr.head_ref_name,
         "base_branch": pr.base_ref_name,
         "pr_number": str(pr_number),
-        "plan_number": plan_id if plan_id is not None else "",
     }
     _add_optional_model(inputs, model=model)
 
@@ -241,7 +235,7 @@ def _dispatch_learn(
     user_output(f"Dispatching learn workflow for plan #{issue}...")
 
     inputs: dict[str, str] = {
-        "plan_number": str(issue),
+        "pr_number": str(issue),
     }
 
     _dispatch_workflow(
@@ -333,13 +327,7 @@ def _dispatch_one_shot(
     "--pr",
     "pr_number",
     type=int,
-    help="PR number (required for pr-rebase and pr-address)",
-)
-@click.option(
-    "--plan",
-    "plan_number",
-    type=int,
-    help="Plan number (required for learn)",
+    help="PR number (required for pr-rebase, pr-address, learn, and one-shot)",
 )
 @click.option(
     "--no-squash",
@@ -385,7 +373,6 @@ def launch(
     workflow_name: str,
     *,
     pr_number: int | None,
-    plan_number: int | None,
     no_squash: bool,
     model: str | None,
     prompt: str | None,
@@ -421,8 +408,8 @@ def launch(
       erk launch pr-address --pr 456
 
     \b
-      # Dispatch learn for a plan issue
-      erk launch learn --plan 123
+      # Dispatch learn for a plan PR
+      erk launch learn --pr 123
 
     \b
       # Run one-shot against a PR with inline prompt
@@ -447,7 +434,8 @@ def launch(
         raise UserFacingCliError(
             "GitHub is not authenticated\n\n"
             "Authenticate with: gh auth login\n\n"
-            "This is required before dispatching workflows."
+            "This is required before dispatching workflows.",
+            error_type="auth_required",
         )
 
     # 3. Validate workflow name
@@ -469,12 +457,12 @@ def launch(
         ref = remote.get_default_branch_name(owner=repo_id.owner, repo=repo_id.repo)
 
     # 5. Local enrichment: pr-rebase branch inference when no --pr
-    inferred_branch: str | None = None
     if workflow_name == "pr-rebase" and pr_number is None:
         if not has_local_repo:
             raise UserFacingCliError(
                 "--pr is required for pr-rebase without a local repo"
-                " (no local branch to infer from)"
+                " (no local branch to infer from)",
+                error_type="missing_option",
             )
         assert not isinstance(ctx.repo, NoRepoSentinel)
         current_branch = Ensure.not_none(
@@ -488,15 +476,8 @@ def launch(
         )
         assert not isinstance(pr_for_branch, PRNotFound)
         pr_number = pr_for_branch.number
-        inferred_branch = current_branch
 
-    # 6. Local enrichment: plan ID resolution
-    plan_id: str | None = None
-    if has_local_repo and inferred_branch is not None:
-        assert not isinstance(ctx.repo, NoRepoSentinel)
-        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(ctx.repo.root, inferred_branch)
-
-    # 7. Dispatch to unified handler
+    # 6. Dispatch to unified handler
     branch_name: str | None = None
     run_id: str | None = None
 
@@ -508,7 +489,6 @@ def launch(
             repo_name=repo_id.repo,
             pr_number=pr_number,
             no_squash=no_squash,
-            plan_id=plan_id,
             model=model,
             ref=ref,
         )
@@ -523,7 +503,6 @@ def launch(
             owner=repo_id.owner,
             repo_name=repo_id.repo,
             pr_number=pr_number,
-            plan_id=plan_id,
             model=model,
             ref=ref,
         )
@@ -538,21 +517,20 @@ def launch(
             owner=repo_id.owner,
             repo_name=repo_id.repo,
             pr_number=pr_number,
-            plan_id=plan_id,
             model=model,
             ref=ref,
         )
     elif workflow_name == "learn":
         Ensure.invariant(
-            plan_number is not None,
-            "--plan is required for learn workflow",
+            pr_number is not None,
+            "--pr is required for learn workflow",
         )
-        assert plan_number is not None
+        assert pr_number is not None
         _dispatch_learn(
             remote,
             owner=repo_id.owner,
             repo_name=repo_id.repo,
-            issue=plan_number,
+            issue=pr_number,
             ref=ref,
         )
     elif workflow_name == "one-shot":
@@ -601,7 +579,7 @@ def launch(
         # Should never reach here due to _get_workflow_file validation
         raise click.UsageError(f"Unknown workflow: {workflow_name}")
 
-    # 8. Post-dispatch: plan metadata update (local repo only)
+    # 7. Post-dispatch: plan metadata update (local repo only)
     if has_local_repo and branch_name is not None and run_id is not None:
         assert not isinstance(ctx.repo, NoRepoSentinel)
-        maybe_update_plan_dispatch_metadata(ctx, ctx.repo, branch_name, run_id)
+        maybe_update_pr_dispatch_metadata(ctx, ctx.repo, branch_name, run_id)

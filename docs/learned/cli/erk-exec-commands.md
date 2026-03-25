@@ -36,11 +36,11 @@ Not all erk exec commands support the `--format` flag. Always check with `erk ex
 
 ### Commands with `--format json` Support
 
-| Command             | `--format json` | Notes                        |
-| ------------------- | --------------- | ---------------------------- |
-| `impl-init`         | ✓               | Returns validation result    |
-| `get-plan-metadata` | ✓               | Returns specific field value |
-| `list-sessions`     | ✓               | Returns session list         |
+| Command           | `--format json` | Notes                        |
+| ----------------- | --------------- | ---------------------------- |
+| `impl-init`       | ✓               | Returns validation result    |
+| `get-pr-metadata` | ✓               | Returns specific field value |
+| `list-sessions`   | ✓               | Returns session list         |
 
 ### Commands Without Format Flag
 
@@ -72,7 +72,7 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 ### Plan Operations
 
-- `get-plan-metadata` - Read plan metadata
+- `get-pr-metadata` - Read plan metadata
 - `setup-impl-from-pr` - Prepare .erk/impl-context/ folder
 
 ### Session Operations
@@ -145,7 +145,7 @@ erk exec setup-impl                           # Auto-detect from .erk/impl-conte
 - `--file` - Local markdown file path
 - `--no-impl` - Create branch only, skip `.erk/impl-context/` folder creation
 
-**Output:** JSON with `success`, `source`, `plan_number`, `has_plan_tracking`, `valid`, `related_docs`
+**Output:** JSON with `success`, `source`, `pr_number`, `has_plan_tracking`, `valid`, `related_docs`
 
 #### setup-impl-from-pr
 
@@ -201,8 +201,8 @@ Performs `git rm -rf .erk/impl-context/` and commits the deletion.
 
 Batch commands read JSON arrays from stdin and process items individually. They continue on individual failures and always exit with code 0.
 
-- `add-plan-labels` — Add labels to multiple plans (stdin: `[{"plan_number": int, "label": str}]`)
-- `close-prs` — Close multiple PRs with comments (stdin: `[{"plan_number": int, "comment": str}]`)
+- `add-pr-labels-batch` — Add labels to multiple plans (stdin: `[{"pr_number": int, "label": str}]`)
+- `close-prs` — Close multiple PRs with comments (stdin: `[{"pr_number": int, "comment": str}]`)
 
 Both use frozen dataclass results with discriminated union error handling.
 
@@ -222,13 +222,13 @@ These commands were renamed from issue-oriented to PR-oriented terminology:
 
 CLI flags and error codes were standardized from "issue" to "plan" terminology:
 
-| Old Name                             | New Name                |
-| ------------------------------------ | ----------------------- |
-| `--plan-issue` (flag)                | `--learn-plan`          |
-| `missing-plan-issue` (error code)    | `missing-learn-plan`    |
-| `unexpected-plan-issue` (error code) | `unexpected-learn-plan` |
-| `no-issue-reference` (error code)    | `no-plan-reference`     |
-| `issue-not-found` (error code)       | `plan-not-found`        |
+| Old Name                             | New Name              |
+| ------------------------------------ | --------------------- |
+| `--plan-issue` (flag)                | `--learn-pr`          |
+| `missing-plan-issue` (error code)    | `missing-learn-pr`    |
+| `unexpected-plan-issue` (error code) | `unexpected-learn-pr` |
+| `no-issue-reference` (error code)    | `no-plan-reference`   |
+| `issue-not-found` (error code)       | `plan-not-found`      |
 
 YAML schema fields (e.g., `learn_plan_issue`) were NOT renamed for stability.
 

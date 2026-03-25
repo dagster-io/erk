@@ -11,12 +11,12 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.track_learn_result import track_learn_result
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import (
     format_plan_header_body_for_test,
@@ -43,10 +43,10 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_no_plan"],
+            ["--pr-id", "42", "--status", "completed_no_plan"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -55,7 +55,7 @@ def test_track_learn_result_completed_no_plan(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "42"
+    assert output["pr_number"] == "42"
     assert output["learn_status"] == "completed_no_plan"
     assert output["learn_plan_issue"] is None
 
@@ -83,10 +83,10 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_with_plan", "--learn-plan", "456"],
+            ["--pr-id", "42", "--status", "completed_with_plan", "--learn-pr", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -95,7 +95,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "42"
+    assert output["pr_number"] == "42"
     assert output["learn_status"] == "completed_with_plan"
     assert output["learn_plan_issue"] == 456
 
@@ -114,7 +114,7 @@ def test_track_learn_result_completed_with_plan(tmp_path: Path) -> None:
 
 
 def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path: Path) -> None:
-    """Test error when completed_with_plan is missing --learn-plan."""
+    """Test error when completed_with_plan is missing --learn-pr."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -128,10 +128,10 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_with_plan"],
+            ["--pr-id", "42", "--status", "completed_with_plan"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -140,11 +140,11 @@ def test_track_learn_result_requires_plan_issue_for_completed_with_plan(tmp_path
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "learn-plan is required" in output["message"]
+    assert "learn-pr is required" in output["message"]
 
 
 def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: Path) -> None:
-    """Test error when completed_no_plan has --learn-plan."""
+    """Test error when completed_no_plan has --learn-pr."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -158,10 +158,10 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "completed_no_plan", "--learn-plan", "456"],
+            ["--pr-id", "42", "--status", "completed_no_plan", "--learn-pr", "456"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -170,7 +170,7 @@ def test_track_learn_result_rejects_plan_issue_for_completed_no_plan(tmp_path: P
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "should not be provided" in output["message"]
+    assert "learn-pr should not be provided" in output["message"]
 
 
 # ============================================================================
@@ -193,10 +193,10 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "pending_review", "--plan-pr", "789"],
+            ["--pr-id", "42", "--status", "pending_review", "--plan-pr", "789"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -205,7 +205,7 @@ def test_track_learn_result_pending_review_with_plan_pr(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "42"
+    assert output["pr_number"] == "42"
     assert output["learn_status"] == "pending_review"
     assert output["learn_plan_issue"] is None
     assert output["learn_plan_pr"] == 789
@@ -234,10 +234,10 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
         cwd = Path.cwd()
         result = runner.invoke(
             track_learn_result,
-            ["--plan-id", "42", "--status", "pending_review"],
+            ["--pr-id", "42", "--status", "pending_review"],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -250,7 +250,7 @@ def test_track_learn_result_pending_review_requires_plan_pr(tmp_path: Path) -> N
 
 
 def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) -> None:
-    """Test error when pending_review has --learn-plan."""
+    """Test error when pending_review has --learn-pr."""
     plan_body = format_plan_header_body_for_test(learn_status="pending")
     issue = create_test_issue(42, "Test Plan #42", plan_body)
     fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -265,18 +265,18 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
         result = runner.invoke(
             track_learn_result,
             [
-                "--plan-id",
+                "--pr-id",
                 "42",
                 "--status",
                 "pending_review",
                 "--plan-pr",
                 "789",
-                "--learn-plan",
+                "--learn-pr",
                 "456",
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),
@@ -285,7 +285,7 @@ def test_track_learn_result_pending_review_rejects_plan_issue(tmp_path: Path) ->
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "learn-plan should not be provided" in output["message"]
+    assert "learn-pr should not be provided" in output["message"]
 
 
 def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) -> None:
@@ -304,18 +304,18 @@ def test_track_learn_result_completed_with_plan_rejects_plan_pr(tmp_path: Path) 
         result = runner.invoke(
             track_learn_result,
             [
-                "--plan-id",
+                "--pr-id",
                 "42",
                 "--status",
                 "completed_with_plan",
-                "--learn-plan",
+                "--learn-pr",
                 "456",
                 "--plan-pr",
                 "789",
             ],
             obj=ErkContext.for_test(
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 cwd=cwd,
                 repo_root=cwd,
             ),

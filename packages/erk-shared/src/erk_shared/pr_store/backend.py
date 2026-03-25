@@ -1,0 +1,466 @@
+"""Abstract interface for managed PR backends.
+
+ManagedPrBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+and should NOT have fake implementations. To test code that uses a ManagedPrBackend,
+inject fake gateways into the real backend implementation.
+
+Example:
+    # Testing with fake gateway
+    fake_issues = FakeGitHubIssues()
+    fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
+    backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
+    result = backend.create_managed_pr(...)
+
+    # Assert on gateway mutations
+    assert fake_issues.created_issues[0][0] == "expected title"
+
+See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+for the full gateway vs backend architecture.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from collections.abc import Mapping
+from pathlib import Path
+
+from erk_shared.gateway.github.metadata.schemas import (
+    CREATED_FROM_SESSION,
+    LAST_LEARN_SESSION,
+    LAST_LOCAL_IMPL_SESSION,
+    LAST_REMOTE_IMPL_AT,
+    LAST_REMOTE_IMPL_RUN_ID,
+    LAST_REMOTE_IMPL_SESSION_ID,
+    LAST_SESSION_BRANCH,
+    LAST_SESSION_ID,
+    LAST_SESSION_SOURCE,
+)
+from erk_shared.learn.impl_events import (
+    extract_implementation_sessions,
+    extract_learn_sessions,
+)
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.types import CreatePlanResult, Plan, PlanQuery, PrNotFound
+from erk_shared.sessions.discovery import SessionsForPlan
+
+# ---------------------------------------------------------------------------
+# Branch → Plan Resolution
+# ---------------------------------------------------------------------------
+
+
+class ManagedPrBackend(ABC):
+    """Abstract interface for managed PR operations.
+
+    Provides the full read/write interface for managed PR backends.
+    Implementations provide backend-specific storage for managed PRs.
+
+    Read operations:
+        get_managed_pr: Fetch a plan by identifier
+        list_managed_prs: Query plans by criteria
+        get_provider_name: Get the provider name
+        close_managed_pr: Close a plan
+        get_metadata_field: Get a single metadata field value
+
+    Write operations:
+        create_managed_pr: Create a new plan
+        update_metadata: Update plan metadata
+        update_managed_pr_content: Update plan content body
+        add_comment: Add a comment to a plan
+        post_event: Combined metadata update + optional comment
+    """
+
+    # Read operations
+
+    @abstractmethod
+    def get_managed_pr(self, repo_root: Path, pr_number: str) -> Plan | PrNotFound:
+        """Fetch a plan by identifier.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier (e.g., "42", "PROJ-123")
+
+        Returns:
+            Plan with all metadata, or PrNotFound if the plan does not exist
+        """
+        ...
+
+    @abstractmethod
+    def list_managed_prs(self, repo_root: Path, query: PlanQuery) -> list[Plan]:
+        """Query plans by criteria.
+
+        Args:
+            repo_root: Repository root directory
+            query: Filter criteria (labels, state, limit)
+
+        Returns:
+            List of Plan matching the criteria
+
+        Raises:
+            RuntimeError: If provider fails
+        """
+        ...
+
+    @abstractmethod
+    def get_provider_name(self) -> str:
+        """Get the name of the provider.
+
+        Returns:
+            Provider name (e.g., "github", "gitlab", "linear")
+        """
+        ...
+
+    @abstractmethod
+    def get_metadata_field(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        field_name: str,
+    ) -> object | PrNotFound:
+        """Get a single metadata field from a plan.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+            field_name: Name of the metadata field to read
+
+        Returns:
+            Field value (may be None if unset), or PrNotFound if plan doesn't exist
+        """
+        ...
+
+    @abstractmethod
+    def get_all_metadata_fields(
+        self,
+        repo_root: Path,
+        pr_number: str,
+    ) -> dict[str, object] | PrNotFound:
+        """Get all metadata fields from the plan-header block.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+
+        Returns:
+            Dictionary of all metadata fields, or PrNotFound if plan doesn't exist.
+            Returns empty dict if plan exists but has no metadata block.
+        """
+        ...
+
+    @abstractmethod
+    def get_comments(self, repo_root: Path, pr_number: str) -> list[str]:
+        """Get all comments on a plan.
+
+        Used by session discovery to find implementation and learn session IDs
+        from impl-started/impl-ended/learn-invoked metadata blocks posted as comments.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+
+        Returns:
+            List of comment body strings, ordered oldest to newest.
+            Returns empty list if plan has no comments.
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    # Session discovery (concrete — uses get_plan + get_comments)
+
+    def find_sessions_for_managed_pr(
+        self,
+        repo_root: Path,
+        pr_number: str,
+    ) -> SessionsForPlan:
+        """Find all Claude Code sessions associated with a plan.
+
+        Extracts session IDs from:
+        1. created_from_session in plan-header (planning session)
+        2. last_local_impl_session in plan-header (most recent impl session)
+        3. impl-started/impl-ended comments (all implementation sessions)
+        4. last_learn_session in plan-header (most recent learn session)
+        5. learn-invoked comments (previous learn sessions)
+
+        This is a concrete method that delegates to the abstract ``get_managed_pr``
+        and ``get_comments`` methods, so every backend gets it for free.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+
+        Returns:
+            SessionsForPlan with all discovered session IDs
+
+        Raises:
+            RuntimeError: If plan not found
+        """
+        plan = self.get_managed_pr(repo_root, pr_number)
+        if isinstance(plan, PrNotFound):
+            msg = f"Plan {pr_number} not found"
+            raise RuntimeError(msg)
+
+        planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+        metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
+        metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
+
+        comments = self.get_comments(repo_root, pr_number)
+        comment_impl_sessions = extract_implementation_sessions(comments)
+        comment_learn_sessions = extract_learn_sessions(comments)
+
+        # Combine implementation sessions: metadata first, then from comments
+        implementation_session_ids: list[str] = []
+        impl_seen: set[str] = set()
+        if metadata_impl_session is not None:
+            implementation_session_ids.append(metadata_impl_session)
+            impl_seen.add(metadata_impl_session)
+        for session_id in comment_impl_sessions:
+            if session_id not in impl_seen:
+                implementation_session_ids.append(session_id)
+                impl_seen.add(session_id)
+
+        # Combine learn sessions: metadata first, then from comments
+        learn_session_ids: list[str] = []
+        learn_seen: set[str] = set()
+        if metadata_learn_session is not None:
+            learn_session_ids.append(metadata_learn_session)
+            learn_seen.add(metadata_learn_session)
+        for session_id in comment_learn_sessions:
+            if session_id not in learn_seen:
+                learn_session_ids.append(session_id)
+                learn_seen.add(session_id)
+
+        return SessionsForPlan(
+            planning_session_id=planning_session_id,
+            implementation_session_ids=implementation_session_ids,
+            learn_session_ids=learn_session_ids,
+            last_remote_impl_at=header_str(plan.header_fields, LAST_REMOTE_IMPL_AT),
+            last_remote_impl_run_id=header_str(plan.header_fields, LAST_REMOTE_IMPL_RUN_ID),
+            last_remote_impl_session_id=header_str(plan.header_fields, LAST_REMOTE_IMPL_SESSION_ID),
+            last_session_branch=header_str(plan.header_fields, LAST_SESSION_BRANCH),
+            last_session_id=header_str(plan.header_fields, LAST_SESSION_ID),
+            last_session_source=header_str(plan.header_fields, LAST_SESSION_SOURCE),
+        )
+
+    # Branch → Plan resolution
+
+    @abstractmethod
+    def get_managed_pr_for_branch(self, repo_root: Path, branch_name: str) -> Plan | PrNotFound:
+        """Look up the plan associated with a branch.
+
+        Resolves the branch name to a plan identifier and fetches the full plan.
+        Returns PrNotFound if the branch is not a plan branch or the plan
+        doesn't exist.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Git branch name (e.g., "plnd/fix-bug-01-15-1430")
+
+        Returns:
+            Plan if found, PrNotFound otherwise
+        """
+        ...
+
+    @abstractmethod
+    def resolve_pr_number_for_branch(self, repo_root: Path, branch_name: str) -> str | None:
+        """Resolve plan identifier for a branch without fetching the full plan.
+
+        Lightweight resolution that does NOT verify the plan exists.
+        Returns None if the branch is not associated with a plan.
+
+        For ManagedGitHubPrBackend this requires an API call to find the
+        draft PR associated with the branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Git branch name
+
+        Returns:
+            Plan identifier string if branch is a plan branch, None otherwise
+        """
+        ...
+
+    # Write operations
+
+    @abstractmethod
+    def create_managed_pr(
+        self,
+        *,
+        repo_root: Path,
+        title: str,
+        content: str,
+        labels: tuple[str, ...],
+        metadata: Mapping[str, object],
+        summary: str,
+    ) -> CreatePlanResult:
+        """Create a new plan.
+
+        Args:
+            repo_root: Repository root directory
+            title: Plan title
+            content: Plan body/description
+            labels: Labels to apply (immutable tuple)
+            metadata: Provider-specific metadata
+            summary: AI-generated summary (empty string if none)
+
+        Returns:
+            CreatePlanResult with pr_number and url
+
+        Raises:
+            RuntimeError: If provider fails
+        """
+        ...
+
+    @abstractmethod
+    def update_metadata(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        metadata: Mapping[str, object],
+    ) -> None:
+        """Update plan metadata.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+            metadata: New metadata to set
+
+        Raises:
+            PlanHeaderNotFoundError: If plan has no plan-header metadata block
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    @abstractmethod
+    def update_managed_pr_content(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        content: str,
+        *,
+        summary: str,
+    ) -> None:
+        """Update the plan content body.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+            content: New plan content
+            summary: AI-generated summary (empty string if none)
+
+        Raises:
+            RuntimeError: If plan not found or update fails
+        """
+        ...
+
+    @abstractmethod
+    def close_managed_pr(self, repo_root: Path, pr_number: str) -> None:
+        """Close a plan by its identifier (issue number or GitHub URL).
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Plan identifier (issue number like "123" or GitHub URL)
+
+        Raises:
+            RuntimeError: If provider fails, plan not found, or invalid identifier
+        """
+        ...
+
+    @abstractmethod
+    def update_managed_pr_title(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        title: str,
+    ) -> None:
+        """Update the title of a plan.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier (e.g., "42")
+            title: New plan title
+
+        Raises:
+            RuntimeError: If plan not found or update fails
+        """
+        ...
+
+    @abstractmethod
+    def add_comment(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        body: str,
+    ) -> str:
+        """Add a comment to a plan.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+            body: Comment body text
+
+        Returns:
+            Comment ID as string
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    @abstractmethod
+    def add_label(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        label: str,
+    ) -> None:
+        """Add a label to a plan.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+            label: Label to add
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...
+
+    @abstractmethod
+    def ensure_plan_header(self, repo_root: Path, pr_number: str) -> None:
+        """Ensure plan has a plan-header metadata block.
+
+        If the plan already has a plan-header, this is a no-op.
+        If missing, creates a minimal plan-header with required fields
+        (schema_version, created_at, created_by) and injects it.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+
+        Raises:
+            RuntimeError: If plan not found
+        """
+        ...
+
+    @abstractmethod
+    def post_event(
+        self,
+        repo_root: Path,
+        pr_number: str,
+        *,
+        metadata: Mapping[str, object],
+        comment: str | None,
+    ) -> None:
+        """Post a combined event: metadata update + optional comment.
+
+        Args:
+            repo_root: Repository root directory
+            pr_number: Provider-specific identifier
+            metadata: Metadata fields to update
+            comment: Optional comment body to post
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        ...

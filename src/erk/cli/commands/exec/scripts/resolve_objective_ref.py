@@ -32,12 +32,12 @@ import click
 from erk_shared.context.helpers import (
     require_cwd,
     require_git,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
-from erk_shared.gateway.github.parsing import parse_plan_number_from_url
+from erk_shared.gateway.github.parsing import parse_issue_number_from_url
 from erk_shared.naming import extract_objective_number
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 def _resolve_objective_ref_impl(
@@ -65,7 +65,7 @@ def _resolve_objective_ref_impl(
             return {"resolved": True, "objective_number": int(ref), "source": "argument"}
 
         # Try as URL
-        number = parse_plan_number_from_url(ref)
+        number = parse_issue_number_from_url(ref)
         if number is not None:
             return {"resolved": True, "objective_number": number, "source": "argument"}
 
@@ -100,16 +100,16 @@ def resolve_objective_ref(ctx: click.Context, ref: str) -> None:
     cwd = require_cwd(ctx)
     git = require_git(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
 
     current_branch = git.branch.get_current_branch(cwd)
 
     def get_objective_for_branch(branch: str) -> int | None:
         try:
-            result = plan_backend.get_plan_for_branch(repo_root, branch)
+            result = pr_backend.get_managed_pr_for_branch(repo_root, branch)
         except RuntimeError:
             return None
-        if isinstance(result, PlanNotFound):
+        if isinstance(result, PrNotFound):
             return None
         if result.objective_id is not None:
             return result.objective_id

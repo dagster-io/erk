@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.label_ops import AddLabelsResult, add_labels_resilient
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
 
 
 def _make_pr_details(*, number: int = 42) -> PRDetails:
@@ -47,17 +47,17 @@ def test_all_labels_added_successfully() -> None:
         time=fake_time,
         repo_root=REPO_ROOT,
         pr_number=42,
-        labels=("bug", "erk-plan"),
+        labels=("bug", "erk-pr"),
     )
 
     assert result == AddLabelsResult(
         success=True,
         pr_number=42,
-        added_labels=["bug", "erk-plan"],
+        added_labels=["bug", "erk-pr"],
         failed_labels=[],
         errors={},
     )
-    assert fake_github.added_labels == [(42, "bug"), (42, "erk-plan")]
+    assert fake_github.added_labels == [(42, "bug"), (42, "erk-pr")]
 
 
 def test_empty_labels_returns_success() -> None:

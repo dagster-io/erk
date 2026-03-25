@@ -245,6 +245,12 @@ Suggest consolidating into single {Category} entry: "{proposed description}"
 Commits: {list of hashes}
 ```
 
+#### Hidden Command Detection
+
+When a commit adds a new CLI command or flag, check the source file for `hidden=True` in the Click decorator. If present, append "(hidden)" to the proposed entry description. This tells the user the command won't appear in default `erk --help` output.
+
+Example: `- Add erk stack sync command for divergence resolution (hidden) (43983f7af)`
+
 #### Confidence Flags
 
 Mark entries as **low-confidence** when:

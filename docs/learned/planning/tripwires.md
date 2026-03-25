@@ -16,7 +16,9 @@ Rules triggered by matching actions in code.
 
 **adding Closes #N to a planned PR footer** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. Planned PR IS the plan. Self-referential close would close the plan itself. Use issue_number=None for github-draft-pr backend.
 
-**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from \_get_pr_for_plan_direct. The entire PR comment block is gated on pr_result not being None.
+**adding a LLM-generated slug to the consolidate-learn-plans branch name** → Read [Consolidate Learn Plans Workflow](consolidate-learn-plans-workflow.md) first. Branch name uses format_branch_timestamp_suffix() only — no LLM slug. Format: consolidate-learn-plans-{MM-DD-HHMM}. See consolidate-learn-plans-workflow.md.
+
+**adding a new PR-dependent step to trigger-async-learn** → Read [Learn Without PR Context](learn-without-pr-context.md) first. Any new PR-dependent step must handle the None case from PR lookup. The entire PR comment block is gated on pr_result not being None.
 
 **adding a new filtering step to preprocess_session.py** → Read [Session Preprocessing Architecture](session-preprocessing.md) first. There are TWO preprocessing implementations: the exec script (preprocess_session.py) and erk-shared (session_preprocessing.py). The exec script has the full filtering pipeline; erk-shared has only Stage 1 mechanical reduction. New filters go in the exec script. Read this doc first.
 
@@ -36,7 +38,7 @@ Rules triggered by matching actions in code.
 
 **adding plnd/ special-casing to cleanup_impl_for_submit** → Read [Impl-Context Staging Directory](impl-context.md) first. plan-save never goes through the submit pipeline — it pushes directly via push_to_remote(). No special casing for plnd/ branches is needed in cleanup_impl_for_submit().
 
-**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. dispatch_one_shot() and \_dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
+**adding post-dispatch operations without matching dispatch_cmd.py pattern** → Read [One-Shot Workflow](one-shot-workflow.md) first. The one-shot dispatch path (one_shot_remote_dispatch.py) and the planned-PR dispatch path (dispatch_cmd.py) must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other.
 
 **adding redundant branch-location guards to learn status checks** → Read [Remote Branch Learn Support](remote-branch-learn.md) first. Learn status checking in land_pipeline.py:341 requires is_current_branch or worktree_path is not None. Remote branches (is_current_branch=False, worktree_path=None) are not prompted for learn — this is intentional since remote sessions are handled via planned-pr-context branches.
 
@@ -68,7 +70,7 @@ Rules triggered by matching actions in code.
 
 **calling commands that depend on `.erk/impl-context/plan-ref.json` metadata** → Read [Plan Lifecycle](lifecycle.md) first. Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json.
 
-**calling gh issue view with a plan_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, plan_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming plan_id semantics.
+**calling gh issue view with a pr_id from PlannedPRBackend** → Read [Plan ID Semantics](plan-id-semantics.md) first. For planned-PR plans, pr_id is a PR number, not an issue number. Use gh pr view instead. Check provider type before assuming pr_id semantics.
 
 **calling gt track before rebasing a stacked plan branch** → Read [Stacked Plan Branch Rebase](stacked-plan-branch-rebase.md) first. Always rebase BEFORE gt track for stacked plans (not after). gt track requires the parent branch to be an ancestor in git history.
 
@@ -85,6 +87,8 @@ Rules triggered by matching actions in code.
 **changing branch naming convention (plnd/ prefix)** → Read [Branch Name Inference](branch-name-inference.md) first. The plnd/ prefix (planned-PR) is a cross-cutting contract used by branch creation, extraction functions, and PR recovery. Changing the prefix format requires updating all consumers. The legacy P{issue}- prefix has been fully removed.
 
 **changing how sessions are classified as planning vs impl** → Read [Learn Pipeline Workflow](learn-pipeline-workflow.md) first. Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently.
+
+**changing the prompt for consolidate-learn-plans to be config-driven** → Read [Consolidate Learn Plans Workflow](consolidate-learn-plans-workflow.md) first. The prompt is hardcoded (static). See consolidate_learn_plans_dispatch.py lines 123-126. The purpose is fixed; no LLM slug or config needed. See consolidate-learn-plans-workflow.md.
 
 **checking erk exec plan-save --format json output for empty result** → Read [Planned PR Backend](planned-pr-backend.md) first. Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2>&1 or check for empty stdout and retry with stderr capture.
 
@@ -108,7 +112,7 @@ Rules triggered by matching actions in code.
 
 **creating a new plan-generating command without a pre-plan gathering step** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document.
 
-**creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
+**creating erk-learn plan for an issue that already has erk-learn label** → Read [Learn Plan Validation](learn-plan-validation.md) first. Validate target issue has erk-pr label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention).
 
 **creating temp files for AI workflows** → Read [Scratch Storage](scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
@@ -120,7 +124,7 @@ Rules triggered by matching actions in code.
 
 **detecting plan backend by checking backend type directly** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
 
-**dispatching implementation against an existing PR** → Read [Incremental Dispatch Workflow](incremental-dispatch.md) first. Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-plan label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md.
+**dispatching implementation against an existing PR** → Read [Incremental Dispatch Workflow](incremental-dispatch.md) first. Use incremental-dispatch, not regular dispatch. Incremental dispatch does NOT require the erk-pr label — just an OPEN PR. It uses provider='incremental-dispatch' vs 'github-draft-pr'. See incremental-dispatch.md.
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
@@ -156,11 +160,13 @@ Rules triggered by matching actions in code.
 
 **launching parallel agents that return results inline instead of writing to files** → Read [Parallel Agent Orchestration for Bulk Operations](parallel-audit-pattern.md) first. Parallel agents must write results via Write tool to .erk/scratch/ files. Inline results can be truncated or lost. The parent agent reads files after completion.
 
+**looking for alternative PR lookup paths beyond branch-based** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. Branch-based lookup via get_pr_for_branch() is the only PR discovery strategy. The issue timeline API was removed.
+
 **making a third trial-and-error attempt at a validation fix** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. After 2 failed attempts, stop guessing. Grep for the validator function and read the source to understand the exact requirement.
 
 **making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
 
-**manually creating an erk-plan with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+**manually creating an erk-pr with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
@@ -172,7 +178,7 @@ Rules triggered by matching actions in code.
 
 **modifying marker deletion behavior in exit-plan-mode hook** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates.
 
-**modifying register-one-shot-plan exit behavior** → Read [One-Shot Workflow](one-shot-workflow.md) first. register-one-shot-plan uses best-effort: exit 0 if any operation succeeds
+**modifying register-one-shot-pr exit behavior** → Read [One-Shot Workflow](one-shot-workflow.md) first. register-one-shot-pr uses best-effort: exit 0 if any operation succeeds
 
 **moving gateway files without git mv** → Read [Gateway Consolidation Checklist](gateway-consolidation-checklist.md) first. Always use git mv to preserve file history. Plain mv + git add loses blame history, making future archaeology harder.
 
@@ -186,7 +192,7 @@ Rules triggered by matching actions in code.
 
 **pushing implementation commits after impl-context cleanup without git pull --rebase** → Read [Impl-Context Staging Directory](impl-context.md) first. After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures.
 
-**querying all erk PRs without using the erk-pr base label** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. Use erk-pr to query all erk-submitted PRs (plans + code). Use type-specific labels (erk-plan, erk-learn) only when you need to filter to a specific type.
+**querying core erk PRs using erk-core label** → Read [PR and Plan Label Assignment Scheme](label-scheme.md) first. erk-core no longer exists. Use erk-pr with exclude_labels=(erk-learn,) to query non-learn PRs. Use erk-learn only when you need learn-specific filtering.
 
 **reading learn_plan_issue or learn_status** → Read [Learn Plan Metadata Preservation](learn-plan-metadata-fields.md) first. Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects.
 
@@ -220,7 +226,7 @@ Rules triggered by matching actions in code.
 
 **running sequential analysis that could be parallelized** → Read [Multi-Tier Agent Orchestration](agent-orchestration.md) first. If agents analyze independent data sources, run them in parallel. Only use sequential execution when one agent's output is another's input.
 
-**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
+**saving a plan linked to an objective** → Read [Plan Lifecycle](lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-pr-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **staging .erk/impl-context/ deletion without an immediate commit** → Read [.erk/impl-context/ Cleanup Discipline](worktree-cleanup.md) first. A downstream `git reset --hard` will silently discard staged-only deletions. Always commit+push cleanup atomically. See reliability-patterns.md.
 
@@ -238,15 +244,13 @@ Rules triggered by matching actions in code.
 
 **using `find_metadata_block` or `extract_plan_content` without validating separator context** → Read [Planned PR Lifecycle](planned-pr-lifecycle.md) first. The content separator `\n\n---\n\n` can accidentally form from 'Remotely executed' notes + footer delimiter. find_metadata_block() validates via `<!-- erk:metadata-block:` marker in the prefix. Never skip this validation.
 
-**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_plan_dispatch_metadata() uses LBYL guards and silent skip with warning. Choose based on whether failure should block the operation.
+**using assertive metadata writes in a best-effort context** → Read [Metadata Update Patterns](metadata-update-patterns.md) first. write_dispatch_metadata() raises on error. maybe_update_pr_dispatch_metadata() uses LBYL guards and returns silently when preconditions aren't met (no warning printed on skip). Choose based on whether failure should block the operation.
 
 **using background agents without waiting for completion before dependent operations** → Read [Command-Agent Delegation](agent-delegation.md) first. Use TaskOutput with block=true to wait for all background agents to complete. Without synchronization, dependent agents may read incomplete outputs or missing files.
 
 **using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction** → Read [Plan Content Extraction Fallback](metadata-block-fallback.md) first. These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering.
 
-**using gh issue view on a plan ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
-
-**using issue timeline API as the primary PR lookup path** → Read [PR Discovery Strategies for Plans](pr-discovery.md) first. The primary path is branch_name from plan-header → get_pr_for_branch(). Timeline API is a separate strategy for when branch_name is unavailable.
+**using gh issue view on a PR ID without checking plan backend type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR PR IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type.
 
 **using only branch-based discovery for plan/objective resolution** → Read [Objective Update After Land](objective-update-after-land.md) first. Use direct lookup with --plan parameter when available. Branch-based discovery fails if the branch is already deleted. Direct lookup with fallback is the resilient pattern.
 
@@ -256,10 +260,10 @@ Rules triggered by matching actions in code.
 
 **using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 
-**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics.
+**validating pr_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR pr_id IS the PR number (not an issue number). Check provider type before assuming pr_id semantics.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
 
-**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py.
+**writing post-dispatch operations without try/except guards** → Read [One-Shot Workflow](one-shot-workflow.md) first. Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_remote_dispatch.py.
 
 **writing to /tmp/** → Read [Scratch Storage](scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.

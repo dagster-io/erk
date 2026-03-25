@@ -35,10 +35,10 @@ The Python implementation (`_add_planned_prefix()` in `submit_pipeline.py`) chec
 
 Two separate systems modify PR titles:
 
-- **Title tag**: `[erk-plan]` or `[erk-learn]` — added by `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py`. This identifies the plan type.
+- **Title tag**: `[erk-pr]` or `[erk-learn]` — added by `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/pr_utils.py`. This identifies the plan type.
 - **Title prefix**: `plnd/` — added by `_add_planned_prefix()`. This signals that the PR is an active plan implementation.
 
-Both can apply simultaneously, producing titles like `plnd/[erk-plan] My Feature`.
+Both can apply simultaneously, producing titles like `plnd/[erk-pr] My Feature`.
 
 ## Related Documentation
 

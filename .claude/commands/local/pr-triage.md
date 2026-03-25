@@ -38,7 +38,7 @@ Assign each PR to exactly one tier (highest applicable wins):
 | 4    | `new-feat`   | New Features / Large Changes       | additions >> deletions, new capabilities, large refactors                                  |
 | 5    | `stale`      | Stale / Empty / Close Candidates   | 0 changes, OR draft >30 days since updatedAt, OR superseded                                |
 
-**Label awareness:** Account for erk-specific labels (`erk-plan`, `erk-pr`, `erk-learn`, `erk-planned-pr`). Plan PRs (`erk-plan`) are tracking issues, not code PRs - classify them in Tier 5 as close candidates if they have 0 code changes.
+**Label awareness:** Account for erk-specific labels (`erk-pr`, `erk-pr`, `erk-learn`, `erk-prned-pr`). Plan PRs (`erk-pr`) are tracking issues, not code PRs - classify them in Tier 5 as close candidates if they have 0 code changes.
 
 ### Phase 3: Annotate Each PR
 

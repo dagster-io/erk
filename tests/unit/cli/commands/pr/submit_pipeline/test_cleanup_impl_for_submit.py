@@ -6,8 +6,8 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     cleanup_impl_for_submit,
 )
-from erk.core.context import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_state(
@@ -28,7 +28,7 @@ def _make_state(
         session_id="test-session",
         skip_description=False,
         quiet=False,
-        plan_id=None,
+        pr_id=None,
         pr_number=None,
         pr_url=None,
         was_created=False,

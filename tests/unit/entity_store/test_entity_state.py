@@ -15,8 +15,6 @@ from erk_shared.entity_store.state import (
     fetch_entity_body,
 )
 from erk_shared.entity_store.types import EntityKind
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
@@ -24,6 +22,8 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 REPO_ROOT = Path("/fake/repo")
 NOW = datetime(2024, 1, 1, tzinfo=UTC)

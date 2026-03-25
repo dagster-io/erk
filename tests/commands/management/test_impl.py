@@ -4,13 +4,13 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.shell_utils import render_cd_script
-from erk.core.context import context_for_test
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
+from tests.fakes.gateway.erk_installation import FakeErkInstallation, GlobalConfig
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.test_context import context_for_test
 
 # Deterministic date suffix from FakeTime, used by ctx.time.now() in tests
 _FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
@@ -40,15 +40,15 @@ def test_create_with_plan_file() -> None:
         # Create test context using env.build_context() helper
         test_ctx = env.build_context(git=git_ops)
 
-        # Run erk create with --from-plan-file
+        # Run erk create with --from-pr-file
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", "Add_Auth_Feature.md", "--no-post"],
+            ["wt", "create", "--from-pr-file", "Add_Auth_Feature.md", "--no-post"],
             obj=test_ctx,
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # --from-plan-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        # --from-pr-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
         expected_name = f"add-auth-feature-{_FAKE_DATE_SUFFIX}"
 
         # Verify worktree was created with sanitized name and date suffix
@@ -92,15 +92,15 @@ def test_create_with_plan_name_sanitization() -> None:
         # Create test context using env.build_context() helper
         test_ctx = env.build_context(git=git_ops)
 
-        # Run erk create with --from-plan-file
+        # Run erk create with --from-pr-file
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", "MY_COOL_Plan_File.md", "--no-post"],
+            ["wt", "create", "--from-pr-file", "MY_COOL_Plan_File.md", "--no-post"],
             obj=test_ctx,
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # --from-plan-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        # --from-pr-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
         expected_name = f"my-cool-file-{_FAKE_DATE_SUFFIX}"
 
         # Verify worktree name is lowercase with hyphens, "plan" removed, and date suffix added
@@ -113,7 +113,7 @@ def test_create_with_plan_name_sanitization() -> None:
 
 
 def test_create_with_both_name_and_plan_file_fails() -> None:
-    """Test that providing both NAME and --from-plan-file is an error."""
+    """Test that providing both NAME and --from-pr-file is an error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create a plan file
@@ -147,14 +147,14 @@ def test_create_with_both_name_and_plan_file_fails() -> None:
             cwd=env.root_worktree,
         )
 
-        # Run erk create with both NAME and --from-plan-file
+        # Run erk create with both NAME and --from-pr-file
         result = runner.invoke(
-            cli, ["wt", "create", "myname", "--from-plan-file", "plan.md"], obj=test_ctx
+            cli, ["wt", "create", "myname", "--from-pr-file", "plan.md"], obj=test_ctx
         )
 
         # Should fail
         assert result.exit_code != 0
-        assert "Cannot specify both NAME and --from-plan-file" in result.output
+        assert "Cannot specify both NAME and --from-pr-file" in result.output
 
 
 def test_create_rejects_reserved_name_root() -> None:
@@ -284,7 +284,7 @@ def test_create_rejects_main_as_worktree_name() -> None:
         # Should fail with error suggesting to use root
         assert result.exit_code != 0
         assert "main" in result.output.lower()
-        assert "erk br co root" in result.output
+        assert "erk slot co root" in result.output
 
         # Verify worktree was not created
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / "main"
@@ -330,7 +330,7 @@ def test_create_rejects_master_as_worktree_name() -> None:
         # Should fail with error suggesting to use root
         assert result.exit_code != 0
         assert "master" in result.output.lower()
-        assert "erk br co root" in result.output
+        assert "erk slot co root" in result.output
 
         # Verify worktree was not created
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / "master"
@@ -380,19 +380,10 @@ def test_create_with_script_flag() -> None:
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / "test-worktree"
         assert worktree_path.exists()
 
-        # Output should be a temp file path
-        script_path = Path(result.output.strip())
-        assert script_path.exists()
-        assert script_path.name.startswith("erk-create-")
-        assert script_path.name.endswith(".sh")
-
         # Verify script content contains activation keywords (not simple cd)
         # Since worktree_path != repo_root, render_navigation_script uses full activation
-        script_content = script_path.read_text(encoding="utf-8")
+        script_content = result.output
 
         # Check for activation script indicators (uv sync, venv activation, .env loading)
         assert "uv sync" in script_content or "# cd to new worktree" in script_content
         assert str(worktree_path) in script_content
-
-        # Cleanup
-        script_path.unlink(missing_ok=True)

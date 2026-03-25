@@ -20,8 +20,8 @@ Column order in `_setup_columns()` for `ViewMode.PLANS`:
 | Column Header  | Key           | Width | Condition                                           |
 | -------------- | ------------- | ----- | --------------------------------------------------- |
 | `plan` or `pr` | `plan`        | 6     | Always (header is `pr` in planned_pr mode)          |
-| `stage`        | `stage`       | 8     | Only when `plan_backend == "planned_pr"`            |
-| `sts`          | `status`      | 7     | Only when `plan_backend == "planned_pr"`            |
+| `stage`        | `stage`       | 8     | Only when `pr_backend == "planned_pr"`              |
+| `sts`          | `status`      | 7     | Only when `pr_backend == "planned_pr"`              |
 | `created`      | `created`     | 7     | In planned_pr mode (positioned here, not after run) |
 | `obj`          | `objective`   | 5     | Always                                              |
 | `loc`          | `location`    | 3     | Always (location emoji)                             |
@@ -57,7 +57,7 @@ When `ViewMode.OBJECTIVES` is active, an entirely different column set is used:
 
 ## Backend-Conditional Columns
 
-Several columns behave differently based on `plan_backend`:
+Several columns behave differently based on `pr_backend`:
 
 1. **`plan`/`pr` column**: Shows `plan` header for issue-based backend, `pr` header for `planned_pr` backend (since in planned_pr mode, the plan IS the PR).
 2. **`stage` column**: Only added in `planned_pr` mode — shows the lifecycle stage with inline PR status indicators (planned, impl, merged, closed).

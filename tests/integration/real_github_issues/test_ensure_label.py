@@ -41,9 +41,9 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.ensure_label_exists(
             repo_root=Path("/repo"),
-            label="erk-plan",
-            description="Implementation plan",
-            color="0E8A16",
+            label="erk-pr",
+            description="Plan managed as a draft PR",
+            color="1D76DB",
         )
 
         # Should have made 2 calls: REST API check then create
@@ -60,11 +60,11 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
         assert create_cmd[0] == "gh"
         assert create_cmd[1] == "label"
         assert create_cmd[2] == "create"
-        assert "erk-plan" in create_cmd
+        assert "erk-pr" in create_cmd
         assert "--description" in create_cmd
-        assert "Implementation plan" in create_cmd
+        assert "Plan managed as a draft PR" in create_cmd
         assert "--color" in create_cmd
-        assert "0E8A16" in create_cmd
+        assert "1D76DB" in create_cmd
 
 
 def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
@@ -77,7 +77,7 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="erk-plan",  # Non-empty output means label exists
+            stdout="erk-pr",  # Non-empty output means label exists
             stderr="",
         )
 
@@ -85,9 +85,9 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.ensure_label_exists(
             repo_root=Path("/repo"),
-            label="erk-plan",
-            description="Implementation plan",
-            color="0E8A16",
+            label="erk-pr",
+            description="Plan managed as a draft PR",
+            color="1D76DB",
         )
 
         # Should have made only 1 call: REST API labels check (no create needed)
@@ -128,13 +128,13 @@ def test_label_exists_returns_true_when_found(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="erk-plan",  # Non-empty output means label exists
+            stdout="erk-pr",  # Non-empty output means label exists
             stderr="",
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
-        result = issues.label_exists(Path("/repo"), "erk-plan")
+        result = issues.label_exists(Path("/repo"), "erk-pr")
 
         assert result is True
         assert len(created_commands) == 1
@@ -188,7 +188,7 @@ def test_label_exists_uses_cache(monkeypatch: MonkeyPatch, tmp_path: Path) -> No
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="erk-plan",
+            stdout="erk-pr",
             stderr="",
         )
 
@@ -199,12 +199,12 @@ def test_label_exists_uses_cache(monkeypatch: MonkeyPatch, tmp_path: Path) -> No
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         # First call should hit API
-        result1 = issues.label_exists(tmp_path, "erk-plan")
+        result1 = issues.label_exists(tmp_path, "erk-pr")
         assert result1 is True
         assert len(api_calls) == 1
 
         # Second call should use cache (no additional API call)
-        result2 = issues.label_exists(tmp_path, "erk-plan")
+        result2 = issues.label_exists(tmp_path, "erk-pr")
         assert result2 is True
         assert len(api_calls) == 1  # Still just 1 call
 
@@ -219,7 +219,7 @@ def test_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="not authenticated"):
-            issues.label_exists(Path("/repo"), "erk-plan")
+            issues.label_exists(Path("/repo"), "erk-pr")
 
 
 # ============================================================================
@@ -242,7 +242,7 @@ def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None, time=RealTime())
-        issues.ensure_label_on_issue(Path("/repo"), 42, "erk-plan")
+        issues.ensure_label_on_issue(Path("/repo"), 42, "erk-pr")
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
@@ -252,7 +252,7 @@ def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
         # Endpoint comes after --method POST
         assert any("repos/{owner}/{repo}/issues/42/labels" in arg for arg in cmd)
         assert "-f" in cmd
-        assert "labels[]=erk-plan" in cmd
+        assert "labels[]=erk-pr" in cmd
 
 
 def test_ensure_label_on_issue_command_failure(monkeypatch: MonkeyPatch) -> None:

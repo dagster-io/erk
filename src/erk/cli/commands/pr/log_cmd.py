@@ -32,7 +32,7 @@ class PlanCreatedMetadata(TypedDict, total=False):
     """Metadata for plan_created event."""
 
     worktree_name: str
-    plan_number: int
+    pr_number: int
 
 
 class SubmissionQueuedMetadata(TypedDict, total=False):
@@ -139,15 +139,15 @@ def pr_log(
     try:
         remote = get_remote_github(ctx)
 
-        plan_number = parse_issue_identifier(identifier)
+        pr_number = parse_issue_identifier(identifier)
 
-        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=plan_number)
+        issue = remote.get_issue(owner=repo_id.owner, repo=repo_id.repo, number=pr_number)
         if isinstance(issue, IssueNotFound):
-            user_output(click.style("Error: ", fg="red") + f"Plan '{identifier}' not found")
+            user_output(click.style("Error: ", fg="red") + f"PR '{identifier}' not found")
             raise SystemExit(1)
 
         comment_bodies = remote.get_issue_comments(
-            owner=repo_id.owner, repo=repo_id.repo, number=plan_number
+            owner=repo_id.owner, repo=repo_id.repo, number=pr_number
         )
 
         events = _extract_events_from_comments(comment_bodies)
@@ -156,7 +156,7 @@ def pr_log(
         if output_json:
             _output_json(events)
         else:
-            _output_timeline(events, plan_number)
+            _output_timeline(events, pr_number)
 
     except (RuntimeError, ValueError) as e:
         user_output(click.style("Error: ", fg="red") + str(e))
@@ -189,7 +189,7 @@ def _block_to_event(key: str, data: dict) -> Event | None:
     """Convert a metadata block to an Event.
 
     Args:
-        key: Metadata block key (e.g., "erk-plan", "submission-queued")
+        key: Metadata block key (e.g., "erk-pr", "submission-queued")
         data: Metadata block data
 
     Returns:
@@ -197,7 +197,8 @@ def _block_to_event(key: str, data: dict) -> Event | None:
     """
     # Map block types to event extractors
     extractors: dict[str, EventExtractor] = {
-        BlockKeys.ERK_PLAN: _extract_plan_created_event,
+        BlockKeys.ERK_PR: _extract_plan_created_event,
+        "erk-plan": _extract_plan_created_event,  # backward-compat alias
         BlockKeys.SUBMISSION_QUEUED: _extract_submission_queued_event,
         BlockKeys.WORKFLOW_STARTED: _extract_workflow_started_event,
         BlockKeys.ERK_IMPLEMENTATION_STATUS: _extract_implementation_status_event,
@@ -213,7 +214,7 @@ def _block_to_event(key: str, data: dict) -> Event | None:
 
 
 def _extract_plan_created_event(data: dict) -> Event | None:
-    """Extract plan creation event from erk-plan block."""
+    """Extract plan creation event from erk-pr block."""
     timestamp = data.get("timestamp")
     if not timestamp:
         return None
@@ -222,7 +223,7 @@ def _extract_plan_created_event(data: dict) -> Event | None:
     if "worktree_name" in data:
         metadata["worktree_name"] = data["worktree_name"]
     if "issue_number" in data:
-        metadata["plan_number"] = data["issue_number"]
+        metadata["pr_number"] = data["issue_number"]
 
     return Event(
         timestamp=timestamp,
@@ -345,18 +346,18 @@ def _output_json(events: list[Event]) -> None:
     user_output(json.dumps(events, indent=2))
 
 
-def _output_timeline(events: list[Event], plan_number: int) -> None:
+def _output_timeline(events: list[Event], pr_number: int) -> None:
     """Output events as human-readable timeline.
 
     Args:
         events: List of Event objects sorted chronologically
-        plan_number: GitHub issue number for the plan
+        pr_number: GitHub issue number for the plan
     """
     if not events:
-        user_output(f"No events found for plan #{plan_number}")
+        user_output(f"No events found for PR #{pr_number}")
         return
 
-    user_output(f"Plan #{plan_number} Event Timeline\n")
+    user_output(f"PR #{pr_number} Event Timeline\n")
 
     for event in events:
         # Format timestamp as human-readable
@@ -400,7 +401,7 @@ def _format_event_description(event: Event) -> str:
 
     if event_type == "plan-created":
         worktree = metadata.get("worktree_name", "unknown")
-        return f"Plan created: worktree '{worktree}' assigned"
+        return f"PR created: worktree '{worktree}' assigned"
 
     if event_type == "submission-queued":
         submitted_by = metadata.get("submitted_by", "unknown")

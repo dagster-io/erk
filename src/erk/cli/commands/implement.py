@@ -14,7 +14,6 @@ from pathlib import Path
 
 import click
 
-from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.implement_shared import (
     PlanSource,
@@ -30,16 +29,18 @@ from erk.cli.commands.implement_shared import (
     prepare_plan_source_from_file,
     validate_flags,
 )
+from erk.cli.constants import has_pr_title_prefix
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.cli_alias import alias
 from erk_shared.context.types import RepoContext
 from erk_shared.impl_folder import create_impl_folder, get_impl_dir, resolve_impl_dir, save_plan_ref
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 def _execute(
@@ -134,7 +135,7 @@ def _show_dry_run_output(
 def _implement_from_issue(
     ctx: ErkContext,
     *,
-    plan_number: str,
+    pr_number: str,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -148,7 +149,7 @@ def _implement_from_issue(
 
     Args:
         ctx: Erk context
-        plan_number: GitHub plan number
+        pr_number: GitHub PR number
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -164,25 +165,26 @@ def _implement_from_issue(
 
     # Fetch plan from GitHub
     ctx.console.info("Fetching plan from GitHub...")
-    result = ctx.plan_store.get_plan(repo.root, plan_number)
-    if isinstance(result, PlanNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_number} not found")
+    result = ctx.pr_store.get_managed_pr(repo.root, pr_number)
+    if isinstance(result, PrNotFound):
+        user_output(click.style("Error: ", fg="red") + f"Plan #{pr_number} not found")
         raise SystemExit(1)
     plan = result
 
-    # Validate erk-plan label
-    if "erk-plan" not in plan.labels:
+    # Validate plan title prefix
+    if not has_pr_title_prefix(plan.title):
         user_output(
             click.style("Error: ", fg="red")
-            + f"Plan #{plan_number} does not have the 'erk-plan' label.\n"
-            "Create a plan using 'erk pr create' or add the label manually."
+            + f"Plan #{pr_number} does not have a valid plan title prefix"
+            " ([erk-pr] or [erk-learn]).\n"
+            "Create a plan using 'erk pr create' to ensure correct formatting."
         )
         raise SystemExit(1) from None
 
     ctx.console.info(f"Plan: {plan.title}")
 
     # Create dry-run description
-    dry_run_desc = f"Would create impl folder from plan #{plan_number}\n  Title: {plan.title}"
+    dry_run_desc = f"Would create impl folder from plan #{pr_number}\n  Title: {plan.title}"
     plan_source = PlanSource(
         plan_content=plan.body,
         base_name=plan.title,
@@ -217,11 +219,11 @@ def _implement_from_issue(
     # Save plan reference for PR linking
     ctx.console.info("Saving plan reference for PR linking...")
     impl_dir = get_impl_dir(ctx.cwd, branch_name=branch or "current")
-    provider_name = ctx.plan_store.get_provider_name()
+    provider_name = ctx.pr_store.get_provider_name()
     save_plan_ref(
         impl_dir,
         provider=provider_name,
-        plan_id=str(plan_number),
+        pr_number=str(pr_number),
         url=plan.url,
         labels=(),
         objective_id=plan.objective_id,
@@ -351,7 +353,7 @@ def implement(
     Note: Plain numbers (e.g., 809) are always interpreted as plan numbers.
           For files with numeric names, use ./ prefix (e.g., ./809).
 
-    The plan must have the 'erk-plan' label.
+    The plan must have the '[erk-pr]' title prefix.
 
     Examples:
 
@@ -448,14 +450,14 @@ def implement(
     target_info = detect_target_type(target)
 
     # Output target detection diagnostic
-    if target_info.target_type in ("plan_number", "plan_url"):
-        ctx.console.info(f"Detected plan #{target_info.plan_number}")
+    if target_info.target_type in ("pr_number", "pr_url"):
+        ctx.console.info(f"Detected plan #{target_info.pr_number}")
     elif target_info.target_type == "file_path":
         ctx.console.info(f"Detected plan file: {target}")
 
     # Dispatch based on target type
-    if target_info.target_type in ("plan_number", "plan_url"):
-        if target_info.plan_number is None:
+    if target_info.target_type in ("pr_number", "pr_url"):
+        if target_info.pr_number is None:
             user_output(
                 click.style("Error: ", fg="red") + "Failed to extract plan number from target"
             )
@@ -463,7 +465,7 @@ def implement(
 
         _implement_from_issue(
             ctx,
-            plan_number=target_info.plan_number,
+            pr_number=target_info.pr_number,
             dry_run=dry_run,
             submit=submit,
             dangerous=effective_dangerous,

@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.discover_reviews import (
 )
 from erk.review.models import ParsedReview, ReviewFrontmatter
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
+from tests.fakes.gateway.github import FakeLocalGitHub
 
 
 def _make_review(

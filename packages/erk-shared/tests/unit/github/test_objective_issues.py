@@ -4,19 +4,19 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.branch_manager.fake import FakeBranchManager
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.objective_issues import (
     CreateObjectiveIssueResult,
     create_objective_issue,
 )
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.create_plan_draft_pr import (
+from erk_shared.pr_store.create_plan_draft_pr import (
     CreatePlanDraftPRResult,
     create_plan_draft_pr,
 )
+from tests.fakes.gateway.branch_manager import FakeBranchManager
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 
 
 def _create_plan(
@@ -45,7 +45,7 @@ def _create_plan(
     if fake_time is None:
         fake_time = FakeTime()
     if labels is None:
-        labels = ["erk-pr", "erk-plan"]
+        labels = ["erk-pr"]
 
     return create_plan_draft_pr(
         git=fake_git,
@@ -186,7 +186,7 @@ class TestCreateObjectiveIssue:
     """Test objective issue creation using create_objective_issue()."""
 
     def test_creates_objective_issue_with_correct_labels(self, tmp_path: Path) -> None:
-        """Objective issues use only erk-objective label (NOT erk-plan)."""
+        """Objective issues use only erk-objective label (NOT erk-pr)."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild a feature..."
 
@@ -204,13 +204,13 @@ class TestCreateObjectiveIssue:
         assert result.plan_number == 1
         assert result.title == "My Objective"
 
-        # Verify labels only include erk-objective (NOT erk-plan)
+        # Verify labels only include erk-objective (NOT erk-pr)
         _, body, labels = fake_gh.created_issues[0]
         assert labels == ["erk-objective"]
 
         # Verify only erk-objective label was created
         assert "erk-objective" in fake_gh.labels
-        assert "erk-plan" not in fake_gh.labels
+        assert "erk-pr" not in fake_gh.labels
 
     def test_objective_has_no_title_tag(self, tmp_path: Path) -> None:
         """Objective issues have no title tag."""
@@ -232,7 +232,7 @@ class TestCreateObjectiveIssue:
         # Title should be just the extracted title, no suffix
         title, _, _ = fake_gh.created_issues[0]
         assert title == "My Objective"
-        assert "[erk-plan]" not in title
+        assert "[erk-pr]" not in title
         assert "[erk-objective]" not in title
 
     def test_objective_v2_body_has_metadata_and_content_in_comment(self, tmp_path: Path) -> None:
@@ -308,7 +308,7 @@ class TestCreateObjectiveIssue:
         assert len(fake_gh.updated_bodies) == 1
         _issue_num, updated_body = fake_gh.updated_bodies[0]
         assert "## Commands" not in updated_body
-        assert "erk br co --for-plan" not in updated_body
+        assert "erk br co --for-pr" not in updated_body
 
     def test_objective_with_extra_labels(self, tmp_path: Path) -> None:
         """Objective issues can have extra labels."""
@@ -328,7 +328,7 @@ class TestCreateObjectiveIssue:
         assert result.success is True
 
         _, _, labels = fake_gh.created_issues[0]
-        assert "erk-plan" not in labels  # objectives don't get erk-plan
+        assert "erk-pr" not in labels  # objectives don't get erk-pr
         assert "erk-objective" in labels
         assert "priority-high" in labels
 
@@ -491,7 +491,7 @@ class TestCreatePlanDraftPRBranchAlreadyExists:
             plan_content="# My Feature\n\nSteps...",
             branch_name="plnd/my-feature-01-15-1430",
             title=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             source_repo=None,
             objective_id=None,
             created_from_session=None,
@@ -596,7 +596,7 @@ class TestCreatePlanDraftPRMetadata:
             plan_content="# Full Metadata Plan\n\nSteps...",
             branch_name="plnd/full-metadata-plan-01-15-1430",
             title=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             source_repo="owner/impl-repo",
             objective_id=7,
             created_from_session="sess-xyz",
@@ -622,16 +622,16 @@ class TestCreatePlanDraftPRNonNumericPlanId:
         """Non-numeric plan_id from backend returns error result with branch_name set."""
         from unittest.mock import patch
 
-        from erk_shared.plan_store.planned_pr import PlannedPRBackend
-        from erk_shared.plan_store.types import CreatePlanResult
+        from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+        from erk_shared.pr_store.types import CreatePlanResult
 
         fake_issues = FakeGitHubIssues(username="testuser")
         fake_github = FakeLocalGitHub(issues_gateway=fake_issues)
 
         def patched_create_plan(self_inner: object, **kwargs: object) -> CreatePlanResult:
-            return CreatePlanResult(plan_id="not-a-number", url="")
+            return CreatePlanResult(pr_id="not-a-number", url="")
 
-        with patch.object(PlannedPRBackend, "create_plan", patched_create_plan):
+        with patch.object(ManagedGitHubPrBackend, "create_managed_pr", patched_create_plan):
             result = create_plan_draft_pr(
                 git=FakeGit(trunk_branches={tmp_path: "main"}),
                 github=fake_github,
@@ -643,7 +643,7 @@ class TestCreatePlanDraftPRNonNumericPlanId:
                 plan_content="# Test Plan\n\nSteps...",
                 branch_name="plnd/test-plan-01-15-1430",
                 title=None,
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 source_repo=None,
                 objective_id=None,
                 created_from_session=None,
@@ -720,7 +720,7 @@ class TestCreatePlanDraftPRExtraFiles:
             plan_content="# Plan\n\nSteps...",
             branch_name="plnd/plan-01-15-1430",
             title=None,
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             source_repo=None,
             objective_id=None,
             created_from_session=None,

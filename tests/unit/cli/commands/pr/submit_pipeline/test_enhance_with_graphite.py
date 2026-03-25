@@ -7,11 +7,11 @@ from erk.cli.commands.pr.submit_pipeline import (
     SubmitState,
     enhance_with_graphite,
 )
-from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.test_utils.test_context import context_for_test
 
 
 def _make_state(
@@ -25,7 +25,7 @@ def _make_state(
     force: bool = False,
     debug: bool = False,
     session_id: str = "test-session",
-    plan_id: str | None = None,
+    pr_id: str | None = None,
     pr_number: int | None = 42,
     pr_url: str | None = "https://github.com/owner/repo/pull/42",
     was_created: bool = False,
@@ -50,7 +50,7 @@ def _make_state(
         session_id=session_id,
         skip_description=False,
         quiet=False,
-        plan_id=plan_id,
+        pr_id=pr_id,
         pr_number=pr_number,
         pr_url=pr_url,
         was_created=was_created,

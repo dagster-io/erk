@@ -17,7 +17,6 @@ from erk.core.output_filter import extract_pr_metadata_from_text
 from erk_shared.core.prompt_executor import (
     ErrorEvent,
     ExecutorEvent,
-    PlanNumberEvent,
     PrNumberEvent,
     PrTitleEvent,
     PrUrlEvent,
@@ -203,9 +202,6 @@ def _handle_agent_message(
     pr_title = metadata.get("pr_title")
     if pr_title is not None:
         events.append(PrTitleEvent(title=str(pr_title)))
-    plan_number = metadata.get("plan_number")
-    if plan_number is not None:
-        events.append(PlanNumberEvent(number=int(plan_number)))
 
     return events
 

@@ -11,19 +11,17 @@ It accepts:
 - Branch name
 """
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -124,9 +122,7 @@ def test_land_outputs_deferred_execution_script() -> None:
         assert not any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
         # Verify script was written with execution command
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert "erk exec land-execute" in script_content
         # Script uses shell variables for pr-number and branch (passed as arguments)
         assert '--pr-number="$PR_NUMBER"' in script_content

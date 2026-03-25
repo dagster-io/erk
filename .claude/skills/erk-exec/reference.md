@@ -19,23 +19,24 @@ Quick reference for all `erk exec` subcommands.
 | Command                           | Description                                                                       |
 | --------------------------------- | --------------------------------------------------------------------------------- |
 | `add-objective-node`              | Add a new node to an objective's roadmap.                                         |
-| `add-plan-label`                  | Add a label to a plan via the appropriate backend.                                |
-| `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                               |
+| `add-pr-label`                    | Add a label to a PR via the appropriate backend.                                  |
 | `add-pr-labels`                   | Add labels to a PR with automatic retry on transient failures.                    |
+| `add-pr-labels-batch`             | Batch add labels to multiple PRs from JSON stdin.                                 |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                                    |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                                |
 | `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                              |
 | `ci-generate-summaries`           | Generate CI failure summaries using Haiku.                                        |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                              |
 | `ci-verify-autofix`               | Run full CI verification after autofix push.                                      |
+| `classify-pr-feedback`            | Classify PR review feedback mechanically before LLM processing.                   |
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                                    |
 | `close-pr`                        | Close a plan with a comment.                                                      |
 | `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                      |
 | `cmux-open-pr`                    | Create a cmux workspace to open a PR.                                             |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                               |
-| `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                      |
+| `create-pr-from-session`          | Extract plan from Claude session and create a planned PR.                         |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                            |
-| `detect-plan-from-branch`         | Detect plan number from the current git branch.                                   |
+| `detect-pr-from-branch`           | Detect PR number from the current git branch.                                     |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                          |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                                  |
 | `download-remote-session`         | Download a session from a git branch.                                             |
@@ -45,19 +46,18 @@ Quick reference for all `erk exec` subcommands.
 | `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                             |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                                 |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).                |
-| `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                             |
 | `get-learn-sessions`              | Get session information for a plan.                                               |
-| `get-plan-info`                   | Retrieve plan info from the appropriate backend.                                  |
-| `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                         |
-| `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                           |
 | `get-pr-body-footer`              | Generate PR body footer with teleport command.                                    |
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).                     |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.                     |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                         |
 | `get-pr-feedback`                 | Fetch all PR feedback in a single command.                                        |
-| `get-pr-for-plan`                 | Get PR details for a plan.                                                        |
+| `get-pr-info`                     | Retrieve PR info from the appropriate backend.                                    |
+| `get-pr-metadata`                 | Extract a metadata field from a PR's plan-header block.                           |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                             |
 | `get-pr-view`                     | Fetch PR details using REST API (avoids GraphQL rate limits).                     |
+| `get-prs-for-objective`           | Fetch erk-prs linked to an objective.                                             |
+| `get-review-activity-log`         | Fetch the activity log from an existing review summary comment.                   |
 | `handle-no-changes`               | Handle no-changes scenario gracefully.                                            |
 | `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.                |
 | `impl-signal`                     | Signal implementation events to GitHub.                                           |
@@ -79,7 +79,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                       |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                              |
 | `objective-update-after-land`     | Update objective after landing a PR.                                              |
-| `plan-save`                       | Save plan as a draft PR.                                                          |
+| `plan-save`                       | Save plan as a planned PR.                                                        |
 | `plan-update`                     | Update an existing plan's content.                                                |
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                              |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                            |
@@ -91,7 +91,8 @@ Quick reference for all `erk exec` subcommands.
 | `push-session`                    | Preprocess and push a session to the planned-pr-context branch with accumulation. |
 | `quick-submit`                    | Quick commit all changes and submit.                                              |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                      |
-| `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                         |
+| `register-one-shot-pr`            | Register a one-shot PR with issue metadata and comment.                           |
+| `reopen-contested-threads`        | Detect and reopen contested resolved PR review threads.                           |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.                   |
 | `resolve-objective-ref`           | Resolve an objective reference to an objective number.                            |
 | `resolve-review-thread`           | Resolve a PR review thread.                                                       |
@@ -103,16 +104,17 @@ Quick reference for all `erk exec` subcommands.
 | `setup-impl`                      | Consolidated implementation setup.                                                |
 | `setup-impl-from-pr`              | Set up .erk/impl-context/ folder from GitHub PR in current worktree.              |
 | `store-tripwire-candidates`       | Store tripwire candidates as a metadata comment on a plan.                        |
+| `summarize-impl-failure`          | Summarize an implementation failure using Haiku.                                  |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan.                                      |
 | `track-learn-result`              | Track learn workflow result on a plan.                                            |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).               |
 | `update-objective-node`           | Update node fields in an objective's roadmap table.                               |
-| `update-plan-header`              | Update plan-header metadata fields on a plan.                                     |
 | `update-pr-description`           | Update PR title and body with AI-generated description.                           |
+| `update-pr-header`                | Update plan-header metadata fields on a PR.                                       |
 | `upload-impl-session`             | Upload current implementation session for async learn.                            |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.               |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                                     |
-| `validate-plan-content`           | Validate plan content from file or stdin.                                         |
+| `validate-pr-content`             | Validate PR content from file or stdin.                                           |
 
 ## Commands
 
@@ -137,49 +139,49 @@ Add a new node to an objective's roadmap.
 | `--slug`        | TEXT    | No       | -              | Kebab-case identifier (auto-generated if omitted) |
 | `--status`      | CHOICE  | No       | 'pending'      | Initial status (default: pending)                 |
 | `--depends-on`  | TEXT    | No       | Sentinel.UNSET | Dependency node IDs                               |
-| `--reason`      | TEXT    | No       | -              | Reason for adding this node                       |
+| `--comment`     | TEXT    | No       | -              | Comment for adding this node                      |
 
-### add-plan-label
+### add-pr-label
 
-Add a label to a plan via the appropriate backend.
+Add a label to a PR via the appropriate backend.
 
-**Usage:** `erk exec add-plan-label` <plan_number>
+**Usage:** `erk exec add-pr-label` <pr>
 
 **Arguments:**
 
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
-| Flag      | Type | Required | Default        | Description              |
-| --------- | ---- | -------- | -------------- | ------------------------ |
-| `--label` | TEXT | Yes      | Sentinel.UNSET | Label to add to the plan |
-
-### add-plan-labels
-
-Batch add labels to multiple plans from JSON stdin.
-
-**Usage:** `erk exec add-plan-labels`
+| Flag      | Type | Required | Default        | Description            |
+| --------- | ---- | -------- | -------------- | ---------------------- |
+| `--label` | TEXT | Yes      | Sentinel.UNSET | Label to add to the PR |
 
 ### add-pr-labels
 
 Add labels to a PR with automatic retry on transient failures.
 
-**Usage:** `erk exec add-pr-labels` <pr_number>
+**Usage:** `erk exec add-pr-labels` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
 | Flag       | Type | Required | Default        | Description                     |
 | ---------- | ---- | -------- | -------------- | ------------------------------- |
 | `--labels` | TEXT | Yes      | Sentinel.UNSET | Labels to add (can be repeated) |
+
+### add-pr-labels-batch
+
+Batch add labels to multiple PRs from JSON stdin.
+
+**Usage:** `erk exec add-pr-labels-batch`
 
 ### add-remote-execution-note
 
@@ -240,12 +242,12 @@ Update PR body with AI-generated summary and footer.
 
 **Options:**
 
-| Flag           | Type    | Required | Default        | Description                   |
-| -------------- | ------- | -------- | -------------- | ----------------------------- |
-| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier (for context) |
-| `--run-id`     | TEXT    | No       | -              | Optional workflow run ID      |
-| `--run-url`    | TEXT    | No       | -              | Optional workflow run URL     |
-| `--planned-pr` | FLAG    | No       | -              | Planned-PR plan               |
+| Flag           | Type    | Required | Default        | Description                 |
+| -------------- | ------- | -------- | -------------- | --------------------------- |
+| `--pr-number`  | INTEGER | Yes      | Sentinel.UNSET | PR identifier (for context) |
+| `--run-id`     | TEXT    | No       | -              | Optional workflow run ID    |
+| `--run-url`    | TEXT    | No       | -              | Optional workflow run URL   |
+| `--planned-pr` | FLAG    | No       | -              | Planned-PR PR               |
 
 ### ci-verify-autofix
 
@@ -260,6 +262,19 @@ Run full CI verification after autofix push.
 | `--original-sha` | TEXT | Yes      | Sentinel.UNSET | SHA before autofix ran         |
 | `--repo`         | TEXT | Yes      | Sentinel.UNSET | GitHub repository (owner/repo) |
 
+### classify-pr-feedback
+
+Classify PR review feedback mechanically before LLM processing.
+
+**Usage:** `erk exec classify-pr-feedback`
+
+**Options:**
+
+| Flag                 | Type    | Required | Default | Description                                 |
+| -------------------- | ------- | -------- | ------- | ------------------------------------------- |
+| `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
+| `--include-resolved` | FLAG    | No       | -       | Include resolved review threads             |
+
 ### cleanup-impl-context
 
 Clean up .erk/impl-context/ staging directory.
@@ -270,13 +285,13 @@ Clean up .erk/impl-context/ staging directory.
 
 Close a plan with a comment.
 
-**Usage:** `erk exec close-pr` <plan_number>
+**Usage:** `erk exec close-pr` <pr>
 
 **Arguments:**
 
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
@@ -308,17 +323,17 @@ Create a cmux workspace to open a PR.
 
 Create .erk/impl-context/ folder from plan content.
 
-**Usage:** `erk exec create-impl-context-from-plan` <plan_id>
+**Usage:** `erk exec create-impl-context-from-plan` <pr>
 
 **Arguments:**
 
-| Name      | Required | Description |
-| --------- | -------- | ----------- |
-| `PLAN_ID` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 ### create-pr-from-session
 
-Extract plan from Claude session and create GitHub draft PR.
+Extract plan from Claude session and create a planned PR.
 
 **Usage:** `erk exec create-pr-from-session`
 
@@ -327,7 +342,7 @@ Extract plan from Claude session and create GitHub draft PR.
 | Flag            | Type | Required | Default        | Description                                                                   |
 | --------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id`  | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
-| `--summary`     | TEXT | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed plan in the PR body       |
+| `--summary`     | TEXT | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed PR in the PR body         |
 | `--branch-slug` | TEXT | No       | -              | Pre-generated branch slug (required). Generate in the calling skill layer.    |
 
 ### dash-data
@@ -348,11 +363,11 @@ Serialize plan dashboard data to JSON.
 | `--run-state` | TEXT    | No       | -           | -           |
 | `--creator`   | TEXT    | No       | -           | -           |
 
-### detect-plan-from-branch
+### detect-pr-from-branch
 
-Detect plan number from the current git branch.
+Detect PR number from the current git branch.
 
-**Usage:** `erk exec detect-plan-from-branch`
+**Usage:** `erk exec detect-pr-from-branch`
 
 ### detect-trunk-branch
 
@@ -412,10 +427,10 @@ Fetch preprocessed sessions from a planned-pr-context branch.
 
 **Options:**
 
-| Flag           | Type    | Required | Default        | Description                           |
-| -------------- | ------- | -------- | -------------- | ------------------------------------- |
-| `--plan-id`    | INTEGER | Yes      | Sentinel.UNSET | Plan identifier to fetch sessions for |
-| `--output-dir` | PATH    | Yes      | Sentinel.UNSET | Directory to write fetched XML files  |
+| Flag           | Type    | Required | Default        | Description                          |
+| -------------- | ------- | -------- | -------------- | ------------------------------------ |
+| `--pr-number`  | INTEGER | Yes      | Sentinel.UNSET | PR identifier to fetch sessions for  |
+| `--output-dir` | PATH    | Yes      | Sentinel.UNSET | Directory to write fetched XML files |
 
 ### generate-pr-address-summary
 
@@ -464,18 +479,6 @@ Fetch an issue's body using REST API (avoids GraphQL rate limits).
 | -------------- | -------- | ----------- |
 | `ISSUE_NUMBER` | Yes      | -           |
 
-### get-issue-timeline-prs
-
-Fetch PRs referencing an issue via REST API timeline.
-
-**Usage:** `erk exec get-issue-timeline-prs` <issue_number>
-
-**Arguments:**
-
-| Name           | Required | Description |
-| -------------- | -------- | ----------- |
-| `ISSUE_NUMBER` | Yes      | -           |
-
 ### get-learn-sessions
 
 Get session information for a plan.
@@ -487,49 +490,6 @@ Get session information for a plan.
 | Name    | Required | Description |
 | ------- | -------- | ----------- |
 | `ISSUE` | No       | -           |
-
-### get-plan-info
-
-Retrieve plan info from the appropriate backend.
-
-**Usage:** `erk exec get-plan-info` <plan_number>
-
-**Arguments:**
-
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
-
-**Options:**
-
-| Flag             | Type | Required | Default | Description                                   |
-| ---------------- | ---- | -------- | ------- | --------------------------------------------- |
-| `--include-body` | FLAG | No       | -       | Include the plan body content in the response |
-
-### get-plan-metadata
-
-Extract a metadata field from a plan's plan-header block.
-
-**Usage:** `erk exec get-plan-metadata` <plan_number> <field_name>
-
-**Arguments:**
-
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
-| `FIELD_NAME`  | Yes      | -           |
-
-### get-plans-for-objective
-
-Fetch erk-plans linked to an objective.
-
-**Usage:** `erk exec get-plans-for-objective` <objective_number>
-
-**Arguments:**
-
-| Name               | Required | Description |
-| ------------------ | -------- | ----------- |
-| `OBJECTIVE_NUMBER` | Yes      | -           |
 
 ### get-pr-body-footer
 
@@ -547,13 +507,13 @@ Generate PR body footer with teleport command.
 
 Fetch PR commits using REST API (avoids GraphQL rate limits).
 
-**Usage:** `erk exec get-pr-commits` <pr_number>
+**Usage:** `erk exec get-pr-commits` <pr>
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 ### get-pr-context
 
@@ -592,17 +552,36 @@ Fetch all PR feedback in a single command.
 | `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
 | `--include-resolved` | FLAG    | No       | -       | Include resolved review threads             |
 
-### get-pr-for-plan
+### get-pr-info
 
-Get PR details for a plan.
+Retrieve PR info from the appropriate backend.
 
-**Usage:** `erk exec get-pr-for-plan` <plan_number>
+**Usage:** `erk exec get-pr-info` <pr>
 
 **Arguments:**
 
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
+
+**Options:**
+
+| Flag             | Type | Required | Default | Description                                 |
+| ---------------- | ---- | -------- | ------- | ------------------------------------------- |
+| `--include-body` | FLAG | No       | -       | Include the PR body content in the response |
+
+### get-pr-metadata
+
+Extract a metadata field from a PR's plan-header block.
+
+**Usage:** `erk exec get-pr-metadata` <pr> <field_name>
+
+**Arguments:**
+
+| Name         | Required | Description |
+| ------------ | -------- | ----------- |
+| `PR`         | Yes      | -           |
+| `FIELD_NAME` | Yes      | -           |
 
 ### get-pr-review-comments
 
@@ -621,19 +600,44 @@ Fetch PR review comments for agent context injection.
 
 Fetch PR details using REST API (avoids GraphQL rate limits).
 
-**Usage:** `erk exec get-pr-view` [pr_number]
+**Usage:** `erk exec get-pr-view` [pr]
 
 **Arguments:**
 
-| Name        | Required | Description |
-| ----------- | -------- | ----------- |
-| `PR_NUMBER` | No       | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | No       | -           |
 
 **Options:**
 
 | Flag       | Type | Required | Default | Description                   |
 | ---------- | ---- | -------- | ------- | ----------------------------- |
 | `--branch` | TEXT | No       | -       | Branch name to look up PR for |
+
+### get-prs-for-objective
+
+Fetch erk-prs linked to an objective.
+
+**Usage:** `erk exec get-prs-for-objective` <objective_number>
+
+**Arguments:**
+
+| Name               | Required | Description |
+| ------------------ | -------- | ----------- |
+| `OBJECTIVE_NUMBER` | Yes      | -           |
+
+### get-review-activity-log
+
+Fetch the activity log from an existing review summary comment.
+
+**Usage:** `erk exec get-review-activity-log`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description                                |
+| ------------- | ------- | -------- | -------------- | ------------------------------------------ |
+| `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to search                        |
+| `--marker`    | TEXT    | Yes      | Sentinel.UNSET | HTML marker identifying the review comment |
 
 ### handle-no-changes
 
@@ -646,7 +650,6 @@ Handle no-changes scenario gracefully.
 | Flag               | Type    | Required | Default        | Description                                       |
 | ------------------ | ------- | -------- | -------------- | ------------------------------------------------- |
 | `--pr-number`      | INTEGER | Yes      | Sentinel.UNSET | PR number to update                               |
-| `--plan-id`        | INTEGER | Yes      | Sentinel.UNSET | Plan identifier                                   |
 | `--behind-count`   | INTEGER | Yes      | Sentinel.UNSET | How many commits behind base branch               |
 | `--base-branch`    | TEXT    | Yes      | Sentinel.UNSET | Base branch name                                  |
 | `--original-title` | TEXT    | Yes      | Sentinel.UNSET | Original PR title                                 |
@@ -679,9 +682,9 @@ Signal implementation events to GitHub.
 
 **Options:**
 
-| Flag           | Type | Required | Default | Description                                          |
-| -------------- | ---- | -------- | ------- | ---------------------------------------------------- |
-| `--session-id` | TEXT | No       | -       | Session ID for plan file deletion on 'started' event |
+| Flag           | Type | Required | Default | Description                                        |
+| -------------- | ---- | -------- | ------- | -------------------------------------------------- |
+| `--session-id` | TEXT | No       | -       | Session ID for PR file deletion on 'started' event |
 
 ### impl-verify
 
@@ -699,7 +702,7 @@ Dispatch a local plan against an existing PR for remote implementation.
 
 | Flag            | Type    | Required | Default        | Description                               |
 | --------------- | ------- | -------- | -------------- | ----------------------------------------- |
-| `--plan-file`   | PATH    | Yes      | Sentinel.UNSET | Path to plan markdown file                |
+| `--plan-file`   | PATH    | Yes      | Sentinel.UNSET | Path to PR markdown file                  |
 | `--pr`          | INTEGER | Yes      | Sentinel.UNSET | PR number to dispatch against             |
 | `--ref`         | TEXT    | No       | -              | Branch to dispatch workflow from          |
 | `--ref-current` | FLAG    | No       | -              | Dispatch workflow from the current branch |
@@ -721,12 +724,12 @@ Execute deferred land operations.
 | `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                           |
 | `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                                  |
 | `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                            |
-| `--plan-number`       | INTEGER | No       | Sentinel.UNSET | Linked plan number                                                                       |
+| `--linked-pr-number`  | INTEGER | No       | Sentinel.UNSET | PR number that the learn issue will be created for                                       |
 | `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                                   |
 | `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                                      |
 | `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                          |
 | `--no-cleanup`        | FLAG    | No       | -              | User declined cleanup during validation phase                                            |
-| `--skip-learn`        | FLAG    | No       | -              | Skip creating a learn plan                                                               |
+| `--skip-learn`        | FLAG    | No       | -              | Skip creating a learn PR                                                                 |
 | `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)                                    |
 | `--up`                | FLAG    | No       | -              | Navigate upstack to child branch after landing (resolves child at execution time)        |
 | `-f`, `--force`       | FLAG    | No       | -              | Accept flag for compatibility (execute mode always skips confirmations)                  |
@@ -880,12 +883,12 @@ Fetch all context for objective update in a single call.
 
 **Options:**
 
-| Flag          | Type    | Required | Default | Description                                               |
-| ------------- | ------- | -------- | ------- | --------------------------------------------------------- |
-| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)                    |
-| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)              |
-| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                  |
-| `--plan`      | INTEGER | No       | -       | Plan number (direct lookup, skips branch-based discovery) |
+| Flag          | Type    | Required | Default | Description                                             |
+| ------------- | ------- | -------- | ------- | ------------------------------------------------------- |
+| `--pr`        | INTEGER | No       | -       | PR number (auto-discovered if omitted)                  |
+| `--objective` | INTEGER | No       | -       | Objective issue (auto-discovered if omitted)            |
+| `--branch`    | TEXT    | No       | -       | Branch name (auto-discovered if omitted)                |
+| `--plan`      | INTEGER | No       | -       | PR number (direct lookup, skips branch-based discovery) |
 
 ### objective-link-pr
 
@@ -940,7 +943,7 @@ Save plan as objective GitHub issue.
 | Flag           | Type   | Required | Default | Description                                                               |
 | -------------- | ------ | -------- | ------- | ------------------------------------------------------------------------- |
 | `--format`     | CHOICE | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
-| `--session-id` | TEXT   | No       | -       | Session ID for scoped plan lookup                                         |
+| `--session-id` | TEXT   | No       | -       | Session ID for scoped PR lookup                                           |
 | `--slug`       | TEXT   | No       | -       | Short kebab-case identifier for the objective (e.g., 'build-auth-system') |
 | `--validate`   | FLAG   | No       | -       | Run objective validation after creation and include results in output     |
 
@@ -960,7 +963,7 @@ Update objective after landing a PR.
 
 ### plan-save
 
-Save plan as a draft PR.
+Save plan as a planned PR.
 
 **Usage:** `erk exec plan-save`
 
@@ -969,14 +972,14 @@ Save plan as a draft PR.
 | Flag                              | Type      | Required | Default | Description                                                            |
 | --------------------------------- | --------- | -------- | ------- | ---------------------------------------------------------------------- |
 | `--format`                        | CHOICE    | No       | 'json'  | Output format: json (default) or display (formatted text)              |
-| `--plan-file`                     | PATH      | No       | -       | Path to specific plan file (highest priority)                          |
-| `--session-id`                    | TEXT      | No       | -       | Session ID for scoped plan lookup                                      |
-| `--plan-type`                     | CHOICE    | No       | -       | Plan type: standard (default) or learn                                 |
-| `--learned-from-issue`            | INTEGER   | No       | -       | Parent plan number (for learn plans)                                   |
+| `--plan-file`                     | PATH      | No       | -       | Path to specific PR file (highest priority)                            |
+| `--session-id`                    | TEXT      | No       | -       | Session ID for scoped PR lookup                                        |
+| `--plan-type`                     | CHOICE    | No       | -       | PR type: standard (default) or learn                                   |
+| `--learned-from-issue`            | INTEGER   | No       | -       | Parent PR number (for learn plans)                                     |
 | `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions workflow run URL                                        |
 | `--branch-slug`                   | TEXT      | No       | -       | Pre-generated branch slug (skips LLM call when provided)               |
 | `--objective`                     | INTEGER   | No       | -       | Objective issue number (overrides session marker)                      |
-| `--summary`                       | TEXT      | No       | -       | AI-generated plan summary for PR description                           |
+| `--summary`                       | TEXT      | No       | -       | AI-generated PR summary for PR description                             |
 | `--session-xml-dir`               | DIRECTORY | No       | -       | Directory containing session XML files to embed in the PR diff         |
 | `--current-branch`                | FLAG      | No       | -       | Use the current branch directly instead of creating a new plnd/ branch |
 
@@ -988,13 +991,13 @@ Update an existing plan's content.
 
 **Options:**
 
-| Flag            | Type    | Required | Default        | Description                                                             |
-| --------------- | ------- | -------- | -------------- | ----------------------------------------------------------------------- |
-| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan number to update                                                   |
-| `--format`      | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text)               |
-| `--plan-path`   | PATH    | No       | Sentinel.UNSET | Direct path to plan file (overrides session lookup)                     |
-| `--session-id`  | TEXT    | No       | Sentinel.UNSET | Session ID to find plan file in scratch storage                         |
-| `--summary`     | TEXT    | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed plan in the PR body |
+| Flag           | Type    | Required | Default        | Description                                                           |
+| -------------- | ------- | -------- | -------------- | --------------------------------------------------------------------- |
+| `--pr-number`  | INTEGER | Yes      | Sentinel.UNSET | PR number to update                                                   |
+| `--format`     | CHOICE  | No       | 'json'         | Output format: json (default) or display (formatted text)             |
+| `--plan-path`  | PATH    | No       | Sentinel.UNSET | Direct path to PR file (overrides session lookup)                     |
+| `--session-id` | TEXT    | No       | Sentinel.UNSET | Session ID to find PR file in scratch storage                         |
+| `--summary`    | TEXT    | No       | Sentinel.UNSET | AI-generated summary to display above the collapsed PR in the PR body |
 
 ### post-or-update-pr-summary
 
@@ -1033,14 +1036,14 @@ Post a workflow started comment to a GitHub issue.
 
 **Options:**
 
-| Flag            | Type    | Required | Default        | Description                     |
-| --------------- | ------- | -------- | -------------- | ------------------------------- |
-| `--plan-number` | INTEGER | Yes      | Sentinel.UNSET | Plan identifier                 |
-| `--branch-name` | TEXT    | Yes      | Sentinel.UNSET | Git branch name                 |
-| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET | Pull request number             |
-| `--run-id`      | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID  |
-| `--run-url`     | TEXT    | Yes      | Sentinel.UNSET | Full URL to workflow run        |
-| `--repository`  | TEXT    | Yes      | Sentinel.UNSET | Repository in owner/repo format |
+| Flag               | Type    | Required | Default        | Description                     |
+| ------------------ | ------- | -------- | -------------- | ------------------------------- |
+| `--pr-number`      | INTEGER | Yes      | Sentinel.UNSET | PR identifier                   |
+| `--branch-name`    | TEXT    | Yes      | Sentinel.UNSET | Git branch name                 |
+| `--impl-pr-number` | INTEGER | Yes      | Sentinel.UNSET | Pull request number             |
+| `--run-id`         | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID  |
+| `--run-url`        | TEXT    | Yes      | Sentinel.UNSET | Full URL to workflow run        |
+| `--repository`     | TEXT    | Yes      | Sentinel.UNSET | Repository in owner/repo format |
 
 ### pr-sync-commit
 
@@ -1112,7 +1115,7 @@ Preprocess and push a session to the planned-pr-context branch with accumulation
 | `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                  |
 | `--stage`        | CHOICE  | Yes      | Sentinel.UNSET | Lifecycle stage: planning, impl, or address             |
 | `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                     |
-| `--plan-id`      | INTEGER | Yes      | Sentinel.UNSET | Plan identifier for the planned-pr-context branch       |
+| `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | PR identifier for the planned-pr-context branch         |
 
 ### quick-submit
 
@@ -1135,21 +1138,33 @@ Rebase onto target branch and resolve conflicts with Claude.
 | `--model`         | TEXT    | No       | 'claude-sonnet-4-5' | Claude model to use for conflict resolution and summary generation |
 | `--max-attempts`  | INTEGER | No       | 5                   | Maximum number of conflict resolution attempts                     |
 
-### register-one-shot-plan
+### register-one-shot-pr
 
-Register a one-shot plan with issue metadata and comment.
+Register a one-shot PR with issue metadata and comment.
 
-**Usage:** `erk exec register-one-shot-plan`
+**Usage:** `erk exec register-one-shot-pr`
 
 **Options:**
 
-| Flag             | Type    | Required | Default        | Description |
-| ---------------- | ------- | -------- | -------------- | ----------- |
-| `--plan-number`  | INTEGER | Yes      | Sentinel.UNSET | -           |
-| `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | -           |
-| `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | -           |
-| `--submitted-by` | TEXT    | Yes      | Sentinel.UNSET | -           |
-| `--run-url`      | TEXT    | Yes      | Sentinel.UNSET | -           |
+| Flag               | Type    | Required | Default        | Description |
+| ------------------ | ------- | -------- | -------------- | ----------- |
+| `--pr-number`      | INTEGER | Yes      | Sentinel.UNSET | -           |
+| `--run-id`         | TEXT    | Yes      | Sentinel.UNSET | -           |
+| `--impl-pr-number` | INTEGER | Yes      | Sentinel.UNSET | -           |
+| `--submitted-by`   | TEXT    | Yes      | Sentinel.UNSET | -           |
+| `--run-url`        | TEXT    | Yes      | Sentinel.UNSET | -           |
+
+### reopen-contested-threads
+
+Detect and reopen contested resolved PR review threads.
+
+**Usage:** `erk exec reopen-contested-threads`
+
+**Options:**
+
+| Flag   | Type    | Required | Default | Description                                 |
+| ------ | ------- | -------- | ------- | ------------------------------------------- |
+| `--pr` | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
 
 ### reply-to-discussion-comment
 
@@ -1249,20 +1264,20 @@ Consolidated implementation setup.
 
 | Flag      | Type    | Required | Default | Description                  |
 | --------- | ------- | -------- | ------- | ---------------------------- |
-| `--issue` | INTEGER | No       | -       | Plan number to set up from   |
+| `--issue` | INTEGER | No       | -       | PR number to set up from     |
 | `--file`  | PATH    | No       | -       | Markdown file to set up from |
 
 ### setup-impl-from-pr
 
 Set up .erk/impl-context/ folder from GitHub PR in current worktree.
 
-**Usage:** `erk exec setup-impl-from-pr` <plan_number>
+**Usage:** `erk exec setup-impl-from-pr` <pr>
 
 **Arguments:**
 
-| Name          | Required | Description |
-| ------------- | -------- | ----------- |
-| `PLAN_NUMBER` | Yes      | -           |
+| Name | Required | Description |
+| ---- | -------- | ----------- |
+| `PR` | Yes      | -           |
 
 **Options:**
 
@@ -1281,8 +1296,22 @@ Store tripwire candidates as a metadata comment on a plan.
 
 | Flag                | Type    | Required | Default        | Description                      |
 | ------------------- | ------- | -------- | -------------- | -------------------------------- |
-| `--plan-number`     | INTEGER | Yes      | Sentinel.UNSET | Plan number                      |
+| `--pr-number`       | INTEGER | Yes      | Sentinel.UNSET | PR number                        |
 | `--candidates-file` | TEXT    | Yes      | Sentinel.UNSET | Path to tripwire-candidates.json |
+
+### summarize-impl-failure
+
+Summarize an implementation failure using Haiku.
+
+**Usage:** `erk exec summarize-impl-failure`
+
+**Options:**
+
+| Flag             | Type    | Required | Default        | Description                |
+| ---------------- | ------- | -------- | -------------- | -------------------------- |
+| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to session JSONL file |
+| `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | PR number                  |
+| `--exit-code`    | INTEGER | No       | Sentinel.UNSET | Exit code                  |
 
 ### track-learn-evaluation
 
@@ -1310,12 +1339,12 @@ Track learn workflow result on a plan.
 
 **Options:**
 
-| Flag           | Type    | Required | Default        | Description                                                          |
-| -------------- | ------- | -------- | -------------- | -------------------------------------------------------------------- |
-| `--plan-id`    | TEXT    | Yes      | Sentinel.UNSET | Plan identifier (e.g., issue number)                                 |
-| `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
-| `--learn-plan` | INTEGER | No       | Sentinel.UNSET | Learn plan number (required if status is completed_with_plan)        |
-| `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
+| Flag         | Type    | Required | Default        | Description                                                          |
+| ------------ | ------- | -------- | -------------- | -------------------------------------------------------------------- |
+| `--pr-id`    | TEXT    | Yes      | Sentinel.UNSET | PR identifier (e.g., issue number)                                   |
+| `--status`   | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
+| `--learn-pr` | INTEGER | No       | Sentinel.UNSET | Learn PR number (required if status is completed_with_plan)          |
+| `--plan-pr`  | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
 
 ### update-issue-body
 
@@ -1357,21 +1386,8 @@ Update node fields in an objective's roadmap table.
 | `--status`       | CHOICE | No       | -              | Explicit status to set (default: infer from PR value)                   |
 | `--description`  | TEXT   | No       | -              | New description for the node. Omit to preserve existing.                |
 | `--slug`         | TEXT   | No       | -              | New slug for the node. Omit to preserve existing.                       |
-| `--reason`       | TEXT   | No       | -              | Reason text (e.g., why a node was skipped). Omit to preserve existing.  |
+| `--comment`      | TEXT   | No       | -              | Comment text (e.g., why a node was skipped). Omit to preserve existing. |
 | `--include-body` | FLAG   | No       | -              | Include the fully-mutated issue body in JSON output as 'updated_body'   |
-
-### update-plan-header
-
-Update plan-header metadata fields on a plan.
-
-**Usage:** `erk exec update-plan-header` <plan_id> [fields]
-
-**Arguments:**
-
-| Name      | Required | Description |
-| --------- | -------- | ----------- |
-| `PLAN_ID` | Yes      | -           |
-| `FIELDS`  | No       | -           |
 
 ### update-pr-description
 
@@ -1385,6 +1401,19 @@ Update PR title and body with AI-generated description.
 | -------------- | ---- | -------- | ------- | ------------------------------------- |
 | `--debug`      | FLAG | No       | -       | Show diagnostic output                |
 | `--session-id` | TEXT | No       | -       | Session ID for scratch file isolation |
+
+### update-pr-header
+
+Update plan-header metadata fields on a PR.
+
+**Usage:** `erk exec update-pr-header` <pr_id> [fields]
+
+**Arguments:**
+
+| Name     | Required | Description |
+| -------- | -------- | ----------- |
+| `PR_ID`  | Yes      | -           |
+| `FIELDS` | No       | -           |
 
 ### upload-impl-session
 
@@ -1410,14 +1439,14 @@ Validate Claude credentials for CI workflows.
 
 **Usage:** `erk exec validate-claude-credentials`
 
-### validate-plan-content
+### validate-pr-content
 
-Validate plan content from file or stdin.
+Validate PR content from file or stdin.
 
-**Usage:** `erk exec validate-plan-content`
+**Usage:** `erk exec validate-pr-content`
 
 **Options:**
 
-| Flag          | Type | Required | Default        | Description                                           |
-| ------------- | ---- | -------- | -------------- | ----------------------------------------------------- |
-| `--plan-file` | PATH | No       | Sentinel.UNSET | Path to plan file. If not provided, reads from stdin. |
+| Flag          | Type | Required | Default        | Description                                         |
+| ------------- | ---- | -------- | -------------- | --------------------------------------------------- |
+| `--plan-file` | PATH | No       | Sentinel.UNSET | Path to PR file. If not provided, reads from stdin. |

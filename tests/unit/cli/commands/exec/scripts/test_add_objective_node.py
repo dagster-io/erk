@@ -7,9 +7,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.add_objective_node import add_objective_node
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 ROADMAP_BODY = """\
 # Objective: Build Feature X
@@ -231,8 +231,8 @@ def test_add_node_with_depends_on() -> None:
     assert "depends_on" in updated_body
 
 
-def test_add_node_with_reason() -> None:
-    """Node with reason is added correctly."""
+def test_add_node_with_comment() -> None:
+    """Node with comment is added correctly."""
     issue = _make_issue(8470, ROADMAP_BODY)
     fake_gh = FakeGitHubIssues(issues={8470: issue})
     runner = CliRunner()
@@ -245,7 +245,7 @@ def test_add_node_with_reason() -> None:
             "1",
             "--description",
             "New cleanup task",
-            "--reason",
+            "--comment",
             "Added during re-evaluation",
         ],
         obj=ErkContext.for_test(github=FakeLocalGitHub(issues_gateway=fake_gh)),

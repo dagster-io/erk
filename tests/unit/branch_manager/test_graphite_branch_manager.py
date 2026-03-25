@@ -4,11 +4,11 @@ from pathlib import Path
 
 from erk_shared.gateway.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.git_branch_ops import FakeGitBranchOps
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
 
 REPO_ROOT = Path("/fake/repo")
 

@@ -2,69 +2,214 @@
 
 from __future__ import annotations
 
+import json
+import logging
+import os
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from anyio import to_thread
+from fastmcp.tools.tool import Tool, ToolResult
+from mcp.server.auth.handlers.metadata import ProtectedResourceMetadataHandler
+from mcp.shared.auth import ProtectedResourceMetadata
+from starlette.requests import Request
+from starlette.responses import Response
+
+from erk_mcp.auth import build_auth_provider_from_env, get_authenticated_github_token
+from erk_shared.agentclick.machine_schema import request_schema
+from erk_shared.agentclick.mcp_exposed import discover_mcp_commands
 
 if TYPE_CHECKING:
     from fastmcp import FastMCP
 
 DEFAULT_MCP_NAME = "erk"
+DEFAULT_MCP_HTTP_PATH = "/mcp"
+ROOT_PROTECTED_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
+CLI_SUBPROCESS_ERROR_TYPE = "cli_subprocess_error"
+GENERIC_SUBPROCESS_ERROR_MESSAGE = "The requested erk command failed."
+
+LOGGER = logging.getLogger(__name__)
 
 
-def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run an erk CLI command and return the result."""
+def _log_subprocess_failure(
+    command_path: tuple[str, ...],
+    *,
+    returncode: int,
+    stderr: str,
+) -> None:
+    joined_path = " ".join(command_path)
+    stderr_output = stderr.strip()
+
+    if stderr_output:
+        LOGGER.error(
+            "erk-mcp subprocess failed for 'erk %s' with exit code %s. stderr:\n%s",
+            joined_path,
+            returncode,
+            stderr_output,
+        )
+        return
+
+    LOGGER.error(
+        "erk-mcp subprocess failed for 'erk %s' with exit code %s and no stderr output.",
+        joined_path,
+        returncode,
+    )
+
+
+def _build_subprocess_error_output() -> str:
+    return json.dumps(
+        {
+            "success": False,
+            "error_type": CLI_SUBPROCESS_ERROR_TYPE,
+            "message": GENERIC_SUBPROCESS_ERROR_MESSAGE,
+        }
+    )
+
+
+def _run_erk_json(
+    command_path: tuple[str, ...],
+    params: dict[str, Any],
+    *,
+    env_override: dict[str, str] | None = None,
+) -> str:
+    """Run erk json command, piping params as JSON stdin.
+
+    Args:
+        command_path: Tuple of subcommand names, e.g. ("json", "pr", "list").
+        params: JSON-serializable dict piped to stdin.
+        env_override: Optional environment dict for the subprocess. None inherits process env.
+    """
     result = subprocess.run(
-        ["erk", *args],
+        ["erk", *command_path],
+        input=json.dumps(params),
         capture_output=True,
         text=True,
         check=False,
+        env=env_override,
     )
+    if result.stdout.strip():
+        return result.stdout
+
     if result.returncode != 0:
-        stderr = result.stderr.strip()
-        raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
-    return result
+        _log_subprocess_failure(
+            command_path,
+            returncode=result.returncode,
+            stderr=result.stderr,
+        )
+        return _build_subprocess_error_output()
 
-
-def plan_list(state: str | None = None) -> str:
-    """List erk plans with their status, labels, and metadata.
-
-    Returns structured JSON from the erk dashboard.
-    Use the state parameter to filter by 'open' or 'closed'.
-    """
-    args = ["exec", "dash-data"]
-    if state is not None:
-        args.extend(["--state", state])
-    result = _run_erk(args)
     return result.stdout
 
 
-def plan_view(plan_id: int) -> str:
-    """View a specific plan's metadata and body content.
+class MachineCommandTool(Tool):
+    """MCP tool backed by an erk @machine_command CLI command.
 
-    Returns the plan's title, state, labels, and full markdown body.
+    Dynamically registers a CLI command as an MCP tool using the
+    command's request_type for input schema. The tool filters out
+    None values before piping params as JSON to the CLI.
     """
-    result = _run_erk(["exec", "get-plan-info", str(plan_id), "--include-body"])
-    return result.stdout
+
+    cli_command_path: tuple[str, ...]
+
+    async def run(self, arguments: dict[str, Any]) -> ToolResult:
+        params: dict[str, Any] = {}
+        for k, v in arguments.items():
+            if v is not None:
+                params[k] = v
+        path = self.cli_command_path
+        user_token = get_authenticated_github_token()
+        env_override: dict[str, str] | None = None
+        if user_token is not None:
+            env_override = {**os.environ, "GH_TOKEN": user_token}
+        result = await to_thread.run_sync(
+            lambda: _run_erk_json(path, params, env_override=env_override)
+        )
+        return self.convert_result(result)
 
 
-def one_shot(prompt: str) -> str:
-    """Submit a task for fully autonomous remote execution.
+def _build_machine_command_tools() -> tuple[MachineCommandTool, ...]:
+    """Discover @mcp_exposed commands and build MachineCommandTool instances."""
+    from erk.cli.cli import cli
 
-    Creates a branch, draft PR, and dispatches a GitHub Actions workflow
-    where Claude autonomously explores, plans, implements, and submits.
+    tools: list[MachineCommandTool] = []
+    for cmd, meta, command_path in discover_mcp_commands(cli, _parent_path=()):
+        assert cmd.name is not None
+        machine_meta = getattr(cmd, "_machine_command_meta", None)
+        if machine_meta is None:
+            continue
+        tools.append(
+            MachineCommandTool(
+                name=meta.name,
+                cli_command_path=command_path,
+                description=meta.description,
+                parameters=request_schema(machine_meta.request_type),
+            )
+        )
+    return tuple(tools)
 
-    Returns after dispatch (~10-30s) with PR and workflow run URLs.
-    """
-    result = _run_erk(["one-shot", prompt])
-    return result.stdout
+
+def _build_root_protected_resource_metadata(
+    auth: Any,
+) -> ProtectedResourceMetadata | None:
+    if auth is None or auth.base_url is None:
+        return None
+
+    authorization_server = auth.base_url
+    if getattr(auth, "issuer_url", None) is not None:
+        authorization_server = auth.issuer_url
+
+    return ProtectedResourceMetadata(
+        resource=f"{str(auth.base_url).rstrip('/')}{DEFAULT_MCP_HTTP_PATH}",
+        authorization_servers=[str(authorization_server)],
+        scopes_supported=getattr(auth, "required_scopes", None),
+    )
+
+
+def _add_oauth_compat_routes(server: FastMCP) -> None:
+    metadata = _build_root_protected_resource_metadata(server.auth)
+    if metadata is None:
+        return
+
+    handler = ProtectedResourceMetadataHandler(metadata)
+
+    @server.custom_route(
+        ROOT_PROTECTED_RESOURCE_METADATA_PATH,
+        methods=["GET"],
+        include_in_schema=False,
+    )
+    async def root_oauth_protected_resource_metadata(
+        request: Request,
+    ) -> Response:
+        return await handler.handle(request)
+
+
+def _validate_startup_auth_configuration(*, auth: Any) -> None:
+    if auth is not None:
+        return
+
+    raise ValueError(
+        "Missing required environment variables for erk-mcp startup: "
+        "ERK_MCP_GITHUB_OAUTH_CLIENT_ID, ERK_MCP_GITHUB_OAUTH_CLIENT_SECRET, "
+        "and ERK_MCP_PUBLIC_URL."
+    )
 
 
 def create_mcp() -> FastMCP:
     """Create and configure the FastMCP server instance."""
     from fastmcp import FastMCP
 
-    server = FastMCP(DEFAULT_MCP_NAME)
-    server.tool()(plan_list)
-    server.tool()(plan_view)
-    server.tool()(one_shot)
+    server = FastMCP(DEFAULT_MCP_NAME, auth=build_auth_provider_from_env())
+    _add_oauth_compat_routes(server)
+    for tool in _build_machine_command_tools():
+        server.add_tool(tool)
     return server
+
+
+def create_startup_mcp() -> FastMCP:
+    server = create_mcp()
+    _validate_startup_auth_configuration(auth=server.auth)
+    return server
+
+
+# Module-level instance for `fastmcp dev` CLI discovery (used by `make mcp-dev`)
+mcp = create_mcp()

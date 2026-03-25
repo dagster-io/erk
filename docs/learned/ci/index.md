@@ -30,11 +30,13 @@
 - **[github-commit-indexing-timing.md](github-commit-indexing-timing.md)** — working with GitHub commit status API, debugging 422 'No commit found for SHA' errors, implementing CI verification workflows
 - **[github-token-scopes.md](github-token-scopes.md)** — deciding which token to use in GitHub Actions workflows, encountering permission errors with github.token, understanding why user API calls or git push fail in CI
 - **[gitignored-directory-commit-patterns.md](gitignored-directory-commit-patterns.md)** — working with .erk/impl-context/ in CI workflows, force-adding gitignored files in GitHub Actions, debugging why .erk/impl-context/ appears in PR diffs
+- **[impl-failure-summarization.md](impl-failure-summarization.md)** — modifying failure summarization in plan-implement CI, understanding how implementation failures are analyzed, working with summarize-impl-failure exec script, debugging missing or incomplete failure summaries on PRs
 - **[job-ordering-strategy.md](job-ordering-strategy.md)** — modifying CI job dependencies, adding new CI jobs, understanding fix-formatting gating, debugging why CI restarted after a push
 - **[label-rename-checklist.md](label-rename-checklist.md)** — renaming a GitHub label used in CI automation, updating label references across the codebase, debugging why CI label checks aren't working after a rename
 - **[learn-ci-environment-detection.md](learn-ci-environment-detection.md)** — running /erk:learn in CI, understanding CI vs interactive mode differences, debugging learn workflow in GitHub Actions
 - **[makefile-prettier-ignore-path.md](makefile-prettier-ignore-path.md)** — creating .prettierignore file, adding patterns to exclude files from Prettier, debugging why .prettierignore has no effect
 - **[markdown-formatting.md](markdown-formatting.md)** — editing markdown files, handling Prettier CI failures, implementing documentation changes
+- **[merge-gate-jobs.md](merge-gate-jobs.md)** — adding new CI jobs to ci.yml, understanding which jobs block merging, working with the ci-summarize job, understanding check-submission and fix-formatting interactions
 - **[plan-implement-change-detection.md](plan-implement-change-detection.md)** — maintaining erk-impl workflow, debugging change detection issues, understanding why no-changes was triggered
 - **[plan-implement-customization.md](plan-implement-customization.md)** — customizing erk-impl workflow for a specific repository, installing system dependencies in erk-impl CI, configuring Python version for erk remote workflows
 - **[plan-implement-workflow-patterns.md](plan-implement-workflow-patterns.md)** — modifying erk-impl workflow, adding cleanup steps to GitHub Actions, working with git reset in workflows
@@ -43,6 +45,6 @@
 - **[review-types-taxonomy.md](review-types-taxonomy.md)** — creating a new review workflow, deciding whether to extend an existing review or create a new one, understanding review scope boundaries
 - **[test-coverage-detection.md](test-coverage-detection.md)** — understanding how the test-coverage-review bot maps source to test files, debugging false positives in test coverage review, adding test files in the correct location for coverage detection
 - **[uv-cache-management.md](uv-cache-management.md)** — debugging slow CI jobs or GitHub Actions cache issues, modifying setup-uv configuration, CI jobs timing out in post-job cleanup
-- **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, implementing label-based CI skipping, understanding why CI was skipped on a PR
-- **[workflow-model-policy.md](workflow-model-policy.md)** — creating or modifying GitHub Actions workflows that invoke Claude, choosing which Claude model to use in a workflow, understanding why all workflows default to Opus
+- **[workflow-gating-patterns.md](workflow-gating-patterns.md)** — adding conditional execution to GitHub Actions workflows, understanding why CI was skipped on a PR
+- **[workflow-model-policy.md](workflow-model-policy.md)** — creating or modifying GitHub Actions workflows that invoke Claude, choosing which Claude model to use in a workflow, understanding why all workflows default to Sonnet 4.6
 - **[workflow-naming-conventions.md](workflow-naming-conventions.md)** — creating new GitHub Actions workflows launchable via erk launch, understanding the relationship between CLI names and workflow files

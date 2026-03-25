@@ -7,8 +7,8 @@ read_when:
   - "using ErkContext.for_test()"
   - "testing Click commands with context"
 tripwires:
-  - action: "testing code that reads ERK_PLAN_BACKEND or other environment variables via CliRunner"
-    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PLAN_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
+  - action: "testing code that reads ERK_PR_BACKEND or other environment variables via CliRunner"
+    warning: "CliRunner env var isolation: ambient env vars from the developer shell leak into CliRunner by default and cause intermittent test failures. Use CliRunner(env={'ERK_PR_BACKEND': '...'}) to override, or CliRunner(env={}) to isolate completely. Never rely on ambient env being clean. Note: mix_stderr parameter is broken in Click 8.3.1 — do not use it."
     score: 7
   - action: "renaming a user-facing string in CLI output and updating related test assertions"
     warning: "Test assertion lag: after renaming display strings (e.g., 'issue' → 'plan'), grep all test files for the old literal before committing. Tests using old string literals against stale snapshots will silently pass — the failure only surfaces in CI on a clean checkout."
@@ -34,7 +34,7 @@ Erk CLI commands use Click's context system (`@click.pass_context`) to receive d
 ```python
 from click.testing import CliRunner
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 def test_my_command() -> None:
     """Test command with fake dependencies."""
@@ -203,8 +203,8 @@ def test_command_with_multiple_dependencies() -> None:
 
 ```python
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 def test_plan_save_success() -> None:
     """Test successful plan extraction and issue creation."""
@@ -244,7 +244,7 @@ This is a comprehensive feature plan that includes all the necessary details.
 ### Example 2: Testing with Claude Installation Fake
 
 ```python
-from erk_shared.gateway.claude_installation.fake import (
+from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
@@ -335,7 +335,7 @@ def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Mock the factory that creates the dependency
     monkeypatch.setattr(
-        "my_module.PlannedPRBackend",
+        "my_module.ManagedGitHubPrBackend",
         lambda github: fake_backend,
     )
 
@@ -487,11 +487,11 @@ def test_impl_init_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
 ## Pattern 6: FakeGitHub with Shared FakeGitHubIssues
 
-When testing code that uses both `PlanBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:
+When testing code that uses both `ManagedPrBackend` and direct `FakeGitHubIssues` operations, both must operate on the same instance:
 
 ```python
 def test_plan_operations_with_shared_issues() -> None:
-    """Test that plan_backend and direct issue operations share state."""
+    """Test that pr_backend and direct issue operations share state."""
     issues = FakeGitHubIssues()
     runner = CliRunner()
 
@@ -500,12 +500,12 @@ def test_plan_operations_with_shared_issues() -> None:
         obj=ErkContext.for_test(github_issues=issues),
     )
 
-    # Both plan_backend metadata writes and direct issue queries
+    # Both managed_pr_backend metadata writes and direct issue queries
     # see the same data because they share the issues instance
     assert result.exit_code == 0
 ```
 
-**Critical:** Always pass `issues=issues` to `build_workspace_test_context` when using custom `FakeGitHubIssues`. Without it, `plan_backend` operates on a different instance and metadata writes are invisible to your test assertions.
+**Critical:** Always pass `issues=issues` to `build_workspace_test_context` when using custom `FakeGitHubIssues`. Without it, `managed_pr_backend` operates on a different instance and metadata writes are invisible to your test assertions.
 
 ## See Also
 

@@ -29,7 +29,7 @@ This document defines conventions that supplement AGENTS.md. For basic naming (s
 
 | Type                  | Convention               | Example                          |
 | --------------------- | ------------------------ | -------------------------------- |
-| Issue numbers (`int`) | `_id` suffix             | `objective_id`, `plan_id`        |
+| Issue numbers (`int`) | `_id` suffix             | `objective_id`, `pr_id`          |
 | GitHub Issue objects  | No suffix or `_issue`    | `objective`, `plan_issue`        |
 | String identifiers    | `_identifier` or `_name` | `plan_identifier`, `branch_name` |
 
@@ -200,9 +200,9 @@ Property names should match user-facing output labels. When the CLI displays a l
 
 **Example:** Property naming in `next_steps.py`:
 
-<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps -->
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PrNextSteps -->
 
-See `PlanNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_current_wt` match their output labels "Checkout plan:", "Implement plan:".
+See `PrNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout_current_wt`, `implement_new_wt` match their output labels "Checkout PR:", "Implement PR:".
 
 ## String Method Preferences
 

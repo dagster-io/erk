@@ -22,7 +22,7 @@ Submodules:
     post_init_hook            - check_post_init_hook
     legacy_prompt_hooks       - check_legacy_prompt_hooks
     claude_erk_permission     - check_claude_erk_permission
-    plans_repo_labels         - check_plans_repo_labels
+    pr_repo_labels            - check_pr_repo_labels
     repository                - check_repository
     claude_settings           - check_claude_settings
     user_prompt_hook          - check_user_prompt_hook
@@ -41,6 +41,7 @@ from erk.artifacts.state import load_installed_capabilities
 
 if TYPE_CHECKING:
     from erk.core.context import ErkContext
+
 from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
 from erk.core.health_checks.claude_cli import check_claude_cli
 from erk.core.health_checks.claude_erk_permission import check_claude_erk_permission
@@ -58,9 +59,9 @@ from erk.core.health_checks.legacy_prompt_hooks import check_legacy_prompt_hooks
 from erk.core.health_checks.legacy_slot_naming import check_legacy_slot_naming
 from erk.core.health_checks.managed_artifacts import check_managed_artifacts
 from erk.core.health_checks.models import CheckResult
-from erk.core.health_checks.plans_repo_labels import check_plans_repo_labels
 from erk.core.health_checks.post_init_hook import check_post_init_hook
 from erk.core.health_checks.post_plan_implement_ci_hook import check_post_plan_implement_ci_hook
+from erk.core.health_checks.pr_repo_labels import check_pr_repo_labels
 from erk.core.health_checks.repository import check_repository
 from erk.core.health_checks.required_tool_version import check_required_tool_version
 from erk.core.health_checks.statusline_configured import check_statusline_configured
@@ -135,18 +136,16 @@ def run_all_checks(ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
             )
         )
 
-        # Check plans_repo labels if configured
+        # Check pr_repo labels if configured
         from erk.cli.config import load_config
         from erk_shared.gateway.github.issues.real import RealGitHubIssues
 
         repo_config = load_config(repo_root)
-        if repo_config.plans_repo is not None:
+        if repo_config.github_repo is not None:
             from erk_shared.gateway.time.real import RealTime
 
-            github_issues = RealGitHubIssues(target_repo=repo_config.plans_repo, time=RealTime())
-            results.append(
-                check_plans_repo_labels(repo_root, repo_config.plans_repo, github_issues)
-            )
+            github_issues = RealGitHubIssues(target_repo=repo_config.github_repo, time=RealTime())
+            results.append(check_pr_repo_labels(repo_root, repo_config.github_repo, github_issues))
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 

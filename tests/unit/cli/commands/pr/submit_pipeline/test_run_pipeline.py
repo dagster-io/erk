@@ -9,8 +9,9 @@ from erk.cli.commands.pr.submit_pipeline import (
     make_initial_state,
     run_submit_pipeline,
 )
-from erk.core.context import ErkContext, context_for_test
-from erk_shared.gateway.git.fake import FakeGit
+from erk.core.context import ErkContext
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import context_for_test
 
 
 def test_stops_at_first_error(tmp_path: Path) -> None:
@@ -92,7 +93,7 @@ def test_make_initial_state_sets_placeholders(tmp_path: Path) -> None:
     assert state.force is True
     assert state.debug is True
     assert state.session_id == "my-session"
-    assert state.plan_id is None
+    assert state.pr_id is None
     assert state.pr_number is None
     assert state.pr_url is None
     assert state.was_created is False

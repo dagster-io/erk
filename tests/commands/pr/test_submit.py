@@ -11,13 +11,13 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.abc import BranchDivergence
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -1276,13 +1276,13 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
 def test_pr_submit_shows_plan_context_phase() -> None:
     """Test that Phase 2 shows plan found for branches that have a PR.
 
-    With PlannedPRBackend, any branch with a PR resolves to that PR as its plan.
+    With ManagedGitHubPrBackend, any branch with a PR resolves to that PR as its plan.
     The submit command shows "Incorporating plan from issue #123" for the PR.
     """
     from datetime import UTC, datetime
 
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -1362,11 +1362,11 @@ plan_comment_id: 1000
 <!-- /erk:metadata-block:plan-header -->"""
         plan_issue = IssueInfo(
             number=5823,
-            title="[erk-plan] Add feature",
+            title="[erk-pr] Add feature",
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/5823",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -1417,7 +1417,7 @@ plan_comment_id: 1000
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        # Verify Phase 2 shows plan found (PR is the plan with ManagedGitHubPrBackend)
         assert "Phase 2: Getting diff and plan context" in result.output
         assert "Incorporating plan #123" in result.output
 
@@ -1425,13 +1425,13 @@ plan_comment_id: 1000
 def test_pr_submit_shows_plan_context_with_objective() -> None:
     """Test that Phase 2 shows plan found for branches that have a PR.
 
-    With PlannedPRBackend, any branch with a PR resolves to that PR as its plan,
+    With ManagedGitHubPrBackend, any branch with a PR resolves to that PR as its plan,
     even when the old issue had an objective linkage.
     """
     from datetime import UTC, datetime
 
-    from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
     from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -1512,11 +1512,11 @@ objective_issue: 5000
 <!-- /erk:metadata-block:plan-header -->"""
         plan_issue = IssueInfo(
             number=5823,
-            title="[erk-plan] Add feature",
+            title="[erk-pr] Add feature",
             body=issue_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/5823",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
@@ -1581,7 +1581,7 @@ objective_issue: 5000
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        # Verify Phase 2 shows plan found (PR is the plan with ManagedGitHubPrBackend)
         assert "Phase 2: Getting diff and plan context" in result.output
         assert "Incorporating plan #123" in result.output
 
@@ -1589,7 +1589,7 @@ objective_issue: 5000
 def test_pr_submit_shows_no_plan_message() -> None:
     """Test that Phase 2 shows plan found when branch has a PR.
 
-    With PlannedPRBackend, any branch with a PR resolves to that PR as its plan.
+    With ManagedGitHubPrBackend, any branch with a PR resolves to that PR as its plan.
     The submit command shows "Incorporating plan from issue #123".
     """
     runner = CliRunner()
@@ -1679,7 +1679,7 @@ def test_pr_submit_shows_no_plan_message() -> None:
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        # Verify Phase 2 shows plan found (PR is the plan with ManagedGitHubPrBackend)
         assert "Phase 2: Getting diff and plan context" in result.output
         assert "Incorporating plan #123" in result.output
 

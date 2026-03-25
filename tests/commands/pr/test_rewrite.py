@@ -11,17 +11,17 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PRDetails
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
-from tests.fakes.prompt_executor import FakePromptExecutor
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -329,7 +329,7 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
-            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(github, github.issues, time=FakeTime()),
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
@@ -377,7 +377,7 @@ def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
     """Rewrite skips lifecycle update when plan cannot be resolved from branch name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # plnd/ branch — resolve_plan_id_for_branch returns None
+        # plnd/ branch — resolve_pr_id_for_branch returns None
         branch_name = "plnd/add-feature"
 
         # Create plan issue with lifecycle_stage "planned"
@@ -388,7 +388,7 @@ def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
             body=plan_body,
             state="OPEN",
             url="https://github.com/owner/repo/issues/100",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),
             updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),

@@ -7,14 +7,14 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
@@ -85,9 +85,9 @@ def test_incremental_dispatch_success(tmp_path: Path) -> None:
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs, _ref = fake_github.triggered_workflows[0]
     assert workflow == "plan-implement.yml"
-    assert inputs["plan_id"] == "42"
+    assert inputs["pr_number"] == "42"
     assert inputs["branch_name"] == "feature/my-feature"
-    assert inputs["plan_backend"] == "planned_pr"
+    assert inputs["pr_backend"] == "planned_pr"
 
 
 def test_incremental_dispatch_pr_not_found(tmp_path: Path) -> None:
@@ -257,14 +257,14 @@ def test_incremental_dispatch_writes_dispatch_metadata(tmp_path: Path) -> None:
         ),
     }
     fake_github = FakeLocalGitHub(pr_details={42: pr}, prs=prs)
-    plan_store = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    pr_store = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     runner = CliRunner()
     result = runner.invoke(
         incremental_dispatch,
         ["--plan-file", str(plan_file), "--pr", "42", "--format", "json"],
         obj=ErkContext.for_test(
-            git=fake_git, github=fake_github, plan_store=plan_store, repo_root=tmp_path
+            git=fake_git, github=fake_github, pr_store=pr_store, repo_root=tmp_path
         ),
     )
 

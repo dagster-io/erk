@@ -1,12 +1,12 @@
 """Lifecycle stage display computation for plans.
 
 Extracted to a standalone module to avoid circular imports when testing.
-The main consumer is RealPlanDataProvider in real.py.
+The main consumer is RealPrDataProvider in real.py.
 """
 
 from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
-from erk_shared.plan_store.conversion import header_str
-from erk_shared.plan_store.types import Plan
+from erk_shared.pr_store.conversion import header_str
+from erk_shared.pr_store.types import Plan
 
 
 def compute_lifecycle_display(
@@ -14,11 +14,12 @@ def compute_lifecycle_display(
     *,
     has_workflow_run: bool,
     linked_pr_state: str | None,
+    linked_pr_is_draft: bool | None = None,
 ) -> str:
     """Compute lifecycle stage display string for a plan.
 
     Reads lifecycle_stage from plan header fields if present, otherwise
-    infers from is_draft and pr_state in plan metadata. Returns a
+    infers from linked PR data or plan metadata. Returns a
     color-coded Rich markup string for table display.
 
     When the resolved stage is "planned" and a workflow run exists,
@@ -28,7 +29,9 @@ def compute_lifecycle_display(
         plan: Plan with header_fields and metadata populated
         has_workflow_run: Whether the plan has an associated workflow run
         linked_pr_state: PR state from linked PR (e.g. "MERGED", "CLOSED", "OPEN").
-            Used for issue-backed plans where pr_state is not in plan.metadata.
+            Used when pr_state is not in plan.metadata.
+        linked_pr_is_draft: Draft status from linked PR. Used with
+            linked_pr_state to infer stage for OPEN PRs.
 
     Returns:
         Display string (may contain Rich markup for color)
@@ -48,6 +51,13 @@ def compute_lifecycle_display(
         stage = "merged"
     elif effective_pr_state == "CLOSED":
         stage = "closed"
+
+    # Infer stage from linked PR data (OPEN state)
+    if stage is None and effective_pr_state == "OPEN" and linked_pr_is_draft is not None:
+        if linked_pr_is_draft:
+            stage = "planned"
+        else:
+            stage = "impl"
 
     # Fall back to inferring from PR metadata
     if stage is None and plan.metadata:

@@ -41,7 +41,7 @@ def extract_latest_plan(ctx: click.Context, session_id: str | None) -> None:
 
     if not plan_text:
         click.echo(
-            click.style("Error: ", fg="red") + "No plan found in Claude session files", err=True
+            click.style("Error: ", fg="red") + "No PR found in Claude session files", err=True
         )
         raise SystemExit(1)
 

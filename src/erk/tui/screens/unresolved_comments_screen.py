@@ -8,7 +8,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Label, Markdown
 
 from erk_shared.gateway.github.types import PRReviewThread
-from erk_shared.gateway.plan_service.abc import PlanService
+from erk_shared.gateway.pr_service.abc import PrService
 
 
 def _format_threads(threads: list[PRReviewThread]) -> str:
@@ -125,7 +125,7 @@ class UnresolvedCommentsScreen(ModalScreen):
     def __init__(
         self,
         *,
-        service: PlanService,
+        service: PrService,
         pr_number: int,
         full_title: str,
         resolved_count: int,

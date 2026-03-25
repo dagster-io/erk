@@ -11,7 +11,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from erk_shared.core.objective_list_service import ObjectiveListService
-from erk_shared.core.plan_list_service import PlanListData
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_header_dispatch_info
 from erk_shared.gateway.github.types import (
@@ -20,7 +20,7 @@ from erk_shared.gateway.github.types import (
     WorkflowRun,
 )
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.conversion import github_issue_to_plan
+from erk_shared.pr_store.conversion import github_issue_to_plan
 
 if TYPE_CHECKING:
     from erk_shared.gateway.http.abc import HttpClient
@@ -50,7 +50,7 @@ class RealObjectiveListService(ObjectiveListService):
         creator: str | None = None,
         exclude_labels: list[str] | None = None,
         http_client: HttpClient,
-    ) -> PlanListData:
+    ) -> PrListData:
         t0 = self._time.monotonic()
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
             location=location,
@@ -84,7 +84,7 @@ class RealObjectiveListService(ObjectiveListService):
                     logging.warning("Failed to fetch workflow runs: %s", e)
         t3 = self._time.monotonic()
 
-        return PlanListData(
+        return PrListData(
             plans=plans,
             pr_linkages=pr_linkages,
             workflow_runs=workflow_runs,

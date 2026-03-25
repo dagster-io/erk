@@ -9,10 +9,10 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.shell import FakeShell
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -228,7 +228,7 @@ def test_consolidate_dry_run_shows_preview() -> None:
 
 def test_consolidate_confirmation_prompt() -> None:
     """Test consolidate prompts for confirmation without --force."""
-    from erk_shared.gateway.console.fake import FakeConsole
+    from tests.fakes.gateway.console import FakeConsole
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1115,21 +1115,16 @@ def test_consolidate_with_name_outputs_script_even_when_branch_delete_fails(
             f"Script should have been written before failure. Output: {result.output}"
         )
 
-        # Key verification: Script path IS output in stdout (before failure)
-        # The script path is output via output_for_script_handler() and appears in stdout
-        script_path = list(env.script_writer.written_scripts.keys())[0]
-        assert str(script_path) in result.stdout, (
-            f"Script path should be in stdout. Script: {script_path}, stdout: {result.stdout}"
-        )
+        # Key verification: Script content IS output in stdout (before failure)
+        # output_for_script_handler() outputs content directly to stdout
+        script_content = result.stdout
+        assert script_content.strip() != "", "Script content should be in stdout, got empty"
 
         # Verify source worktree WAS removed (deletion happened before the failure)
         # The source worktree is env.cwd
         assert env.cwd.resolve() in test_ctx.git.removed_worktrees, (
             "Source worktree should have been removed"
         )
-
-        # Verify script content IS valid (navigates to new worktree)
-        script_content = list(env.script_writer.written_scripts.values())[0]
         expected_new_path = (
             env.erk_root / "repos" / env.root_worktree.name / "worktrees" / "my-stack"
         )

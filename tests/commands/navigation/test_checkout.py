@@ -1,15 +1,13 @@
 """Tests for erk branch checkout command."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -66,9 +64,7 @@ def test_checkout_to_branch_in_single_worktree() -> None:
         # Should not checkout (already on the branch)
         assert len(git_ops.checked_out_branches) == 0
         # Should generate activation script (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
         assert str(feature_wt) in script_content
 
 
@@ -113,7 +109,10 @@ def test_checkout_to_branch_not_found() -> None:
 
 
 def test_checkout_creates_worktree_for_unchecked_branch() -> None:
-    """Test that checkout auto-creates worktree when branch exists but is not checked out."""
+    """Test that checkout checks out in current worktree when branch exists but is not checked out.
+
+    Default behavior checks out in the current worktree.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -154,32 +153,25 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
             print(f"stderr: {result.stderr}")
             print(f"stdout: {result.stdout}")
 
-        # Should succeed and allocate slot for the branch
+        # Should succeed — default checks out in current worktree (no slot allocation)
         assert result.exit_code == 0
-        # New slot allocation behavior outputs "Assigned X to erk-slot-XX"
-        assert "Assigned existing-branch to erk-slot-01" in result.stderr
+        assert "Assigned" not in result.stderr
 
-        # Verify worktree was created
-        assert len(git_ops.added_worktrees) == 1
-        added_wt_path, added_wt_branch = git_ops.added_worktrees[0]
-        assert added_wt_branch == "existing-branch"
+        # Verify checkout_branch was called on the current worktree
+        assert len(git_ops.checked_out_branches) == 1
+        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
+        assert checkout_path == env.cwd
+        assert checkout_branch == "existing-branch"
 
-        # Should generate activation script (output path to stdout)
-        assert result.stdout.strip() != ""
-        script_path = Path(result.stdout.strip())
-        assert script_path.exists()
-
-        # Verify "Switched to new worktree" message in activation script
-        script_content = script_path.read_text(encoding="utf-8")
-        assert "Switched to new worktree" in script_content
-        assert "existing-branch" in script_content
+        # No new worktree should be created
+        assert len(git_ops.added_worktrees) == 0
 
 
 def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
-    """Test that checkout auto-creates worktree when branch exists in repo but is not checked out.
+    """Test that checkout checks out in current worktree when branch exists but is not checked out.
 
-    With auto-creation behavior, branches that exist in worktree stacks but are not
-    directly checked out will have a worktree created automatically.
+    Default behavior checks out in the current worktree rather than creating
+    a new worktree.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -224,13 +216,18 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
             print(f"stderr: {result.stderr}")
             print(f"stdout: {result.stdout}")
 
-        # Should succeed and allocate slot for the branch
+        # Should succeed — default checks out in current worktree (no slot allocation)
         assert result.exit_code == 0
-        # New slot allocation behavior outputs "Assigned X to erk-slot-XX"
-        assert "Assigned feature-base to erk-slot-01" in result.stderr
+        assert "Assigned" not in result.stderr
 
-        # Verify worktree was created
-        assert len(git_ops.added_worktrees) == 1
+        # Verify checkout_branch was called on the current worktree
+        assert len(git_ops.checked_out_branches) == 1
+        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
+        assert checkout_path == env.cwd
+        assert checkout_branch == "feature-base"
+
+        # No new worktree should be created
+        assert len(git_ops.added_worktrees) == 0
 
 
 def test_checkout_works_without_graphite() -> None:
@@ -272,10 +269,6 @@ def test_checkout_works_without_graphite() -> None:
 
         # Should succeed - checkout does not require Graphite
         assert result.exit_code == 0
-        script_path = Path(result.stdout.strip())
-        # Verify script was written to in-memory store
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
 
 
 def test_checkout_already_on_target_branch() -> None:
@@ -331,9 +324,7 @@ def test_checkout_already_on_target_branch() -> None:
         assert len(git_ops.checked_out_branches) == 0
 
         # Verify activation script was generated
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # CRITICAL: Message should say "Already on branch" since we're already in target location
         # Message format: "Already on branch {branch} in worktree {name}"
@@ -385,10 +376,6 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
         assert result.exit_code == 0
         # Should not checkout (already on feature-2)
         assert len(git_ops.checked_out_branches) == 0
-        # Should generate activation script (verify in-memory)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
 
 
 def test_checkout_with_multiple_worktrees_same_branch() -> None:
@@ -441,7 +428,11 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
 
 
 def test_checkout_creates_worktree_for_remote_only_branch() -> None:
-    """Test checkout auto-creates worktree when branch exists only on origin."""
+    """Test checkout checks out in current worktree when branch exists only on origin.
+
+    Default behavior creates a tracking branch and checks out in the current
+    worktree.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         work_dir = env.erk_root / env.cwd.name
@@ -483,26 +474,23 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
             print(f"stderr: {result.stderr}")
             print(f"stdout: {result.stdout}")
 
-        # Should succeed with slot allocation for the remote branch
+        # Should succeed — default checks out in current worktree (no slot allocation)
         assert result.exit_code == 0, f"Expected success, got: {result.stderr}"
         assert "exists on origin, creating local tracking branch" in result.stderr
-        # New slot allocation behavior outputs "Assigned X to erk-slot-XX"
-        assert "Assigned feature-remote to erk-slot-01" in result.stderr
+        assert "Assigned" not in result.stderr
 
-        # Verify worktree was created
-        assert len(git_ops.added_worktrees) == 1
-        added_wt_path, added_wt_branch = git_ops.added_worktrees[0]
-        assert added_wt_branch == "feature-remote"
+        # Verify fetch and tracking branch creation
+        assert ("origin", "feature-remote") in git_ops.fetched_branches
+        assert ("feature-remote", "origin/feature-remote") in git_ops.created_tracking_branches
 
-        # Should generate activation script (output path to stdout)
-        assert result.stdout.strip() != ""
-        script_path = Path(result.stdout.strip())
-        assert script_path.exists()
+        # Verify checkout_branch was called on the current worktree
+        assert len(git_ops.checked_out_branches) == 1
+        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
+        assert checkout_path == env.cwd
+        assert checkout_branch == "feature-remote"
 
-        # Verify "Switched to new worktree" message in activation script
-        script_content = script_path.read_text(encoding="utf-8")
-        assert "Switched to new worktree" in script_content
-        assert "feature-remote" in script_content
+        # No new worktree should be created
+        assert len(git_ops.added_worktrees) == 0
 
 
 def test_checkout_fails_when_branch_not_on_origin() -> None:
@@ -603,9 +591,7 @@ def test_checkout_message_when_switching_worktrees() -> None:
         assert result.exit_code == 0
 
         # Verify activation script was generated
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
+        script_content = result.stdout
 
         # CRITICAL: Message should say "Switched to worktree"
         # NOT "Already on branch" or "Already in worktree"
@@ -622,19 +608,18 @@ def test_checkout_message_when_switching_worktrees() -> None:
         assert len(git_ops.checked_out_branches) == 0
 
 
-def test_checkout_trunk_with_dirty_root_errors() -> None:
-    """Test that checkout prevents creating worktree for trunk branch when root is dirty.
+def test_checkout_trunk_with_dirty_root_checks_out_in_current_worktree() -> None:
+    """Test that checkout of trunk when root is dirty checks out in current worktree.
 
-    When the root worktree is dirty, try_switch_root_worktree() fails and the command
-    falls through to ensure_worktree_for_branch(). This test verifies that the trunk
-    validation in ensure_worktree_for_branch() catches this and errors appropriately.
+    After slot logic was moved to `erk slot checkout`, `branch checkout` simply
+    does a `git checkout` in the current worktree when the branch isn't found
+    in any worktree and root takeover fails (dirty root).
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         work_dir = env.erk_root / env.cwd.name
 
         # Setup: root worktree is on a feature branch, not trunk
-        # This way when user tries to checkout trunk, it won't already be checked out
         git_ops = FakeGit(
             worktrees={
                 env.cwd: [
@@ -659,19 +644,12 @@ def test_checkout_trunk_with_dirty_root_errors() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        # Try to checkout trunk branch (main) - should error
+        # Checkout trunk - now succeeds by checking out in current worktree
         result = runner.invoke(
             cli, ["branch", "checkout", "main"], obj=test_ctx, catch_exceptions=False
         )
 
-        # Should fail with error
-        assert result.exit_code == 1
-
-        # Error message should indicate trunk branch cannot have worktree
-        assert "Cannot create worktree for trunk branch" in result.stderr
-        assert "main" in result.stderr
-        assert "erk br co root" in result.stderr
-        assert "root worktree" in result.stderr
+        assert result.exit_code == 0
 
 
 def test_checkout_tracks_untracked_branch_with_graphite() -> None:

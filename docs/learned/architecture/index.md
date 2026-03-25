@@ -51,7 +51,7 @@
 - **[gateway-removal-pattern.md](gateway-removal-pattern.md)** — Consolidating two gateways into one, Removing deprecated gateway implementations, Refactoring gateway hierarchies
 - **[gateway-signature-migration.md](gateway-signature-migration.md)** — changing gateway method signatures, migrating callers after gateway API changes, updating discriminated union return types across call sites
 - **[gateway-specific-patterns.md](gateway-specific-patterns.md)** — considering mixing discriminated unions with exceptions in gateway methods, designing operations with both expected failures and cleanup steps, reviewing historical gateway error handling experiments
-- **[gateway-vs-backend.md](gateway-vs-backend.md)** — creating a new ABC interface, deciding between gateway and backend patterns, understanding PlanBackend vs Git gateway architecture, choosing the right abstraction pattern for a new service
+- **[gateway-vs-backend.md](gateway-vs-backend.md)** — creating a new ABC interface, deciding between gateway and backend patterns, understanding ManagedPrBackend vs Git gateway architecture, choosing the right abstraction pattern for a new service
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[git-graphite-quirks.md](git-graphite-quirks.md)** — debugging unexpected git/gt behavior, handling rebase/restack edge cases, writing conflict detection logic, troubleshooting detached HEAD states, handling concurrent worktree operations, understanding worktree lock files
 - **[git-operation-patterns.md](git-operation-patterns.md)** — implementing git operations in gateways, checking if git branches or refs exist, deciding between LBYL and EAFP for git commands
@@ -68,7 +68,6 @@
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-issue-autoclose.md](github-issue-autoclose.md)** — understanding why erk no longer uses Closes #N, understanding plan closure strategy
 - **[github-parsing.md](github-parsing.md)** — parsing GitHub URLs, extracting PR or issue numbers from URLs, understanding github parsing layers
-- **[github-pr-linkage-api.md](github-pr-linkage-api.md)** — querying PRs linked to an issue, understanding how GitHub tracks issue-PR relationships, debugging why a PR doesn't show as linked to an issue, working with CrossReferencedEvent or closingIssuesReferences
 - **[globalconfig-field-addition.md](globalconfig-field-addition.md)** — adding a new field to GlobalConfig, extending erk's global configuration, adding a user-configurable setting to ~/.erk/config.toml
 - **[graphite-cache-invalidation.md](graphite-cache-invalidation.md)** — implementing mtime-based cache invalidation, caching Graphite branch metadata, optimizing repeated calls to git or graphite operations
 - **[health-check-runner-gateway.md](health-check-runner-gateway.md)** — working with health check infrastructure, modifying doctor command, adding new health checks, working with artifact allowlist
@@ -79,7 +78,7 @@
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
 - **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_branch_slug, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts, working with plan summary generation or --summary flags
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
-- **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with plan-ref.json, closing reference lost after erk pr submit
+- **[json-dataclass-utilities.md](json-dataclass-utilities.md)** — adding a new exec script with JSON output, working with @json_command or @machine_command decorators, implementing JSON deserialization for dataclasses, generating JSON schemas from dataclass fields
 - **[json-parsing-patterns.md](json-parsing-patterns.md)** — parsing JSON from files or API responses, validating JSON field presence, implementing LBYL JSON parsing
 - **[land-state-threading.md](land-state-threading.md)** — implementing pipelines with immutable state, using dataclasses.replace() for state updates, designing stateful workflows with frozen dataclasses
 - **[lbyl-gateway-pattern.md](lbyl-gateway-pattern.md)** — implementing existence checks before gateway operations, adding LBYL validation to CLI commands, understanding why gateways have separate existence methods
@@ -100,8 +99,8 @@
 - **[permission-modes.md](permission-modes.md)** — Working with interactive agent permissions, Implementing Codex or Claude backend integration, Modifying permission mode configuration
 - **[phase-zero-detection-pattern.md](phase-zero-detection-pattern.md)** — implementing mode variants in multi-phase commands, designing conditional execution workflows, debugging scattered mode detection logic
 - **[pipeline-transformation-patterns.md](pipeline-transformation-patterns.md)** — designing data transformation pipelines, deciding when to enrich vs filter data, troubleshooting lost metadata in pipelines
-- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to use PlanBackend, working with require_plan_backend, understanding post_event vs update_metadata, Phase 3 PlanBackend consolidation
-- **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
+- **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to use ManagedPrBackend, working with require_pr_backend, understanding post_event vs update_metadata, Phase 3 ManagedPrBackend consolidation
+- **[plan-context-integration.md](plan-context-integration.md)** — using PrContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
 - **[plan-ref-architecture.md](plan-ref-architecture.md)** — working with plan-ref.json, working with PlanRef dataclass, migrating from IssueReference to PlanRef, understanding provider-agnostic plan references
 - **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer or checkout command, adding a new PR command that generates or updates PR descriptions
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages
@@ -127,10 +126,12 @@
 - **[state-threading-pattern.md](state-threading-pattern.md)** — designing linear pipelines with immutable state, understanding SubmitState or pipeline architecture, implementing multi-step workflows with frozen dataclasses
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
+- **[sync-branch-to-sha-pattern.md](sync-branch-to-sha-pattern.md)** — syncing a local branch to a known remote SHA, working with dispatch_helpers.py branch sync, handling checked-out branch updates in dispatch
 - **[task-context-isolation.md](task-context-isolation.md)** — fetching large JSON responses from APIs, parsing PR review comments or GitHub issues, analyzing verbose API responses that pollute context, need to reduce context window usage, returning structured data from subagents, choosing between context: fork vs manual Task delegation
 - **[test-context-composition.md](test-context-composition.md)** — using build_workspace_test_context with custom fakes, debugging invisible metadata writes in tests, understanding issues_explicitly_passed flag
 - **[threading-patterns.md](threading-patterns.md)** — running blocking operations (subprocess, network) while yielding progress events, implementing daemon threads for long-running tasks, understanding the result holder + error holder pattern, testing code that uses background threads
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
+- **[unified-dispatch-pattern.md](unified-dispatch-pattern.md)** — working with launch_cmd.py dispatch handlers, adding a new workflow to erk launch, understanding how workflows are dispatched via erk
 - **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation
 - **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows
 - **[worktree-dispatch-detection.md](worktree-dispatch-detection.md)** — modifying dispatch command logic, working with worktree branch detection

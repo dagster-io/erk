@@ -1,21 +1,21 @@
-"""Helpers for creating plan stores with Plan objects in tests.
+"""Helpers for creating PR backends with Plan objects in tests.
 
 This module provides utilities for tests that need to set up plan state.
-It converts Plan objects to PlannedPRBackend backed by FakeLocalGitHub.
+It converts Plan objects to ManagedGitHubPrBackend backed by FakeLocalGitHub.
 """
 
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import (
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import (
     DETAILS_CLOSE,
     DETAILS_OPEN,
 )
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 
 _PLAN_HEADER_END_MARKER = "<!-- /erk:metadata-block:plan-header -->"
 
@@ -35,7 +35,7 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         PRDetails with equivalent data and a generated branch name
     """
     state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
-    branch_name = f"plan-{plan.plan_identifier}"
+    branch_name = f"plan-{plan.pr_identifier}"
 
     # Build PR body: if the plan body has a metadata block, reformat it with separator
     # and wrap plan content in <details> tags (new lifecycle format)
@@ -49,21 +49,21 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
         pr_body = details_section + "\n\n" + metadata_part
     else:
         # Plain body without a plan-header block - synthesize one with branch_name so
-        # PlannedPRBackend._convert_to_plan() can populate header_fields["branch_name"].
+        # ManagedGitHubPrBackend._convert_to_plan() can populate header_fields["branch_name"].
         # Real planned-PR plans always have branch_name in plan-header (set by plan_save).
         metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
         details_section = DETAILS_OPEN + body + DETAILS_CLOSE
         pr_body = details_section + "\n\n" + metadata_body
 
-    # Include erk-plan label plus any existing labels
-    labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)
+    # Include erk-pr label (ensure it's present)
+    labels = tuple(plan.labels) if "erk-pr" in plan.labels else ("erk-pr", *plan.labels)
 
     # Use base_ref_name from plan metadata if provided, otherwise default to "main"
     raw_base_ref = plan.metadata.get("base_ref_name")
     base_ref = raw_base_ref if isinstance(raw_base_ref, str) else "main"
 
     return PRDetails(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         url=plan.url,
         title=plan.title,
         body=pr_body,
@@ -80,16 +80,16 @@ def _plan_to_pr_details(plan: Plan) -> PRDetails:
     )
 
 
-def create_plan_store_with_plans(
+def create_pr_backend_with_plans(
     plans: dict[str, Plan],
-) -> tuple[PlannedPRBackend, FakeLocalGitHub]:
-    """Create PlannedPRBackend backed by FakeLocalGitHub.
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub]:
+    """Create ManagedGitHubPrBackend backed by FakeLocalGitHub.
 
     This helper converts Plan objects to PRDetails so tests can continue
-    constructing Plan objects while using PlannedPRBackend internally.
+    constructing Plan objects while using ManagedGitHubPrBackend internally.
 
     Args:
-        plans: Mapping of plan_identifier -> Plan
+        plans: Mapping of pr_identifier -> Plan
 
     Returns:
         Tuple of (backend, fake_github) for test assertions.
@@ -101,9 +101,9 @@ def create_plan_store_with_plans(
     prs: dict[str, PullRequestInfo] = {}
     pr_labels: dict[int, set[str]] = {}
 
-    for plan_id, plan in plans.items():
+    for pr_id, plan in plans.items():
         details = _plan_to_pr_details(plan)
-        pr_number = int(plan_id)
+        pr_number = int(pr_id)
         branch_name = details.head_ref_name
 
         pr_details[pr_number] = details
@@ -128,7 +128,7 @@ def create_plan_store_with_plans(
     for pr_number, labels in pr_labels.items():
         fake_github.set_pr_labels(pr_number, labels)
 
-    return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
+    return ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime()), fake_github
 
 
 def format_plan_header_body_for_test(
@@ -150,6 +150,7 @@ def format_plan_header_body_for_test(
     last_remote_impl_session_id: str | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
+    node_ids: list[str] | None = None,
     created_from_session: str | None = None,
     created_from_workflow_run_url: str | None = None,
     last_learn_session: str | None = None,
@@ -179,6 +180,7 @@ def format_plan_header_body_for_test(
         last_remote_impl_session_id=last_remote_impl_session_id,
         source_repo=source_repo,
         objective_issue=objective_issue,
+        node_ids=node_ids,
         created_from_session=created_from_session,
         created_from_workflow_run_url=created_from_workflow_run_url,
         last_learn_session=last_learn_session,
@@ -192,9 +194,9 @@ def format_plan_header_body_for_test(
 
 
 def issue_info_to_pr_details(issue: IssueInfo) -> PRDetails:
-    """Convert an IssueInfo to PRDetails for use with PlannedPRBackend.
+    """Convert an IssueInfo to PRDetails for use with ManagedGitHubPrBackend.
 
-    This helper converts IssueInfo test data to PRDetails for use with PlannedPRBackend.
+    This helper converts IssueInfo test data to PRDetails for use with ManagedGitHubPrBackend.
 
     The PR body wraps the issue body in plan lifecycle format (details tags)
     if the body contains a plan-header metadata block.
@@ -241,10 +243,10 @@ def issue_info_to_pr_details(issue: IssueInfo) -> PRDetails:
 
 def create_backend_from_issues(
     issues: dict[int, IssueInfo],
-) -> tuple[PlannedPRBackend, FakeLocalGitHub, FakeGitHubIssues]:
-    """Create a PlannedPRBackend from IssueInfo data.
+) -> tuple[ManagedGitHubPrBackend, FakeLocalGitHub, FakeGitHubIssues]:
+    """Create a ManagedGitHubPrBackend from IssueInfo data.
 
-    Converts test data to PR-based data for PlannedPRBackend.
+    Converts test data to PR-based data for ManagedGitHubPrBackend.
     The FakeGitHubIssues is also created so tests that need comment
     access (same API for PRs and issues) still work.
 
@@ -260,5 +262,5 @@ def create_backend_from_issues(
 
     fake_issues = FakeGitHubIssues(issues=issues)
     fake_github = FakeLocalGitHub(pr_details=pr_details, issues_gateway=fake_issues)
-    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
     return backend, fake_github, fake_issues

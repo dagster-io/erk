@@ -7,11 +7,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.close_prs import close_prs
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
@@ -28,7 +28,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -52,8 +52,8 @@ def test_close_prs_batch_success() -> None:
 
     batch_input = json.dumps(
         [
-            {"plan_number": 42, "comment": "Closing plan A"},
-            {"plan_number": 43, "comment": "Closing plan B"},
+            {"pr_number": 42, "comment": "Closing plan A"},
+            {"pr_number": 43, "comment": "Closing plan B"},
         ]
     )
 
@@ -62,7 +62,7 @@ def test_close_prs_batch_success() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -70,9 +70,9 @@ def test_close_prs_batch_success() -> None:
     output = json.loads(result.output)
     assert output["success"] is True
     assert len(output["results"]) == 2
-    assert output["results"][0]["plan_number"] == 42
+    assert output["results"][0]["pr_number"] == 42
     assert output["results"][0]["success"] is True
-    assert output["results"][1]["plan_number"] == 43
+    assert output["results"][1]["pr_number"] == 43
     assert output["results"][1]["success"] is True
 
     # Verify both PRs were closed
@@ -92,8 +92,8 @@ def test_close_prs_partial_failure() -> None:
 
     batch_input = json.dumps(
         [
-            {"plan_number": 42, "comment": "Closing plan A"},
-            {"plan_number": 999, "comment": "This should fail"},
+            {"pr_number": 42, "comment": "Closing plan A"},
+            {"pr_number": 999, "comment": "This should fail"},
         ]
     )
 
@@ -102,7 +102,7 @@ def test_close_prs_partial_failure() -> None:
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -126,7 +126,7 @@ def test_close_prs_invalid_json() -> None:
         input="not valid json",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -142,14 +142,14 @@ def test_close_prs_missing_field() -> None:
     fake_github = FakeLocalGitHub(issues_gateway=fake_gh)
     runner = CliRunner()
 
-    batch_input = json.dumps([{"plan_number": 42}])  # Missing 'comment'
+    batch_input = json.dumps([{"pr_number": 42}])  # Missing 'comment'
 
     result = runner.invoke(
         close_prs,
         input=batch_input,
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 
@@ -171,7 +171,7 @@ def test_close_prs_empty_array() -> None:
         input="[]",
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_gh, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_gh, time=FakeTime()),
         ),
     )
 

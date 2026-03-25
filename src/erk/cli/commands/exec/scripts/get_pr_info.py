@@ -1,0 +1,79 @@
+"""Backend-aware PR info retrieval.
+
+Usage:
+    erk exec get-pr-info <pr-number>
+    erk exec get-pr-info <pr-number> --include-body
+
+Output:
+    JSON with PR info fields:
+    {"success": true, "pr_number": "42", "title": "...", "state": "OPEN",
+     "labels": [...], "url": "...", "objective_id": null, "backend": "github",
+     "head_ref_name": "...", "base_ref_name": "..."}
+
+    With --include-body, adds "body": "..." containing PR content.
+
+Exit Codes:
+    0: Success
+    1: Error (PR not found)
+"""
+
+import json
+
+import click
+
+from erk.cli.pr_ref_type import PR_REF
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
+from erk_shared.pr_store.types import PrNotFound
+
+
+@click.command(name="get-pr-info")
+@click.argument("pr", type=PR_REF)
+@click.option(
+    "--include-body",
+    is_flag=True,
+    help="Include the PR body content in the response",
+)
+@click.pass_context
+def get_pr_info(
+    ctx: click.Context,
+    pr: int,
+    *,
+    include_body: bool,
+) -> None:
+    """Retrieve PR info from the appropriate backend."""
+    backend = require_pr_backend(ctx)
+    repo_root = require_repo_root(ctx)
+
+    pr_id = str(pr)
+
+    plan = backend.get_managed_pr(repo_root, pr_id)
+    if isinstance(plan, PrNotFound):
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "pr_not_found",
+                    "message": f"PR #{pr} not found",
+                }
+            ),
+            err=True,
+        )
+        raise SystemExit(1)
+
+    result: dict[str, object] = {
+        "success": True,
+        "pr_number": plan.pr_identifier,
+        "title": plan.title,
+        "state": plan.state.value,
+        "labels": plan.labels,
+        "url": plan.url,
+        "objective_id": plan.objective_id,
+        "backend": backend.get_provider_name(),
+        "head_ref_name": plan.metadata.get("head_ref_name"),
+        "base_ref_name": plan.metadata.get("base_ref_name"),
+    }
+
+    if include_body:
+        result["body"] = plan.body
+
+    click.echo(json.dumps(result))

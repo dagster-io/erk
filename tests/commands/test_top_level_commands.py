@@ -5,19 +5,19 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.pr.list_cmd import dash
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk.cli.commands.pr.list.cli import dash
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -43,7 +43,7 @@ def test_top_level_dash_command_works() -> None:
 
     # Mock _run_interactive_mode to verify CLI routing works without
     # actually running the Textual TUI (which hangs in test environments)
-    with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+    with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
         result = runner.invoke(cli, ["dash"])
 
         # Assert - command routes correctly and calls _run_interactive_mode
@@ -60,16 +60,16 @@ def test_dash_command_routes_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     # Arrange
     plan1 = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Test Plan",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -84,7 +84,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Mock _run_interactive_mode to verify CLI routing works
-        with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+        with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
             # Act - Use dash command directly
             result = runner.invoke(dash, [], obj=ctx)
 
@@ -102,16 +102,16 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
     """
     from unittest.mock import patch
 
-    from erk_shared.gateway.github.fake import FakeLocalGitHub
+    from tests.fakes.gateway.github import FakeLocalGitHub
 
     # Arrange
     open_plan = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Open Plan",
         body="",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/1",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -126,7 +126,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Mock _run_interactive_mode to verify filters are passed
-        with patch("erk.cli.commands.pr.list_cmd._run_interactive_mode") as mock_run:
+        with patch("erk.cli.commands.pr.list.cli._run_interactive_mode") as mock_run:
             # Act - Filter for open plans using dash command
             result = runner.invoke(dash, ["--state", "open"], obj=ctx)
 
@@ -140,7 +140,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
 
 def test_top_level_view_command_works() -> None:
     """Test that 'erk pr view' command works."""
-    from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+    from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 
     # Arrange
     issue_info = IssueInfo(
@@ -149,7 +149,7 @@ def test_top_level_view_command_works() -> None:
         body="Issue body content",
         state="OPEN",
         url="https://github.com/owner/repo/issues/123",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -164,7 +164,6 @@ def test_top_level_view_command_works() -> None:
         dispatch_run_id="run-1",
         issues={123: issue_info},
         issue_comments=None,
-        pr_references=None,
     )
 
     runner = CliRunner()
@@ -185,12 +184,12 @@ def test_top_level_close_command_works() -> None:
     """Test that 'erk pr close' command works."""
     # Arrange
     issue1 = Plan(
-        plan_identifier="456",
+        pr_identifier="456",
         title="Plan to Close",
         body="content",  # non-empty body required for plan header parsing
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/456",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
@@ -200,8 +199,8 @@ def test_top_level_close_command_works() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_github = create_plan_store_with_plans({"456": issue1})
-        ctx = build_workspace_test_context(env, plan_store=store, issues=fake_github.issues)
+        store, fake_github = create_pr_backend_with_plans({"456": issue1})
+        ctx = build_workspace_test_context(env, pr_store=store, issues=fake_github.issues)
 
         # Act - Use pr close command
         result = runner.invoke(cli, ["pr", "close", "456"], obj=ctx)

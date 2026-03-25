@@ -3,8 +3,8 @@
 import click
 from click.testing import CliRunner
 
-from erk.cli.alias import ALIAS_ATTR, alias, get_aliases, register_with_aliases
-from erk.cli.help_formatter import ErkCommandGroup
+from erk_shared.cli_alias import ALIAS_ATTR, alias, get_aliases, register_with_aliases
+from erk_shared.cli_group import ErkCommandGroup
 
 
 def test_alias_decorator_stores_single_alias() -> None:
@@ -143,7 +143,7 @@ def test_help_formatter_shows_aliases_inline() -> None:
     """ErkCommandGroup shows aliases inline with primary command in help."""
     runner = CliRunner()
 
-    @click.group(cls=ErkCommandGroup)
+    @click.group(cls=ErkCommandGroup, grouped=True)
     def cli() -> None:
         pass
 
@@ -165,7 +165,7 @@ def test_help_formatter_hides_alias_as_separate_entry() -> None:
     """ErkCommandGroup hides aliases from showing as separate commands."""
     runner = CliRunner()
 
-    @click.group(cls=ErkCommandGroup)
+    @click.group(cls=ErkCommandGroup, grouped=True)
     def cli() -> None:
         pass
 

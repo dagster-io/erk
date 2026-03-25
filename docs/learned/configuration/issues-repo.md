@@ -4,7 +4,7 @@ last_audited: "2026-02-17 09:00 PT"
 audit_result: clean
 read_when:
   - "configuring plans to be stored in a separate repository"
-  - "setting up plans.repo in config.toml"
+  - "setting up github.repo in config.toml"
 ---
 
 # External Plans Repository Configuration
@@ -16,7 +16,7 @@ Configure erk to store plans in a separate repository from your working reposito
 In `.erk/config.toml`:
 
 ```toml
-[plans]
+[github]
 repo = "owner/repo"
 ```
 
@@ -25,7 +25,7 @@ repo = "owner/repo"
 **Example:**
 
 ```toml
-[plans]
+[github]
 repo = "myorg/engineering-plans"
 ```
 
@@ -41,11 +41,11 @@ When `plans.repo` is set:
 
 Erk uses these labels to organize plans:
 
-| Label            | Color              | Description                              |
-| ---------------- | ------------------ | ---------------------------------------- |
-| `erk-plan`       | `#0E8A16` (green)  | Implementation plan for manual execution |
-| `erk-objective`  | `#5319E7` (purple) | Multi-phase objective with roadmap       |
-| `erk-extraction` | `#D93F0B` (orange) | Documentation extraction plan            |
+| Label           | Color              | Description                        |
+| --------------- | ------------------ | ---------------------------------- |
+| `erk-pr`        | `#0E8A16` (green)  | Implementation plan PR             |
+| `erk-learn`     | `#D93F0B` (orange) | Documentation extraction plan PR   |
+| `erk-objective` | `#5319E7` (purple) | Multi-phase objective with roadmap |
 
 ### Automatic Label Setup
 
@@ -75,4 +75,4 @@ Run `erk doctor` to verify the setup:
 erk doctor
 ```
 
-Look for the "plans-repo-labels" check. If labels are missing, the check will fail with instructions to fix.
+Look for the "pr-repo-labels" check. If labels are missing, the check will fail with instructions to fix.

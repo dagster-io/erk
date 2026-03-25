@@ -11,18 +11,19 @@
 - **[branch-name-inference.md](branch-name-inference.md)** — debugging missing branch_name in plans, implementing PR lookup from plans, modifying branch creation or naming conventions
 - **[branch-plan-resolution.md](branch-plan-resolution.md)** — resolving which plan a branch belongs to, working with branch naming conventions for plans, understanding how get_plan_for_branch works
 - **[complete-inventory-protocol.md](complete-inventory-protocol.md)** — estimating effort or remaining work for a plan or PR, closing a plan as complete, creating a consolidation plan from multiple PRs
+- **[consolidate-learn-plans-workflow.md](consolidate-learn-plans-workflow.md)** — working with consolidate-learn-plans dispatch, adding or modifying the consolidate-learn-plans workflow, understanding how learn plan consolidation branches are named, working with erk launch consolidate-learn-plans
 - **[consolidation-labels.md](consolidation-labels.md)** — consolidating multiple learn plans, working with erk-consolidated label, preventing re-consolidation of issues, modifying /local:replan-learn-plans or /erk:replan consolidation behavior
 - **[context-preservation-in-replan.md](context-preservation-in-replan.md)** — implementing or modifying replan workflow steps, debugging why a replanned issue produced a sparse plan, adding new plan-creation workflows that use EnterPlanMode
 - **[context-preservation-prompting.md](context-preservation-prompting.md)** — writing slash commands that create plans, designing any workflow that calls EnterPlanMode, understanding why plans lose investigation context
 - **[cornerstone-enforcement.md](cornerstone-enforcement.md)** — understanding SHOULD_BE_CODE filtering, working on learn pipeline classification, documentation items being classified as code, understanding cornerstone test rules
 - **[cross-artifact-analysis.md](cross-artifact-analysis.md)** — detecting PR and plan relationships, assessing if work supersedes a plan, analyzing overlap between artifacts
-- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo plan closing syntax
+- **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [github] repo in config.toml, understanding cross-repo plan closing syntax
 - **[debugging-patterns.md](debugging-patterns.md)** — Debugging validation failures after an initial fix attempt fails, Encountering errors where the required format is unclear from the error message alone, Deciding whether to guess at another fix or read the validator source
 - **[exploration-strategies.md](exploration-strategies.md)** — deciding when to use Explore agents vs direct searches, planning a two-stage explore-then-plan workflow, gathering codebase context before entering plan mode
 - **[gateway-consolidation-checklist.md](gateway-consolidation-checklist.md)** — moving a gateway package into the gateway/ directory, extracting a new gateway from existing code, performing large-scale import refactoring across packages
 - **[impl-context.md](impl-context.md)** — working with .erk/impl-context/ files, debugging plan content missing from a draft-PR implementation, reviewing a PR that contains .erk/impl-context/ files, understanding how draft-PR plans transfer content to .erk/impl-context/
 - **[incremental-dispatch.md](incremental-dispatch.md)** — dispatching implementation against an existing PR, adding a local plan to an existing PR for remote implementation, working with incremental-dispatch exec script or slash command
-- **[label-scheme.md](label-scheme.md)** — understanding how plans, code PRs, and learn issues are labeled, working with erk-pr, erk-plan, or erk-learn labels, debugging label filtering in TUI or CLI views
+- **[label-scheme.md](label-scheme.md)** — understanding how plans and learn issues are labeled, working with erk-pr or erk-learn labels, debugging label filtering in TUI or CLI views
 - **[learn-pipeline-workflow.md](learn-pipeline-workflow.md)** — debugging why learn materials are missing or malformed, understanding data flow from sessions to documentation plan, choosing between local learn and async learn modes, adding a new stage to the learn pipeline
 - **[learn-plan-metadata-fields.md](learn-plan-metadata-fields.md)** — working with learn plan metadata, troubleshooting null learn_status or learn_plan_issue, transforming Plan objects in pipelines, understanding created_from_workflow_run_url field, adding workflow run backlinks to plans
 - **[learn-plan-validation.md](learn-plan-validation.md)** — creating or modifying erk-learn plans, working on the learn workflow pipeline, debugging learn-on-learn cycle errors
@@ -32,9 +33,9 @@
 - **[learn-workflow.md](learn-workflow.md)** — using /erk:learn skill, understanding learn status tracking, auto-updating parent plans when learn plans land
 - **[lifecycle-stage-consolidation.md](lifecycle-stage-consolidation.md)** — adding or modifying lifecycle_stage write points, understanding the impl stage consolidation from implementing/implemented, working with plan lifecycle stage transitions
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
-- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-prs that lack metadata blocks
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan metadata schema, coordinating metadata changes across files
-- **[metadata-update-patterns.md](metadata-update-patterns.md)** — writing plan dispatch metadata updates, choosing between assertive and best-effort metadata operations, working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata
+- **[metadata-update-patterns.md](metadata-update-patterns.md)** — writing plan dispatch metadata updates, choosing between assertive and best-effort metadata operations, working with write_dispatch_metadata or maybe_update_pr_dispatch_metadata
 - **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[objective-update-after-land.md](objective-update-after-land.md)** — modifying the land pipeline's post-merge behavior, working with objective-update-after-land exec script, understanding fail-open patterns in erk
@@ -44,7 +45,7 @@
 - **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan
 - **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub draft PR, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
-- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
+- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a pr_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-mismatch-recovery.md](plan-mismatch-recovery.md)** — debugging stale plan content in .erk/impl-context/, plan content doesn't match what's on GitHub, re-running implementation setup for an existing plan
 - **[plan-schema.md](plan-schema.md)** — understanding plan structure, debugging plan validation errors, working with plan-header or plan-body blocks
@@ -56,7 +57,7 @@
 - **[planned-pr-lifecycle.md](planned-pr-lifecycle.md)** — working with planned-PR-backed plans, understanding PR body format for planned PR plans, debugging plan content extraction from PR bodies, building or modifying lifecycle stage transitions
 - **[planning-patterns.md](planning-patterns.md)** — preparing to enter plan mode, optimizing plan creation workflow, delegating tasks during planning
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs
-- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, debugging why get-pr-for-plan returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
+- **[pr-discovery.md](pr-discovery.md)** — finding the PR associated with an erk plan, debugging why PR lookup returns no-branch-in-plan, understanding how erk learn finds PRs, working with plan-header branch_name field
 - **[pr-submission-patterns.md](pr-submission-patterns.md)** — creating or updating PRs programmatically in erk, debugging why a duplicate PR or issue was created, fixing erk pr check validation failures, understanding the PR number vs plan number distinction
 - **[refactoring-decomposition.md](refactoring-decomposition.md)** — deleting a function or type that has many callers across the codebase, planning a multi-node objective that removes a backend or feature flag, decomposing a large refactor into reviewable PRs
 - **[reliability-patterns.md](reliability-patterns.md)** — deciding whether an operation should be agent-driven or workflow-native, designing multi-layer resilience for critical automated operations, ordering git operations that mix cleanup with reset in CI workflows

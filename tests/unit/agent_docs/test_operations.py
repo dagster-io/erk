@@ -13,7 +13,7 @@ from erk.agent_docs.operations import (
     validate_agent_docs,
     validate_tripwires_index,
 )
-from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+from tests.fakes.gateway.agent_docs import FakeAgentDocs
 
 PROJECT_ROOT = Path("/fake/repo")
 

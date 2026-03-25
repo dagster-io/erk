@@ -11,20 +11,20 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.dry_run import DryRunGit
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, create_marker
-from tests.fakes.shell import FakeShell
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def _make_plan_body_with_worktree(worktree_name: str) -> str:
@@ -423,19 +423,19 @@ def test_delete_all_closes_pr_and_plan() -> None:
         # Create plan with worktree_name in metadata
         now = datetime.now(UTC)
         plan = Plan(
-            plan_identifier="123",
-            title="Implement feature",
+            pr_identifier="123",
+            title="[erk-pr] Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/123",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_github = create_plan_store_with_plans({"123": plan})
+        fake_pr_backend, fake_github = create_pr_backend_with_plans({"123": plan})
 
         # Add PR for the branch to the same FakeLocalGitHub backing the plan store
         pr_info = _make_pr_info(456, state="OPEN")
@@ -452,7 +452,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=fake_github,
-            plan_store=fake_plan_store,
+            pr_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
@@ -463,7 +463,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
         assert_cli_success(result)
         # Verify PR was closed
         assert 456 in fake_github.closed_prs
-        # Verify plan was closed (PlannedPRBackend closes via FakeLocalGitHub.close_pr)
+        # Verify plan was closed (ManagedGitHubPrBackend closes via FakeLocalGitHub.close_pr)
         assert 123 in fake_github.closed_prs
         # Verify branch was deleted (--all implies --branch)
         assert "feature-branch" in fake_git.deleted_branches
@@ -605,19 +605,19 @@ def test_delete_all_shows_closed_plan_status() -> None:
         # Create a CLOSED plan with worktree_name in metadata
         now = datetime.now(UTC)
         plan = Plan(
-            plan_identifier="456",
-            title="Implement feature",
+            pr_identifier="456",
+            title="[erk-pr] Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.CLOSED,  # Already closed
             url="https://github.com/owner/repo/issues/456",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_github = create_plan_store_with_plans({"456": plan})
+        fake_pr_backend, fake_github = create_pr_backend_with_plans({"456": plan})
 
         # Build fake git ops with worktree info
         fake_git = FakeGit(
@@ -628,7 +628,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=FakeLocalGitHub(),
-            plan_store=fake_plan_store,
+            pr_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},
@@ -638,7 +638,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
 
         assert_cli_success(result)
         # Should show that plan was already closed
-        assert "Plan #456 already closed" in result.output
+        assert "PR #456 already closed" in result.output
         # Plan should NOT have been closed again (it was already closed)
         assert 456 not in fake_github.closed_prs
 
@@ -653,19 +653,19 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
         # Create OPEN plan with worktree_name in metadata
         now = datetime.now(UTC)
         plan = Plan(
-            plan_identifier="789",
-            title="Implement feature",
+            pr_identifier="789",
+            title="[erk-pr] Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.OPEN,
             url="https://github.com/owner/repo/issues/789",
-            labels=["erk-pr", "erk-plan"],
+            labels=["erk-pr"],
             assignees=[],
             created_at=now,
             updated_at=now,
             metadata={},
             objective_id=None,
         )
-        fake_plan_store, fake_github = create_plan_store_with_plans({"789": plan})
+        fake_pr_backend, fake_github = create_pr_backend_with_plans({"789": plan})
 
         # Create OPEN PR for the branch
         pr_info = _make_pr_info(123, state="OPEN")
@@ -684,7 +684,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
         test_ctx = env.build_context(
             git=fake_git,
             github=fake_github,
-            plan_store=fake_plan_store,
+            pr_store=fake_pr_backend,
             issues=fake_github.issues,
             shell=FakeShell(),
             existing_paths={wt},

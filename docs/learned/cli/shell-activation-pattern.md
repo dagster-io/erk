@@ -7,7 +7,7 @@ read_when:
   - "understanding why plan checkout commands use source"
 tripwires:
   - action: "generating directory-change commands using erk br co without source"
-    warning: 'Subprocess directory changes do NOT persist to the parent shell. erk br co runs in a subprocess — its chdir() is invisible to the caller. Use the shell activation pattern: source "$(erk br co <branch> --script)" to actually navigate.'
+    warning: "Subprocess directory changes do NOT persist to the parent shell. erk br co runs in a subprocess — its chdir() is invisible to the caller. Use the shell activation pattern: source <(erk br co <branch> --script) to actually navigate."
     score: 9
 ---
 
@@ -26,18 +26,18 @@ erk br co feature-branch && some-command   # Wrong: chdir() happened in subproce
 **This DOES navigate the shell:**
 
 ```bash
-source "$(erk br co feature-branch --script)"
+source <(erk br co feature-branch --script)
 ```
 
 ## How It Works
 
-`erk br co --script` prints the path to a shell activation script (`.erk/bin/activate.sh`) instead of executing it. The activation script:
+`erk br co --script` outputs the shell activation script content to stdout. The activation script:
 
 1. Sources the worktree's virtual environment
 2. Changes the shell's working directory to the worktree root
 3. Loads `.env` files if present
 
-By wrapping in `source "$(...)"`, the shell evaluates the script in the current process, making the directory change persistent.
+By wrapping in `source <(...)`, the shell evaluates the script content in the current process via process substitution, making the directory change persistent.
 
 ## Implementation
 

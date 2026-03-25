@@ -4,7 +4,7 @@ This module provides ErkContext - the unified context that holds all dependencie
 for erk and erk-kits operations.
 
 The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
-PlanListService) are defined in erk_shared.core, enabling
+PrListService) are defined in erk_shared.core, enabling
 proper type hints without circular imports. Real implementations remain in erk.
 """
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from erk_shared.core.health_check_runner import HealthCheckRunner
     from erk_shared.core.objective_list_service import ObjectiveListService
 
-from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.pr_list_service import PrListService
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.agent_docs.abc import AgentDocs
@@ -54,7 +54,7 @@ from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
-from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.pr_store.backend import ManagedPrBackend
 
 
 @dataclass(frozen=True)
@@ -87,7 +87,7 @@ class ErkContext:
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     agent_docs: AgentDocs  # docs/learned/ file access
-    plan_store: PlanBackend
+    pr_store: ManagedPrBackend
     prompt_executor: PromptExecutor
 
     # Shell/CLI integrations (moved to erk_shared)
@@ -101,7 +101,7 @@ class ErkContext:
     erk_installation: ErkInstallation
     script_writer: ScriptWriter
     codespace_registry: CodespaceRegistry
-    plan_list_service: PlanListService
+    pr_list_service: PrListService
     objective_list_service: ObjectiveListService
 
     # Paths
@@ -173,13 +173,13 @@ class ErkContext:
         return self.github.issues
 
     @property
-    def plan_backend(self) -> PlanBackend:
-        """Access plan_store as PlanBackend (read/write interface).
+    def pr_backend(self) -> ManagedPrBackend:
+        """Access pr_store as ManagedPrBackend (read/write interface).
 
-        Since plan_store is typed as PlanBackend, this is a direct alias.
+        Since pr_store is typed as ManagedPrBackend, this is a direct alias.
         Retained for call-site compatibility.
         """
-        return self.plan_store
+        return self.pr_store
 
     @property
     def branch_manager(self) -> BranchManager:
@@ -218,7 +218,7 @@ class ErkContext:
         github_admin: GitHubAdmin | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
-        plan_store: PlanBackend | None = None,
+        pr_store: ManagedPrBackend | None = None,
         cmux: Cmux | None = None,
         remote_github: RemoteGitHub | None = None,
         debug: bool = False,
@@ -238,7 +238,7 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-            plan_store: Optional PlanBackend. If None, creates PlannedPRBackend.
+            pr_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -248,13 +248,13 @@ class ErkContext:
             ErkContext configured with provided values and test defaults
 
         Example:
-            >>> from erk_shared.gateway.github.issues import FakeGitHubIssues
-            >>> from erk_shared.gateway.git.fake import FakeGit
+            >>> from tests.fakes.gateway.github_issues import FakeGitHubIssues
+            >>> from tests.fakes.gateway.git import FakeGit
             >>> github = FakeGitHubIssues()
             >>> git_ops = FakeGit()
             >>> ctx = ErkContext.for_test(github_issues=github, git=git_ops, debug=True)
         """
-        from erk_shared.context.testing import context_for_test
+        from tests.fakes.tests.shared_context import context_for_test
 
         return context_for_test(
             github_issues=github_issues,
@@ -263,7 +263,7 @@ class ErkContext:
             github_admin=github_admin,
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
-            plan_store=plan_store,
+            pr_store=pr_store,
             cmux=cmux,
             remote_github=remote_github,
             debug=debug,

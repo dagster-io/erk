@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.impl_folder import (
     create_impl_folder,
     get_impl_dir,
@@ -16,6 +15,7 @@ from erk_shared.impl_folder import (
     read_plan_ref,
     save_plan_ref,
 )
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
 
@@ -32,7 +32,7 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
     save_plan_ref(
         impl_folder,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -46,7 +46,7 @@ def test_save_and_read_plan_ref(tmp_path: Path) -> None:
     # Read back and verify
     ref = read_plan_ref(impl_folder)
     assert ref is not None
-    assert ref.plan_id == "42"
+    assert ref.pr_id == "42"
     assert ref.url == "https://github.com/owner/repo/issues/42"
     assert ref.created_at is not None
     assert ref.synced_at is not None
@@ -60,7 +60,7 @@ def test_save_plan_ref_dir_must_exist(tmp_path: Path) -> None:
         save_plan_ref(
             impl_folder,
             provider="github",
-            plan_id="42",
+            pr_number="42",
             url="https://github.com/owner/repo/issues/42",
             labels=(),
             objective_id=None,
@@ -84,7 +84,7 @@ def test_has_plan_ref_true_when_file_exists(tmp_path: Path) -> None:
     save_plan_ref(
         impl_folder,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -123,7 +123,7 @@ Test the workflow.
         repo_root=sentinel_path(),
         title="Test Plan",
         body=plan_content,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     assert result.number == 123
@@ -132,7 +132,7 @@ Test the workflow.
     save_plan_ref(
         impl_folder,
         provider="github",
-        plan_id=str(result.number),
+        pr_number=str(result.number),
         url=result.url,
         labels=(),
         objective_id=None,
@@ -145,19 +145,19 @@ Test the workflow.
     # Step 5: Read back and verify
     ref = read_plan_ref(impl_folder)
     assert ref is not None
-    assert ref.plan_id == "123"
+    assert ref.pr_id == "123"
     assert ref.url == result.url
 
 
-def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
-    """Test that issue creation includes erk-plan label."""
+def test_workflow_issue_creation_tracks_erk_pr_label() -> None:
+    """Test that issue creation includes erk-pr label."""
     issues = FakeGitHubIssues()
 
     issues.create_issue(
         repo_root=sentinel_path(),
         title="Implementation Plan",
         body="Plan content here",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     # Verify issue was created with label
@@ -165,7 +165,6 @@ def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
     title, body, labels = issues.created_issues[0]
     assert title == "Implementation Plan"
     assert body == "Plan content here"
-    assert "erk-plan" in labels
 
 
 def test_workflow_get_issue_after_creation() -> None:
@@ -179,7 +178,7 @@ def test_workflow_get_issue_after_creation() -> None:
         repo_root=sentinel_path(),
         title="Test Issue",
         body="Body content",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
     )
 
     # Retrieve issue info

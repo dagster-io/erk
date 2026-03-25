@@ -8,8 +8,8 @@ relies solely on extract_objective_number() which parses plnd/O{N}-... patterns.
 from pathlib import Path
 
 from erk.cli.commands.objective_helpers import get_objective_for_branch
-from erk.core.context import context_for_test
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.test_utils.test_context import context_for_test
 
 
 def test_extracts_objective_from_plnd_branch(tmp_path: Path) -> None:

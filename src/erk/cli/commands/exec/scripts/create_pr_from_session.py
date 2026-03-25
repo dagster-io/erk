@@ -1,19 +1,19 @@
-"""Extract plan from Claude session and create GitHub draft PR.
+"""Extract plan from Claude session and create a planned PR.
 
 Usage:
     erk exec create-pr-from-session --branch-slug SLUG [--session-id SESSION_ID]
 
-This command combines plan extraction from Claude session files with GitHub
-draft PR creation. It extracts the latest ExitPlanMode plan, creates a branch,
-commits the plan, and creates a draft PR.
+This command combines plan extraction from Claude session files with planned PR
+creation. It extracts the latest ExitPlanMode plan, creates a branch,
+commits the plan, and creates a planned PR.
 
 Output:
     JSON result on stdout:
-        {"success": true, "plan_number": N, "plan_url": "...", "branch_name": "..."}
+        {"success": true, "pr_number": N, "pr_url": "...", "branch_name": "..."}
     Error messages on stderr with exit code 1 on failure
 
 Exit Codes:
-    0: Success - draft PR created
+    0: Success - planned PR created
     1: Error - no plan found, gh CLI not available, or other error
 """
 
@@ -32,7 +32,7 @@ from erk_shared.context.helpers import (
     require_time,
 )
 from erk_shared.naming import generate_planned_pr_branch_name
-from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.pr_store.create_plan_draft_pr import create_plan_draft_pr
 
 
 @click.command(name="create-pr-from-session")
@@ -42,7 +42,7 @@ from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
 )
 @click.option(
     "--summary",
-    help="AI-generated summary to display above the collapsed plan in the PR body",
+    help="AI-generated summary to display above the collapsed PR in the PR body",
 )
 @click.option(
     "--branch-slug",
@@ -56,9 +56,9 @@ def create_pr_from_session(
     summary: str | None,
     branch_slug: str | None,
 ) -> None:
-    """Extract plan from Claude session and create GitHub draft PR.
+    """Extract plan from Claude session and create a planned PR.
 
-    Combines plan extraction with draft PR creation in a single operation.
+    Combines plan extraction with planned PR creation in a single operation.
     """
     if not branch_slug:
         click.echo(
@@ -102,7 +102,7 @@ def create_pr_from_session(
         plan_content=plan_text,
         branch_name=branch_name,
         title=None,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         source_repo=None,
         objective_id=None,
         created_from_session=session_id,
@@ -120,8 +120,8 @@ def create_pr_from_session(
     # Return success result
     output = {
         "success": True,
-        "plan_number": result.plan_number,
-        "plan_url": result.plan_url,
+        "pr_number": result.pr_number,
+        "pr_url": result.pr_url,
         "branch_name": result.branch_name,
         "title": result.title,
     }

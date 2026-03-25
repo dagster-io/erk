@@ -1,0 +1,144 @@
+"""Tests for check_pr_repo_labels health check.
+
+These tests verify the health check correctly reports label status in the PR repository.
+Uses FakeGitHubIssues to test label checking behavior.
+
+Note: The doctor check verifies erk-pr and erk-objective labels.
+erk-learn is optional and not checked.
+"""
+
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.test_utils.paths import sentinel_path
+
+from erk.core.health_checks.pr_repo_labels import check_pr_repo_labels
+
+
+def test_check_returns_passed_when_all_required_labels_exist() -> None:
+    """Test that check returns success when required erk labels exist."""
+    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-objective"})
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.passed is True
+    assert result.name == "pr-repo-labels"
+    assert "configured" in result.message.lower()
+    assert "owner/plans-repo" in result.message
+
+
+def test_check_returns_failed_when_one_label_missing() -> None:
+    """Test that check fails when one required label is missing."""
+    # Missing erk-objective
+    github_issues = FakeGitHubIssues(labels={"erk-pr"})
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.passed is False
+    assert "erk-objective" in result.message
+    assert result.remediation is not None
+    assert "gh label create" in result.remediation
+
+
+def test_check_returns_failed_when_all_labels_missing() -> None:
+    """Test that check fails when all required labels are missing."""
+    github_issues = FakeGitHubIssues()  # No labels
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.passed is False
+    assert "erk-pr" in result.message
+    assert "erk-objective" in result.message
+    # erk-learn is NOT checked (optional)
+    assert "erk-learn" not in result.message
+
+
+def test_check_returns_failed_message_includes_pr_repo() -> None:
+    """Test that failure message includes the PR repo name."""
+    github_issues = FakeGitHubIssues()
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="myorg/engineering-plans",
+        github_issues=github_issues,
+    )
+
+    assert result.passed is False
+    assert "myorg/engineering-plans" in result.message
+
+
+def test_check_passes_with_extra_labels() -> None:
+    """Test that check passes when repo has extra labels beyond required erk labels."""
+    github_issues = FakeGitHubIssues(
+        labels={
+            "erk-pr",
+            "erk-objective",
+            "erk-learn",
+            "bug",
+            "enhancement",
+        }
+    )
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.passed is True
+
+
+def test_check_passes_without_erk_learn() -> None:
+    """Test that check passes when erk-learn is missing (it's optional)."""
+    github_issues = FakeGitHubIssues(labels={"erk-pr", "erk-objective"})
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.passed is True
+
+
+def test_remediation_contains_gh_label_create_commands() -> None:
+    """Test that remediation contains copy-paste gh label create commands."""
+    # Missing erk-objective
+    github_issues = FakeGitHubIssues(labels={"erk-pr"})
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.remediation is not None
+    assert 'gh label create "erk-objective"' in result.remediation
+    assert "--description" in result.remediation
+    assert "--color" in result.remediation
+    assert "-R owner/plans-repo" in result.remediation
+
+
+def test_remediation_contains_multiple_commands_when_multiple_missing() -> None:
+    """Test that remediation contains commands for all missing labels."""
+    github_issues = FakeGitHubIssues()  # No labels
+
+    result = check_pr_repo_labels(
+        repo_root=sentinel_path(),
+        pr_repo="owner/plans-repo",
+        github_issues=github_issues,
+    )
+
+    assert result.remediation is not None
+    assert 'gh label create "erk-pr"' in result.remediation
+    assert 'gh label create "erk-objective"' in result.remediation

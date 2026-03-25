@@ -13,15 +13,15 @@ from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
     setup_impl_from_pr,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.context.testing import context_for_test
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir, save_plan_ref
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.graphite import FakeGraphite
+from tests.fakes.gateway.time import FakeTime
+from tests.fakes.tests.shared_context import context_for_test
 
 BRANCH = "test/branch"
 """Test branch name used across tests."""
@@ -109,23 +109,23 @@ class TestSetupImplFromPrNoImplFlag:
 def _make_planned_pr_backend(
     tmp_path: Path,
     plan_branch: str,
-) -> tuple[PlannedPRBackend, int]:
-    """Create a PlannedPRBackend with one plan, returning (backend, pr_number).
+) -> tuple[ManagedGitHubPrBackend, int]:
+    """Create a ManagedGitHubPrBackend with one PR, returning (backend, pr_number).
 
     Unlike _make_planned_pr_context, this does not create a full ErkContext,
     allowing the caller to build their own context (e.g., without github).
     """
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
-        title="My Plan",
+        title="My PR",
         content="# Plan\n\nImplement something.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
     return backend, pr_number
 
 
@@ -136,24 +136,24 @@ def _make_planned_pr_context(
     fake_git: FakeGit | None = None,
     fake_graphite: FakeGraphite | None = None,
 ) -> tuple[ErkContext, int]:
-    """Create an ErkContext configured for planned-PR plan backend with shared FakeLocalGitHub.
+    """Create an ErkContext configured for planned-PR PR backend with shared FakeLocalGitHub.
 
-    The FakeLocalGitHub is shared between the PlannedPRBackend and the context,
-    so that both plan_backend.get_provider_name() and github.get_pr() work.
+    The FakeLocalGitHub is shared between the ManagedGitHubPrBackend and the context,
+    so that both pr_backend.get_provider_name() and github.get_pr() work.
 
     Returns (context, pr_number).
     """
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
-        title="My Plan",
+        title="My PR",
         content="# Plan\n\nImplement something.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
 
     if fake_git is None:
         fake_git = FakeGit(current_branches={tmp_path: "master"})
@@ -166,13 +166,13 @@ def _make_planned_pr_context(
         graphite=fake_graphite,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
     return ctx, pr_number
 
 
 def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
-    """Planned-PR plan with branch_name checks out the plan branch and teleports from remote."""
+    """Planned-PR PR with branch_name checks out the plan branch and teleports from remote."""
     plan_branch = "my-plan-branch-02-19"
     fake_git = FakeGit(
         current_branches={tmp_path: "master"},
@@ -189,7 +189,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Fetch was called for the plan branch
+    # Fetch was called for the PR branch
     assert fake_git.fetched_branches == [("origin", plan_branch)]
 
     # Branch was checked out
@@ -198,7 +198,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
     # Pull-rebase was called to sync with remote
     assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
 
-    # Output contains the plan branch name
+    # Output contains the PR branch name
     output_lines = result.output.strip().split("\n")
     json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
     output = json.loads(json_line)
@@ -207,7 +207,7 @@ def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
 
 
 def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
-    """Already on the plan branch — no checkout needed, just fetch and pull-rebase."""
+    """Already on the PR branch — no checkout needed, just fetch and pull-rebase."""
     plan_branch = "my-plan-branch-02-19"
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},  # Already on the plan branch
@@ -226,21 +226,21 @@ def test_planned_pr_plan_already_on_plan_branch(tmp_path: Path) -> None:
     # Fetch was called
     assert fake_git.fetched_branches == [("origin", plan_branch)]
 
-    # No checkout (already on the plan branch)
+    # No checkout (already on the PR branch)
     assert all(b != plan_branch for _, b in fake_git.checked_out_branches)
 
     # Pull-rebase was called to sync
     assert fake_git.pull_rebase_calls == [(tmp_path, "origin", plan_branch)]
 
-    assert f"Already on plan branch '{plan_branch}'" in result.output
+    assert f"Already on PR branch '{plan_branch}'" in result.output
 
 
 def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None:
-    """When .impl/ already has a matching plan_id, skip branch switching.
+    """When .impl/ already has a matching pr_id, skip branch switching.
 
     In CI, the workflow checks out an implementation branch and pre-populates
     .impl/ with plan-ref.json. setup-impl-from-pr should detect this and
-    stay on the current branch instead of switching to the plan branch.
+    stay on the current branch instead of switching to the PR branch.
     """
     plan_branch = "plan-my-feature-02-19"
     ci_branch = "P100-my-feature-impl-02-19-1430"
@@ -252,15 +252,15 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     )
     fake_graphite = FakeGraphite()
 
-    # Pre-create branch-scoped impl dir with matching plan_id (simulating CI setup).
+    # Pre-create branch-scoped impl dir with matching pr_id (simulating CI setup).
     impl_dir = get_impl_dir(tmp_path, branch_name=ci_branch)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id=str(pr_number),
+        pr_number=str(pr_number),
         url=f"https://github.com/test-owner/test-repo/pull/{pr_number}",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         objective_id=None,
         node_ids=None,
     )
@@ -270,7 +270,7 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
         graphite=fake_graphite,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()
@@ -288,14 +288,14 @@ def test_planned_pr_plan_skips_checkout_when_impl_exists(tmp_path: Path) -> None
     assert len(fake_git.pull_rebase_calls) == 0
 
     # Output should indicate we skipped branch setup
-    assert f"Found existing impl dir for plan #{pr_number}, skipping branch setup" in result.output
+    assert f"Found existing impl dir for PR #{pr_number}, skipping branch setup" in result.output
 
-    # JSON output should have the CI branch, not the plan branch
+    # JSON output should have the CI branch, not the PR branch
     output_lines = result.output.strip().split("\n")
     json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
     output = json.loads(json_line)
     assert output["success"] is True
-    assert output["branch"] == ci_branch  # Stayed on CI branch, not plan branch
+    assert output["branch"] == ci_branch  # Stayed on CI branch, not PR branch
 
 
 def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
@@ -331,7 +331,7 @@ def test_planned_pr_plan_sync_failure_reports_error(tmp_path: Path) -> None:
 
 
 def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None:
-    """Planned-PR plan reads plan content from .erk/impl-context/ after checkout."""
+    """Planned-PR PR reads plan content from .erk/impl-context/ after checkout."""
     plan_branch = "plan-test-local-read-02-20"
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},
@@ -373,7 +373,7 @@ def test_planned_pr_reads_from_impl_context_when_present(tmp_path: Path) -> None
     json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
     output = json.loads(json_line)
     assert output["success"] is True
-    assert output["plan_title"] == "Local Plan"
+    assert output["pr_title"] == "Local Plan"
 
 
 def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -> None:
@@ -411,7 +411,7 @@ def test_planned_pr_reads_objective_id_from_ref_json(tmp_path: Path) -> None:
 
 
 def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -> None:
-    """When .erk/impl-context/ doesn't exist, extract plan from PR body."""
+    """When .erk/impl-context/ doesn't exist, extract content from PR body."""
     plan_branch = "plan-test-fallback-02-20"
     fake_git = FakeGit(
         current_branches={tmp_path: plan_branch},
@@ -429,7 +429,7 @@ def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -
 
     assert result.exit_code == 0, f"Command failed: {result.output}"
 
-    # Impl folder was created with plan content extracted from PR body
+    # Impl folder was created with content extracted from PR body
     impl_plan = tmp_path / ".erk" / "impl-context" / plan_branch / "plan.md"
     assert impl_plan.exists()
     # The PR body was created via _make_planned_pr_context with content
@@ -454,16 +454,16 @@ def _invoke_create_impl_context(
     Returns (result_dict, impl_path).
     """
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
-    plan_result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_managed_pr(
         repo_root=tmp_path,
-        title="Test Plan Title",
+        title="Test PR Title",
         content="# Plan\n\nDo the thing.",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         metadata={"branch_name": plan_branch},
         summary=None,
     )
-    pr_number = int(plan_result.plan_id)
+    pr_number = int(plan_result.pr_id)
 
     fake_git = FakeGit(current_branches={tmp_path: plan_branch})
     ctx = context_for_test(
@@ -471,7 +471,7 @@ def _invoke_create_impl_context(
         git=fake_git,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     if impl_context_files is not None:
@@ -489,7 +489,7 @@ def _invoke_create_impl_context(
     def _wrapper(click_ctx: click.Context) -> None:
         result = create_impl_context_from_pr(
             click_ctx,
-            plan_number=pr_number,
+            pr_number=pr_number,
             cwd=tmp_path,
             branch_name=plan_branch,
         )
@@ -504,14 +504,14 @@ def _invoke_create_impl_context(
 def test_create_impl_context_pr_not_found(tmp_path: Path) -> None:
     """create_impl_context_from_pr exits 1 when PR does not exist."""
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
     fake_git = FakeGit(current_branches={tmp_path: "some-branch"})
     ctx = context_for_test(
         github=fake_github,
         git=fake_git,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()
@@ -521,7 +521,7 @@ def test_create_impl_context_pr_not_found(tmp_path: Path) -> None:
     def _wrapper(click_ctx: click.Context) -> None:
         create_impl_context_from_pr(
             click_ctx,
-            plan_number=9999,
+            pr_number=9999,
             cwd=tmp_path,
             branch_name="some-branch",
         )
@@ -559,7 +559,7 @@ def test_create_impl_context_ref_json_non_string_title(tmp_path: Path) -> None:
     )
     assert result["success"] is True
     # Non-string title falls back to PR title
-    assert result["plan_title"] == "Test Plan Title"
+    assert result["pr_title"] == "Test PR Title"
 
 
 def test_create_impl_context_ref_json_non_list_node_ids(tmp_path: Path) -> None:
@@ -588,7 +588,7 @@ def test_create_impl_context_ref_json_missing_fields(tmp_path: Path) -> None:
         },
     )
     assert result["success"] is True
-    assert result["plan_title"] == "Test Plan Title"  # Falls back to PR title
+    assert result["pr_title"] == "Test PR Title"  # Falls back to PR title
     ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
     assert ref_data["objective_id"] is None
     assert ref_data.get("node_ids") is None
@@ -611,7 +611,7 @@ def test_create_impl_context_valid_ref_json(tmp_path: Path) -> None:
         },
     )
     assert result["success"] is True
-    assert result["plan_title"] == "Custom Title"
+    assert result["pr_title"] == "Custom Title"
     ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
     assert ref_data["objective_id"] == 42
     assert ref_data["node_ids"] == ["node-1", "node-2"]
@@ -619,9 +619,9 @@ def test_create_impl_context_valid_ref_json(tmp_path: Path) -> None:
 
 def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -> None:
     """When the PR doesn't exist, report an error."""
-    # Create a PlannedPRBackend but don't create any PR
+    # Create a ManagedGitHubPrBackend but don't create any PR
     fake_github = FakeLocalGitHub()
-    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
     fake_git = FakeGit(current_branches={tmp_path: "master"})
 
@@ -630,7 +630,7 @@ def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -> None:
         git=fake_git,
         cwd=tmp_path,
         repo_root=tmp_path,
-        plan_store=backend,
+        pr_store=backend,
     )
 
     runner = CliRunner()

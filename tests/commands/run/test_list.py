@@ -3,7 +3,7 @@
 This file focuses on CLI-specific concerns for the list runs command:
 - Command execution and exit codes
 - Output formatting and display (status indicators, Rich table)
-- PR-centric view with direct PR extraction and plan→PR fallback
+- PR-centric view with direct PR extraction
 
 The integration layer (list_workflow_runs) is tested in:
 - tests/unit/fakes/test_fake_github.py - Fake infrastructure tests
@@ -20,14 +20,18 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.run.list_cmd import list_runs
+from erk.cli.constants import DISPATCH_WORKFLOW_NAME, PR_ADDRESS_WORKFLOW_NAME
 from erk.core.context import ErkContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
-from tests.fakes.context import create_test_context
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.tests.context import create_test_context
+
+_IMPL_WORKFLOW = f".github/workflows/{DISPATCH_WORKFLOW_NAME}"
+_ADDR_WORKFLOW = f".github/workflows/{PR_ADDRESS_WORKFLOW_NAME}"
 
 
 def _make_git(tmp_path: Path) -> FakeGit:
@@ -55,7 +59,7 @@ def _make_issue(number: int, title: str) -> IssueInfo:
         body="",
         state="OPEN",
         url=f"https://github.com/owner/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -112,6 +116,7 @@ def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc123",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -136,6 +141,7 @@ def test_list_runs_new_plan_implement_format_shows_pr(
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/add-branch-name-to-run-name (#460):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -148,10 +154,10 @@ def test_list_runs_new_plan_implement_format_shows_pr(
     assert "plan-implement" in result.output
 
 
-def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
+def test_list_runs_old_plan_format_shows_dash(
     tmp_path: Path,
 ) -> None:
-    """Old plan-implement format (no #pr) falls back to plan→PR linkage."""
+    """Old plan-implement format (no #pr) shows dashes for PR columns."""
     workflow_runs = [
         WorkflowRun(
             run_id="111222",
@@ -160,39 +166,17 @@ def test_list_runs_old_plan_format_falls_back_to_plan_pr_linkage(
             branch="feat-1",
             head_sha="abc123",
             display_title="142:abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
 
-    pr_info = PullRequestInfo(
-        number=201,
-        state="OPEN",
-        url="https://github.com/owner/repo/pull/201",
-        is_draft=False,
-        title="Add user auth",
-        checks_passing=True,
-        owner="owner",
-        repo="repo",
-        has_conflicts=False,
-    )
-
-    github = FakeLocalGitHub(
-        workflow_runs=workflow_runs,
-        pr_plan_linkages={142: [pr_info]},
-    )
-    ctx = _make_ctx(
-        tmp_path,
-        workflow_runs=workflow_runs,
-        issues={142: _make_issue(142, "Add user authentication")},
-        github=github,
-    )
+    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
 
     runner = CliRunner()
     result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
 
     assert result.exit_code == 0
-    assert "#201" in result.output
-    assert "Add user auth" in result.output
-    assert "✅" in result.output
+    assert "111222" in result.output
 
 
 def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
@@ -205,6 +189,7 @@ def test_list_runs_no_pr_shows_dash(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="Some legacy title [abc123]",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -227,6 +212,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/add-feature (#460):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
         WorkflowRun(
             run_id="222222",
@@ -235,6 +221,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             branch="feat-2",
             head_sha="def456",
             display_title="pr-address:#460:def456",
+            workflow_path=_ADDR_WORKFLOW,
         ),
         WorkflowRun(
             run_id="333333",
@@ -243,6 +230,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             branch="feat-3",
             head_sha="ghi789",
             display_title="one-shot:#461:ghi789",
+            workflow_path=".github/workflows/one-shot.yml",
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -268,6 +256,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/feat-1 (#201):abc",
+            workflow_path=_IMPL_WORKFLOW,
         ),
         WorkflowRun(
             run_id="999888",
@@ -276,6 +265,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             branch="feat-2",
             head_sha="def456",
             display_title="plnd/feat-2 (#202):def",
+            workflow_path=_IMPL_WORKFLOW,
         ),
         WorkflowRun(
             run_id="789",
@@ -284,6 +274,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             branch="feat-3",
             head_sha="ghi789",
             display_title="plnd/feat-3 (#203):ghi",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -313,7 +304,8 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:abc",
+            display_title="plnd/add-feature (#201):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
 
@@ -331,12 +323,11 @@ def test_list_runs_truncates_long_titles(tmp_path: Path) -> None:
 
     github = FakeLocalGitHub(
         workflow_runs=workflow_runs,
-        pr_plan_linkages={142: [pr_info]},
+        prs={"feat-1": pr_info},
     )
     ctx = _make_ctx(
         tmp_path,
         workflow_runs=workflow_runs,
-        issues={142: _make_issue(142, "Plan title")},
         github=github,
     )
 
@@ -361,6 +352,7 @@ def test_list_runs_displays_submission_time(tmp_path: Path) -> None:
             head_sha="abc123",
             display_title="pr-address:#456:abc456",
             created_at=timestamp,
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -384,6 +376,7 @@ def test_list_runs_handles_missing_timestamp(tmp_path: Path) -> None:
             head_sha="abc123",
             display_title="pr-address:#456:abc456",
             created_at=None,
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -405,6 +398,7 @@ def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="plnd/fix-auth-bug (#460):abc456",
+            workflow_path=_IMPL_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -429,6 +423,7 @@ def test_list_runs_handles_queued_status(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -450,6 +445,7 @@ def test_list_runs_handles_cancelled_status(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -471,6 +467,7 @@ def test_list_runs_pr_column_header(tmp_path: Path) -> None:
             branch="feat-1",
             head_sha="abc123",
             display_title="pr-address:#456:abc",
+            workflow_path=_ADDR_WORKFLOW,
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)

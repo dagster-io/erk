@@ -7,13 +7,13 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.codespace.setup_cmd import DEFAULT_MACHINE_TYPE
-from erk.core.context import context_for_test
 from erk_shared.context.types import RepoContext
-from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
-from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+from tests.fakes.gateway.codespace import FakeCodespace
+from tests.fakes.gateway.codespace_registry import FakeCodespaceRegistry
+from tests.fakes.gateway.erk_installation import FakeErkInstallation
+from tests.test_utils.test_context import context_for_test
 
 TEST_REPO_INFO = RepoInfo(owner="testorg", name="testrepo")
 TEST_GITHUB_REPO_ID = GitHubRepoId(owner="testorg", repo="testrepo")

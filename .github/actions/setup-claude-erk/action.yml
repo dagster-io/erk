@@ -11,5 +11,6 @@ runs:
         if [ -d "./packages/erk-shared" ]; then
           uv tool install --from . --with-editable ./packages/erk-shared erk
         else
-          uv tool install --from . --with erk-shared erk
+          uv sync --group dev
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
         fi

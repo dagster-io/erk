@@ -85,7 +85,7 @@ class RealGitCommitOps(GitCommitOps):
         ).stdout.strip()
 
         # Create temporary index file to avoid touching the real index
-        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-pr-")
         os.close(tmp_fd)
         try:
             env = os.environ.copy()

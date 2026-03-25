@@ -20,9 +20,15 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "cli-skill-creator",
         "cmux",
         "command-creator",
+        # npx-managed: as skills migrate to npx distribution, they move from
+        # bundled_skills() to _UNBUNDLED_SKILLS and can be removed from
+        # codex_portable_skills() and pyproject.toml force-include.
+        "dignified-python",  # npx-managed
+        "fake-driven-testing",  # npx-managed
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
+        "npx-skills",
         "refac-cli-push-down",
-        "refac-mock-to-fake",
+        "fdt-refactor-mock-to-fake",
         "refac-module-to-subpackage",
         "rename-swarm",
         "session-inspector",
@@ -46,17 +52,17 @@ _REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
 def bundled_skills() -> dict[str, str]:
     """Return the bundled skills dict. Cached to avoid re-creation."""
     return {
-        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
-        "fake-driven-testing": "5-layer test architecture with fakes",
         "erk-diff-analysis": "Code diff analysis for commit messages",
         "erk-exec": "Erk exec subcommand reference",
-        "erk-planning": "Plan management",
         "objective": "Objective tracking and management",
         "gh": "GitHub CLI integration",
-        "gt": "Graphite stacked PR management",
+        "graphite": "Graphite stacked PR management",
+        "erk-gt": "Erk-specific Graphite patterns and safety rules",
         "dignified-code-simplifier": "Code simplification review",
         "pr-operations": "Pull request operations",
         "pr-feedback-classifier": "PR feedback classification",
+        # Tombstone: overwrites stale skill in customer repos on next sync
+        "erk-planning": "[REMOVED] Plan management now in slash commands",
     }
 
 

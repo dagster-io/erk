@@ -132,9 +132,7 @@ See `pr_close()` in `src/erk/cli/commands/pr/close_cmd.py`.
 
 For complex workflows involving multiple failure modes, combine fail-open with **root cause recovery**.
 
-<!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py, _get_pr_for_plan_direct -->
-
-**Example**: The `trigger-async-learn` command needs PR review comments. See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
+**Example**: The `trigger-async-learn` command needs PR review comments but treats their absence as non-fatal.
 
 **Two layers**:
 
@@ -143,7 +141,7 @@ For complex workflows involving multiple failure modes, combine fail-open with *
 2. **Layer 2: Root cause recovery** — caller inspects `None` and decides what to do:
 
    ```python
-   pr_info = _get_pr_for_plan_direct(...)
+   pr_info = get_pr_info(...)
 
    if pr_info is None:
        click.echo("No PR found for plan, skipping review comments", err=True)
@@ -178,7 +176,7 @@ Use two layers when:
 | Async background | No        | Log warning, continue | Review comments are optional for learn |
 | Pre-flight check | Yes       | Abort early           | Prevent invalid workflow trigger       |
 
-The same gateway function (`_get_pr_for_plan_direct`) returns `None` in all cases. The **caller** decides whether `None` is acceptable.
+The lenient handler returns `None` in all failure cases. The **caller** decides whether `None` is acceptable.
 
 ## Real-World Usage
 

@@ -23,7 +23,7 @@ from erk.cli.commands.pr.shared import (
     run_diff_extraction,
 )
 from erk.cli.repo_resolution import get_remote_github
-from erk.core.plan_context_provider import PlanContextProvider
+from erk.core.pr_context_provider import PrContextProvider
 from erk_shared.context.helpers import require_context
 from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.github.types import PRNotFound
@@ -69,8 +69,8 @@ def get_pr_context(ctx: click.Context, *, debug: bool) -> None:
     commit_messages = erk_ctx.git.commit.get_commit_messages_since(cwd, discovery.parent_branch)
 
     # Plan context
-    plan_provider = PlanContextProvider(
-        plan_backend=erk_ctx.plan_backend, remote_github=get_remote_github(erk_ctx)
+    plan_provider = PrContextProvider(
+        pr_backend=erk_ctx.pr_backend, remote_github=get_remote_github(erk_ctx)
     )
     if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
         raise click.ClickException("Repository has no GitHub remote configured")
@@ -88,7 +88,7 @@ def get_pr_context(ctx: click.Context, *, debug: bool) -> None:
     plan_context_data: dict[str, str | None] | None = None
     if plan_context is not None:
         plan_context_data = {
-            "plan_id": plan_context.plan_id,
+            "pr_number": plan_context.pr_id,
             "plan_content": plan_context.plan_content,
             "objective_summary": plan_context.objective_summary,
         }

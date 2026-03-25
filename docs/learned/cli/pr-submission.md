@@ -59,33 +59,19 @@ The two commands diverge in their operations:
 
 Both workflows must satisfy the same validation rules checked by `erk pr check`:
 
-1. **Issue closing reference** — When `.erk/impl-context/plan-ref.json` (or legacy `.erk/impl-context/issue.json`) exists, PR body must contain `Closes #N` (or `Closes owner/repo#N` for cross-repo plans)
-2. **Checkout footer** — PR body must contain `erk pr checkout <pr-number>` command
-3. **Branch/issue agreement** — Branch name pattern `P123-...` must match `.erk/impl-context/plan-ref.json` plan ID
+1. **Checkout footer** — PR body must contain `erk pr checkout <pr-number>` command
+2. **Branch/plan agreement** — Branch name pattern `P123-...` must match `.erk/impl-context/plan-ref.json` plan ID
 
 These rules are enforced by validation functions in the PR submission gateway:
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/pr/submit.py, has_checkout_footer_for_pr -->
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/pr/submit.py, has_issue_closing_reference -->
 
-See `has_checkout_footer_for_pr()` and `has_issue_closing_reference()` in `packages/erk-shared/src/erk_shared/gateway/pr/submit.py`.
+See `has_checkout_footer_for_pr()` in `packages/erk-shared/src/erk_shared/gateway/pr/submit.py`.
 
 **Why these rules exist:**
 
-- **Issue closing** — Enables GitHub's auto-close on merge, maintains plan-to-PR traceability
 - **Checkout footer** — Enables `erk pr checkout` command to work, provides remote execution context
-- **Branch/issue agreement** — Prevents stale `.erk/impl-context/` folders from creating wrong issue linkages
-
-## Cross-Repo Plans
-
-When `.erk/impl-context/plan-ref.json` contains a `plans_repo` field (e.g., `anthropics/erk-plans`), the closing reference format changes:
-
-- **Same-repo:** `Closes #123`
-- **Cross-repo:** `Closes anthropics/erk-plans#123`
-
-<!-- Source: src/erk/cli/commands/exec/scripts/get_pr_body_footer.py, build_pr_body_footer -->
-
-The footer generation logic handles this automatically via `build_pr_body_footer()` in the gateway layer.
+- **Branch/plan agreement** — Prevents stale `.erk/impl-context/` folders from creating wrong linkages
 
 ## Implementation Notes
 

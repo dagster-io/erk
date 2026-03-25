@@ -6,10 +6,10 @@ including issue references for status display.
 
 from pathlib import Path
 
-from erk.core.context import minimal_context
 from erk.status.collectors.impl import PlanFileCollector
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_plan_ref
+from tests.fakes.gateway.git import FakeGit
+from tests.test_utils.test_context import minimal_context
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""
@@ -25,8 +25,8 @@ def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.exists is False
-    assert result.plan_number is None
-    assert result.plan_url is None
+    assert result.pr_number is None
+    assert result.pr_url is None
 
 
 def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
@@ -43,12 +43,12 @@ def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.exists is True
-    assert result.plan_number is None
-    assert result.plan_url is None
+    assert result.pr_number is None
+    assert result.pr_url is None
 
 
 def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
-    """Test collector includes issue reference in PlanStatus."""
+    """Test collector includes issue reference in PrStatus."""
     # Create plan folder (uses ## Step N: format)
     plan_content = "# Test Plan\n\n## Step 1: Step one\n"
     plan_folder = create_impl_folder(tmp_path, plan_content, branch_name=BRANCH, overwrite=False)
@@ -57,7 +57,7 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     save_plan_ref(
         plan_folder,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -72,8 +72,8 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
 
     assert result is not None
     assert result.exists is True
-    assert result.plan_number == 42
-    assert result.plan_url == "https://github.com/owner/repo/issues/42"
+    assert result.pr_number == 42
+    assert result.pr_url == "https://github.com/owner/repo/issues/42"
 
 
 def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
@@ -95,5 +95,5 @@ def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     # Should still work but without issue info
     assert result is not None
     assert result.exists is True
-    assert result.plan_number is None
-    assert result.plan_url is None
+    assert result.pr_number is None
+    assert result.pr_url is None

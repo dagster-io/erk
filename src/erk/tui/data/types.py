@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from erk_shared.gateway.github.types import IssueFilterState
 
 
 @dataclass(frozen=True)
-class PlanRowData:
+class PrRowData:
     """Row data for displaying a plan in the TUI table.
 
     Contains pre-formatted display strings and raw data needed for actions.
@@ -23,13 +25,10 @@ class PlanRowData:
 
     Attributes:
 
-        plan_id: GitHub issue number (e.g., 123). Never None.
-        plan_url: Full URL to the GitHub issue. None when unavailable.
-        full_title: Complete untruncated plan title. Empty string possible.
-        plan_body: Raw issue body text (markdown). Empty string possible.
-
-        pr_number: PR number if linked, None otherwise.
-        pr_url: URL to PR (GitHub or Graphite), None if no PR.
+        pr_number: GitHub issue/PR number (e.g., 123). Never None.
+        pr_url: URL to PR (GitHub or Graphite), None if unavailable.
+        full_title: Complete untruncated title. Empty string possible.
+        pr_body: Raw issue body text (markdown). Empty string possible.
         pr_display: Formatted PR cell content (e.g., "#123 👀"). Always a string.
         pr_title: PR title if different from issue title. None if no PR.
         pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR.
@@ -75,7 +74,8 @@ class PlanRowData:
         objective_total_nodes: Total nodes in objective roadmap. 0 if no objective.
         objective_progress_display: Progress display (e.g., "3/7" or "-").
         objective_slug_display: Slug or stripped title fallback (max 25 chars).
-        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
+        objective_frontier_display: Frontier sparkline starting at first non-done node
+            (e.g., "▶▶○○○○"). "-" when all done.
         objective_deps_display: Dep status of next node ("ready", "in progress", "-").
         objective_deps_plans: Tuple of (display, url) pairs for blocking dep plans.
             Each entry is a plan number like "#7911" paired with its GitHub URL.
@@ -92,9 +92,7 @@ class PlanRowData:
         status_display: Status indicator emojis (e.g., "🚀", "👀 💥", "-").
     """
 
-    plan_id: int
-    plan_url: str | None
-    pr_number: int | None
+    pr_number: int
     pr_url: str | None
     pr_display: str
     checks_display: str
@@ -109,7 +107,7 @@ class PlanRowData:
     run_state_display: str
     run_url: str | None
     full_title: str
-    plan_body: str
+    pr_body: str
     pr_title: str | None
     pr_state: str | None
     pr_head_branch: str | None
@@ -137,7 +135,7 @@ class PlanRowData:
     objective_total_nodes: int
     objective_progress_display: str
     objective_slug_display: str
-    objective_state_display: str
+    objective_frontier_display: str
     objective_deps_display: str
     objective_deps_plans: tuple[tuple[str, str], ...]
     objective_next_node_display: str
@@ -152,6 +150,56 @@ class PlanRowData:
 
 
 @dataclass(frozen=True)
+class RunRowData:
+    """Row data for displaying a workflow run in the TUI Runs tab.
+
+    Contains pre-formatted display strings and raw data needed for actions.
+    Immutable to ensure table state consistency.
+
+    Attributes:
+        run_id: GitHub Actions workflow run ID string.
+        run_url: URL to the GitHub Actions run page. None if unavailable.
+        status: Raw run status ("queued", "in_progress", "completed").
+        conclusion: Raw run conclusion ("success", "failure", "cancelled"). None if in progress.
+        status_display: Pre-formatted status string for table display.
+        workflow_name: Workflow command name (e.g., "plan-implement", "pr-address").
+        pr_number: Linked PR number. None if no PR.
+        pr_url: URL to the linked PR. None if no PR.
+        pr_display: Formatted PR cell content (e.g., "#123" or "-").
+        pr_title: PR title. None if no PR.
+        pr_state: PR state ("OPEN", "MERGED", "CLOSED"). None if no PR linked.
+        pr_status_display: Pre-formatted PR status emoji (e.g., "👀", "🚧", "🎉", "⛔", or "-").
+        title_display: Truncated title for table display.
+        submitted_display: Formatted submission time (e.g., "03-09 14:30").
+        created_at: UTC datetime when run was created. None if unavailable.
+        checks_display: Formatted checks cell content.
+        run_id_display: Formatted run ID for display.
+        branch_display: Branch name, truncated to 40 chars.
+        branch: Branch name from the workflow run (e.g., "plnd/fix-widget-9039").
+    """
+
+    run_id: str
+    run_url: str | None
+    status: str
+    conclusion: str | None
+    status_display: str
+    workflow_name: str
+    pr_number: int | None
+    pr_url: str | None
+    pr_display: str
+    pr_title: str | None
+    pr_state: str | None
+    pr_status_display: str
+    title_display: str
+    branch_display: str
+    submitted_display: str
+    created_at: datetime | None
+    checks_display: str
+    run_id_display: str
+    branch: str
+
+
+@dataclass(frozen=True)
 class FetchTimings:
     """Timing breakdown for a single fetch cycle.
 
@@ -161,7 +209,7 @@ class FetchTimings:
 
     rest_issues_ms: float
     graphql_enrich_ms: float
-    plan_parsing_ms: float
+    pr_parsing_ms: float
     workflow_runs_ms: float
     worktree_mapping_ms: float
     row_building_ms: float
@@ -173,7 +221,7 @@ class FetchTimings:
         entries = [
             ("rest", self.rest_issues_ms, 0),
             ("gql", self.graphql_enrich_ms, 0),
-            ("parse", self.plan_parsing_ms, 100),
+            ("parse", self.pr_parsing_ms, 100),
             ("wf", self.workflow_runs_ms, 0),
             ("wt", self.worktree_mapping_ms, 100),
             ("rows", self.row_building_ms, 100),
@@ -183,13 +231,13 @@ class FetchTimings:
 
 
 @dataclass(frozen=True)
-class PlanFilters:
+class PrFilters:
     """Filter options for plan list queries.
 
     Matches options from the existing CLI command for consistency.
 
     Attributes:
-        labels: Labels to filter by (default: ["erk-plan"])
+        labels: Labels to filter by (default: ["erk-pr"])
         state: Filter by state ("open" or "closed")
         run_state: Filter by workflow run state (e.g., "in_progress")
         limit: Maximum number of results (None for no limit)
@@ -212,10 +260,10 @@ class PlanFilters:
     lifecycle_stage: str | None = None
 
     @staticmethod
-    def default() -> PlanFilters:
-        """Create default filters (open erk-plan issues)."""
-        return PlanFilters(
-            labels=("erk-plan",),
+    def default() -> PrFilters:
+        """Create default filters (open erk-pr issues)."""
+        return PrFilters(
+            labels=("erk-pr",),
             state="open",
             run_state=None,
             limit=None,
@@ -224,3 +272,20 @@ class PlanFilters:
             exclude_labels=(),
             creator=None,
         )
+
+
+def serialize_pr_row(row: PrRowData) -> dict[str, Any]:
+    """Convert PrRowData to JSON-serializable dict.
+
+    Handles datetime fields (to ISO 8601 strings) and tuple fields
+    (log_entries, objective_deps_plans) to lists for JSON compatibility.
+    """
+    data = dataclasses.asdict(row)
+    for key in ("last_local_impl_at", "last_remote_impl_at", "updated_at", "created_at"):
+        if isinstance(data[key], datetime):
+            data[key] = data[key].isoformat()
+    # Convert log_entries tuple of tuples to list of lists
+    data["log_entries"] = [list(entry) for entry in row.log_entries]
+    # Convert objective_deps_plans tuple of tuples to list of lists
+    data["objective_deps_plans"] = [list(entry) for entry in row.objective_deps_plans]
+    return data

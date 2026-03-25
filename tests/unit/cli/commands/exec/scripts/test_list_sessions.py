@@ -18,16 +18,16 @@ from erk.cli.commands.exec.scripts.list_sessions import (
     list_sessions,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import (
-    FakeClaudeInstallation,
-    FakeProject,
-    FakeSessionData,
-)
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.learn.extraction.session_schema import (
     extract_first_user_message_text,
     extract_git_branch,
 )
+from tests.fakes.gateway.claude_installation import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)
+from tests.fakes.gateway.git import FakeGit
 
 
 def _user_msg(text: str, *, branch: str | None = None) -> str:

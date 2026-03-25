@@ -8,7 +8,7 @@ from erk.cli.commands.codespace.remove_cmd import remove_codespace
 from erk.cli.commands.codespace.run import run_group
 from erk.cli.commands.codespace.set_default_cmd import set_default_codespace_cmd
 from erk.cli.commands.codespace.setup_cmd import setup_codespace
-from erk.cli.help_formatter import ErkCommandGroup
+from erk_shared.cli_group import ErkCommandGroup
 
 
 @click.group("codespace", cls=ErkCommandGroup, grouped=False, hidden=True)

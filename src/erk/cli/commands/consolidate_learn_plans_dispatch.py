@@ -22,7 +22,7 @@ from erk_shared.gateway.remote_github.abc import RemoteGitHub
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import format_branch_timestamp_suffix
 from erk_shared.output.output import format_duration, user_output
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
 
 CONSOLIDATE_LEARN_PLANS_WORKFLOW = "consolidate-learn-plans.yml"
 
@@ -70,7 +70,7 @@ def dispatch_consolidate_learn_plans(
     user_output(click.style(f"  \u2713 Authenticated as {submitted_by}", dim=True))
 
     trunk = remote.get_default_branch_name(owner=owner, repo=repo)
-    pr_title = "Consolidate learn plans"
+    pr_title = "Consolidate learn PRs"
 
     branch_name = _generate_branch_name(time_gateway=time_gateway)
 
@@ -121,15 +121,15 @@ def dispatch_consolidate_learn_plans(
         current_step = "Committing prompt file"
         user_output("Committing prompt file...")
         prompt_content = (
-            "Consolidate all open erk-learn plans into a single documentation update.\n"
-            "Run /erk:consolidate-learn-plans-plan to query, consolidate, and implement.\n"
+            "Consolidate all open erk-learn PRs into a single documentation update.\n"
+            "Run /erk:system:consolidate-learn-plans-plan to query, consolidate, and implement.\n"
         )
         remote.create_file_commit(
             owner=owner,
             repo=repo,
             path=".erk/impl-context/prompt.md",
             content=prompt_content,
-            message="Consolidate learn plans",
+            message="Consolidate learn PRs",
             branch=branch_name,
         )
         user_output(click.style("  \u2713 Committed", dim=True))
@@ -156,6 +156,7 @@ def dispatch_consolidate_learn_plans(
             last_remote_impl_session_id=None,
             source_repo=None,
             objective_issue=None,
+            node_ids=None,
             created_from_session=None,
             created_from_workflow_run_url=None,
             last_learn_session=None,
@@ -166,7 +167,7 @@ def dispatch_consolidate_learn_plans(
             learned_from_issue=None,
             lifecycle_stage="prompted",
         )
-        placeholder_content = "_Consolidating learn plans: content will be populated by workflow._"
+        placeholder_content = "_Consolidating learn PRs: content will be populated by workflow._"
         pr_body_initial = build_plan_stage_body(metadata_body, placeholder_content, summary="")
         pr_number = remote.create_pull_request(
             owner=owner,
@@ -192,7 +193,7 @@ def dispatch_consolidate_learn_plans(
             owner=owner,
             repo=repo,
             issue_number=pr_number,
-            labels=("erk-pr", "erk-plan", "erk-learn"),
+            labels=("erk-pr", "erk-learn"),
         )
         user_output(click.style(f"  \u2192 PR #{pr_number}", dim=True))
 
@@ -227,8 +228,8 @@ def dispatch_consolidate_learn_plans(
             metadata_block = create_submission_queued_block(
                 queued_at=queued_at,
                 submitted_by=submitted_by,
-                plan_number=pr_number,
-                validation_results={"issue_is_open": True, "has_erk_plan_label": True},
+                pr_number=pr_number,
+                validation_results={"pr_is_open": True, "has_erk_pr_title": True},
                 expected_workflow="consolidate-learn-plans",
             )
             comment_body = render_erk_issue_event(

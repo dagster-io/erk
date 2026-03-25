@@ -3,13 +3,13 @@
 from datetime import UTC, datetime
 
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
 
 
 def plan_to_issue(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for test setup."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -23,7 +23,7 @@ def plan_to_issue(plan: Plan) -> IssueInfo:
 
 
 def make_plan(
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     state: PlanState,
     labels: list[str],
@@ -34,15 +34,15 @@ def make_plan(
 ) -> Plan:
     """Create a Plan with common defaults for testing."""
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=state,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
+        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
         labels=labels,
         assignees=[],
         created_at=datetime(2024, 1, day, tzinfo=UTC),
         updated_at=datetime(2024, 1, day, tzinfo=UTC),
-        metadata={"number": int(plan_identifier)},
+        metadata={"number": int(pr_identifier)},
         objective_id=objective_issue,
     )

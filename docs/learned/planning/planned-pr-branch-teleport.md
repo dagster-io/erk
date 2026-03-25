@@ -63,7 +63,7 @@ The branch name is discovered via a lightweight GitHub PR query. Detection uses 
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py -->
 
-Calls `github.get_pr(repo_root, plan_number)` and reads `pr_result.head_ref_name` to discover the plan branch name. This is a planned-PR plan (reuse the existing branch and teleport from remote).
+Calls `github.get_pr(repo_root, pr_number)` and reads `pr_result.head_ref_name` to discover the plan branch name. This is a planned-PR plan (reuse the existing branch and teleport from remote).
 
 ## Idempotent Design
 
@@ -94,7 +94,7 @@ Legacy plans used the `P{number}-{slugified-title}-{timestamp}` branch pattern. 
 
 Plan implementation branches always diverge from remote because the draft PR scaffolding commits (from `plan-save`) differ from the worker's implementation commits. The PR submit pipeline auto-enables force-push for plan branches to avoid requiring `--force` every time.
 
-**Detection:** `state.issue_number is not None` in `submit_pipeline.py`
+**Detection:** Plan metadata is detected in `.erk/impl-context/` in `submit_pipeline.py`
 
 **Derived flag:** `effective_force = state.force or is_plan_impl`
 

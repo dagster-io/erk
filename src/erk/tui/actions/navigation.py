@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from erk.tui.commands.types import CommandContext
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData, RunRowData
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk.tui.screens.help_screen import HelpScreen
 from erk.tui.screens.launch_screen import LaunchScreen
@@ -24,10 +24,10 @@ class NavigationActionsMixin:
     """Mixin providing navigation and detail-view action handlers.
 
     Includes action_exit_app, action_refresh, action_help, action_launch,
-    action_show_detail, action_view_plan_body, action_view_comments,
+    action_show_detail, action_view_pr_body, action_view_comments,
     action_view_checks, action_cursor_down, action_cursor_up,
     action_open_pr, action_open_run, action_show_implement,
-    action_copy_checkout, action_close_plan, and helpers.
+    action_copy_checkout, action_close_pr, and helpers.
     """
 
     def action_exit_app(self: ErkDashApp) -> None:
@@ -37,6 +37,17 @@ class NavigationActionsMixin:
         """
         from erk.tui.filtering.types import FilterMode
 
+        if self._run_pr_filter_active:
+            self._run_pr_filter_active = False
+            cached_runs = self._run_data_cache
+            if cached_runs is not None:
+                self._run_rows = self._get_filtered_run_rows(cached_runs)
+                if self._run_table is not None:
+                    self._run_table.populate(self._run_rows)
+                if self._status_bar is not None:
+                    self._status_bar.set_plan_count(len(self._run_rows), noun="runs")
+            self.notify("Showing all runs", timeout=2)
+            return
         if self._show_all_users:
             self._show_all_users = False
             self._data_cache.clear()
@@ -107,7 +118,7 @@ class NavigationActionsMixin:
         executor = RealCommandExecutor(
             browser_launch=self._service.browser.launch,
             clipboard_copy=self._service.clipboard.copy,
-            close_plan_fn=self._service.close_plan,
+            close_pr_fn=self._service.close_pr,
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
             dispatch_to_queue_fn=self._service.dispatch_to_queue,
@@ -125,7 +136,7 @@ class NavigationActionsMixin:
             )
         )
 
-    def action_view_plan_body(self: ErkDashApp) -> None:
+    def action_view_pr_body(self: ErkDashApp) -> None:
         """Display the plan/objective content in a modal (fetched on-demand)."""
         row = self._get_selected_row()
         if row is None:
@@ -135,8 +146,8 @@ class NavigationActionsMixin:
         self.push_screen(
             PlanBodyScreen(
                 service=self._service,
-                plan_id=row.plan_id,
-                plan_body=row.plan_body,
+                pr_number=row.pr_number,
+                pr_body=row.pr_body,
                 full_title=row.full_title,
                 content_type=content_type,
             )
@@ -146,10 +157,6 @@ class NavigationActionsMixin:
         """Display unresolved PR review comments in a modal."""
         row = self._get_selected_row()
         if row is None:
-            return
-        if row.pr_number is None:
-            if self._status_bar is not None:
-                self._status_bar.set_message("No PR linked to this plan")
             return
         unresolved = row.total_comment_count - row.resolved_comment_count
         if unresolved == 0:
@@ -170,10 +177,6 @@ class NavigationActionsMixin:
         """Display failing CI checks in a modal."""
         row = self._get_selected_row()
         if row is None:
-            return
-        if row.pr_number is None:
-            if self._status_bar is not None:
-                self._status_bar.set_message("No PR linked to this plan")
             return
         if row.checks_passing is None:
             if self._status_bar is not None:
@@ -202,7 +205,7 @@ class NavigationActionsMixin:
         row = self._get_selected_row()
         if row is None:
             return
-        if not row.plan_body:
+        if not row.pr_body:
             if self._status_bar is not None:
                 self._status_bar.set_message("No objective body available")
             return
@@ -210,33 +213,51 @@ class NavigationActionsMixin:
             ObjectiveNodesScreen(
                 provider=self._provider,
                 service=self._service,
-                plan_id=row.plan_id,
-                plan_body=row.plan_body,
+                pr_number=row.pr_number,
+                pr_body=row.pr_body,
                 full_title=row.full_title,
             )
         )
 
     def action_cursor_down(self: ErkDashApp) -> None:
         """Move cursor down (vim j key)."""
-        if self._table is not None:
+        if self._view_mode == ViewMode.RUNS:
+            if self._run_table is not None:
+                self._run_table.action_cursor_down()
+        elif self._table is not None:
             self._table.action_cursor_down()
 
     def action_cursor_up(self: ErkDashApp) -> None:
         """Move cursor up (vim k key)."""
-        if self._table is not None:
+        if self._view_mode == ViewMode.RUNS:
+            if self._run_table is not None:
+                self._run_table.action_cursor_up()
+        elif self._table is not None:
             self._table.action_cursor_up()
 
     def action_open_pr(self: ErkDashApp) -> None:
         """Open selected PR in browser, or objective issue in Objectives view."""
+        # Runs tab: open the linked PR
+        run_row = self._get_selected_run_row()
+        if run_row is not None:
+            if run_row.pr_url:
+                self._service.browser.launch(run_row.pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened PR #{run_row.pr_number}")
+            else:
+                if self._status_bar is not None:
+                    self._status_bar.set_message("No PR linked to this run")
+            return
+
         row = self._get_selected_row()
         if row is None:
             return
 
         if self._view_mode == ViewMode.OBJECTIVES:
-            if row.plan_url:
-                self._service.browser.launch(row.plan_url)
+            if row.objective_url is not None:
+                self._service.browser.launch(row.objective_url)
                 if self._status_bar is not None:
-                    self._status_bar.set_message(f"Opened objective #{row.plan_id}")
+                    self._status_bar.set_message(f"Opened objective #{row.pr_number}")
             else:
                 if self._status_bar is not None:
                     self._status_bar.set_message("No URL for this objective")
@@ -251,6 +272,15 @@ class NavigationActionsMixin:
 
     def action_open_run(self: ErkDashApp) -> None:
         """Open selected workflow run in browser."""
+        # Runs tab: open the run URL directly
+        run_row = self._get_selected_run_row()
+        if run_row is not None:
+            if run_row.run_url is not None:
+                self._service.browser.launch(run_row.run_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened run {run_row.run_id}")
+            return
+
         row = self._get_selected_row()
         if row is None:
             return
@@ -270,7 +300,7 @@ class NavigationActionsMixin:
         if row is None:
             return
 
-        cmd = f"erk implement {row.plan_id}"
+        cmd = f"erk implement {row.pr_number}"
         if self._status_bar is not None:
             self._status_bar.set_message(f"Copy: {cmd}")
 
@@ -281,22 +311,22 @@ class NavigationActionsMixin:
             return
         self._copy_checkout_command(row)
 
-    def action_close_plan(self: ErkDashApp) -> None:
+    def action_close_pr(self: ErkDashApp) -> None:
         """Close the selected plan and its linked PRs (async with toast)."""
         row = self._get_selected_row()
         if row is None:
             return
 
-        if row.plan_url is None:
+        if row.pr_url is None:
             self.notify("Cannot close plan: no issue URL", severity="warning")
             return
 
         # Show persistent status bar message and run async - no blocking
-        op_id = f"close-plan-{row.plan_id}"
-        self._start_operation(op_id=op_id, label=f"Closing plan #{row.plan_id}...")
-        self._close_plan_async(op_id, row.plan_id, row.plan_url)
+        op_id = f"close-plan-{row.pr_number}"
+        self._start_operation(op_id=op_id, label=f"Closing plan #{row.pr_number}...")
+        self._close_pr_async(op_id, row.pr_number, row.pr_url)
 
-    def _copy_checkout_command(self: ErkDashApp, row: PlanRowData) -> None:
+    def _copy_checkout_command(self: ErkDashApp, row: PrRowData) -> None:
         """Copy appropriate checkout command based on row state.
 
         If worktree exists locally, copies 'erk co {worktree_name}'.
@@ -309,7 +339,7 @@ class NavigationActionsMixin:
         # Determine which command to use
         if row.worktree_branch is not None:
             # Local worktree exists - use branch checkout
-            cmd = f"erk br co {row.worktree_branch}"
+            cmd = f"erk slot co {row.worktree_branch}"
         elif row.pr_number is not None:
             # No local worktree but PR exists - use PR checkout
             cmd = f"erk pr co {row.pr_number}"
@@ -329,8 +359,24 @@ class NavigationActionsMixin:
             else:
                 self._status_bar.set_message(f"Clipboard unavailable. Copy manually: {cmd}")
 
-    def _get_selected_row(self: ErkDashApp) -> PlanRowData | None:
-        """Get currently selected row data."""
+    def _get_selected_row(self: ErkDashApp) -> PrRowData | None:
+        """Get currently selected row data.
+
+        Returns None on the Runs tab since Runs uses RunRowData, not PrRowData.
+        """
+        if self._view_mode == ViewMode.RUNS:
+            return None
         if self._table is None:
             return None
         return self._table.get_selected_row_data()
+
+    def _get_selected_run_row(self: ErkDashApp) -> RunRowData | None:
+        """Get currently selected run row data.
+
+        Only returns data when on the Runs tab.
+        """
+        if self._view_mode != ViewMode.RUNS:
+            return None
+        if self._run_table is None:
+            return None
+        return self._run_table.get_selected_row_data()

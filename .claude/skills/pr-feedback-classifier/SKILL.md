@@ -12,90 +12,51 @@ model: sonnet
 
 # PR Feedback Classifier
 
-Fetch and classify all PR review feedback for the current branch's PR.
-
-## Arguments
-
-- `--pr <number>`: Target a specific PR by number (default: current branch's PR)
-- `--include-resolved`: Include resolved threads (for reference)
-
-Check `$ARGUMENTS` for flags.
-
-## Critical Constraints
-
-**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+Classify PR review feedback by filling in semantic fields from mechanical CLI output.
 
 ## Steps
 
-1. **Fetch PR info and all comments in a single call:**
+1. **Run mechanical classification:**
 
    ```bash
-   erk exec get-pr-feedback [--pr <number>] [--include-resolved]
+   erk exec classify-pr-feedback [--pr <number>] [--include-resolved]
    ```
 
    Pass `--pr <number>` if specified in `$ARGUMENTS`. Pass `--include-resolved` if specified in `$ARGUMENTS`.
 
-   This returns JSON with `pr_number`, `pr_title`, `pr_url`, `review_threads`, and `discussion_comments`.
+   This returns JSON with mechanically pre-classified items:
+   - **review_submissions**: PR-level reviews (classification: "actionable" | "informational" | "needs_llm")
+   - **review_threads**: Inline review threads (pre_existing_candidate flag set for bot + restructured)
+   - **discussion_comments**: Discussion comments (classification: "informational" | "needs_llm")
+   - **restructured_files**: Renamed/moved files detected by git diff
+   - **mechanical_informational_count**: Items already filtered as informational by CLI
 
-   **Also fetch file-level restructuring context:**
+2. **Fill in semantic fields for items that need LLM judgment:**
 
-   ```bash
-   TRUNK=$(erk exec detect-trunk-branch | jq -r '.trunk_branch')
-   git diff --stat -M -C "$TRUNK"...HEAD
-   ```
+   For each item:
+   - **review_submissions with classification "needs_llm"**: Determine if actionable or informational
+   - **All actionable items** (review_submissions, review_threads, discussion_comments): Write `action_summary` (brief description of requested change)
+   - **All actionable items**: Assign `complexity` (local/single_file/cross_cutting/complex)
+   - **Threads with pre_existing_candidate=true**: Confirm if truly pre-existing (generic code quality issue, not specific to restructuring). If confirmed, set complexity to "pre_existing"
 
-   This reveals renames, copies, and splits. Use this to inform pre-existing detection in step 2.
+3. **Construct final JSON output with batches grouped by complexity.**
 
-2. **Classify each comment** using the Comment Classification Model below.
+## Complexity Levels
 
-3. **Group into batches** by complexity.
+- **local**: Single line change at specified location
+- **single_file**: Multiple changes in one file
+- **cross_cutting**: Changes across multiple files
+- **complex**: Architectural changes
+- **pre_existing**: Bot comment on moved/restructured code (auto-resolve candidate)
 
-4. **Output structured JSON** (schema below).
+## Batch Ordering
 
-## Comment Classification Model
-
-For each comment, determine:
-
-### Classification
-
-Classification determines how the thread is presented to the user, not whether it appears.
-
-- **Actionable**: Code changes requested, violations to fix, missing tests, documentation updates requested, bot suggestions to add tests, bot style/refactoring suggestions (optional/could)
-- **Informational**: CI-generated style suggestions, acknowledgments on review threads
-
-**Important:** Every unresolved review thread goes into `actionable_threads`, regardless of whether it's from a bot or human. The `classification` field distinguishes how the user should handle it.
-
-Discussion comments that are purely informational (CI status updates, Graphite stack comments, PR description summaries) are still counted in `informational_count` and do NOT appear in `actionable_threads`.
-
-### Pre-Existing Detection
-
-For each thread in `actionable_threads`, determine the `pre_existing` field:
-
-- **`pre_existing: true`** when ALL of:
-  1. Author is a bot (`[bot]` suffix)
-  2. PR involves file restructuring (renames, splits, moves visible in `git diff --stat -M -C`)
-  3. The flagged pattern would have been equally flaggable in the original file location (generic code quality issue, not specific to the restructuring)
-
-- **`pre_existing: false`** when ANY of:
-  - Author is human
-  - The issue is specifically caused by the restructuring (e.g., `__all__` in a new `__init__.py`, new import paths)
-  - No restructuring detected in the PR
-
-### Complexity
-
-- `local`: Single line change at specified location
-- `single_file`: Multiple changes in one file
-- `cross_cutting`: Changes across multiple files
-- `complex`: Architectural changes or related refactoring needed
-
-### Batch Ordering
-
-0. **Pre-Existing (Auto-Resolve)** (auto_proceed: true): Pre-existing issues in moved/restructured code (`pre_existing: true`)
-1. **Local Fixes** (auto_proceed: true): Single-line changes
-2. **Single-File** (auto_proceed: true): Multi-location in one file
-3. **Cross-Cutting** (auto_proceed: false): Multiple files
-4. **Complex** (auto_proceed: false): Architectural changes
-5. **Informational** (auto_proceed: false): Threads classified as `informational` — user decides to act or dismiss
+0. Pre-Existing (Auto-Resolve) (auto_proceed: true)
+1. Local Fixes (auto_proceed: true)
+2. Single-File (auto_proceed: true)
+3. Cross-Cutting (auto_proceed: false)
+4. Complex (auto_proceed: false)
+5. Informational (auto_proceed: false)
 
 ## Output Format
 
@@ -108,6 +69,18 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
   "pr_title": "Feature: Add new API endpoint",
   "pr_url": "https://github.com/owner/repo/pull/5944",
   "actionable_threads": [
+    {
+      "thread_id": "PRR_kwDOPxC3hc5q73Nd",
+      "type": "review_submission",
+      "path": null,
+      "line": null,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Reviewer requested changes: fix the authentication flow",
+      "complexity": "cross_cutting",
+      "original_comment": "The authentication flow is broken for edge cases..."
+    },
     {
       "thread_id": "PRRT_kwDOPxC3hc5q73Ne",
       "type": "review",
@@ -176,11 +149,12 @@ Output ONLY the following JSON (no prose, no markdown, no code fences):
 
 - `thread_id`: The ID needed for `erk exec resolve-review-thread`
 - `comment_id`: The ID needed for `erk exec reply-to-discussion-comment`
+- `type`: `"review"` for inline thread comments, `"review_submission"` for PR-level review submissions, `"discussion"` for discussion actions
 - `classification`: `"actionable"` or `"informational"` — determines how the user handles the thread
 - `pre_existing`: `true` if the issue existed before this PR (bot comment on moved/restructured code). Pre-existing threads use `complexity: "pre_existing"` and are placed in the first batch for auto-resolution
-- `item_indices`: References into `actionable_threads` (type=review) or `discussion_actions` (type=discussion)
+- `item_indices`: References into `actionable_threads` (type=review or review_submission) or `discussion_actions` (type=discussion)
 - `original_comment`: First 200 characters of the comment text
-- `informational_count`: Count of informational **discussion** comments only (CI status, Graphite stack). Review threads always appear individually in `actionable_threads` with a `classification` field
+- `informational_count`: Count of informational items — includes items filtered by CLI plus any you classify as informational
 
 ## Error Case
 

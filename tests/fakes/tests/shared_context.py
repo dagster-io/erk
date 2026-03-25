@@ -1,0 +1,229 @@
+"""Test factories for creating ErkContext instances.
+
+This module provides factory functions for creating test contexts with
+fake implementations. These are used by both erk and erk-kits tests.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from erk_shared.context.context import ErkContext
+from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+
+if TYPE_CHECKING:
+    from erk.artifacts.paths import ErkPackageInfo
+from erk_shared.core.prompt_executor import PromptExecutor
+from erk_shared.gateway.agent_docs.abc import AgentDocs
+from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+from erk_shared.gateway.cmux.abc import Cmux
+from erk_shared.gateway.codespace.abc import Codespace
+from erk_shared.gateway.git.abc import Git
+from erk_shared.gateway.github.abc import LocalGitHub
+from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+from erk_shared.gateway.github_admin.abc import GitHubAdmin
+from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+from erk_shared.gateway.remote_github.abc import RemoteGitHub
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.core import (
+    FakeCodespaceRegistry,
+    FakeObjectiveListService,
+    FakePrListService,
+    FakePromptExecutor,
+    FakeScriptWriter,
+)
+
+
+def context_for_test(
+    *,
+    github_issues: GitHubIssues | None = None,
+    git: Git | None = None,
+    github: LocalGitHub | None = None,
+    github_admin: GitHubAdmin | None = None,
+    graphite: Graphite | None = None,
+    claude_installation: ClaudeInstallation | None = None,
+    agent_launcher: AgentLauncher | None = None,
+    agent_docs: AgentDocs | None = None,
+    prompt_executor: PromptExecutor | None = None,
+    codespace: Codespace | None = None,
+    cmux: Cmux | None = None,
+    pr_store: ManagedPrBackend | None = None,
+    local_config: LoadedConfig | None = None,
+    remote_github: RemoteGitHub | None = None,
+    debug: bool = False,
+    repo_root: Path | None = None,
+    cwd: Path | None = None,
+    repo_info: RepoInfo | None = None,
+    package_info: ErkPackageInfo | None = None,
+) -> ErkContext:
+    """Create test context with optional pre-configured implementations.
+
+    Provides full control over all context parameters with sensible test defaults
+    for any unspecified values. Uses fakes by default to avoid subprocess calls.
+
+    This is the factory function for creating test contexts in tests.
+    It creates an ErkContext with fake implementations for all services.
+
+    Plan backend defaults to ManagedGitHubPrBackend unless explicitly overridden.
+
+    Args:
+        github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
+        git: Optional Git implementation. If None, creates FakeGit.
+        github: Optional GitHub implementation. If None, creates FakeLocalGitHub.
+        graphite: Optional Graphite implementation. If None, creates FakeGraphite.
+        claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
+        agent_launcher: Optional AgentLauncher. If None, creates FakeAgentLauncher.
+        agent_docs: Optional AgentDocs. If None, creates FakeAgentDocs.
+        prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+        codespace: Optional Codespace. If None, creates FakeCodespace.
+        pr_store: Optional ManagedPrBackend. If None, creates ManagedGitHubPrBackend.
+        local_config: Optional LoadedConfig. If None, uses LoadedConfig.test().
+        debug: Whether to enable debug mode (default False).
+        repo_root: Repository root path (defaults to Path("/fake/repo"))
+        cwd: Current working directory (defaults to Path("/fake/worktree"))
+        repo_info: Optional RepoInfo (owner/name). If None, repo_info will be None in context.
+
+    Returns:
+        ErkContext configured with provided values and test defaults
+
+    Example:
+        >>> from tests.fakes.gateway.github_issues import FakeGitHubIssues
+        >>> from tests.fakes.gateway.git import FakeGit
+        >>> github = FakeGitHubIssues()
+        >>> git_ops = FakeGit()
+        >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
+    """
+    from tests.fakes.gateway.agent_docs import FakeAgentDocs
+    from tests.fakes.gateway.agent_launcher import FakeAgentLauncher
+    from tests.fakes.gateway.claude_installation import FakeClaudeInstallation
+    from tests.fakes.gateway.cmux import FakeCmux
+    from tests.fakes.gateway.codespace import FakeCodespace
+    from tests.fakes.gateway.completion import FakeCompletion
+    from tests.fakes.gateway.console import FakeConsole
+    from tests.fakes.gateway.erk_installation import FakeErkInstallation
+    from tests.fakes.gateway.git import FakeGit
+    from tests.fakes.gateway.github import FakeLocalGitHub
+    from tests.fakes.gateway.github_admin import FakeGitHubAdmin
+    from tests.fakes.gateway.github_issues import FakeGitHubIssues
+    from tests.fakes.gateway.graphite import FakeGraphite
+    from tests.fakes.gateway.graphite_branch_ops import FakeGraphiteBranchOps
+    from tests.fakes.gateway.http import FakeHttpClient
+    from tests.fakes.gateway.shell import FakeShell
+    from tests.fakes.gateway.time import FakeTime
+
+    # Resolve defaults - create issues first since it's composed into github
+    resolved_issues: GitHubIssues = (
+        github_issues if github_issues is not None else FakeGitHubIssues()
+    )
+    resolved_git: Git = git if git is not None else FakeGit()
+    # Compose github with issues
+    # If github is provided, use it as-is (caller wires issues via FakeLocalGitHub constructor)
+    if github is None:
+        resolved_github: LocalGitHub = FakeLocalGitHub(issues_gateway=resolved_issues)
+    else:
+        resolved_github = github
+    resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
+
+    if isinstance(resolved_graphite, GraphiteDisabled):
+        resolved_graphite_branch_ops: GraphiteBranchOps | None = None
+    elif isinstance(resolved_graphite, FakeGraphite):
+        resolved_graphite_branch_ops = resolved_graphite.create_linked_branch_ops()
+    else:
+        resolved_graphite_branch_ops = FakeGraphiteBranchOps()
+    resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
+    resolved_claude_installation: ClaudeInstallation = (
+        claude_installation
+        if claude_installation is not None
+        else FakeClaudeInstallation.for_test()
+    )
+    resolved_prompt_executor: PromptExecutor = (
+        prompt_executor if prompt_executor is not None else FakePromptExecutor()
+    )
+    resolved_agent_launcher: AgentLauncher = (
+        agent_launcher if agent_launcher is not None else FakeAgentLauncher()
+    )
+    resolved_agent_docs: AgentDocs = (
+        agent_docs if agent_docs is not None else FakeAgentDocs(files={}, has_docs_dir=True)
+    )
+    resolved_codespace: Codespace = (
+        codespace
+        if codespace is not None
+        else FakeCodespace(run_exit_code=0, repo_id=12345, created_codespace_name="fake-gh-name")
+    )
+    resolved_cmux: Cmux = cmux if cmux is not None else FakeCmux(workspace_ref="fake-ws")
+    resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
+
+    # Create repo context
+    repo_dir = Path("/fake/erk/repos") / resolved_repo_root.name
+    github_repo_id: GitHubRepoId | None = None
+    if repo_info is not None:
+        github_repo_id = GitHubRepoId(owner=repo_info.owner, repo=repo_info.name)
+    repo = RepoContext(
+        root=resolved_repo_root,
+        repo_name=resolved_repo_root.name,
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+        github=github_repo_id,
+    )
+
+    fake_time = FakeTime()
+    fake_console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=None,
+    )
+
+    resolved_local_config = local_config if local_config is not None else LoadedConfig.test()
+
+    # Resolve pr_store: explicit > ManagedGitHubPrBackend default
+    resolved_pr_store: ManagedPrBackend
+    if pr_store is not None:
+        resolved_pr_store = pr_store
+    else:
+        resolved_pr_store = ManagedGitHubPrBackend(
+            resolved_github, resolved_issues, time=FakeTime()
+        )
+
+    return ErkContext(
+        git=resolved_git,
+        github=resolved_github,
+        github_admin=github_admin if github_admin is not None else FakeGitHubAdmin(),
+        claude_installation=resolved_claude_installation,
+        prompt_executor=resolved_prompt_executor,
+        graphite=resolved_graphite,
+        graphite_branch_ops=resolved_graphite_branch_ops,
+        console=fake_console,
+        time=fake_time,
+        erk_installation=FakeErkInstallation(),
+        agent_docs=resolved_agent_docs,
+        pr_store=resolved_pr_store,
+        shell=FakeShell(),
+        completion=FakeCompletion(),
+        codespace=resolved_codespace,
+        cmux=resolved_cmux,
+        agent_launcher=resolved_agent_launcher,
+        script_writer=FakeScriptWriter(),
+        codespace_registry=FakeCodespaceRegistry(),
+        pr_list_service=FakePrListService(),
+        objective_list_service=FakeObjectiveListService(data=None),
+        cwd=resolved_cwd,
+        repo=repo,
+        repo_info=repo_info,
+        global_config=GlobalConfig.test(
+            erk_root=Path("/fake/erk"),
+        ),
+        local_config=resolved_local_config,
+        package_info=package_info,
+        http_client=FakeHttpClient(),
+        remote_github=remote_github,
+        dry_run=False,
+        debug=debug,
+    )

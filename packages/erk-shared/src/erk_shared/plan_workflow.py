@@ -2,7 +2,7 @@
 
 This module provides the canonical logic for preparing plans for worktree creation,
 including validation, branch naming, and metadata extraction. Used by both
-`erk wt create --from-plan` and `erk implement`.
+`erk wt create --from-pr` and `erk implement`.
 """
 
 from dataclasses import dataclass
@@ -14,7 +14,15 @@ from erk_shared.naming import (
     sanitize_worktree_name,
     validate_worktree_name,
 )
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+
+_ERK_PR_TITLE_PREFIX = "[erk-pr] "
+_ERK_LEARN_TITLE_PREFIX = "[erk-learn] "
+
+
+def _has_pr_title_prefix(title: str) -> bool:
+    """Return True if title starts with either [erk-pr] or [erk-learn] prefix."""
+    return title.startswith(_ERK_PR_TITLE_PREFIX) or title.startswith(_ERK_LEARN_TITLE_PREFIX)
 
 
 @dataclass(frozen=True)
@@ -25,7 +33,7 @@ class PlanBranchSetup:
         branch_name: Git branch name (e.g., plnd/fix-bug-01-15-1430)
         worktree_name: Sanitized directory name for the worktree
         plan_content: Plan body to use as plan.md content
-        plan_number: Plan number
+        pr_number: Plan number
         issue_url: Full GitHub issue URL
         issue_title: Issue title for reference
         objective_issue: Linked objective issue number, or None if not linked
@@ -35,7 +43,7 @@ class PlanBranchSetup:
     branch_name: str
     worktree_name: str
     plan_content: str
-    plan_number: int
+    pr_number: int
     issue_url: str
     issue_title: str
     objective_issue: int | None
@@ -69,39 +77,39 @@ def prepare_plan_for_worktree(
     Does NOT create the branch or worktree - just validates and computes names.
 
     Args:
-        plan: Plan from plan_store
+        plan: Plan from pr_store
         timestamp: Timestamp for branch name suffix
         warn_non_open: Whether to include warning for non-OPEN plans
 
     Returns:
         PlanBranchSetup on success, PlanValidationFailed on validation failure
     """
-    # Validate erk-plan label
-    if "erk-plan" not in plan.labels:
+    # Validate plan title prefix
+    if not _has_pr_title_prefix(plan.title):
         return PlanValidationFailed(
-            f"Plan #{plan.plan_identifier} must have 'erk-plan' label.\n"
-            f"To add the label:\n"
-            f"  gh issue edit {plan.plan_identifier} --add-label erk-plan"
+            f"Plan #{plan.pr_identifier} does not have a valid plan title prefix"
+            " ([erk-pr] or [erk-learn]).\n"
+            "Create a plan using 'erk pr create' to ensure correct formatting."
         )
 
     # Validate plan_identifier can be converted to int (LBYL)
-    if not plan.plan_identifier.isdigit():
+    if not plan.pr_identifier.isdigit():
         return PlanValidationFailed(
-            f"Plan identifier '{plan.plan_identifier}' is not a valid plan number. "
+            f"Plan identifier '{plan.pr_identifier}' is not a valid plan number. "
             "Expected a numeric GitHub issue number."
         )
-    plan_number = int(plan.plan_identifier)
+    pr_number = int(plan.pr_identifier)
 
     # Collect warnings
     warnings: list[str] = []
     if warn_non_open and plan.state != PlanState.OPEN:
-        warnings.append(f"Plan #{plan.plan_identifier} is {plan.state.value}. Proceeding anyway...")
+        warnings.append(f"Plan #{plan.pr_identifier} is {plan.state.value}. Proceeding anyway...")
 
     # Branch name comes from plan-header metadata (set by plan_save)
     existing_branch = plan.header_fields.get(BRANCH_NAME)
     if not isinstance(existing_branch, str) or len(existing_branch) == 0:
         return PlanValidationFailed(
-            f"Draft PR plan #{plan.plan_identifier} is missing required "
+            f"Draft PR plan #{plan.pr_identifier} is missing required "
             f"branch_name in plan-header metadata. "
             f"This indicates the plan was not saved correctly."
         )
@@ -121,7 +129,7 @@ def prepare_plan_for_worktree(
         branch_name=branch_name,
         worktree_name=worktree_name,
         plan_content=plan.body,
-        plan_number=plan_number,
+        pr_number=pr_number,
         issue_url=plan.url,
         issue_title=plan.title,
         objective_issue=plan.objective_id,

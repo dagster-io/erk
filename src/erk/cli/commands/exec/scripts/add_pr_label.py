@@ -1,0 +1,64 @@
+"""Backend-aware label addition for PRs.
+
+Usage:
+    erk exec add-pr-label <pr-number> --label <label>
+
+Output:
+    JSON with {success, pr_number, label}
+
+Exit Codes:
+    0: Success - label added
+    1: Error - PR not found or API error
+    2: Usage error - missing required --label flag
+"""
+
+import json
+
+import click
+
+from erk.cli.pr_ref_type import PR_REF
+from erk_shared.context.helpers import require_pr_backend, require_repo_root
+
+
+@click.command(name="add-pr-label")
+@click.argument("pr", type=PR_REF)
+@click.option(
+    "--label",
+    required=True,
+    help="Label to add to the PR",
+)
+@click.pass_context
+def add_pr_label(
+    ctx: click.Context,
+    pr: int,
+    *,
+    label: str,
+) -> None:
+    """Add a label to a PR via the appropriate backend."""
+    backend = require_pr_backend(ctx)
+    repo_root = require_repo_root(ctx)
+
+    pr_id = str(pr)
+
+    try:
+        backend.add_label(repo_root, pr_id, label)
+    except RuntimeError as e:
+        click.echo(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": f"Failed to add label to PR #{pr}: {e}",
+                }
+            )
+        )
+        raise SystemExit(1) from e
+
+    click.echo(
+        json.dumps(
+            {
+                "success": True,
+                "pr_number": pr,
+                "label": label,
+            }
+        )
+    )

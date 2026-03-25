@@ -26,7 +26,7 @@ from erk_shared.context.helpers import (
     require_cwd,
     require_git,
     require_github,
-    require_plan_backend,
+    require_pr_backend,
     require_repo_root,
 )
 from erk_shared.context.types import NoRepoSentinel
@@ -57,7 +57,7 @@ from erk_shared.objective_fetch_context_result import (
     PRInfoDict,
     RoadmapContextDict,
 )
-from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.pr_store.types import PrNotFound
 
 
 def _error_json(error: str) -> str:
@@ -74,7 +74,7 @@ def _empty_roadmap() -> RoadmapContextDict:
     )
 
 
-def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextDict:
+def _build_roadmap_context(objective_body: str, pr_id: str) -> RoadmapContextDict:
     """Parse roadmap from objective body.
 
     Uses parse_roadmap_frontmatter() + group_nodes_by_phase() directly
@@ -151,10 +151,10 @@ def _fetch_objective_content(
 )
 @click.option(
     "--plan",
-    "plan_number",
+    "pr_number_arg",
     type=int,
     default=None,
-    help="Plan number (direct lookup, skips branch-based discovery)",
+    help="PR number (direct lookup, skips branch-based discovery)",
 )
 @click.pass_context
 def objective_fetch_context(
@@ -163,13 +163,13 @@ def objective_fetch_context(
     pr_number: int | None,
     objective_number: int | None,
     branch_name: str | None,
-    plan_number: int | None,
+    pr_number_arg: int | None,
 ) -> None:
     """Fetch all context for objective update in a single call."""
     erk_ctx = require_context(ctx)
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
-    plan_backend = require_plan_backend(ctx)
+    pr_backend = require_pr_backend(ctx)
     remote = get_remote_github(erk_ctx)
 
     if isinstance(erk_ctx.repo, NoRepoSentinel) or erk_ctx.repo.github is None:
@@ -180,12 +180,12 @@ def objective_fetch_context(
     repo_name = erk_ctx.repo.github.repo
 
     # When --plan is provided, do direct plan lookup (skip branch-based discovery)
-    if plan_number is not None:
-        plan_result = plan_backend.get_plan(repo_root, str(plan_number))
-        if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"Plan #{plan_number} not found"))
+    if pr_number_arg is not None:
+        plan_result = pr_backend.get_managed_pr(repo_root, str(pr_number_arg))
+        if isinstance(plan_result, PrNotFound):
+            click.echo(_error_json(f"PR #{pr_number_arg} not found"))
             raise SystemExit(1)
-        plan_id = plan_result.plan_identifier
+        pr_id = plan_result.pr_identifier
     else:
         # Discovery: auto-fill branch from git state
         if branch_name is None:
@@ -197,16 +197,16 @@ def objective_fetch_context(
                 raise SystemExit(1)
 
         # Resolve plan from branch via backend (works for both P<number>- and plan-... branches)
-        plan_result = plan_backend.get_plan_for_branch(repo_root, branch_name)
-        if isinstance(plan_result, PlanNotFound):
-            click.echo(_error_json(f"No plan found for branch '{branch_name}'"))
+        plan_result = pr_backend.get_managed_pr_for_branch(repo_root, branch_name)
+        if isinstance(plan_result, PrNotFound):
+            click.echo(_error_json(f"No PR found for branch '{branch_name}'"))
             raise SystemExit(1)
-        plan_id = plan_result.plan_identifier
+        pr_id = plan_result.pr_identifier
 
     # Discovery: auto-fill objective from plan metadata
     if objective_number is None:
         if plan_result.objective_id is None:
-            msg = f"Plan #{plan_id} has no objective_issue in plan-header metadata"
+            msg = f"Plan #{pr_id} has no objective_issue in plan-header metadata"
             click.echo(_error_json(msg))
             raise SystemExit(1)
         objective_number = plan_result.objective_id
@@ -234,7 +234,7 @@ def objective_fetch_context(
         click.echo(_error_json(f"PR #{pr_number} not found"))
         raise SystemExit(1)
 
-    roadmap = _build_roadmap_context(objective.body, plan_id)
+    roadmap = _build_roadmap_context(objective.body, pr_id)
 
     # Fetch prose content from the first comment's objective-body block
     objective_content = _fetch_objective_content(
@@ -251,7 +251,7 @@ def objective_fetch_context(
         "objective_content": objective_content,
     }
     plan_info: PlanInfoDict = {
-        "number": plan_id,
+        "number": pr_id,
         "title": plan_result.title,
         "body": plan_result.body,
     }

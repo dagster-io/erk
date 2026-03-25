@@ -1,14 +1,14 @@
 """Fetch preprocessed sessions from a planned-pr-context branch.
 
-Downloads the manifest and XML files from the planned-pr-context/{plan_id} branch
+Downloads the manifest and XML files from the planned-pr-context/{pr_number} branch
 for use by the learn pipeline. Returns JSON with file list and manifest metadata.
 
 Usage:
-    erk exec fetch-sessions --plan-id 2521 --output-dir ./learn
+    erk exec fetch-sessions --pr-number 2521 --output-dir ./learn
 
 Output:
     Structured JSON output:
-    {"success": true, "plan_id": 2521, "manifest": {...}, "files": [...]}
+    {"success": true, "pr_number": 2521, "manifest": {...}, "files": [...]}
     {"success": false, "error": "branch_not_found"}
 
 Exit Codes:
@@ -61,10 +61,10 @@ def _fetch_file_from_branch(
 
 @click.command(name="fetch-sessions")
 @click.option(
-    "--plan-id",
+    "--pr-number",
     required=True,
     type=int,
-    help="Plan identifier to fetch sessions for",
+    help="PR identifier to fetch sessions for",
 )
 @click.option(
     "--output-dir",
@@ -75,18 +75,18 @@ def _fetch_file_from_branch(
 @click.pass_context
 def fetch_sessions(
     ctx: click.Context,
-    plan_id: int,
+    pr_number: int,
     output_dir: Path,
 ) -> None:
     """Fetch preprocessed sessions from a planned-pr-context branch.
 
-    Reads the manifest from the planned-pr-context/{plan_id} branch and downloads
+    Reads the manifest from the planned-pr-context/{pr_number} branch and downloads
     all XML files to the output directory.
     """
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
 
-    session_branch = f"planned-pr-context/{plan_id}"
+    session_branch = f"planned-pr-context/{pr_number}"
 
     # Check if branch exists on remote
     if not git.branch.branch_exists_on_remote(repo_root, "origin", session_branch):
@@ -122,7 +122,7 @@ def fetch_sessions(
 
     result: dict[str, object] = {
         "success": True,
-        "plan_id": plan_id,
+        "pr_number": pr_number,
         "session_branch": session_branch,
         "manifest": manifest,
         "files": downloaded_files,

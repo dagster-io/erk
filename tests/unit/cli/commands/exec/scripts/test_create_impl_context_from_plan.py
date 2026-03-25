@@ -2,7 +2,7 @@
 
 Layer 2: Tests using fakes via ErkContext.for_test().
 
-Tests verify the command fetches a plan via PlanBackend and creates
+Tests verify the command fetches a plan via ManagedPrBackend and creates
 .erk/impl-context/ folder structure with plan.md and ref.json.
 """
 
@@ -16,11 +16,11 @@ from erk.cli.commands.exec.scripts.create_impl_context_from_plan import (
     create_impl_context_from_plan,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.plan_helpers import issue_info_to_pr_details
 
 
@@ -38,7 +38,7 @@ def _make_plan_issue(
         body=body,
         state="OPEN",
         url=url,
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -52,7 +52,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     issue = _make_plan_issue(
         number=123,
         body=plan_body,
-        title="[erk-plan] Test Plan",
+        title="[erk-pr] Test Plan",
         url="https://github.com/test-owner/test-repo/issues/123",
     )
     fake_issues = FakeGitHubIssues(issues={123: issue})
@@ -67,7 +67,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
         ["123"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -75,9 +75,9 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Command failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == 123
-    # PlannedPRBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
-    assert "test-owner/test-repo/pull/123" in output["plan_url"]
+    assert output["pr_number"] == 123
+    # ManagedGitHubPrBackend uses PR URLs (issue_info_to_pr_details converts /issues/ to /pull/)
+    assert "test-owner/test-repo/pull/123" in output["pr_url"]
 
     # Verify .erk/impl-context/ folder was created with correct files
     impl_context_dir = tmp_path / ".erk" / "impl-context"
@@ -91,7 +91,7 @@ def test_success_creates_impl_context(tmp_path: Path) -> None:
     assert ref_file.exists()
     ref_data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert ref_data["provider"] == "github-draft-pr"
-    assert ref_data["plan_id"] == "123"
+    assert ref_data["pr_id"] == "123"
     assert ref_data["url"] == "https://github.com/test-owner/test-repo/pull/123"
     assert "created_at" in ref_data
     assert "synced_at" in ref_data
@@ -108,7 +108,7 @@ def test_plan_not_found_exits_with_error(tmp_path: Path) -> None:
         ["999"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )
@@ -131,7 +131,7 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
     issue = _make_plan_issue(
         number=456,
         body=plan_body,
-        title="[erk-plan] Objective Plan",
+        title="[erk-pr] Objective Plan",
         url="https://github.com/test-owner/test-repo/issues/456",
     )
     fake_issues = FakeGitHubIssues(issues={456: issue})
@@ -146,7 +146,7 @@ def test_objective_id_preserved_in_ref_json(tmp_path: Path) -> None:
         ["456"],
         obj=ErkContext.for_test(
             github=fake_github,
-            plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+            pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
             repo_root=tmp_path,
         ),
     )

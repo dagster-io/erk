@@ -1,0 +1,664 @@
+"""Interface tests for ManagedPrBackend implementations.
+
+These tests verify that ManagedGitHubPrBackend satisfies the ManagedPrBackend ABC interface.
+"""
+
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+
+from erk_shared.pr_store.backend import ManagedPrBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.types import PlanQuery, PlanState, PrNotFound
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
+
+# =============================================================================
+# Fixtures
+# =============================================================================
+
+_BRANCH_COUNTER = 0
+
+
+def _next_branch() -> str:
+    """Generate a unique branch name for tests."""
+    global _BRANCH_COUNTER  # noqa: PLW0603
+    _BRANCH_COUNTER += 1
+    return f"test-branch-{_BRANCH_COUNTER}"
+
+
+def _make_planned_pr_backend() -> ManagedPrBackend:
+    """Create a ManagedGitHubPrBackend backed by FakeLocalGitHub."""
+    fake_github = FakeLocalGitHub()
+    return ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+
+
+def _create_metadata(backend: ManagedPrBackend) -> dict[str, object]:
+    """Build the required metadata dict for create_plan().
+
+    ManagedGitHubPrBackend requires branch_name metadata.
+    """
+    return {"branch_name": _next_branch()}
+
+
+def _make_planned_pr_backend_with_plan() -> tuple[ManagedPrBackend, str]:
+    """Create ManagedGitHubPrBackend with a pre-existing plan by creating one via API."""
+    fake_github = FakeLocalGitHub()
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    result = backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="[erk-pr] Existing Plan",
+        content="Plan content",
+        labels=("erk-pr",),
+        metadata={"branch_name": "existing-plan-branch"},
+        summary="",
+    )
+    return backend, result.pr_id
+
+
+@pytest.fixture()
+def pr_backend() -> ManagedPrBackend:
+    """Provide a ManagedGitHubPrBackend instance."""
+    return _make_planned_pr_backend()
+
+
+@pytest.fixture()
+def backend_with_plan() -> tuple[ManagedPrBackend, str]:
+    """Fixture providing ManagedGitHubPrBackend with a pre-existing plan.
+
+    Returns:
+        Tuple of (backend, pr_id)
+    """
+    return _make_planned_pr_backend_with_plan()
+
+
+# =============================================================================
+# Interface contract tests
+# =============================================================================
+
+
+def test_get_provider_name_returns_string(pr_backend: ManagedPrBackend) -> None:
+    """Backend returns a non-empty provider name string."""
+    name = pr_backend.get_provider_name()
+
+    assert isinstance(name, str)
+    assert len(name) > 0
+
+
+def test_create_and_get_plan_roundtrip(pr_backend: ManagedPrBackend) -> None:
+    """Backend can create and retrieve a plan with same data."""
+    result = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Test Plan Title",
+        content="# Plan Content\n\nThis is the plan body.",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    # Verify CreatePlanResult structure
+    assert isinstance(result.pr_id, str)
+    assert len(result.pr_id) > 0
+    assert isinstance(result.url, str)
+
+    # Retrieve the plan
+    plan = pr_backend.get_managed_pr(Path("/repo"), result.pr_id)
+    assert not isinstance(plan, PrNotFound)
+
+    # Verify Plan structure
+    assert plan.pr_identifier == result.pr_id
+    assert "Test Plan Title" in plan.title
+    assert plan.body == "# Plan Content\n\nThis is the plan body."
+    assert plan.state == PlanState.OPEN
+    assert isinstance(plan.url, str)
+    assert isinstance(plan.labels, list)
+    assert isinstance(plan.assignees, list)
+    assert isinstance(plan.created_at, datetime)
+    assert isinstance(plan.updated_at, datetime)
+    assert isinstance(plan.metadata, dict)
+
+
+def test_list_plans_returns_list(pr_backend: ManagedPrBackend) -> None:
+    """Backend returns a list from list_plans (empty is valid)."""
+    results = pr_backend.list_managed_prs(Path("/repo"), PlanQuery())
+
+    assert isinstance(results, list)
+
+
+def test_list_plans_filters_by_state(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend filters by PlanState correctly."""
+    backend, pr_id = backend_with_plan
+
+    open_results = backend.list_managed_prs(Path("/repo"), PlanQuery(state=PlanState.OPEN))
+    assert any(p.pr_identifier == pr_id for p in open_results)
+
+    closed_results = backend.list_managed_prs(Path("/repo"), PlanQuery(state=PlanState.CLOSED))
+    assert not any(p.pr_identifier == pr_id for p in closed_results)
+
+
+def test_close_plan_changes_state(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend closes a plan by changing state to CLOSED."""
+    backend, pr_id = backend_with_plan
+
+    plan_before = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan_before, PrNotFound)
+    assert plan_before.state == PlanState.OPEN
+
+    backend.close_managed_pr(Path("/repo"), pr_id)
+
+    plan_after = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan_after, PrNotFound)
+    assert plan_after.state == PlanState.CLOSED
+
+
+def test_add_comment_returns_string_id(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns comment ID as string."""
+    backend, pr_id = backend_with_plan
+
+    comment_id = backend.add_comment(
+        repo_root=Path("/repo"),
+        pr_number=pr_id,
+        body="Progress update: Phase 1 complete",
+    )
+
+    assert isinstance(comment_id, str)
+    assert len(comment_id) > 0
+
+
+def test_get_plan_not_found_returns_plan_not_found(pr_backend: ManagedPrBackend) -> None:
+    """Backend returns PrNotFound when plan not found."""
+    result = pr_backend.get_managed_pr(Path("/repo"), "99999999")
+    assert isinstance(result, PrNotFound)
+    assert result.pr_id == "99999999"  # pr_id is the identifier for the not-found result
+
+
+def test_add_comment_not_found_raises_runtime_error(pr_backend: ManagedPrBackend) -> None:
+    """Backend raises RuntimeError when plan not found for comment."""
+    with pytest.raises(RuntimeError):
+        pr_backend.add_comment(
+            repo_root=Path("/repo"),
+            pr_number="99999999",
+            body="Comment",
+        )
+
+
+def test_close_plan_not_found_raises_runtime_error(pr_backend: ManagedPrBackend) -> None:
+    """Backend raises RuntimeError when plan not found for close."""
+    with pytest.raises(RuntimeError):
+        pr_backend.close_managed_pr(Path("/repo"), "99999999")
+
+
+def test_update_metadata_not_found_raises_runtime_error(
+    pr_backend: ManagedPrBackend,
+) -> None:
+    """Backend raises RuntimeError when plan not found for update."""
+    with pytest.raises(RuntimeError):
+        pr_backend.update_metadata(
+            repo_root=Path("/repo"),
+            pr_number="99999999",
+            metadata={"key": "value"},
+        )
+
+
+def test_plan_identifier_is_string(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns pr_identifier as string."""
+    backend, pr_id = backend_with_plan
+
+    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert isinstance(plan.pr_identifier, str)
+
+
+def test_assignees_is_list(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns assignees as list."""
+    backend, pr_id = backend_with_plan
+
+    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert isinstance(plan.assignees, list)
+    for assignee in plan.assignees:
+        assert isinstance(assignee, str)
+
+
+def test_labels_is_list(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns labels as list."""
+    backend, pr_id = backend_with_plan
+
+    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert isinstance(plan.labels, list)
+    for label in plan.labels:
+        assert isinstance(label, str)
+
+
+def test_timestamps_are_timezone_aware(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns timezone-aware datetime objects."""
+    backend, pr_id = backend_with_plan
+
+    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert plan.created_at.tzinfo is not None
+    assert plan.updated_at.tzinfo is not None
+
+
+# =============================================================================
+# Multiple plan tests
+# =============================================================================
+
+
+def test_list_plans_with_limit(pr_backend: ManagedPrBackend) -> None:
+    """Backend respects limit parameter."""
+    for i in range(5):
+        pr_backend.create_managed_pr(
+            repo_root=Path("/repo"),
+            title=f"Plan {i}",
+            content=f"Content {i}",
+            labels=("erk-pr",),
+            metadata=_create_metadata(pr_backend),
+            summary="",
+        )
+
+    results = pr_backend.list_managed_prs(Path("/repo"), PlanQuery(limit=2))
+    assert len(results) <= 2
+
+
+def test_create_multiple_plans_have_unique_ids(pr_backend: ManagedPrBackend) -> None:
+    """Backend generates unique plan IDs."""
+    results = []
+    for i in range(3):
+        result = pr_backend.create_managed_pr(
+            repo_root=Path("/repo"),
+            title=f"Plan {i}",
+            content=f"Content {i}",
+            labels=(),
+            metadata=_create_metadata(pr_backend),
+            summary="",
+        )
+        results.append(result)
+
+    ids = [r.pr_id for r in results]
+    assert len(ids) == len(set(ids))
+
+
+# =============================================================================
+# get_metadata_field tests
+# =============================================================================
+
+
+def test_get_metadata_field_returns_plan_not_found(pr_backend: ManagedPrBackend) -> None:
+    """Backend returns PrNotFound for nonexistent plan."""
+    result = pr_backend.get_metadata_field(Path("/repo"), "99999999", "worktree_name")
+    assert isinstance(result, PrNotFound)
+
+
+def test_get_metadata_field_returns_none_for_missing_field(pr_backend: ManagedPrBackend) -> None:
+    """Backend returns None when plan exists but field is absent."""
+    created = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Plan for metadata test",
+        content="# Test plan",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    result = pr_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
+    assert result is None
+
+
+def test_get_metadata_field_roundtrips_with_update_metadata(
+    pr_backend: ManagedPrBackend,
+) -> None:
+    """Backend can set and read back a metadata field."""
+    created = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Plan for roundtrip",
+        content="# Roundtrip plan",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    pr_backend.update_metadata(
+        Path("/repo"),
+        created.pr_id,
+        {"worktree_name": "my-worktree"},
+    )
+
+    result = pr_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
+    assert result == "my-worktree"
+
+
+# =============================================================================
+# get_all_metadata_fields tests
+# =============================================================================
+
+
+def test_get_all_metadata_fields_returns_plan_not_found(pr_backend: ManagedPrBackend) -> None:
+    """Backend returns PrNotFound for nonexistent plan."""
+    result = pr_backend.get_all_metadata_fields(Path("/repo"), "99999999")
+    assert isinstance(result, PrNotFound)
+
+
+def test_get_all_metadata_fields_returns_empty_dict_for_no_metadata(
+    pr_backend: ManagedPrBackend,
+) -> None:
+    """Backend returns empty dict when plan exists but has no metadata fields."""
+    created = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Plan for all-metadata test",
+        content="# Test plan",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    result = pr_backend.get_all_metadata_fields(Path("/repo"), created.pr_id)
+    assert not isinstance(result, PrNotFound)
+    assert isinstance(result, dict)
+
+
+def test_get_all_metadata_fields_roundtrips_with_update_metadata(
+    pr_backend: ManagedPrBackend,
+) -> None:
+    """Backend can set metadata and read all fields back."""
+    created = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Plan for all-metadata roundtrip",
+        content="# Roundtrip plan",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    pr_backend.update_metadata(
+        Path("/repo"),
+        created.pr_id,
+        {"worktree_name": "my-worktree", "branch_name": "feature-branch"},
+    )
+
+    result = pr_backend.get_all_metadata_fields(Path("/repo"), created.pr_id)
+    assert not isinstance(result, PrNotFound)
+    assert result["worktree_name"] == "my-worktree"
+    assert result["branch_name"] == "feature-branch"
+
+
+# =============================================================================
+# update_plan_title tests
+# =============================================================================
+
+
+def test_update_plan_title_roundtrip(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend can update and retrieve a plan title."""
+    backend, pr_id = backend_with_plan
+
+    backend.update_managed_pr_title(Path("/repo"), pr_id, "New Title")
+
+    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert "New Title" in plan.title
+
+
+def test_update_plan_title_not_found_raises(pr_backend: ManagedPrBackend) -> None:
+    """Backend raises RuntimeError for nonexistent plan."""
+    with pytest.raises(RuntimeError):
+        pr_backend.update_managed_pr_title(Path("/repo"), "99999999", "Title")
+
+
+# =============================================================================
+# update_plan_content tests
+# =============================================================================
+
+
+def test_update_plan_content_not_found_raises(pr_backend: ManagedPrBackend) -> None:
+    """Backend raises RuntimeError for nonexistent plan."""
+    with pytest.raises(RuntimeError):
+        pr_backend.update_managed_pr_content(Path("/repo"), "99999999", "new content", summary="")
+
+
+# =============================================================================
+# post_event tests
+# =============================================================================
+
+
+def test_post_event_metadata_only(pr_backend: ManagedPrBackend) -> None:
+    """Backend handles metadata update without comment."""
+    created = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Plan for event",
+        content="# Event plan",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    pr_backend.post_event(
+        Path("/repo"),
+        created.pr_id,
+        metadata={"worktree_name": "event-wt"},
+        comment=None,
+    )
+
+    result = pr_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
+    assert result == "event-wt"
+
+
+def test_post_event_metadata_and_comment(pr_backend: ManagedPrBackend) -> None:
+    """Backend handles metadata update with comment."""
+    created = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Plan for event with comment",
+        content="# Event plan",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+
+    pr_backend.post_event(
+        Path("/repo"),
+        created.pr_id,
+        metadata={"worktree_name": "event-wt-2"},
+        comment="Implementation started",
+    )
+
+    result = pr_backend.get_metadata_field(Path("/repo"), created.pr_id, "worktree_name")
+    assert result == "event-wt-2"
+
+
+def test_post_event_not_found_raises(pr_backend: ManagedPrBackend) -> None:
+    """Backend raises RuntimeError for nonexistent plan."""
+    with pytest.raises(RuntimeError):
+        pr_backend.post_event(
+            Path("/repo"),
+            "99999999",
+            metadata={"worktree_name": "wt"},
+            comment=None,
+        )
+
+
+# =============================================================================
+# get_comments tests
+# =============================================================================
+
+
+def test_get_comments_returns_empty_list_for_no_comments(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns empty list when plan has no comments."""
+    backend, pr_id = backend_with_plan
+
+    comments = backend.get_comments(Path("/repo"), pr_id)
+    assert isinstance(comments, list)
+
+
+def test_get_comments_returns_preconfigured_comments_planned_pr() -> None:
+    """ManagedGitHubPrBackend returns pre-configured comments from FakeGitHubIssues."""
+    fake_github = FakeLocalGitHub()
+    backend = ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
+
+    # Create a plan so the PR exists
+    result = backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Test Plan",
+        content="# Plan",
+        labels=("erk-pr",),
+        metadata={"branch_name": "test-branch-comments"},
+        summary="",
+    )
+
+    # Pre-configure comments on the underlying fake issues gateway
+    pr_number = int(result.pr_id)
+    fake_github.issues._comments[pr_number] = ["First comment", "Second comment"]
+
+    comments = backend.get_comments(Path("/repo"), result.pr_id)
+    assert len(comments) == 2
+    assert "First comment" in comments
+    assert "Second comment" in comments
+
+
+# =============================================================================
+# find_sessions_for_plan tests
+# =============================================================================
+
+
+def test_find_sessions_for_plan_returns_sessions_for_plan(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend returns SessionsForPlan with expected structure."""
+    backend, pr_id = backend_with_plan
+
+    result = backend.find_sessions_for_managed_pr(Path("/repo"), pr_id)
+    assert hasattr(result, "planning_session_id")
+    assert hasattr(result, "implementation_session_ids")
+    assert hasattr(result, "learn_session_ids")
+    assert isinstance(result.implementation_session_ids, list)
+    assert isinstance(result.learn_session_ids, list)
+
+
+def test_find_sessions_for_plan_reads_header_fields(
+    pr_backend: ManagedPrBackend,
+) -> None:
+    """Session fields are read from header_fields, not body text.
+
+    Regression test: draft-PR plans strip the plan-header metadata block
+    from plan.body (via extract_plan_content), so body-based extraction
+    returns None for all session fields. Using header_fields (which are
+    parsed from the full PR body before stripping) works for both backends.
+    """
+    # Create plan via API so plan-header block exists for both backends
+    result = pr_backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Session Discovery Test",
+        content="# Plan\n\nTest plan content.",
+        labels=("erk-pr",),
+        metadata=_create_metadata(pr_backend),
+        summary="",
+    )
+    pr_id = result.pr_id
+
+    # Update metadata with session-related fields
+    pr_backend.update_metadata(
+        Path("/repo"),
+        pr_id,
+        {
+            "created_from_session": "planning-session-abc",
+            "last_local_impl_session": "impl-session-def",
+            "last_learn_session": "learn-session-ghi",
+            "last_remote_impl_at": "2024-06-01T12:00:00Z",
+            "last_remote_impl_run_id": "run-12345",
+            "last_remote_impl_session_id": "remote-session-jkl",
+            "last_session_branch": "sessions/plan-42",
+            "last_session_id": "uploaded-session-mno",
+            "last_session_source": "remote",
+        },
+    )
+
+    sessions = pr_backend.find_sessions_for_managed_pr(Path("/repo"), pr_id)
+
+    assert sessions.planning_session_id == "planning-session-abc"
+    assert "impl-session-def" in sessions.implementation_session_ids
+    assert "learn-session-ghi" in sessions.learn_session_ids
+    assert sessions.last_remote_impl_at == "2024-06-01T12:00:00Z"
+    assert sessions.last_remote_impl_run_id == "run-12345"
+    assert sessions.last_remote_impl_session_id == "remote-session-jkl"
+    assert sessions.last_session_branch == "sessions/plan-42"
+    assert sessions.last_session_id == "uploaded-session-mno"
+    assert sessions.last_session_source == "remote"
+
+
+def test_find_sessions_for_plan_raises_for_nonexistent_plan(
+    pr_backend: ManagedPrBackend,
+) -> None:
+    """Backend raises RuntimeError when plan not found."""
+    with pytest.raises(RuntimeError):
+        pr_backend.find_sessions_for_managed_pr(Path("/repo"), "99999999")
+
+
+# =============================================================================
+# add_label tests
+# =============================================================================
+
+
+def test_add_label_adds_label(
+    backend_with_plan: tuple[ManagedPrBackend, str],
+) -> None:
+    """Backend can add a label to a plan."""
+    backend, pr_id = backend_with_plan
+
+    backend.add_label(Path("/repo"), pr_id, "erk-consolidated")
+
+    plan = backend.get_managed_pr(Path("/repo"), pr_id)
+    assert not isinstance(plan, PrNotFound)
+    assert "erk-consolidated" in plan.labels
+
+
+def test_add_label_not_found_raises_runtime_error(pr_backend: ManagedPrBackend) -> None:
+    """Backend raises RuntimeError when plan not found for add_label."""
+    with pytest.raises(RuntimeError):
+        pr_backend.add_label(Path("/repo"), "99999999", "some-label")
+
+
+# =============================================================================
+# Whitelist removal test (GitHub-specific)
+# =============================================================================
+
+
+def test_update_metadata_accepts_previously_blocked_fields() -> None:
+    """ManagedPrBackend accepts fields like learn_status in metadata."""
+    backend = _make_planned_pr_backend()
+
+    created = backend.create_managed_pr(
+        repo_root=Path("/repo"),
+        title="Whitelist test",
+        content="# Plan",
+        labels=("erk-pr",),
+        metadata={"branch_name": "whitelist-test-branch"},
+        summary="",
+    )
+
+    backend.update_metadata(
+        Path("/repo"),
+        created.pr_id,
+        {"learn_status": "pending"},
+    )
+
+    result = backend.get_metadata_field(Path("/repo"), created.pr_id, "learn_status")
+    assert result == "pending"

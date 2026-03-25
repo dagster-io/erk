@@ -1,6 +1,6 @@
 ---
 description: Create an implementation plan from an objective node
-argument-hint: "<objective-number-or-url> [--node <node-id>]"
+argument-hint: "<objective-number-or-url> [--node <node-id> [--node <node-id>...]]"
 allowed-tools: Bash, Skill, AskUserQuestion, EnterPlanMode
 ---
 
@@ -13,6 +13,7 @@ Create an implementation plan for a specific node in an objective's dependency g
 ```bash
 /erk:objective-plan 3679
 /erk:objective-plan 3679 --node 2.1
+/erk:objective-plan 3679 --node 3.1 --node 3.2
 /erk:objective-plan https://github.com/owner/repo/issues/3679
 /erk:objective-plan  # prompts for objective reference
 ```
@@ -23,15 +24,21 @@ Create an implementation plan for a specific node in an objective's dependency g
 
 ### Step 0: Check for Known Node (Fast Path)
 
-Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an issue number:
+Parse `$ARGUMENTS` for one or more `--node <node-id>` flags. If at least one `--node` is present along with an issue number:
 
-**Invoke the inner skill immediately** via the Skill tool:
+1. Run `/erk:objective-reconcile <objective-number>` via the Skill tool.
+2. Then invoke the inner skill via the Skill tool, passing all `--node` flags through:
 
 ```
-/erk:system:objective-plan-node <objective-number> --node <node-id>
+/erk:system:objective-plan-node <objective-number> --node <node-id-1> [--node <node-id-2> ...]
 ```
 
-This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+Examples:
+
+- Single node: `/erk:system:objective-plan-node 3679 --node 2.1`
+- Multiple nodes: `/erk:system:objective-plan-node 3679 --node 3.1 --node 3.2 --node 3.3`
+
+This skips the interactive selection flow (Steps 1-4 below) since the node(s) are already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
 
 **STOP here** — do not proceed to the steps below.
 
@@ -66,6 +73,18 @@ erk exec objective-plan-setup <objective-number> --session-id "${CLAUDE_SESSION_
 
 Display any `"warnings"` to the user.
 
+### Step 2.5: Reconcile Objective
+
+Invoke `/erk:objective-reconcile <objective-number>` via the Skill tool.
+
+This audits the objective against the current codebase, identifies stale references
+and nodes completed outside the erk land workflow, and applies updates with user
+confirmation before proceeding to node selection.
+
+If reconciliation finds no issues, it reports "all references current" and continues.
+If it finds and fixes issues, the roadmap displayed in Step 4 will reflect the
+updated state.
+
 ### Step 3: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
@@ -99,11 +118,13 @@ If all nodes are complete or have plans in progress, report appropriately:
 
 ### Step 5: Invoke Inner Skill
 
-After the user selects a node, invoke the inner skill via the Skill tool:
+After the user selects a node or nodes, invoke the inner skill via the Skill tool:
 
 ```
-/erk:system:objective-plan-node <objective-number> --node <selected-node-id>
+/erk:system:objective-plan-node <objective-number> --node <node-id-1> [--node <node-id-2> ...]
 ```
+
+If the user selects a phase with multiple nodes (e.g., "Phase 3 (nodes 3.1-3.5)"), pass all selected node IDs as separate `--node` flags.
 
 The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
 
@@ -124,7 +145,7 @@ The inner skill handles marker creation, marking as planning, context gathering,
 | Scenario                                | Action                                                           |
 | --------------------------------------- | ---------------------------------------------------------------- |
 | Objective not found                     | Report error and exit                                            |
-| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| Reference is erk-pr                     | Redirect to `/erk:plan-implement`                                |
 | No pending nodes                        | Report all nodes complete, suggest closing                       |
 | Invalid argument format                 | Prompt for valid issue number                                    |
 | Roadmap not parseable                   | Ask user to specify which node to plan                           |
@@ -135,7 +156,7 @@ The inner skill handles marker creation, marking as planning, context gathering,
 ## Important Notes
 
 - **Objective context matters:** Read the full objective for design decisions and lessons learned
-- **One node at a time:** Each plan should focus on a single roadmap node
+- **Plans can target one or multiple nodes:** Single node is typical; multi-node is supported for related steps in the same phase
 - **Link back:** Always reference the parent objective in the plan
 - **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
 

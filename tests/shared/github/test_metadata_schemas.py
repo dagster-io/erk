@@ -135,7 +135,7 @@ class TestWorktreeCreationSchema:
             "timestamp": "2024-01-15T10:30:00Z",
             "issue_number": "123",
         }
-        with pytest.raises(ValueError, match="issue_number must be an integer"):
+        with pytest.raises(ValueError, match="pr_number must be an integer"):
             schema.validate(data)
 
     def test_negative_issue_number(self) -> None:
@@ -147,7 +147,7 @@ class TestWorktreeCreationSchema:
             "timestamp": "2024-01-15T10:30:00Z",
             "issue_number": -1,
         }
-        with pytest.raises(ValueError, match="issue_number must be positive"):
+        with pytest.raises(ValueError, match="pr_number must be positive"):
             schema.validate(data)
 
     def test_empty_plan_file(self) -> None:
@@ -207,7 +207,7 @@ class TestPlanSchema:
             "worktree_name": "feature-123",
             "timestamp": "2024-01-15T10:30:00Z",
         }
-        with pytest.raises(ValueError, match="issue_number must be an integer"):
+        with pytest.raises(ValueError, match="pr_number must be an integer"):
             schema.validate(data)
 
     def test_zero_issue_number(self) -> None:
@@ -218,7 +218,7 @@ class TestPlanSchema:
             "worktree_name": "feature-123",
             "timestamp": "2024-01-15T10:30:00Z",
         }
-        with pytest.raises(ValueError, match="issue_number must be positive"):
+        with pytest.raises(ValueError, match="pr_number must be positive"):
             schema.validate(data)
 
     def test_empty_worktree_name(self) -> None:
@@ -244,7 +244,7 @@ class TestSubmissionQueuedSchema:
             "queued_at": "2024-01-15T10:30:00Z",
             "submitted_by": "john.doe",
             "issue_number": 123,
-            "validation_results": {"issue_is_open": True, "has_erk_plan_label": True},
+            "validation_results": {"pr_is_open": True, "has_erk_pr_title": True},
             "expected_workflow": "implement-plan.yml",
             "trigger_mechanism": "label-based-webhook",
         }

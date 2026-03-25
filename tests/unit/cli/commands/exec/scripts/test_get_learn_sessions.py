@@ -11,16 +11,16 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.claude_installation.fake import (
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import (
     format_plan_header_body_for_test,
@@ -58,7 +58,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -68,7 +68,7 @@ def test_get_learn_sessions_with_explicit_issue(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "123"
+    assert output["pr_number"] == "123"
 
 
 def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
@@ -94,7 +94,7 @@ def test_get_learn_sessions_infers_from_branch(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -127,7 +127,7 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -137,7 +137,7 @@ def test_get_learn_sessions_with_url_format(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["plan_id"] == "789"
+    assert output["pr_number"] == "789"
 
 
 # ============================================================================
@@ -164,7 +164,7 @@ def test_get_learn_sessions_fails_without_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -193,7 +193,7 @@ def test_get_learn_sessions_fails_with_invalid_issue(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -231,7 +231,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -243,7 +243,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
     # Verify all expected fields exist
     assert "success" in output
-    assert "plan_id" in output
+    assert "pr_number" in output
     assert "planning_session_id" in output
     assert "implementation_session_ids" in output
     assert "learn_session_ids" in output
@@ -255,7 +255,7 @@ def test_json_output_structure(tmp_path: Path) -> None:
 
     # Verify types
     assert isinstance(output["success"], bool)
-    assert isinstance(output["plan_id"], str)
+    assert isinstance(output["pr_number"], str)
     assert isinstance(output["implementation_session_ids"], list)
     assert isinstance(output["session_paths"], list)
     assert isinstance(output["session_sources"], list)
@@ -307,7 +307,7 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -368,7 +368,7 @@ def test_session_sources_includes_remote_session(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -431,7 +431,7 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -486,7 +486,7 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -553,7 +553,7 @@ def test_local_fallback_filters_by_branch(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -606,7 +606,7 @@ def test_preprocessed_manifest_none_when_branch_missing(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -642,7 +642,7 @@ def test_preprocessed_manifest_none_when_manifest_not_on_branch(tmp_path: Path) 
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -662,7 +662,7 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
 
         manifest = {
             "version": 1,
-            "plan_id": 700,
+            "pr_number": 700,
             "sessions": [
                 {
                     "session_id": "test-session-1",
@@ -696,7 +696,7 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
             obj=ErkContext.for_test(
                 git=fake_git,
                 github=fake_github,
-                plan_store=PlannedPRBackend(fake_github, fake_issues, time=FakeTime()),
+                pr_store=ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime()),
                 claude_installation=fake_claude,
                 cwd=cwd,
                 repo_root=cwd,
@@ -707,6 +707,6 @@ def test_preprocessed_manifest_returns_data_on_success(tmp_path: Path) -> None:
     output = json.loads(result.output)
     assert output["preprocessed_manifest"] is not None
     assert output["preprocessed_manifest"]["version"] == 1
-    assert output["preprocessed_manifest"]["plan_id"] == 700
+    assert output["preprocessed_manifest"]["pr_number"] == 700
     assert len(output["preprocessed_manifest"]["sessions"]) == 1
     assert output["preprocessed_manifest"]["sessions"][0]["session_id"] == "test-session-1"

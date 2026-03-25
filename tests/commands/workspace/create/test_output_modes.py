@@ -7,9 +7,9 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.time import DEFAULT_FAKE_TIME
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -137,7 +137,7 @@ def test_create_with_json_and_plan_file() -> None:
         # Don't provide NAME - it's derived from plan filename
         result = runner.invoke(
             cli,
-            ["wt", "create", "--json", "--from-plan-file", str(plan_file)],
+            ["wt", "create", "--json", "--from-pr-file", str(plan_file)],
             obj=test_ctx,
         )
 
@@ -247,7 +247,7 @@ def test_create_with_stay_and_json() -> None:
 
 
 def test_create_with_stay_and_plan_file() -> None:
-    """Test that --stay works with --from-plan-file flag."""
+    """Test that --stay works with --from-pr-file flag."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         # Create plan file
@@ -276,7 +276,7 @@ def test_create_with_stay_and_plan_file() -> None:
 
         result = runner.invoke(
             cli,
-            ["wt", "create", "--from-plan-file", str(plan_file), "--script", "--stay"],
+            ["wt", "create", "--from-pr-file", str(plan_file), "--script", "--stay"],
             obj=test_ctx,
         )
 
@@ -313,7 +313,7 @@ def test_create_default_behavior_generates_script() -> None:
         result = runner.invoke(cli, ["wt", "create", "test-feature", "--script"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        # Should generate script path in output
-        assert "/tmp/" in result.output or "erk-" in result.output
+        # Should output script content (not path) for process substitution
+        assert "#!/bin/bash" in result.output
         # Verify worktree was created
         repo_dir / "test-feature"

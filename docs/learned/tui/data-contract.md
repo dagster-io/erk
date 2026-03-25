@@ -194,17 +194,17 @@ Abstract interface for fetching plan data. Implementations must provide 3 abstra
 
 Filter options for plan list queries. Frozen dataclass with 7 fields:
 
-| Field       | Type              | Description                                |
-| ----------- | ----------------- | ------------------------------------------ |
-| `labels`    | `tuple[str, ...]` | Filter by labels (default: `["erk-plan"]`) |
-| `state`     | `str \| None`     | `"open"`, `"closed"`, or None for all      |
-| `run_state` | `str \| None`     | Filter by workflow run state               |
-| `limit`     | `int \| None`     | Maximum number of results                  |
-| `show_prs`  | `bool`            | Whether to include PR data                 |
-| `show_runs` | `bool`            | Whether to include workflow run data       |
-| `creator`   | `str \| None`     | Filter by creator username                 |
+| Field       | Type              | Description                              |
+| ----------- | ----------------- | ---------------------------------------- |
+| `labels`    | `tuple[str, ...]` | Filter by labels (default: `["erk-pr"]`) |
+| `state`     | `str \| None`     | `"open"`, `"closed"`, or None for all    |
+| `run_state` | `str \| None`     | Filter by workflow run state             |
+| `limit`     | `int \| None`     | Maximum number of results                |
+| `show_prs`  | `bool`            | Whether to include PR data               |
+| `show_runs` | `bool`            | Whether to include workflow run data     |
+| `creator`   | `str \| None`     | Filter by creator username               |
 
-Also provides `PlanFilters.default()` factory for standard open erk-plan queries.
+Also provides `PlanFilters.default()` factory for standard open erk-pr queries.
 
 ## JSON Serialization Gotchas
 

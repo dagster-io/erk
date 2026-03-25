@@ -11,7 +11,6 @@ Usage:
     erk land <branch>     # Land PR for branch
 """
 
-import re
 from dataclasses import dataclass, replace
 from enum import Enum, auto
 from pathlib import Path
@@ -20,6 +19,7 @@ from typing import Literal, NamedTuple, assert_never
 import click
 
 from erk.cli.activation import print_temp_script_instructions, render_activation_script
+from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
 from erk.cli.commands.land_pipeline import (
     LandError,
     make_execution_state,
@@ -36,13 +36,6 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     run_objective_update_after_land,
 )
-from erk.cli.commands.slot.common import (
-    extract_slot_number,
-    find_branch_assignment,
-    get_placeholder_branch_name,
-)
-from erk.cli.commands.slot.unassign_cmd import execute_unassign
-from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -57,9 +50,13 @@ from erk.core.worktree_pool import (
 )
 from erk.core.worktree_utils import is_root_worktree
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.github.parsing import parse_pr_ref
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.output.output import machine_output, user_output
+from erk_shared.slots.naming import extract_slot_number, get_placeholder_branch_name
 from erk_shared.stack.validation import validate_parent_is_trunk
+from erk_slots.common import find_branch_assignment
+from erk_slots.unassign_cmd import execute_unassign
 
 
 @dataclass(frozen=True)
@@ -489,7 +486,7 @@ def _navigate_or_exit(cleanup: CleanupContext) -> None:
                 command_name="land",
                 comment="no-op",
             )
-            machine_output(str(result.path), nl=False)
+            machine_output(result.content, nl=False)
         raise SystemExit(0)
 
 
@@ -549,21 +546,10 @@ def parse_argument(arg: str) -> ParsedArgument:
         - arg_type="pr-url", pr_number=N if arg is a GitHub or Graphite PR URL
         - arg_type="branch", pr_number=None if arg is a branch name
     """
-    # Try parsing as a plain number (PR number)
-    if arg.isdigit():
-        return ParsedArgument(arg_type="pr-number", pr_number=int(arg))
-
-    # Try parsing as a GitHub PR URL (e.g., https://github.com/owner/repo/pull/123)
-    match = re.search(r"/pull/(\d+)", arg)
-    if match:
-        return ParsedArgument(arg_type="pr-url", pr_number=int(match.group(1)))
-
-    # Try parsing as a Graphite PR URL (e.g., https://app.graphite.com/github/pr/owner/repo/123)
-    match = re.search(r"/pr/[^/]+/[^/]+/(\d+)", arg)
-    if match:
-        return ParsedArgument(arg_type="pr-url", pr_number=int(match.group(1)))
-
-    # Treat as branch name
+    pr_number = parse_pr_ref(arg)
+    if pr_number is not None:
+        arg_type = "pr-number" if arg.isdigit() else "pr-url"
+        return ParsedArgument(arg_type=arg_type, pr_number=pr_number)
     return ParsedArgument(arg_type="branch", pr_number=None)
 
 
@@ -932,7 +918,7 @@ def _execute_land_directly(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Capture plan context BEFORE execution pipeline (which deletes the branch)
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    pr_id = ctx.pr_backend.resolve_pr_number_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Build execution state and run the pipeline directly
@@ -948,7 +934,7 @@ def _execute_land_directly(
         no_cleanup=not cleanup_confirmed,
         script=script,
         target_child_branch=None,
-        plan_id=plan_id,
+        pr_id=pr_id,
         skip_learn=skip_learn,
     )
 
@@ -997,7 +983,7 @@ def _execute_land_directly(
             command_name="land",
             comment="no-op",
         )
-        machine_output(str(script_result.path), nl=False)
+        machine_output(script_result.content, nl=False)
 
     if exit_after is not None:
         raise exit_after
@@ -1051,7 +1037,7 @@ def _land_target(
     branch = target.branch
 
     # Step 1: Look up plan and objective for branch (needed for script generation)
-    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+    pr_id = ctx.pr_backend.resolve_pr_number_for_branch(main_repo_root, branch)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
     # Step 2: Look up slot assignment (needed for dry-run output)
@@ -1095,7 +1081,7 @@ def _land_target(
         worktree_path=worktree_path,
         is_current_branch=target.is_current_branch,
         objective_number=objective_number,
-        plan_number=int(plan_id) if plan_id is not None else None,
+        learn_source_pr=int(pr_id) if pr_id is not None else None,
         use_graphite=target.use_graphite,
         skip_learn=skip_learn,
         cleanup_confirmed=cleanup_confirmed,
@@ -1125,8 +1111,8 @@ def _land_target(
         display_flags.append("--no-delete")
 
     if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
+        # Shell integration mode: output script content for process substitution
+        machine_output(result.content, nl=False)
     else:
         # Interactive mode: show instructions and copy to clipboard
         print_temp_script_instructions(
@@ -1229,9 +1215,9 @@ def _navigate_after_land(
             raise SystemExit(0)
         target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
-            # Auto-create worktree for child
-            target_path, _ = ensure_worktree_for_branch(
-                ctx, post_deletion_repo, target_child_branch
+            # Auto-create worktree for child via slot allocation
+            target_path, _ = ensure_branch_has_worktree(
+                ctx, post_deletion_repo, branch_name=target_child_branch, no_slot=False, force=False
             )
         # Suggest running gt restack --downstack to update child branch's PR base
         # Use --downstack to only restack the current branch, avoiding errors if
@@ -1310,7 +1296,7 @@ def render_land_execution_script(
     worktree_path: Path | None,
     is_current_branch: bool,
     objective_number: int | None,
-    plan_number: int | None,
+    learn_source_pr: int | None,
     use_graphite: bool,
     skip_learn: bool,
     cleanup_confirmed: bool,
@@ -1358,6 +1344,7 @@ def render_land_execution_script(
         worktree_path: Path to worktree being cleaned up (if any)
         is_current_branch: Whether landing from the branch's own worktree
         objective_number: Linked objective issue number (if any)
+        learn_source_pr: Linked PR number for learn issue creation
         use_graphite: Whether to use Graphite for merge
         target_path: Where to cd after land completes
 
@@ -1385,8 +1372,8 @@ def render_land_execution_script(
         cmd_parts.append("--skip-learn")
     if objective_number is not None:
         cmd_parts.append(f"--objective-number={objective_number}")
-    if plan_number is not None:
-        cmd_parts.append(f"--plan-number={plan_number}")
+    if learn_source_pr is not None:
+        cmd_parts.append(f"--linked-pr-number={learn_source_pr}")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 
@@ -1417,7 +1404,7 @@ def _execute_land(
     no_delete: bool,
     no_cleanup: bool,
     script: bool,
-    plan_number: int | None,
+    learn_source_pr: int | None,
     skip_learn: bool,
 ) -> None:
     """Execute deferred land operations from activation script.
@@ -1442,7 +1429,7 @@ def _execute_land(
         no_delete: Whether to preserve branch and slot
         no_cleanup: Whether user declined cleanup during validation
         script: Whether running in script mode
-        plan_number: Plan number for learn issue creation
+        learn_source_pr: Linked PR number for learn issue creation
     """
     # Validate required parameters
     Ensure.invariant(pr_number is not None, "Missing --exec-pr-number in execute mode")
@@ -1463,7 +1450,7 @@ def _execute_land(
         no_cleanup=no_cleanup,
         script=script,
         target_child_branch=target_child_branch,
-        plan_id=str(plan_number) if plan_number is not None else None,
+        pr_id=str(learn_source_pr) if learn_source_pr is not None else None,
         skip_learn=skip_learn,
     )
 
@@ -1505,6 +1492,7 @@ def _execute_land(
     "--stack",
     "stack_flag",
     is_flag=True,
+    hidden=True,
     help="Land the current Graphite stack bottom-up.",
 )
 @click.option(
@@ -1528,7 +1516,7 @@ def _execute_land(
     "--skip-learn",
     "skip_learn",
     is_flag=True,
-    help="Skip creating a learn plan after landing.",
+    help="Skip creating a learn PR after landing.",
 )
 @click.pass_obj
 def land(

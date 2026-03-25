@@ -16,8 +16,9 @@ src/erk/tui/
 ├── app.py                 # ErkDashApp - main Textual application
 ├── data/
 │   ├── __init__.py
-│   ├── provider.py        # PlanDataProvider ABC + RealPlanDataProvider
-│   └── types.py           # PlanRowData, PlanFilters dataclasses
+│   ├── provider_abc.py    # PrDataProvider ABC
+│   ├── real_provider.py   # RealPrDataProvider implementation
+│   └── types.py           # PrRowData, PrFilters dataclasses
 ├── widgets/
 │   ├── __init__.py
 │   ├── plan_table.py      # PlanDataTable - DataTable subclass
@@ -48,20 +49,20 @@ The main Textual `App` subclass. Responsibilities:
 | `?` | Show help overlay |
 | `j` / `k` | Vim-style navigation |
 
-### PlanDataProvider (`data/provider.py`)
+### PrDataProvider (`data/provider_abc.py`)
 
 ABC defining data fetching interface. Enables testing with fakes.
 
-- `PlanDataProvider` - Abstract base class
-- `RealPlanDataProvider` - Production implementation wrapping `PlanListService`
+- `PrDataProvider` - Abstract base class
+- `RealPrDataProvider` (`data/real_provider.py`) - Production implementation wrapping `PlanListService`
 
-The provider transforms `PlanListData` from the service layer into `PlanRowData` tuples optimized for table display.
+The provider transforms `PlanListData` from the service layer into `PrRowData` tuples optimized for table display.
 
-### PlanRowData (`data/types.py`)
+### PrRowData (`data/types.py`)
 
 Immutable dataclass containing:
 
-- Raw data for actions (plan_id, plan_url, pr_number, pr_url)
+- Raw data for actions (pr_number, pr_url)
 - Pre-formatted display strings (title, pr_display, checks_display, etc.)
 
 ### PlanDataTable (`widgets/plan_table.py`)
@@ -87,13 +88,13 @@ Footer widget showing:
 ```
 1. erk dash -i
    └── _run_interactive_mode()
-       └── Creates RealPlanDataProvider with ErkContext
+       └── Creates RealPrDataProvider with ErkContext
        └── Creates ErkDashApp(provider, filters, interval)
        └── app.run()
 
 2. On mount:
    └── run_worker(_load_data())
-       └── provider.fetch_plans(filters)  # In executor thread
+       └── provider.fetch_prs(filters)  # In executor thread
        └── _update_table(rows, time, duration)
            └── table.populate(rows)
            └── status_bar.set_plan_count()
@@ -118,18 +119,18 @@ Tests live in `tests/tui/`:
 - `test_plan_table.py` - Unit tests for table widget and row conversion
 - `test_app.py` - Textual pilot-based integration tests
 
-**Fake infrastructure** in `tests/fakes/plan_data_provider.py`:
+**Fake infrastructure** in `tests/fakes/gateway/plan_data_provider.py`:
 
-- `FakePlanDataProvider` - Returns canned data, tracks fetch count
-- `make_plan_row()` - Helper to create test PlanRowData
+- `FakePrDataProvider` - Returns canned data, tracks fetch count
+- `make_pr_row()` - Helper to create test PrRowData
 
 **Testing pattern**:
 
 ```python
 @pytest.mark.asyncio
 async def test_something(self) -> None:
-    provider = FakePlanDataProvider([make_plan_row(123, "Test")])
-    app = ErkDashApp(provider, PlanFilters.default(), refresh_interval=0)
+    provider = FakePrDataProvider([make_pr_row(123, "Test")])
+    app = ErkDashApp(provider, PrFilters.default(), refresh_interval=0)
 
     async with app.run_test() as pilot:
         await pilot.pause()  # Wait for async load
@@ -155,9 +156,9 @@ Before modifying this code, read `TEXTUAL_QUIRKS.md` which documents:
 
 Cell selection adds complexity (left/right navigation) without benefit for this use case. Users care about selecting a plan, not a specific column.
 
-### Why Separate PlanDataProvider?
+### Why Separate PrDataProvider?
 
-1. **Testability**: FakePlanDataProvider enables fast tests without API calls
+1. **Testability**: FakePrDataProvider enables fast tests without API calls
 2. **Separation of concerns**: TUI code doesn't know about PlanListService internals
 3. **Future flexibility**: Could add caching, filtering, or alternative data sources
 
@@ -180,11 +181,11 @@ Interactive mode benefits from seeing all columns. Users navigating with keyboar
 
 ### New Column
 
-1. Add field to `PlanRowData` in `types.py`
-2. Update `RealPlanDataProvider._build_row_data()` to populate it
+1. Add field to `PrRowData` in `types.py`
+2. Update `RealPrDataProvider._build_row_data()` to populate it
 3. Add column in `PlanDataTable._setup_columns()` (check filter flags)
 4. Add value in `PlanDataTable._row_to_values()`
-5. Update `make_plan_row()` helper in test fakes
+5. Update `make_pr_row()` helper in test fakes
 
 ### New Status Bar Info
 

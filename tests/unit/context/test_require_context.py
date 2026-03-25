@@ -6,7 +6,7 @@ import click
 import pytest
 
 from erk_shared.context.helpers import require_context
-from erk_shared.context.testing import context_for_test
+from tests.fakes.tests.shared_context import context_for_test
 
 
 def test_require_context_returns_context_when_valid() -> None:

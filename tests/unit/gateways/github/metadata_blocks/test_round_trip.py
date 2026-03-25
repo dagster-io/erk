@@ -32,7 +32,7 @@ from erk_shared.gateway.github.metadata.registry import (
     get_content_block_types,
     get_yaml_block_types,
 )
-from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema
+from erk_shared.gateway.github.metadata.schemas import PlanRetrySchema, PlanSchema
 from erk_shared.gateway.github.metadata.session import render_session_prompts_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
 
@@ -62,8 +62,14 @@ SAMPLE_DATA: dict[str, dict] = {
         "created_by": "testuser",
         "objective_comment_id": None,
     },
+    "erk-pr": {
+        "pr_number": 42,
+        "worktree_name": "test-worktree",
+        "timestamp": "2025-01-15T10:00:00Z",
+    },
+    # Backward-compat alias: test that old "erk-plan" blocks can still round-trip
     "erk-plan": {
-        "plan_number": 42,
+        "pr_number": 42,
         "worktree_name": "test-worktree",
         "timestamp": "2025-01-15T10:00:00Z",
     },
@@ -82,14 +88,14 @@ SAMPLE_DATA: dict[str, dict] = {
         "started_at": "2025-01-15T10:00:00Z",
         "workflow_run_id": "12345678",
         "workflow_run_url": "https://github.com/owner/repo/actions/runs/12345678",
-        "plan_number": 42,
+        "pr_number": 42,
     },
     "submission-queued": {
         "status": "queued",
         "queued_at": "2025-01-15T10:00:00Z",
         "submitted_by": "testuser",
-        "plan_number": 42,
-        "validation_results": {"issue_is_open": True, "has_erk_plan_label": True},
+        "pr_number": 42,
+        "validation_results": {"pr_is_open": True, "has_erk_pr_title": True},
         "expected_workflow": "implement-plan",
         "trigger_mechanism": "label-based-webhook",
     },
@@ -101,18 +107,18 @@ SAMPLE_DATA: dict[str, dict] = {
     "impl-started": {
         "session_id": "abc-123",
         "timestamp": "2025-01-15T10:00:00Z",
-        "plan_number": 42,
+        "pr_number": 42,
     },
     "impl-ended": {
         "session_id": "abc-123",
         "timestamp": "2025-01-15T11:00:00Z",
-        "plan_number": 42,
+        "pr_number": 42,
         "outcome": "success",
     },
     "learn-invoked": {
         "session_id": "abc-123",
         "timestamp": "2025-01-15T12:00:00Z",
-        "plan_number": 42,
+        "pr_number": 42,
     },
     "tripwire-candidates": {
         "source_plan": 42,
@@ -172,23 +178,33 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         branch_name="plnd/test-branch",
         timestamp="2025-01-15T10:00:00Z",
     ),
-    "erk-plan": create_plan_block(
-        plan_number=42,
+    "erk-pr": create_plan_block(
+        pr_number=42,
         worktree_name="test-worktree",
         timestamp="2025-01-15T10:00:00Z",
+    ),
+    # Backward-compat alias entry for round-trip test
+    "erk-plan": create_metadata_block(
+        key="erk-plan",
+        data={
+            "pr_number": 42,
+            "worktree_name": "test-worktree",
+            "timestamp": "2025-01-15T10:00:00Z",
+        },
+        schema=PlanSchema(),
     ),
     "submission-queued": create_submission_queued_block(
         queued_at="2025-01-15T10:00:00Z",
         submitted_by="testuser",
-        plan_number=42,
-        validation_results={"issue_is_open": True, "has_erk_plan_label": True},
+        pr_number=42,
+        validation_results={"pr_is_open": True, "has_erk_pr_title": True},
         expected_workflow="implement-plan",
     ),
     "workflow-started": create_workflow_started_block(
         started_at="2025-01-15T10:00:00Z",
         workflow_run_id="12345678",
         workflow_run_url="https://github.com/owner/repo/actions/runs/12345678",
-        plan_number=42,
+        pr_number=42,
     ),
     "plan-header": create_plan_header_block(
         created_at="2025-01-15T10:00:00Z",
@@ -208,6 +224,7 @@ FACTORY_BLOCKS: dict[str, MetadataBlock] = {
         last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
+        node_ids=None,
         created_from_session=None,
         created_from_workflow_run_url=None,
         last_learn_session=None,
@@ -325,7 +342,7 @@ class TestRegistryCompleteness:
         yaml_types = get_yaml_block_types()
         content_types = get_content_block_types()
 
-        assert len(all_types) == 16
-        assert len(yaml_types) == 13
+        assert len(all_types) == 17
+        assert len(yaml_types) == 14
         assert len(content_types) == 3
         assert len(yaml_types) + len(content_types) == len(all_types)

@@ -4,14 +4,15 @@
 # Cli Documentation
 
 - **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+- **[adding-json-to-commands.md](adding-json-to-commands.md)** — adding a new machine-readable JSON command, exposing a command via MCP, creating result dataclasses for JSON output, stacking @mcp_exposed and @machine_command decorators, adding a new CLI command with both human and machine output, creating a new command subpackage
 - **[agent-friendly-cli.md](agent-friendly-cli.md)** — adding --json flag to a CLI command, creating or modifying MCP tools, implementing structured JSON output for CLI commands, working on agent-friendly CLI patterns, implementing erk schema command
 - **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
 - **[auto-generated-reference-docs.md](auto-generated-reference-docs.md)** — adding or modifying CLI commands, changing erk exec command structure, CI fails with exec reference check error
-- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how plan_backend affects CLI output
+- **[backend-aware-display.md](backend-aware-display.md)** — adding CLI commands that behave differently for issue vs planned-PR plans, routing between gh issue and gh pr commands based on plan backend, understanding how pr_backend affects CLI output
 - **[batch-exec-commands.md](batch-exec-commands.md)** — implementing batch operations for exec commands, designing JSON stdin/stdout interfaces for erk exec, understanding batch command success semantics
 - **[checkout-helpers.md](checkout-helpers.md)** — writing checkout commands, creating worktrees in checkout commands, implementing branch checkout logic
-- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk pr teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
-- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-plan flag, changing slot allocation behavior
+- **[checkout-teleport-split.md](checkout-teleport-split.md)** — working with erk pr checkout or erk slot teleport commands, understanding the difference between checkout and teleport, modifying cmux-open-pr command
+- **[checkout-three-path-logic.md](checkout-three-path-logic.md)** — modifying erk br co, working with --for-pr flag, changing slot allocation behavior
 - **[ci-aware-commands.md](ci-aware-commands.md)** — implementing commands that behave differently in CI, checking if code is running in GitHub Actions, skipping user-interactive steps in automated environments
 - **[cli-options-validation.md](cli-options-validation.md)** — adding new CLI options or flags, implementing option validation logic, encountering unvalidated user input
 - **[click-framework-conventions.md](click-framework-conventions.md)** — adding Click options to erk CLI commands, understanding default=None convention in Click options, distinguishing 'not provided' from 'empty string' in CLI arguments
@@ -36,6 +37,7 @@
 - **[error-detection-patterns.md](error-detection-patterns.md)** — classifying errors from subprocess stderr output, detecting specific failure modes from external tool output, adding new SubmitError error_type based on error text
 - **[error-handling-antipatterns.md](error-handling-antipatterns.md)** — handling expected CLI failures, deciding between RuntimeError and UserFacingCliError, converting exception-based error handling to UserFacingCliError, writing actionable error messages for pipeline failures
 - **[exec-command-patterns.md](exec-command-patterns.md)** — writing exec scripts with PR/issue output, building diagnostic messages, standardizing exec command output
+- **[exec-review-activity-log.md](exec-review-activity-log.md)** — working with review activity logs on PRs, fetching existing review summary comments, building workflows that read PR comment sections
 - **[exec-script-discovery.md](exec-script-discovery.md)** — using erk exec commands, unsure what flags an exec command accepts
 - **[exec-script-patterns.md](exec-script-patterns.md)** — Creating new exec CLI commands, Understanding why exec commands use context injection instead of Path.cwd(), Deciding where to import gateway ABCs from
 - **[exec-script-performance.md](exec-script-performance.md)** — optimizing exec script execution time, reducing gh subprocess overhead in exec scripts, bundling multiple API calls into a single exec script
@@ -44,6 +46,7 @@
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
 - **[implement-command.md](implement-command.md)** — running erk implement without arguments, auto-detecting plans from current branch, understanding how erk implement selects which plan to execute
 - **[incomplete-command-removal.md](incomplete-command-removal.md)** — removing a workflow command or CLI entry, deprecating or deleting a command from erk, cleaning up dead references after removing a feature
+- **[json-command-decorator.md](json-command-decorator.md)** — adding @machine_command decorator to a CLI command, creating structured JSON CLI output, understanding the erk json command tree, implementing output_types validation, working with MachineCommandError error handling, adding @json_command decorator to a CLI command
 - **[land-learn-integration.md](land-learn-integration.md)** — modifying the erk land command's learn workflow, debugging session discovery during land, working with session reporting in the land pipeline, learn plan creation, session discovery, empty learn plan
 - **[learn-command-conditional-pipeline.md](learn-command-conditional-pipeline.md)** — modifying the erk learn command flow, adding session discovery logic to learn workflow, understanding how preprocessed materials bypass session discovery
 - **[learn-plan-land-flow.md](learn-plan-land-flow.md)** — landing PRs associated with learn plans, understanding how learn plan metadata updates parent issues
@@ -63,7 +66,9 @@
 - **[pr-submission.md](pr-submission.md)** — choosing between git-pr-push and pr-submit commands, understanding PR submission workflows, deciding whether to use Graphite or plain git
 - **[pr-submit-pipeline.md](pr-submit-pipeline.md)** — modifying the PR submit workflow, adding new steps to the submit pipeline, debugging PR submission failures, understanding the Graphite-first vs core submit dispatch
 - **[prompt-consolidation-pattern.md](prompt-consolidation-pattern.md)** — implementing interactive prompts, consolidating multiple yes/no prompts, working with ctx.console.confirm, testing commands with user prompts
-- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr rebase command, adding conflict confirmation UI to CLI commands, understanding rebase convergence paths
+- **[rebase-confirmation-workflow.md](rebase-confirmation-workflow.md)** — modifying the erk pr resolve-conflicts command, adding conflict confirmation UI to CLI commands, understanding how erk handles merge conflict resolution
+- **[ref-resolution-patterns.md](ref-resolution-patterns.md)** — adding --ref or --ref-current flags to a dispatch command, working with resolve_dispatch_ref, understanding dispatch ref fallback behavior
+- **[repo-resolution-pattern.md](repo-resolution-pattern.md)** — adding --repo support to a CLI command, resolving owner/repo from local git context, constructing RemoteGitHub for a command, using resolved_repo_option decorator
 - **[rich-table-output.md](rich-table-output.md)** — building CLI tables with color or formatting, adding Rich output to a Click command, creating sparklines or colored status indicators in CLI
 - **[session-management.md](session-management.md)** — adding session ID to a new exec script or hook, debugging 'session ID required' errors, deciding whether a command should require or optionally accept session ID, understanding how session ID flows from Claude Code to erk
 - **[shell-activation-pattern.md](shell-activation-pattern.md)** — generating commands that switch to a different worktree, debugging why erk br co doesn't change directory, building CLI commands that need shell-level directory changes, understanding why plan checkout commands use source
@@ -71,10 +76,11 @@
 - **[slash-command-llm-turn-optimization.md](slash-command-llm-turn-optimization.md)** — writing a slash command that makes 3+ sequential tool calls to fetch data, optimizing a slash command that feels slow due to many LLM round-trips, deciding whether to bundle API calls into an exec script or keep them in the command
 - **[slot-assign-from-current-branch.md](slot-assign-from-current-branch.md)** — modifying slot assign command behavior, adding --from-current-branch to other commands, understanding branch switching after slot operations
 - **[subprocess-stdin-patterns.md](subprocess-stdin-patterns.md)** — passing content to CLI tools via stdin, using subprocess with input parameter, CLI flags that only work with stdin
+- **[teleport-slot-awareness.md](teleport-slot-awareness.md)** — modifying erk slot teleport command, understanding how teleport updates slot assignments, working with slot pool and teleport interaction
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml, setting environment variables per worktree, updating environment when switching worktrees
 - **[two-phase-validation-model.md](two-phase-validation-model.md)** — implementing commands with user confirmations, designing commands that perform destructive mutations, adding confirmation prompts to CLI commands, deciding where to place confirmation logic in a command
 - **[upgrade-workflow.md](upgrade-workflow.md)** — modifying erk init --upgrade behavior, adding new entries to REQUIRED_GITIGNORE_ENTRIES, working with the erk doctor --check-hooks flag, understanding how erk upgrades existing repositories
 - **[workflow-commands.md](workflow-commands.md)** — triggering GitHub Actions workflows from CLI, adding a new workflow to erk launch, understanding local vs remote command duality
 - **[workflow-run-list.md](workflow-run-list.md)** — modifying workflow run list display, working with erk workflow run list, understanding run-name format parsing, modifying workflow run display
-- **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create-from, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation
-- **[wt-create-from.md](wt-create-from.md)** — setting up a local worktree for an existing branch, working with a PR branch that needs a worktree slot, understanding the difference between erk wt create and erk wt create-from
+- **[workflow-run-management.md](workflow-run-management.md)** — cancelling a GitHub Actions workflow run, retrying a failed GitHub Actions workflow run, working with erk workflow run cancel or retry
+- **[wt-command-comparison.md](wt-command-comparison.md)** — choosing between erk wt create, create --from-branch, and checkout, setting up a worktree for an existing branch, understanding worktree slot allocation

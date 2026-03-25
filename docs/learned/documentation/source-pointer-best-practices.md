@@ -51,9 +51,9 @@ For references spanning multiple locations, use multiple source comments:
 
 ```markdown
 <!-- Source: src/erk/core/llm_json.py, extract_json_dict -->
-<!-- Source: src/erk/core/plan_duplicate_checker.py, check_duplicate -->
+<!-- Source: src/erk/core/pr_duplicate_checker.py, check_duplicate -->
 
-The extraction function in `llm_json.py` is called by `check_duplicate()` in `plan_duplicate_checker.py`.
+The extraction function in `llm_json.py` is called by `check_duplicate()` in `pr_duplicate_checker.py`.
 ```
 
 ## Related Documentation

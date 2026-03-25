@@ -8,8 +8,8 @@ from erk.cli.cli import cli
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import render_metadata_block
 from erk_shared.gateway.github.metadata.types import MetadataBlock
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+from erk_shared.pr_store.planned_pr_lifecycle import build_plan_stage_body
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -40,7 +40,7 @@ def test_check_valid_plan_passes() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -57,7 +57,6 @@ def test_check_valid_plan_passes() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: [plan_body_block]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -66,12 +65,12 @@ def test_check_valid_plan_passes() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Validating plan #42" in result.output
+        assert "Validating PR #42" in result.output
         assert "[PASS] plan-header metadata block present" in result.output
         assert "[PASS] plan-header has required fields" in result.output
         assert "[PASS] First comment exists" in result.output
         assert "[PASS] plan-body content extractable" in result.output
-        assert "Plan validation passed" in result.output
+        assert "PR validation passed" in result.output
 
 
 def test_check_missing_plan_header_fails() -> None:
@@ -83,7 +82,7 @@ def test_check_missing_plan_header_fails() -> None:
         body="No metadata block here",
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -100,7 +99,6 @@ def test_check_missing_plan_header_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: []},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -110,7 +108,7 @@ def test_check_missing_plan_header_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "[FAIL] plan-header metadata block present" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_missing_required_field_fails() -> None:
@@ -130,7 +128,7 @@ def test_check_missing_required_field_fails() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -147,7 +145,6 @@ def test_check_missing_required_field_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: []},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -159,7 +156,7 @@ def test_check_missing_required_field_fails() -> None:
         assert "[PASS] plan-header metadata block present" in result.output
         assert "[FAIL]" in result.output
         assert "created_by" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_missing_first_comment_fails() -> None:
@@ -179,7 +176,7 @@ def test_check_missing_first_comment_fails() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -196,7 +193,6 @@ def test_check_missing_first_comment_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: []},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -206,7 +202,7 @@ def test_check_missing_first_comment_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "[FAIL] First comment exists" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_missing_plan_body_fails() -> None:
@@ -226,7 +222,7 @@ def test_check_missing_plan_body_fails() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -244,7 +240,6 @@ def test_check_missing_plan_body_fails() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: ["Just a regular comment"]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -255,7 +250,7 @@ def test_check_missing_plan_body_fails() -> None:
         assert result.exit_code == 1
         assert "[PASS] First comment exists" in result.output
         assert "[FAIL] plan-body content extractable" in result.output
-        assert "Plan validation failed" in result.output
+        assert "PR validation failed" in result.output
 
 
 def test_check_github_url_parsing() -> None:
@@ -281,7 +276,7 @@ def test_check_github_url_parsing() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -298,7 +293,6 @@ def test_check_github_url_parsing() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: [plan_body_block]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -311,8 +305,8 @@ def test_check_github_url_parsing() -> None:
 
         # Assert
         assert result.exit_code == 0
-        assert "Validating plan #42" in result.output
-        assert "Plan validation passed" in result.output
+        assert "Validating PR #42" in result.output
+        assert "PR validation passed" in result.output
 
 
 def test_check_valid_draft_pr_plan_passes() -> None:
@@ -341,7 +335,7 @@ def test_check_valid_draft_pr_plan_passes() -> None:
         body=issue_body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -359,7 +353,6 @@ def test_check_valid_draft_pr_plan_passes() -> None:
             dispatch_run_id="run-123",
             issues={42: issue},
             issue_comments={42: ["submission-queued comment"]},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -371,7 +364,7 @@ def test_check_valid_draft_pr_plan_passes() -> None:
         assert "[PASS] plan-header metadata block present" in result.output
         assert "[PASS] plan-header has required fields" in result.output
         assert "[PASS] plan content extractable from body" in result.output
-        assert "Plan validation passed" in result.output
+        assert "PR validation passed" in result.output
 
 
 def test_check_invalid_identifier_fails() -> None:
@@ -387,7 +380,6 @@ def test_check_invalid_identifier_fails() -> None:
             dispatch_run_id="run-123",
             issues={},
             issue_comments={},
-            pr_references=None,
         )
         ctx = build_workspace_test_context(env, remote_github=fake_remote)
 
@@ -397,7 +389,7 @@ def test_check_invalid_identifier_fails() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error:" in result.output
-        assert "Invalid plan number or URL" in result.output
+        assert "Invalid PR number or URL" in result.output
 
 
 # =============================================================================
@@ -432,7 +424,7 @@ def test_validate_plan_format_passes_valid_plan() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -447,10 +439,9 @@ def test_validate_plan_format_passes_valid_plan() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: [plan_body_block]},
-        pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True
@@ -470,7 +461,7 @@ def test_validate_plan_format_fails_missing_plan_header() -> None:
         body="No metadata block here",
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -485,10 +476,9 @@ def test_validate_plan_format_fails_missing_plan_header() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: []},
-        pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -516,7 +506,7 @@ def test_validate_plan_format_fails_missing_first_comment() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -531,10 +521,9 @@ def test_validate_plan_format_fails_missing_first_comment() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: []},  # No comments
-        pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -561,7 +550,7 @@ def test_validate_plan_format_fails_missing_plan_body() -> None:
         body=plan_header_block,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -576,10 +565,9 @@ def test_validate_plan_format_fails_missing_plan_body() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: ["Just a regular comment"]},  # No plan-body block
-        pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is False
@@ -601,10 +589,9 @@ def test_validate_plan_format_returns_error_on_github_failure() -> None:
         dispatch_run_id="run-123",
         issues={},
         issue_comments={},
-        pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=999)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=999)
 
     assert isinstance(result, PlanValidationError)
     assert "999" in result.error or "not found" in result.error.lower()
@@ -636,7 +623,7 @@ def test_validate_plan_format_passes_draft_pr_plan() -> None:
         body=issue_body,
         state="OPEN",
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -651,10 +638,9 @@ def test_validate_plan_format_passes_draft_pr_plan() -> None:
         dispatch_run_id="run-123",
         issues={42: issue},
         issue_comments={42: []},
-        pr_references=None,
     )
 
-    result = validate_plan_format(fake_remote, owner="owner", repo="repo", plan_number=42)
+    result = validate_plan_format(fake_remote, owner="owner", repo="repo", pr_number=42)
 
     assert isinstance(result, PlanValidationSuccess)
     assert result.passed is True

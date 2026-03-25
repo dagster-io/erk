@@ -6,17 +6,17 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def _plan_to_issue_info(plan: Plan) -> IssueInfo:
     """Convert Plan to IssueInfo for FakeRemoteGitHub."""
     return IssueInfo(
-        number=int(plan.plan_identifier),
+        number=int(plan.pr_identifier),
         title=plan.title,
         body=plan.body,
         state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
@@ -31,7 +31,7 @@ def _plan_to_issue_info(plan: Plan) -> IssueInfo:
 
 def _make_fake_remote(*plans: Plan) -> FakeRemoteGitHub:
     """Build FakeRemoteGitHub with given plans as issues."""
-    issues = {int(p.plan_identifier): _plan_to_issue_info(p) for p in plans}
+    issues = {int(p.pr_identifier): _plan_to_issue_info(p) for p in plans}
     return FakeRemoteGitHub(
         authenticated_user="test-author",
         default_branch_name="main",
@@ -40,7 +40,6 @@ def _make_fake_remote(*plans: Plan) -> FakeRemoteGitHub:
         dispatch_run_id="run-1",
         issues=issues,
         issue_comments=None,
-        pr_references=None,
     )
 
 
@@ -48,12 +47,12 @@ def test_view_plan_displays_issue() -> None:
     """Test fetching and displaying a plan issue."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue description",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan", "bug"],
+        labels=["erk-pr", "bug"],
         assignees=["alice"],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -63,9 +62,9 @@ def test_view_plan_displays_issue() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -76,7 +75,7 @@ def test_view_plan_displays_issue() -> None:
         assert "Test Issue" in result.output
         assert "OPEN" in result.output
         assert "#42" in result.output
-        assert "erk-plan" in result.output
+        assert "erk-pr" in result.output
         assert "bug" in result.output
         # Body should NOT be displayed without --full
         assert "This is a test issue description" not in result.output
@@ -86,12 +85,12 @@ def test_view_plan_infers_from_branch() -> None:
     """Test inferring plan number from current branch name."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="123",
+        pr_identifier="123",
         title="Inferred Plan",
         body="Plan content",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/123",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -101,8 +100,8 @@ def test_view_plan_infers_from_branch() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, fake_github = create_plan_store_with_plans({"123": plan_issue})
-        # Also register the PR under the real branch name so PlannedPRBackend
+        store, fake_github = create_pr_backend_with_plans({"123": plan_issue})
+        # Also register the PR under the real branch name so ManagedGitHubPrBackend
         # can resolve it via get_pr_for_branch during branch inference.
         real_branch = "P123-foo-bar-feature"
         fake_github._prs[real_branch] = fake_github._prs["plan-123"]
@@ -110,7 +109,7 @@ def test_view_plan_infers_from_branch() -> None:
         # Set current branch to a plan branch
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             current_branch=real_branch,
             remote_github=_make_fake_remote(plan_issue),
         )
@@ -128,10 +127,10 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
     """Test error message when on non-plan branch without identifier."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
+        store, _ = create_pr_backend_with_plans({})
         # Set current branch to master (not a plan branch)
         ctx = build_workspace_test_context(
-            env, plan_store=store, current_branch="master", remote_github=_make_fake_remote()
+            env, pr_store=store, current_branch="master", remote_github=_make_fake_remote()
         )
 
         # Act - no identifier provided
@@ -141,19 +140,19 @@ def test_view_plan_error_when_cannot_infer_from_branch() -> None:
         assert result.exit_code == 1
         assert "Error" in result.output
         assert "No identifier specified and could not infer from branch name" in result.output
-        assert "plan reference file" in result.output
+        assert "PR reference file" in result.output
 
 
 def test_view_plan_with_full_flag() -> None:
     """Test viewing plan with --full flag shows the body."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue description",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -163,9 +162,9 @@ def test_view_plan_with_full_flag() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -176,19 +175,19 @@ def test_view_plan_with_full_flag() -> None:
         assert "Test Issue" in result.output
         # Body SHOULD be displayed with --full
         assert "This is a test issue description" in result.output
-        assert "─── Plan ───" in result.output
+        assert "─── PR Body ───" in result.output
 
 
 def test_view_plan_with_short_full_flag() -> None:
     """Test viewing plan with -f flag (short form of --full)."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Test Issue",
         body="This is a test issue description",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -198,9 +197,9 @@ def test_view_plan_with_short_full_flag() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -217,8 +216,8 @@ def test_view_plan_not_found() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
+        store, _ = create_pr_backend_with_plans({})
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=_make_fake_remote())
 
         # Act
         result = runner.invoke(cli, ["pr", "view", "999"], obj=ctx)
@@ -226,14 +225,14 @@ def test_view_plan_not_found() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error" in result.output
-        assert "Plan #999 not found" in result.output
+        assert "PR #999 not found" in result.output
 
 
 def test_view_plan_minimal_fields() -> None:
     """Test displaying issue with minimal fields (no labels, assignees, body)."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="1",
+        pr_identifier="1",
         title="Minimal Issue",
         body="minimal content",
         state=PlanState.CLOSED,
@@ -248,9 +247,9 @@ def test_view_plan_minimal_fields() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"1": plan_issue})
+        store, _ = create_pr_backend_with_plans({"1": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -266,12 +265,12 @@ def test_view_plan_with_github_url() -> None:
     """Test fetching plan using GitHub issue URL."""
     # Arrange
     plan_issue = Plan(
-        plan_identifier="123",
+        pr_identifier="123",
         title="URL Test Issue",
         body="Issue from URL",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/123",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -281,9 +280,9 @@ def test_view_plan_with_github_url() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        store, _ = create_pr_backend_with_plans({"123": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act - use GitHub URL instead of plain number
@@ -301,8 +300,8 @@ def test_view_plan_invalid_url() -> None:
     # Arrange
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({})
-        ctx = build_workspace_test_context(env, plan_store=store, remote_github=_make_fake_remote())
+        store, _ = create_pr_backend_with_plans({})
+        ctx = build_workspace_test_context(env, pr_store=store, remote_github=_make_fake_remote())
 
         # Act - use invalid identifier
         result = runner.invoke(cli, ["pr", "view", "invalid-input"], obj=ctx)
@@ -310,7 +309,7 @@ def test_view_plan_invalid_url() -> None:
         # Assert
         assert result.exit_code == 1
         assert "Error" in result.output
-        assert "Invalid plan number or URL" in result.output
+        assert "Invalid PR number or URL" in result.output
 
 
 def test_view_plan_with_header_info() -> None:
@@ -343,12 +342,12 @@ Some other content here.
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with Header",
         body=issue_body,  # Raw issue body with plan-header goes here
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -358,9 +357,9 @@ Some other content here.
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -400,12 +399,12 @@ last_local_impl_user: testuser
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with Impl Info",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -415,9 +414,9 @@ last_local_impl_user: testuser
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -440,12 +439,12 @@ def test_view_plan_without_header_info() -> None:
     """
     # Arrange - plan without issue_body metadata
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan without Header",
         body="The plan content here",
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -455,9 +454,9 @@ def test_view_plan_without_header_info() -> None:
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -490,12 +489,12 @@ created_from_session: abc123-session-id
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with no learn",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -505,9 +504,9 @@ created_from_session: abc123-session-id
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -517,7 +516,7 @@ created_from_session: abc123-session-id
         assert result.exit_code == 0
         assert "─── Learn ───" in result.output
         # Plan session uses the new formatted field
-        assert "Plan session:" in result.output
+        assert "PR session:" in result.output
         assert "abc123-session-id" in result.output
         # Status shows "- not started" for no learn evaluation
         assert "Status:" in result.output
@@ -545,12 +544,12 @@ last_learn_session: def456-learn-session
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with learn data",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -560,9 +559,9 @@ last_learn_session: def456-learn-session
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         # Act
@@ -572,7 +571,7 @@ last_learn_session: def456-learn-session
         assert result.exit_code == 0
         assert "─── Learn ───" in result.output
         # Plan session and learn session use formatted field names
-        assert "Plan session:" in result.output
+        assert "PR session:" in result.output
         assert "abc123-session-id" in result.output
         assert "Learn session:" in result.output
         assert "def456-learn-session" in result.output
@@ -595,12 +594,12 @@ learn_status: pending
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with pending learn",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -610,9 +609,9 @@ learn_status: pending
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
@@ -640,12 +639,12 @@ learn_plan_issue: 456
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with completed learn",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -655,9 +654,9 @@ learn_plan_issue: 456
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
@@ -685,12 +684,12 @@ learn_plan_pr: 789
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with completed learn PR",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -700,9 +699,9 @@ learn_plan_pr: 789
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
@@ -730,12 +729,12 @@ learn_run_id: "12345678"
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with pending learn and run_id",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -745,9 +744,9 @@ learn_run_id: "12345678"
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)
@@ -776,12 +775,12 @@ learn_status: pending
 """
 
     plan_issue = Plan(
-        plan_identifier="42",
+        pr_identifier="42",
         title="Plan with pending learn but no run_id",
         body=issue_body,
         state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -791,9 +790,9 @@ learn_status: pending
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(
-            env, plan_store=store, remote_github=_make_fake_remote(plan_issue)
+            env, pr_store=store, remote_github=_make_fake_remote(plan_issue)
         )
 
         result = runner.invoke(cli, ["pr", "view", "42"], obj=ctx)

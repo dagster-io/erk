@@ -20,7 +20,7 @@ Remote plan branches (implemented by CI workers) have:
 - `is_current_branch = False` (not checked out locally)
 - `worktree_path = None` (no local worktree)
 
-The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `planned-pr-context/{plan_id}` branches by the CI worker and don't need interactive prompting during land.
+The guard at land_pipeline.py:341 skips the interactive learn prompt for these branches. This is intentional — remote sessions are uploaded to `planned-pr-context/{pr_number}` branches by the CI worker and don't need interactive prompting during land.
 
 ## Session Discovery for Remote Branches
 

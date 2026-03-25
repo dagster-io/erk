@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session as download_remote_session_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 
 # ============================================================================
 # 1. Helper Function Tests (2 tests)

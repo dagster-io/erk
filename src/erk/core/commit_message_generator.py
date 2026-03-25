@@ -22,7 +22,7 @@ from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 from erk_shared.gateway.time.abc import Time
 
 if TYPE_CHECKING:
-    from erk.core.plan_context_provider import PlanContext
+    from erk.core.pr_context_provider import PrContext
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class CommitMessageRequest:
     current_branch: str
     parent_branch: str
     commit_messages: list[str] | None
-    plan_context: PlanContext | None
+    plan_context: PrContext | None
 
 
 @dataclass(frozen=True)
@@ -124,7 +124,7 @@ class CommitMessageGenerator:
         yield ProgressEvent(f"Diff loaded ({diff_size:,} chars)", style="success")
 
         # Build prompt with context
-        yield ProgressEvent("Analyzing changes with Claude...")
+        yield ProgressEvent(f"Analyzing changes with {self._executor.prompt_label}...")
 
         user_prompt = self._build_user_prompt(
             diff_content=diff_content,
@@ -202,7 +202,7 @@ class CommitMessageGenerator:
         current_branch: str,
         parent_branch: str,
         commit_messages: list[str] | None,
-        plan_context: PlanContext | None,
+        plan_context: PrContext | None,
     ) -> str:
         """Build the context section with branch info, commit messages, and plan context."""
         context_section = f"""## Context
@@ -214,7 +214,7 @@ class CommitMessageGenerator:
         if plan_context is not None:
             context_section += f"""
 
-## Implementation Plan (Plan #{plan_context.plan_id})
+## Implementation Plan (Plan #{plan_context.pr_id})
 
 The following plan describes the intent and rationale for these changes:
 
@@ -254,7 +254,7 @@ and may contain details not visible in the diff alone."""
         current_branch: str,
         parent_branch: str,
         commit_messages: list[str] | None,
-        plan_context: PlanContext | None,
+        plan_context: PrContext | None,
     ) -> str:
         """Build user prompt with context and diff only (no system prompt).
 

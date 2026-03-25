@@ -29,13 +29,7 @@ on:
         description: "Claude model to use for conflict resolution"
         required: false
         type: string
-        default: "claude-opus-4-6"
-      plan_number:
-        description: "Plan issue/PR number for dispatch metadata (empty to skip)"
-        required: false
-        type: string
-        default: ""
-
+        default: "claude-sonnet-4-6"
 concurrency:
   group: rebase-${{ github.event.inputs.branch_name }}
   cancel-in-progress: true
@@ -61,17 +55,16 @@ jobs:
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
       - name: Write dispatch metadata to plan
-        if: inputs.plan_number != ''
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_NUMBER: ${{ inputs.plan_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PLAN_NUMBER" \
+          erk exec update-pr-header "$PR_NUMBER" \
             "last_dispatched_run_id=$RUN_ID" \
             "last_dispatched_node_id=$NODE_ID" \
             "last_dispatched_at=$TIMESTAMP"
@@ -159,17 +152,17 @@ jobs:
           rm "$TEMP_FILE"
 
       - name: Update plan header with dispatch metadata
-        if: always() && inputs.plan_number != ''
+        if: always()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
-          PLAN_NUMBER: ${{ inputs.plan_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
         run: |
           NODE_ID=$(gh api "/repos/$REPO/actions/runs/$RUN_ID" --jq '.node_id')
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
-          erk exec update-plan-header "$PLAN_NUMBER" \
+          erk exec update-pr-header "$PR_NUMBER" \
             "last_dispatched_run_id=$RUN_ID" \
             "last_dispatched_node_id=$NODE_ID" \
             "last_dispatched_at=$TIMESTAMP"

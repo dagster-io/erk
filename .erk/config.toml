@@ -12,7 +12,7 @@
 # ]
 
 [workflows.erk-impl]
-model_name = "claude-opus-4-5"
+model_name = "claude-sonnet-4-6"
 
 [pool]
 max_slots = 64

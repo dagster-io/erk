@@ -6,7 +6,7 @@ read_when:
   - "bundling multiple API calls into a single exec script"
 tripwires:
   - action: "making 5+ sequential gh api subprocess calls in an exec script"
-    warning: "Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PlanListService."
+    warning: "Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PrListService."
   - action: "making a separate subprocess call for each item in a batch operation"
     warning: "Use batch exec commands pattern (batch-exec-commands.md) to process items in a single invocation with per-item error handling."
 ---
@@ -51,11 +51,11 @@ For operations on multiple items, use the batch exec command pattern from `batch
 
 ### 3. HTTP Direct API Path
 
-For bulk read operations, use `PlanListService` which selects the HTTP direct path when available, bypassing subprocess overhead entirely.
+For bulk read operations, use `PrListService` which selects the HTTP direct path when available, bypassing subprocess overhead entirely.
 
 ## Source Pointer
 
-See `src/erk/core/services/plan_list_service.py` for the canonical dual-path implementation.
+See `src/erk/core/services/pr_list_service.py` for the canonical dual-path implementation.
 
 ## Related Documentation
 

@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from erk.tui.data.types import PlanRowData
+from erk.tui.data.types import PrRowData, RunRowData
 from erk.tui.views.types import ViewMode
 
 
@@ -28,9 +28,22 @@ class CommandContext:
         view_mode: The active view mode (plans, learn, objectives)
     """
 
-    row: PlanRowData
+    row: PrRowData
     view_mode: ViewMode
     cmux_integration: bool = False
+
+
+@dataclass(frozen=True)
+class RunCommandContext:
+    """Context available to run commands.
+
+    Attributes:
+        row: The run row data for the selected workflow run
+        view_mode: The active view mode (always RUNS)
+    """
+
+    row: RunRowData
+    view_mode: ViewMode
 
 
 @dataclass(frozen=True)
@@ -38,7 +51,7 @@ class CommandDefinition:
     """Definition of a command in the command palette.
 
     Attributes:
-        id: Unique identifier for the command (e.g., "close_plan")
+        id: Unique identifier for the command (e.g., "close_pr")
         name: Display name (e.g., "Close Plan")
         description: Brief description of what the command does
         category: Command category for emoji prefix display
@@ -48,7 +61,7 @@ class CommandDefinition:
         is_available: Predicate function to check if command is available
         get_display_name: Optional function to generate context-aware display name.
             If provided, returns the name to show in the palette
-            (e.g., "erk br co --for-plan 123").
+            (e.g., "erk br co --for-pr 123").
             If None, falls back to the static `name` field.
     """
 

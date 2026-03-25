@@ -1,6 +1,7 @@
 """No-op wrapper for GitHub operations."""
 
 from pathlib import Path
+from typing import Any
 
 from erk_shared.gateway.github.abc import LocalGitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
@@ -15,6 +16,7 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewThread,
     PullRequestInfo,
     WorkflowRun,
@@ -104,6 +106,12 @@ class DryRunLocalGitHub(LocalGitHub):
         """No-op for closing PR in dry-run mode."""
         pass
 
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.list_all_workflow_runs(repo_root, limit=limit, actor=actor)
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -126,13 +134,17 @@ class DryRunLocalGitHub(LocalGitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_comment(repo_root, comment_id)
 
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        plan_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_prs_linked_to_issues(location, plan_numbers)
+        return self._wrapped.get_prs_by_numbers(location, pr_numbers)
+
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_head_branches(location, pr_numbers)
 
     def get_workflow_runs_by_branches(
         self, repo_root: Path, workflow: str, branches: list[str]
@@ -268,6 +280,14 @@ class DryRunLocalGitHub(LocalGitHub):
             repo_root, pr_number, include_resolved=include_resolved
         )
 
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_reviews(repo_root, pr_number)
+
     def get_pr_check_runs(
         self,
         repo_root: Path,
@@ -284,6 +304,13 @@ class DryRunLocalGitHub(LocalGitHub):
         """No-op for resolving review thread in dry-run mode.
 
         Returns True to indicate success without actually resolving.
+        """
+        return True
+
+    def unresolve_review_thread(self, repo_root: Path, thread_id: str) -> bool:
+        """No-op for unresolving review thread in dry-run mode.
+
+        Returns True to indicate success without actually unresolving.
         """
         return True
 
@@ -307,6 +334,14 @@ class DryRunLocalGitHub(LocalGitHub):
         Returns a fake comment ID to allow dry-run workflows to continue.
         """
         return 1234567890
+
+    def fetch_pr_comments(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[dict[str, Any]]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.fetch_pr_comments(repo_root, pr_number)
 
     def find_pr_comment_by_marker(
         self,
@@ -371,6 +406,14 @@ class DryRunLocalGitHub(LocalGitHub):
         return self._wrapped.get_issues_by_numbers_with_pr_linkages(
             location=location, plan_numbers=plan_numbers
         )
+
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """No-op for cancelling workflow run in dry-run mode."""
+        pass
+
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """No-op for re-running workflow run in dry-run mode."""
+        pass
 
     def create_commit_status(
         self,

@@ -25,15 +25,16 @@ from erk_shared.gateway.github.graphql_queries import (
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
     GET_PR_CHECK_RUNS_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
+    GET_PR_REVIEWS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
     ISSUE_PR_LINKAGE_FRAGMENT,
     RESOLVE_REVIEW_THREAD_MUTATION,
+    UNRESOLVE_REVIEW_THREAD_MUTATION,
 )
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.parsing import (
     execute_gh_command_with_retry,
-    parse_aggregated_check_counts,
     parse_gh_auth_status_output,
 )
 from erk_shared.gateway.github.pr_data_parsing import (
@@ -57,7 +58,9 @@ from erk_shared.gateway.github.types import (
     PRDetails,
     PRListState,
     PRNotFound,
+    PRReview,
     PRReviewComment,
+    PRReviewState,
     PRReviewThread,
     PullRequestInfo,
     RepoInfo,
@@ -116,33 +119,6 @@ class RealLocalGitHub(LocalGitHub):
         self._repo_info = repo_info
         self._issues = issues
         self._default_branch_cache: dict[Path, str] = {}
-
-    @classmethod
-    def for_test(
-        cls,
-        time: Time | None = None,
-        repo_info: RepoInfo | None = None,
-    ) -> "RealLocalGitHub":
-        """Create RealLocalGitHub with test defaults.
-
-        Convenience factory for tests that need RealLocalGitHub but don't care
-        about the issues gateway configuration.
-
-        Args:
-            time: Time implementation (defaults to FakeTime)
-            repo_info: Repository info (defaults to None)
-
-        Returns:
-            RealLocalGitHub configured with FakeGitHubIssues
-        """
-        from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-        from erk_shared.gateway.time.fake import FakeTime
-
-        return cls(
-            time=time if time is not None else FakeTime(),
-            repo_info=repo_info,
-            issues=FakeGitHubIssues(),
-        )
 
     @property
     def issues(self) -> GitHubIssues:
@@ -222,7 +198,6 @@ class RealLocalGitHub(LocalGitHub):
             Parsed JSON response
         """
         # GH-API-AUDIT: GraphQL - explicit graphql query
-        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
         stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         return json.loads(stdout)
@@ -570,6 +545,45 @@ class RealLocalGitHub(LocalGitHub):
         ]
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
+    def list_all_workflow_runs(
+        self, repo_root: Path, *, limit: int, actor: str | None = None
+    ) -> list[WorkflowRun]:
+        """List workflow runs across all workflows in a single API call."""
+        # GH-API-AUDIT: REST - GET actions/runs (all workflows)
+        query_params = f"per_page={limit}"
+        if actor is not None:
+            query_params += f"&actor={actor}"
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/actions/runs?{query_params}",
+            "--jq",
+            ".workflow_runs",
+        ]
+
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        data = json.loads(stdout)
+
+        runs = []
+        for run in data:
+            created_at = None
+            if created_at_str := run.get("created_at"):
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
+            workflow_run = WorkflowRun(
+                run_id=str(run["id"]),
+                status=run["status"],
+                conclusion=run.get("conclusion"),
+                branch=run["head_branch"],
+                head_sha=run["head_sha"],
+                display_title=run.get("display_title"),
+                created_at=created_at,
+                workflow_path=run.get("path"),
+            )
+            runs.append(workflow_run)
+
+        return runs
+
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -740,192 +754,98 @@ class RealLocalGitHub(LocalGitHub):
             return None
         return body
 
-    def get_prs_linked_to_issues(
-        self,
-        location: GitHubRepoLocation,
-        plan_numbers: list[int],
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Get PRs linked to issues via CrossReferencedEvent timeline.
-
-        Uses GraphQL CrossReferencedEvent to find all PRs that reference each plan,
-        regardless of whether they will close the issue when merged. Includes open,
-        closed, and draft PRs. Used by erk dash for batch queries with full PR data
-        (CI status, mergeability).
-
-        For simpler single-issue queries, see GitHubIssues.get_prs_referencing_issue().
-
-        Note: Uses try/except as an acceptable error boundary for handling gh CLI
-        availability and authentication. We cannot reliably check gh installation
-        and authentication status a priori without duplicating gh's logic.
-        """
-        if not plan_numbers:
+    def get_prs_by_numbers(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, PullRequestInfo]:
+        """Batch fetch PR info for specific PR numbers via GraphQL."""
+        if not pr_numbers:
             return {}
 
-        try:
-            # Build and execute GraphQL query to fetch all issues
-            query = self._build_issue_pr_linkage_query(plan_numbers, location.repo_id)
-            response = self._execute_batch_pr_query(query, location.root)
+        pr_queries = []
+        for pr_num in pr_numbers:
+            pr_queries.append(
+                f"    pr_{pr_num}: pullRequest(number: {pr_num}) {{"
+                f" number state url title isDraft headRefName baseRefName"
+                f" mergeable reviewDecision"
+                f" statusCheckRollup {{ state contexts(last: 1) {{"
+                f" totalCount checkRunCountsByState {{ state count }}"
+                f" statusContextCountsByState {{ state count }}"
+                f" }} }}"
+                f" }}"
+            )
 
-            # Parse response and build inverse mapping
-            return self._parse_issue_pr_linkages(response, location.repo_id)
-        except (RuntimeError, FileNotFoundError, json.JSONDecodeError, KeyError, IndexError):
-            # gh not installed, not authenticated, or parsing failed
-            return {}
-
-    def _build_issue_pr_linkage_query(self, plan_numbers: list[int], repo_id: GitHubRepoId) -> str:
-        """Build GraphQL query to fetch PRs linked to plans via timeline.
-
-        Uses CrossReferencedEvent on issue timelines to find PRs that will close
-        each issue. This is O(plans) instead of O(all PRs in repo).
-
-        Uses pre-aggregated count fields for efficiency (~15-30x smaller payload):
-        - contexts(last: 1) with totalCount, checkRunCountsByState, statusContextCountsByState
-        - Removes title and labels fields (not needed for dash)
-
-        Note: This method still builds dynamic alias queries because GraphQL doesn't
-        support variable alias names. The fragment is reused from graphql_queries.py.
-
-        Args:
-            plan_numbers: List of plan numbers to query
-            repo_id: GitHub repository identity (owner and repo name)
-
-        Returns:
-            GraphQL query string
-        """
-        # Build aliased issue queries using the fragment spread
-        issue_queries = []
-        for plan_num in plan_numbers:
-            issue_query = f"""    issue_{plan_num}: issue(number: {plan_num}) {{
-      timelineItems(itemTypes: [CROSS_REFERENCED_EVENT], first: 20) {{
-        nodes {{
-          ... on CrossReferencedEvent {{
-            ...IssuePRLinkageFields
-          }}
-        }}
-      }}
-    }}"""
-            issue_queries.append(issue_query)
-
-        # Combine fragment definition (from constant) and query
-        query = f"""{ISSUE_PR_LINKAGE_FRAGMENT}
-
-query {{
-  repository(owner: "{repo_id.owner}", name: "{repo_id.repo}") {{
-{chr(10).join(issue_queries)}
+        query = f"""query {{
+  repository(owner: "{location.repo_id.owner}", name: "{location.repo_id.repo}") {{
+{chr(10).join(pr_queries)}
   }}
 }}"""
-        return query
 
-    def _parse_issue_pr_linkages(
-        self, response: dict[str, Any], repo_id: GitHubRepoId
-    ) -> dict[int, list[PullRequestInfo]]:
-        """Parse GraphQL response from issue timeline query.
+        try:
+            response = self._execute_batch_pr_query(query, location.root)
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
+            return {}
 
-        Processes CrossReferencedEvent timeline items to extract all PRs that
-        reference each plan.
-
-        Args:
-            response: GraphQL response data
-            repo_id: GitHub repository identity (owner and repo name)
-
-        Returns:
-            Mapping of plan_number -> list of PRs sorted by created_at descending
-        """
-        result: dict[int, list[PullRequestInfo]] = {}
+        result: dict[int, PullRequestInfo] = {}
         repo_data = response.get("data", {}).get("repository", {})
-
-        # Iterate over aliased issue results
-        for key, issue_data in repo_data.items():
-            # Skip non-issue aliases or missing issues
-            if not key.startswith("issue_") or issue_data is None:
+        for key, pr_data in repo_data.items():
+            if not key.startswith("pr_") or pr_data is None:
                 continue
+            pr_num = int(key.removeprefix("pr_"))
+            state = pr_data.get("state", "OPEN")
+            is_draft = pr_data.get("isDraft", False)
+            mergeable_raw = pr_data.get("mergeable")
+            has_conflicts = mergeable_raw == "CONFLICTING" if mergeable_raw else None
+            checks_passing, checks_counts = parse_status_rollup(pr_data.get("statusCheckRollup"))
+            result[pr_num] = PullRequestInfo(
+                number=pr_num,
+                state=state,
+                url=pr_data.get("url", ""),
+                is_draft=is_draft,
+                title=pr_data.get("title"),
+                checks_passing=checks_passing,
+                owner=location.repo_id.owner,
+                repo=location.repo_id.repo,
+                has_conflicts=has_conflicts,
+                checks_counts=checks_counts,
+                head_branch=pr_data.get("headRefName"),
+                review_decision=pr_data.get("reviewDecision"),
+                base_ref_name=pr_data.get("baseRefName"),
+            )
 
-            # Extract plan number from alias
-            plan_number = int(key.removeprefix("issue_"))
+        return result
 
-            # Collect PRs with timestamps for sorting
-            prs_with_timestamps: list[tuple[PullRequestInfo, str]] = []
+    def get_pr_head_branches(
+        self, location: GitHubRepoLocation, pr_numbers: list[int]
+    ) -> dict[int, str]:
+        """Get head branch names for PRs via batch GraphQL query."""
+        if not pr_numbers:
+            return {}
 
-            timeline_items = issue_data.get("timelineItems", {})
-            nodes = timeline_items.get("nodes", [])
+        # Build aliased PR queries
+        pr_queries = []
+        for pr_num in pr_numbers:
+            pr_queries.append(f"    pr_{pr_num}: pullRequest(number: {pr_num}) {{ headRefName }}")
 
-            for node in nodes:
-                if node is None:
-                    continue
+        query = f"""query {{
+  repository(owner: "{location.repo_id.owner}", name: "{location.repo_id.repo}") {{
+{chr(10).join(pr_queries)}
+  }}
+}}"""
 
-                source = node.get("source")
-                if source is None:
-                    continue
+        try:
+            response = self._execute_batch_pr_query(query, location.root)
+        except (RuntimeError, FileNotFoundError, json.JSONDecodeError):
+            return {}
 
-                # Extract required PR fields
-                pr_number = source.get("number")
-                state = source.get("state")
-                url = source.get("url")
-
-                # Skip if essential fields are missing (source may be Issue, not PR)
-                if pr_number is None or state is None or url is None:
-                    continue
-
-                # Extract optional fields (title no longer fetched for efficiency)
-                is_draft = source.get("isDraft")
-                created_at = source.get("createdAt")
-
-                # Parse checks status and counts using aggregated fields
-                checks_passing = None
-                checks_counts: tuple[int, int] | None = None
-                status_rollup = source.get("statusCheckRollup")
-                if status_rollup is not None:
-                    rollup_state = status_rollup.get("state")
-                    if rollup_state == "SUCCESS":
-                        checks_passing = True
-                    elif rollup_state in ("FAILURE", "ERROR"):
-                        checks_passing = False
-
-                    # Extract check counts from aggregated fields
-                    contexts = status_rollup.get("contexts")
-                    if contexts is not None and isinstance(contexts, dict):
-                        total = contexts.get("totalCount", 0)
-                        if total > 0:
-                            checks_counts = parse_aggregated_check_counts(
-                                contexts.get("checkRunCountsByState", []),
-                                contexts.get("statusContextCountsByState", []),
-                                total,
-                            )
-
-                # Parse conflicts status
-                has_conflicts = None
-                mergeable = source.get("mergeable")
-                if mergeable == "CONFLICTING":
-                    has_conflicts = True
-                elif mergeable == "MERGEABLE":
-                    has_conflicts = False
-
-                # Extract head branch (source branch) for landing
-                head_ref_name = source.get("headRefName")
-
-                # Note: title and labels not fetched (not needed for dash)
-                pr_info = PullRequestInfo(
-                    number=pr_number,
-                    state=state,
-                    url=url,
-                    is_draft=is_draft if is_draft is not None else False,
-                    title=None,  # Not fetched for efficiency
-                    checks_passing=checks_passing,
-                    owner=repo_id.owner,
-                    repo=repo_id.repo,
-                    has_conflicts=has_conflicts,
-                    checks_counts=checks_counts,
-                    head_branch=head_ref_name,
-                )
-
-                # Store with timestamp for sorting
-                if created_at:
-                    prs_with_timestamps.append((pr_info, created_at))
-
-            # Sort by created_at descending and store
-            if prs_with_timestamps:
-                prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-                result[plan_number] = [pr for pr, _ in prs_with_timestamps]
+        result: dict[int, str] = {}
+        repo_data = response.get("data", {}).get("repository", {})
+        for key, pr_data in repo_data.items():
+            if not key.startswith("pr_") or pr_data is None:
+                continue
+            pr_num = int(key.removeprefix("pr_"))
+            head_ref = pr_data.get("headRefName")
+            if head_ref is not None:
+                result[pr_num] = head_ref
 
         return result
 
@@ -1275,7 +1195,6 @@ query {{
 
         checks_passing, checks_counts = parse_status_rollup(source.get("statusCheckRollup"))
         has_conflicts = parse_mergeable_status(source.get("mergeable"))
-        will_close_target = event.get("willCloseTarget", False)
         review_thread_counts = parse_review_thread_counts(source.get("reviewThreads"))
         head_ref_name = source.get("headRefName")
         review_decision = source.get("reviewDecision")
@@ -1291,7 +1210,6 @@ query {{
             repo=repo_id.repo,
             has_conflicts=has_conflicts,
             checks_counts=checks_counts,
-            will_close_target=will_close_target,
             review_thread_counts=review_thread_counts,
             head_branch=head_ref_name,
             review_decision=review_decision,
@@ -1553,7 +1471,7 @@ query {{
                 repo=self._repo_info.name,
                 has_conflicts=None,  # Not fetched in batch API
                 checks_counts=None,
-                will_close_target=False,
+                head_branch=branch,
                 base_ref_name=pr_data.get("base", {}).get("ref"),
             )
 
@@ -2042,6 +1960,73 @@ query {{
         threads.sort(key=lambda t: (t.path, t.line or 0))
         return threads
 
+    def get_pr_reviews(
+        self,
+        repo_root: Path,
+        pr_number: int,
+    ) -> list[PRReview]:
+        """Get PR-level reviews for a pull request via GraphQL."""
+        assert self._repo_info is not None, "repo_info required for get_pr_reviews"
+
+        # GH-API-AUDIT: GraphQL - reviews query
+        # WHY GRAPHQL: REST API doesn't reliably expose review state + body in one call
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={GET_PR_REVIEWS_QUERY}",
+            "-f",
+            f"owner={self._repo_info.owner}",
+            "-f",
+            f"repo={self._repo_info.name}",
+            "-F",
+            f"number={pr_number}",
+        ]
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        response = json.loads(stdout)
+
+        return self._parse_reviews_response(response)
+
+    def _parse_reviews_response(self, response: dict[str, Any]) -> list[PRReview]:
+        """Parse GraphQL reviews response into PRReview objects.
+
+        Args:
+            response: GraphQL response data
+
+        Returns:
+            List of PRReview sorted by submitted_at
+        """
+        reviews: list[PRReview] = []
+
+        pr_data = response.get("data", {}).get("repository", {}).get("pullRequest")
+        if pr_data is None:
+            return reviews
+
+        review_nodes = pr_data.get("reviews", {}).get("nodes", [])
+
+        for node in review_nodes:
+            if node is None:
+                continue
+
+            author = node.get("author")
+            author_login = author.get("login") if author else "unknown"
+
+            raw_state = node.get("state", "COMMENTED")
+            state: PRReviewState = raw_state
+
+            review = PRReview(
+                id=node.get("id", ""),
+                author=author_login,
+                body=node.get("body", ""),
+                state=state,
+                submitted_at=node.get("submittedAt", ""),
+            )
+            reviews.append(review)
+
+        reviews.sort(key=lambda r: r.submitted_at)
+        return reviews
+
     def get_pr_check_runs(
         self,
         repo_root: Path,
@@ -2171,6 +2156,42 @@ query {{
 
         return thread_data.get("isResolved", False)
 
+    def unresolve_review_thread(
+        self,
+        repo_root: Path,
+        thread_id: str,
+    ) -> bool:
+        """Unresolve a PR review thread via GraphQL mutation.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            thread_id: GraphQL node ID of the thread
+
+        Returns:
+            True if unresolved successfully
+        """
+        # GH-API-AUDIT: GraphQL - unresolveReviewThread mutation
+        # WHY GRAPHQL: No REST endpoint exists for unresolving review threads
+        cmd = [
+            "gh",
+            "api",
+            "graphql",
+            "-f",
+            f"query={UNRESOLVE_REVIEW_THREAD_MUTATION}",
+            "-f",
+            f"threadId={thread_id}",
+        ]
+
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+        response = json.loads(stdout)
+
+        # Check if the thread was unresolved
+        thread_data = response.get("data", {}).get("unresolveReviewThread", {}).get("thread")
+        if thread_data is None:
+            return False
+
+        return not thread_data.get("isResolved", False)
+
     def add_review_thread_reply(
         self,
         repo_root: Path,
@@ -2238,6 +2259,27 @@ query {{
         response = json.loads(stdout)
         return response["id"]
 
+    def fetch_pr_comments(self, repo_root: Path, pr_number: int) -> list[dict[str, Any]]:
+        """Fetch all issue/PR comments as a list of dicts.
+
+        Returns:
+            List of comment dicts from the GitHub API, or empty list on failure.
+        """
+        # GH-API-AUDIT: REST - GET issues/{number}/comments
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
+            "--paginate",
+        ]
+
+        try:
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+            return json.loads(stdout)
+        except RuntimeError as e:
+            debug_log(f"fetch_pr_comments failed: {e}")
+            return []
+
     def find_pr_comment_by_marker(
         self,
         repo_root: Path,
@@ -2251,29 +2293,14 @@ query {{
         Fetches all comments as JSON and searches in Python to avoid
         shell escaping issues with special characters in markers.
         """
-        # GH-API-AUDIT: REST - GET issues/{number}/comments
-        cmd = [
-            "gh",
-            "api",
-            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
-            "--paginate",
-        ]
-
-        try:
-            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
-            comments = json.loads(stdout)
-            for comment in comments:
-                body = comment.get("body", "")
-                if marker in body:
-                    comment_id = comment.get("id")
-                    if comment_id is not None:
-                        return int(comment_id)
-            return None
-        except RuntimeError as e:
-            # Command failed - log for diagnostics but return None
-            # (marker not found is expected on first run)
-            debug_log(f"find_pr_comment_by_marker failed: {e}")
-            return None
+        comments = self.fetch_pr_comments(repo_root, pr_number)
+        for comment in comments:
+            body = comment.get("body", "")
+            if marker in body:
+                comment_id = comment.get("id")
+                if comment_id is not None:
+                    return int(comment_id)
+        return None
 
     def update_pr_comment(
         self,
@@ -2392,7 +2419,6 @@ query {{
                     repo=self._repo_info.name,
                     has_conflicts=None,  # Not fetched in this API call
                     checks_counts=None,
-                    will_close_target=False,
                     head_branch=branch,
                 )
             )
@@ -2490,6 +2516,19 @@ query {{
         body
         state
         url
+        isDraft
+        headRefName
+        baseRefName
+        statusCheckRollup {{
+          state
+          contexts(last: 1) {{
+            totalCount
+            checkRunCountsByState {{ state count }}
+            statusContextCountsByState {{ state count }}
+          }}
+        }}
+        mergeable
+        reviewDecision
         author {{ login }}
         labels(first: 100) {{ nodes {{ name }} }}
         assignees(first: 100) {{ nodes {{ login }} }}
@@ -2556,7 +2595,54 @@ query {{
                     prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
                     pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
 
+            # Create self-linkage for PullRequest nodes (isDraft only present on PRs)
+            elif "isDraft" in node:
+                checks_passing, checks_counts = parse_status_rollup(node.get("statusCheckRollup"))
+                has_conflicts = parse_mergeable_status(node.get("mergeable"))
+                pr_linkages[issue.number] = [
+                    PullRequestInfo(
+                        number=issue.number,
+                        state=node.get("state", "OPEN"),
+                        url=node.get("url", ""),
+                        is_draft=node.get("isDraft", False),
+                        title=node.get("title"),
+                        checks_passing=checks_passing,
+                        owner=repo_id.owner,
+                        repo=repo_id.repo,
+                        has_conflicts=has_conflicts,
+                        checks_counts=checks_counts,
+                        head_branch=node.get("headRefName"),
+                        review_decision=node.get("reviewDecision"),
+                        base_ref_name=node.get("baseRefName"),
+                    )
+                ]
+
         return (issues, pr_linkages)
+
+    def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
+        """Cancel an in-progress or queued workflow run via REST API."""
+        # GH-API-AUDIT: REST - POST actions/runs/{id}/cancel
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/cancel",
+        ]
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
+
+    def rerun_workflow_run(self, repo_root: Path, run_id: str, *, failed_only: bool) -> None:
+        """Re-run a completed workflow run via REST API."""
+        endpoint = "rerun-failed-jobs" if failed_only else "rerun"
+        # GH-API-AUDIT: REST - POST actions/runs/{id}/rerun or rerun-failed-jobs
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}/{endpoint}",
+        ]
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def create_commit_status(
         self,

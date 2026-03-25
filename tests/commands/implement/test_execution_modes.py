@@ -7,12 +7,12 @@ and mutual exclusivity validation.
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
-from erk_shared.gateway.git.fake import FakeGit
 from tests.commands.implement.conftest import create_sample_plan_issue
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 # Interactive Mode Tests
 
@@ -28,9 +28,9 @@ def test_interactive_mode_calls_executor() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         # Interactive mode is the default (no --no-interactive flag)
         result = runner.invoke(implement, ["#42"], obj=ctx)
@@ -61,9 +61,9 @@ def test_interactive_mode_with_dangerous_flag() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
 
@@ -121,9 +121,9 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=False)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42"], obj=ctx)
 
@@ -146,9 +146,9 @@ def test_non_interactive_executes_single_command() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--no-interactive"], obj=ctx)
 
@@ -174,9 +174,9 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(
             implement,
@@ -208,16 +208,15 @@ def test_script_with_submit_includes_all_commands() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
 
-        # Script should be created (output contains script path)
-        assert "erk-implement-" in result.output
-        assert ".sh" in result.output
+        # Script content should be output
+        assert "#!/bin/bash" in result.output
 
 
 # Dry-Run Tests
@@ -234,8 +233,8 @@ def test_dry_run_shows_execution_mode() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # Test with interactive mode (default)
         result = runner.invoke(implement, ["#42", "--dry-run"], obj=ctx)
@@ -261,8 +260,8 @@ def test_dry_run_shows_command_sequence() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # Without --submit (single command)
         result = runner.invoke(implement, ["#42", "--dry-run", "--no-interactive"], obj=ctx)
@@ -298,9 +297,9 @@ def test_yolo_flag_sets_all_flags() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
         executor = FakePromptExecutor(available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, pr_store=store, prompt_executor=executor)
 
         result = runner.invoke(implement, ["#42", "--yolo"], obj=ctx)
 
@@ -329,8 +328,8 @@ def test_yolo_flag_in_dry_run() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--yolo", "--dry-run"], obj=ctx)
 
@@ -358,8 +357,8 @@ def test_yolo_flag_conflicts_with_script() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         # --yolo sets --no-interactive, which conflicts with --script
         result = runner.invoke(implement, ["#42", "--yolo", "--script"], obj=ctx)
@@ -382,8 +381,8 @@ def test_submit_without_non_interactive_errors() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--submit"], obj=ctx)
 
@@ -402,8 +401,8 @@ def test_script_and_non_interactive_errors() -> None:
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+        store, _ = create_pr_backend_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, pr_store=store)
 
         result = runner.invoke(implement, ["#42", "--no-interactive", "--script"], obj=ctx)
 

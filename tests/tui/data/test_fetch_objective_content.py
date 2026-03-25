@@ -1,17 +1,17 @@
-"""Tests for fetch_objective_content on RealPlanService."""
+"""Tests for fetch_objective_content on RealPrService."""
 
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
-from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.metadata.core import format_objective_content_comment
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
-from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.plan_service.real import RealPlanService
-from tests.fakes.context import create_test_context
+from erk_shared.gateway.pr_service.real import RealPrService
+from tests.fakes.gateway.browser import FakeBrowserLauncher
+from tests.fakes.gateway.clipboard import FakeClipboard
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.http import FakeHttpClient
+from tests.fakes.tests.context import create_test_context
 
 
 def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
@@ -27,8 +27,8 @@ def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
     )
 
 
-def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanService:
-    """Create a RealPlanService with minimal setup for testing."""
+def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPrService:
+    """Create a RealPrService with minimal setup for testing."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     erk_dir = repo_root / ".erk"
@@ -54,7 +54,7 @@ def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanSer
         repo_id=GitHubRepoId(owner="test", repo="repo"),
     )
 
-    return RealPlanService(
+    return RealPrService(
         ctx,
         location=location,
         clipboard=FakeClipboard(),

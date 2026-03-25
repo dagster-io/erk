@@ -12,12 +12,12 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.graphite import FakeGraphite
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -35,7 +35,7 @@ def test_land_skips_learn_prompt_for_remote_pr(
 
     With deferred execution, this test verifies the execute phase behavior.
     """
-    from erk_shared.gateway.console.fake import FakeConsole
+    from tests.fakes.gateway.console import FakeConsole
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -128,15 +128,15 @@ def test_land_skips_learn_prompt_for_remote_pr(
         # Track if find_sessions_for_plan was called (it should NOT be called)
         find_sessions_called: list[str] = []
 
-        def mock_find_sessions(repo_root, plan_id):
-            find_sessions_called.append(plan_id)
+        def mock_find_sessions(repo_root, pr_id):
+            find_sessions_called.append(pr_id)
             raise AssertionError(
-                f"find_sessions_for_plan should NOT be called for remote PRs "
-                f"(no local worktree), but was called with plan_id={plan_id}"
+                f"find_sessions_for_managed_pr should NOT be called for remote PRs "
+                f"(no local worktree), but was called with pr_id={pr_id}"
             )
 
-        # Patch the method on the plan_backend instance
-        monkeypatch.setattr(test_ctx.plan_backend, "find_sessions_for_plan", mock_find_sessions)
+        # Patch the method on the pr_backend instance
+        monkeypatch.setattr(test_ctx.pr_backend, "find_sessions_for_managed_pr", mock_find_sessions)
 
         # Execute mode: test PR merge with no local worktree
         # Note: worktree_path is None because there's no local checkout
@@ -171,13 +171,13 @@ def test_land_skips_learn_prompt_for_remote_pr(
 def test_land_shows_learn_prompt_for_local_plan_branch() -> None:
     """Test that learn check is satisfied when plan has learn_status=completed_no_plan.
 
-    With PlannedPRBackend, any branch that has a PR resolves to that PR as its plan.
+    With ManagedGitHubPrBackend, any branch that has a PR resolves to that PR as its plan.
     The learn check sees learn_status=completed_no_plan in the PR body and returns early,
     so find_sessions_for_plan is never called.
 
     This test verifies that the command succeeds without triggering session discovery.
     """
-    from erk_shared.gateway.console.fake import FakeConsole
+    from tests.fakes.gateway.console import FakeConsole
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

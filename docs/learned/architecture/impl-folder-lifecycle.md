@@ -51,5 +51,4 @@ This ensures the implementation environment is identical whether local or remote
 ## Related Topics
 
 - [PR Finalization Paths](pr-finalization-paths.md) - Local vs remote PR submission
-- [Issue Reference Flow](issue-reference-flow.md) - How issue.json is created and consumed
 - [Planning Workflow](../planning/workflow.md) - Full plan lifecycle

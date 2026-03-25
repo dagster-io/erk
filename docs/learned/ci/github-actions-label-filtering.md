@@ -1,7 +1,7 @@
 ---
 title: GitHub Actions Label Filtering Reference
 last_audited: "2026-02-16 14:20 PT"
-audit_result: clean
+audit_result: edited
 read_when:
   - debugging why label-based CI gating isn't working
   - implementing label-based workflow conditions
@@ -9,7 +9,7 @@ read_when:
 tripwires:
   - action: GitHub Actions cannot interpolate Python constants
     warning: label strings must be hardcoded in YAML
-  - action: using this pattern
+  - action: using label-based gating
     warning:
       Always use negation (!contains) for safe defaults on push events without
       PR context
@@ -35,12 +35,12 @@ This document explains the WHY behind the pattern, not the syntax itself.
 
 ```yaml
 # WRONG - breaks push events
-if: contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+if: contains(github.event.pull_request.labels.*.name, 'skip-ci')
 ```
 
 | Event Type    | labels.\*.name value | Result  | Job runs? | Issue                       |
 | ------------- | -------------------- | ------- | --------- | --------------------------- |
-| PR with label | `["erk-plan-..."]`   | `true`  | Yes       | Intended: label present     |
+| PR with label | `["skip-ci"]`        | `true`  | Yes       | Intended: label present     |
 | PR no label   | `[]`                 | `false` | No        | **WRONG: should run CI**    |
 | Push event    | `[]` (null context)  | `false` | No        | **WRONG: breaks branch CI** |
 
@@ -48,37 +48,16 @@ if: contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
 
 ```yaml
 # CORRECT - safe defaults
-if: !contains(github.event.pull_request.labels.*.name , 'erk-plan-review')
+if: !contains(github.event.pull_request.labels.*.name , 'skip-ci')
 ```
 
-| Event Type    | labels.\*.name value | Result  | Job runs? | Behavior                   |
-| ------------- | -------------------- | ------- | --------- | -------------------------- |
-| PR with label | `["erk-plan-..."]`   | `false` | No        | Intended: skip plan review |
-| PR no label   | `[]`                 | `true`  | Yes       | Intended: run normal CI    |
-| Push event    | `[]` (null context)  | `true`  | Yes       | Safe: run CI when unsure   |
+| Event Type    | labels.\*.name value | Result  | Job runs? | Behavior                 |
+| ------------- | -------------------- | ------- | --------- | ------------------------ |
+| PR with label | `["skip-ci"]`        | `false` | No        | Intended: skip CI        |
+| PR no label   | `[]`                 | `true`  | Yes       | Intended: run normal CI  |
+| Push event    | `[]` (null context)  | `true`  | Yes       | Safe: run CI when unsure |
 
 **The insight:** Negation makes "run CI" the default, ensuring push events aren't silently skipped.
-
-## The Synchronization Trap
-
-**Problem:** GitHub Actions workflows are YAML, label definitions are Python constants. There's no way to interpolate Python values into YAML.
-
-<!-- Source: src/erk/cli/constants.py, PLAN_REVIEW_LABEL -->
-
-See `PLAN_REVIEW_LABEL` in `src/erk/cli/constants.py` for the Python constant.
-
-<!-- Source: .github/workflows/ci.yml, check-submission job if condition -->
-<!-- Source: .github/workflows/code-reviews.yml, discover job if condition -->
-
-See job-level `if` conditions in `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml` for hardcoded label strings.
-
-**Why this matters:**
-
-- Renaming a label in Python doesn't update YAML workflows
-- YAML label strings must be manually synchronized with Python constants
-- No CI check can detect the mismatch (different languages)
-
-**When renaming labels:** See `docs/learned/ci/label-rename-checklist.md` for the full synchronization procedure.
 
 ## The .\*.name Syntax
 
@@ -92,33 +71,24 @@ Input structure:
 {
   "labels": [
     { "name": "bug", "color": "d73a4a" },
-    { "name": "erk-plan-review", "color": "5319e7" }
+    { "name": "enhancement", "color": "5319e7" }
   ]
 }
 ```
 
 Operation result:
 
-- `labels` → `[{name: "bug", ...}, {name: "erk-plan-review", ...}]`
-- `labels.*.name` → `["bug", "erk-plan-review"]`
-- `contains(["bug", "erk-plan-review"], "erk-plan-review")` → `true`
+- `labels` → `[{name: "bug", ...}, {name: "enhancement", ...}]`
+- `labels.*.name` → `["bug", "enhancement"]`
+- `contains(["bug", "enhancement"], "bug")` → `true`
 
 The `.*` is GitHub's syntax, not standard JSON path notation.
-
-## Current Architecture
-
-In the current workflow set, label filtering is handled at job level in `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml`:
-
-- `ci.yml` uses `!contains(...)` so PR plan-review labels skip jobs while push events still run safely
-- `code-reviews.yml` is PR-only, so the same job-level condition cleanly skips plan-review PRs before runner allocation
-
-If a future push-triggered workflow needs to know the labels of an associated PR, use the API-query pattern documented in [GitHub Actions Label Queries](github-actions-label-queries.md).
 
 ## When to Use This Pattern
 
 | Scenario                            | Use Label Filtering? | Notes                                               |
 | ----------------------------------- | -------------------- | --------------------------------------------------- |
-| Skip CI for plan review PRs         | Yes                  | Standard usage in `ci.yml` and `code-reviews.yml`   |
+| Skip CI for specific label          | Yes                  | Use `!contains()` at job level                      |
 | Conditional workflow dispatch       | No                   | Use workflow inputs instead                         |
 | Matrix job filtering                | No                   | Filter in the discover job, not each matrix element |
 | Filtering within a composite action | No                   | Composite actions can't access event context        |
@@ -127,8 +97,3 @@ If a future push-triggered workflow needs to know the labels of an associated PR
 
 - [Workflow Gating Patterns](workflow-gating-patterns.md) - Complete workflow gating strategy
 - [GitHub Actions Label Queries](github-actions-label-queries.md) - Push event label checks via API
-- [CI Label Rename Checklist](label-rename-checklist.md) - Synchronization procedures
-
-## Attribution
-
-Pattern established in PR #6243. Reference documentation created from PR #6400 (label rename fix).

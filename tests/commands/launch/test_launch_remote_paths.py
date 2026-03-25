@@ -3,12 +3,12 @@
 from pathlib import Path
 
 from click.testing import CliRunner
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.test_utils.test_context import context_for_test
 
 from erk.cli.cli import cli
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
-from erk.core.context import context_for_test
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
 from erk_shared.gateway.remote_github.types import RemotePRInfo
 
 
@@ -25,7 +25,6 @@ def _make_fake_remote(
         dispatch_run_id="run-123",
         issues=None,
         issue_comments=None,
-        pr_references=None,
         prs=prs,
     )
 
@@ -231,9 +230,7 @@ def test_learn_remote_dispatches_workflow() -> None:
     ctx = _build_remote_context(fake_remote)
 
     runner = CliRunner()
-    result = runner.invoke(
-        cli, ["launch", "learn", "--plan", "100", "--repo", "owner/repo"], obj=ctx
-    )
+    result = runner.invoke(cli, ["launch", "learn", "--pr", "100", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 0, f"Unexpected failure:\n{result.output}"
     assert "Workflow dispatched" in result.output
@@ -241,11 +238,11 @@ def test_learn_remote_dispatches_workflow() -> None:
     assert len(fake_remote.dispatched_workflows) == 1
     dispatched = fake_remote.dispatched_workflows[0]
     assert dispatched.workflow == WORKFLOW_COMMAND_MAP["learn"]
-    assert dispatched.inputs["plan_number"] == "100"
+    assert dispatched.inputs["pr_number"] == "100"
 
 
-def test_learn_remote_requires_plan() -> None:
-    """Test learn with --repo requires --plan."""
+def test_learn_remote_requires_pr() -> None:
+    """Test learn with --repo requires --pr."""
     fake_remote = _make_fake_remote()
     ctx = _build_remote_context(fake_remote)
 
@@ -253,7 +250,7 @@ def test_learn_remote_requires_plan() -> None:
     result = runner.invoke(cli, ["launch", "learn", "--repo", "owner/repo"], obj=ctx)
 
     assert result.exit_code == 1
-    assert "--plan is required for learn" in result.output
+    assert "--pr is required for learn" in result.output
 
 
 # --- one-shot remote ---
@@ -435,7 +432,7 @@ def test_plan_implement_remote_shows_usage_error() -> None:
 
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["launch", "plan-implement", "--plan", "123", "--repo", "owner/repo"], obj=ctx
+        cli, ["launch", "plan-implement", "--pr", "123", "--repo", "owner/repo"], obj=ctx
     )
 
     assert result.exit_code == 2

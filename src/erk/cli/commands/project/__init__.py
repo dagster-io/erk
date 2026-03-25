@@ -3,7 +3,7 @@
 import click
 
 from erk.cli.commands.project.init_cmd import init_project
-from erk.cli.help_formatter import ErkCommandGroup
+from erk_shared.cli_group import ErkCommandGroup
 
 
 @click.group("project", cls=ErkCommandGroup, grouped=False)

@@ -26,6 +26,10 @@ Rules triggered by matching actions in code.
 
 **adding --json flag to a command without using @json_output decorator** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. Use the shared @json_output decorator from src/erk/cli/json_output.py. Do not manually implement JSON serialization in individual commands.
 
+**adding --json flag to a human command** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Machine JSON output belongs in the `erk json` command tree. Create a machine adapter as json_cli.py in the command's subpackage instead.
+
+**adding --json flag to a human-facing command** → Read [Machine Command Architecture](json-command-decorator.md) first. Machine JSON output lives in the `erk json` command tree, not as a flag on human commands. Create a json_cli.py machine adapter in the command's subpackage.
+
 **adding --sync to checkout** → Read [Checkout/Teleport Command Split](checkout-teleport-split.md) first. checkout is local-only; use teleport for sync. Checkout preserves local state; teleport force-resets to remote.
 
 **adding a column to plan list without checking PlanDataTable.\_setup_columns()** → Read [Plan List Provider Pattern](plan-list-provider-pattern.md) first. Column order in list_cmd.py must mirror plan_table.py for consistency between CLI and TUI. Check both files when modifying columns.
@@ -62,6 +66,8 @@ Rules triggered by matching actions in code.
 
 **adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.
 
+**applying @machine_command below @click.command in the decorator stack** → Read [Machine Command Architecture](json-command-decorator.md) first. @machine_command must be applied ABOVE @click.command. The correct order is @mcp_exposed > @machine_command > @click.command.
+
 **assuming erk implement always requires a plan number argument** → Read [Implement Command](implement-command.md) first. erk implement supports auto-detection from .erk/impl-context/ and from branch PRs. Read this doc first.
 
 **building CLI tables with Rich** → Read [Rich Table CLI Output Pattern](rich-table-output.md) first. Use Console(stderr=True, force_terminal=True) to avoid breaking piped output. Use escape() on user-provided text. See rich-table-output.md for the full pattern.
@@ -76,6 +82,10 @@ Rules triggered by matching actions in code.
 
 **committing .impl/ folder to git** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/ lives in .gitignore and should never be committed. Only .erk/impl-context/ (remote execution artifact) gets committed and later removed.
 
+**constructing RealRemoteGitHub directly in a command** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use get_remote_github(ctx) instead. It handles test injection via ctx.remote_github and falls back to RealRemoteGitHub. See repo-resolution-pattern.md.
+
+**creating a result dataclass without to_json_dict() method** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Result dataclasses should implement to_json_dict() for custom serialization. Without it, the serializer falls back to dataclasses.asdict() which may not handle complex types correctly.
+
 **creating an MCP tool that parses human-readable CLI output** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. MCP tools must call CLI commands with --json flag and parse structured JSON. Never parse human-readable text output.
 
 **creating exec scripts for operations requiring LLM reasoning between steps** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Keep conditional logic in slash commands. Only bundle mechanical API calls where all input params are known upfront.
@@ -86,11 +96,17 @@ Rules triggered by matching actions in code.
 
 **displaying user-provided text in Rich CLI tables without escaping** → Read [Objective Commands](objective-commands.md) first. Use `escape_markup(value)` for user data in Rich tables. Brackets like `[text]` are interpreted as style tags and will disappear.
 
+**duplicating fetch/query logic in cli.py instead of calling run\_\*() from operation.py** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. cli.py MUST delegate to the operation. The operation is the single source of truth for business logic. cli.py only marshals Click flags into the Request and renders the Result. Never re-fetch, re-query, or re-compute what the operation already returns.
+
+**eagerly serializing rich objects in the Result dataclass** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. Result dataclasses should carry rich domain objects (not pre-serialized dicts). Serialization belongs in to_json_dict() only. The human CLI needs rich objects for display; the machine adapter needs to_json_dict() for JSON.
+
 **editing or deleting .impl/ folder during implementation** → Read [Plan-Implement Workflow](plan-implement.md) first. .impl/plan.md is immutable during implementation. Never edit it. Never delete .impl/ folder - it must be preserved for user review. Only .erk/impl-context/ should be auto-deleted.
 
 **emitting human-readable text to stdout when --json is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. When --json is active, stdout must contain only the JSON result object. Human output goes to stderr via user_output().
 
 **exec reference check fails in CI** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. Run 'erk-dev gen-exec-reference-docs' via devrun agent. This is routine maintenance after exec script changes, not a bug to investigate.
+
+**expecting get-review-activity-log to fail on missing marker** → Read [Exec get-review-activity-log](exec-review-activity-log.md) first. The command always exits 0, even when the marker is not found. Check the 'found' field in the JSON response to determine whether the comment was located.
 
 **expecting status to auto-update after manual PR edits** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Only the update-objective-node command writes computed status. Manual edits require explicitly setting status to '-' to enable inference on next parse.
 
@@ -98,7 +114,7 @@ Rules triggered by matching actions in code.
 
 **flagging 5+ parameter violations in code review** → Read [Code Review Filtering](code-review-filtering.md) first. Before flagging, verify NO exception applies (ABC/Protocol/Click)
 
-**generating directory-change commands using erk br co without source** → Read [Shell Activation Pattern for Worktree Navigation](shell-activation-pattern.md) first. Subprocess directory changes do NOT persist to the parent shell. erk br co runs in a subprocess — its chdir() is invisible to the caller. Use the shell activation pattern: source "$(erk br co <branch> --script)" to actually navigate.
+**generating directory-change commands using erk br co without source** → Read [Shell Activation Pattern for Worktree Navigation](shell-activation-pattern.md) first. Subprocess directory changes do NOT persist to the parent shell. erk br co runs in a subprocess — its chdir() is invisible to the caller. Use the shell activation pattern: source <(erk br co <branch> --script) to actually navigate.
 
 **implementing a command with user confirmations interleaved between mutations** → Read [Two-Phase Validation Model](two-phase-validation-model.md) first. Use two-phase model: gather ALL confirmations first (Phase 1), then perform mutations (Phase 2). Interleaving confirmations with mutations causes partial state on decline.
 
@@ -110,11 +126,13 @@ Rules triggered by matching actions in code.
 
 **importing from erk_shared.gateway.{service}.abc when creating exec commands** → Read [Exec Script Patterns](exec-script-patterns.md) first. Gateway ABCs use submodule paths: `erk_shared.gateway.{service}.{resource}.abc`
 
+**initiating a rebase inside erk pr resolve-conflicts** → Read [Resolve Conflicts Workflow](rebase-confirmation-workflow.md) first. erk pr resolve-conflicts does NOT initiate rebases. It requires an active rebase already in progress. Users start the rebase themselves (git rebase, gt restack), then call this command.
+
 **landing a PR without updating associated learn plan status** → Read [Learn Plan Land Flow](learn-plan-land-flow.md) first. Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge.
 
-**launching Claude for conflict resolution without showing conflicted files first** → Read [Rebase Confirmation Workflow](rebase-confirmation-workflow.md) first. Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md.
+**launching Claude for conflict resolution without showing conflicted files first** → Read [Resolve Conflicts Workflow](rebase-confirmation-workflow.md) first. Always show conflicted files and get user confirmation before launching Claude. See rebase-confirmation-workflow.md.
 
-**making 5+ sequential gh api subprocess calls in an exec script** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PlanListService.
+**making 5+ sequential gh api subprocess calls in an exec script** → Read [Exec Script Performance Patterns](exec-script-performance.md) first. Each gh subprocess costs ~200-300ms. Bundle related API calls into a single exec script invocation or use the HTTP direct API path via PrListService.
 
 **making LLM fetch data sequentially when it could be bundled** → Read [Slash Command LLM Turn Optimization](slash-command-llm-turn-optimization.md) first. Extract 3+ mechanical sequential calls into an exec script. Each tool call costs a full LLM round-trip.
 
@@ -126,7 +144,11 @@ Rules triggered by matching actions in code.
 
 **manually deleting branches that were merged via GitHub web UI** → Read [erk reconcile Command](commands/reconcile.md) first. Use erk reconcile instead. It handles the full lifecycle: learn PR creation, objective updates, slot cleanup, branch deletion, and worktree removal.
 
+**manually parsing --repo owner/repo in a command handler** → Read [Repo Resolution Pattern](repo-resolution-pattern.md) first. Use resolved_repo_option decorator instead. It handles parsing, validation, and injection of GitHubRepoId. See repo-resolution-pattern.md.
+
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
+
+**modifying teleport in-place without updating slot assignment** → Read [Teleport Slot Awareness](teleport-slot-awareness.md) first. When teleporting in-place, the current worktree's slot assignment must be updated to track the new branch. Missing this breaks the slot pool's branch tracking. See `_teleport_in_place()` in teleport_cmd.py.
 
 **moving uv sync inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync runs OUTSIDE the guard (always executes, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.
 
@@ -138,9 +160,13 @@ Rules triggered by matching actions in code.
 
 **passing --pr flag to erk pr rewrite** → Read [PR Rewrite Command](pr-rewrite.md) first. Do NOT pass --pr to erk pr rewrite; the command auto-discovers the PR from the current branch. The --pr flag does not exist.
 
+**placing @mcp_exposed below @machine_command in decorator stack** → Read [Adding Machine JSON Commands](adding-json-to-commands.md) first. @mcp_exposed must be ABOVE @machine_command. Correct order: @mcp_exposed > @machine_command > @click.command.
+
 **plan-implement exists in WORKFLOW_COMMAND_MAP but erk launch plan-implement always raises UsageError** → Read [Workflow Commands](workflow-commands.md) first. use erk pr submit instead
 
 **promoting a nested command to top-level** → Read [CLI Command Promotion Pattern](command-promotion.md) first. Three files must be updated: cli.py (import + add_command), help_formatter.py (top_level_commands list), and the command module (help text). See command-promotion.md.
+
+**putting business logic in the machine adapter** → Read [Machine Command Architecture](json-command-decorator.md) first. Machine adapters should be thin wrappers. Put shared logic in \*\_operation.py files.
 
 **putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 
@@ -160,7 +186,11 @@ Rules triggered by matching actions in code.
 
 **renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
 
+**resolving --ref and --ref-current manually in a command handler** → Read [Ref Resolution Patterns](ref-resolution-patterns.md) first. Use resolve_dispatch_ref() from ref_resolution.py. It handles mutual exclusivity, detached HEAD detection, and config fallback. See ref-resolution-patterns.md.
+
 **retrieving dependencies in Click commands** → Read [Dependency Injection in Exec Scripts](dependency-injection-patterns.md) first. Click commands retrieve real implementations from context via require\_\* helpers
+
+**returning MachineCommandError without raising SystemExit** → Read [Machine Command Architecture](json-command-decorator.md) first. The @machine_command decorator handles serialization and exit codes. Just return MachineCommandError from the callback.
 
 **returning non-zero exit code when --json flag is active** → Read [Agent-Friendly CLI Design Principles](agent-friendly-cli.md) first. JSON mode must always exit 0. Errors are communicated via {success: false, error_type, message} in stdout JSON, not via exit codes.
 

@@ -47,7 +47,7 @@ impl_dir = resolve_impl_dir()  # from erk.impl_folder
 .erk/impl-context/<branch>/
 ├── plan.md         # Immutable implementation plan
 ├── progress.md     # Mutable progress tracking (checkboxes)
-└── ref.json        # GitHub plan reference (plan_id, plan_url)
+└── ref.json        # GitHub plan reference (pr_id, pr_url)
 ```
 
 ## Local Implementation Workflow
@@ -306,7 +306,7 @@ erk pr submit <issue-number>
 
 This command:
 
-- Validates the issue has the `erk-plan` label
+- Validates the issue has the `erk-pr` label
 - Verifies the issue is OPEN (not closed)
 - Triggers the `plan-implement.yml` GitHub Actions workflow via direct workflow dispatch
 - Displays the workflow run URL

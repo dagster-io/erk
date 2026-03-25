@@ -7,7 +7,7 @@ typed events for testing error handling.
 from pathlib import Path
 
 from erk.core.prompt_executor import NoOutputEvent, ProcessErrorEvent
-from tests.fakes.prompt_executor import FakePromptExecutor
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 
 
 def test_fake_prompt_executor_simulates_no_output() -> None:

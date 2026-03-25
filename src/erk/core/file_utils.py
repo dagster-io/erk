@@ -7,7 +7,7 @@ import frontmatter
 from erk_shared.gateway.git.abc import Git
 
 
-def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -> str | None:
+def extract_pr_title(plan_path: Path, git_ops: Git | None = None) -> str | None:
     """Extract the first heading from a markdown plan file.
 
     Uses python-frontmatter library to properly parse YAML frontmatter,
@@ -60,7 +60,7 @@ def extract_plan_title(plan_path: Path, git_ops: Git | None = None) -> str | Non
     return None
 
 
-def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None) -> str | None:
+def extract_pr_title_from_folder(folder_path: Path, git_ops: Git | None = None) -> str | None:
     """Extract the first heading from plan.md within a .plan/ folder.
 
     Args:
@@ -87,4 +87,4 @@ def extract_plan_title_from_folder(folder_path: Path, git_ops: Git | None = None
         return None
 
     # Delegate to existing title extraction logic
-    return extract_plan_title(plan_file, git_ops)
+    return extract_pr_title(plan_file, git_ops)

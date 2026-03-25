@@ -5,10 +5,10 @@ from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
-from erk.cli.commands.objective.view_cmd import view_objective
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+from erk.cli.commands.objective.view.cli import view_objective
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
 from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.output_helpers import strip_ansi
 
@@ -23,7 +23,6 @@ def _make_remote(issues: dict[int, IssueInfo]) -> FakeRemoteGitHub:
         dispatch_run_id="run-1",
         issues=issues,
         issue_comments=None,
-        pr_references=None,
     )
 
 

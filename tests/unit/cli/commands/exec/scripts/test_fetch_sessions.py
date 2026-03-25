@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 
 
 class TestFetchSessionsBranchNotFound:
@@ -28,7 +28,7 @@ class TestFetchSessionsBranchNotFound:
         result = runner.invoke(
             fetch_sessions,
             [
-                "--plan-id",
+                "--pr-number",
                 "42",
                 "--output-dir",
                 str(output_dir),
@@ -53,7 +53,7 @@ class TestFetchSessionsSuccess:
 
         manifest = {
             "version": 1,
-            "plan_id": 42,
+            "pr_number": 42,
             "sessions": [
                 {
                     "session_id": "abc-123",
@@ -102,7 +102,7 @@ class TestFetchSessionsSuccess:
         result = runner.invoke(
             fetch_sessions,
             [
-                "--plan-id",
+                "--pr-number",
                 "42",
                 "--output-dir",
                 str(output_dir),
@@ -113,7 +113,7 @@ class TestFetchSessionsSuccess:
         assert result.exit_code == 0, f"Failed: {result.output}"
         output = json.loads(result.output)
         assert output["success"] is True
-        assert output["plan_id"] == 42
+        assert output["pr_number"] == 42
         assert output["session_branch"] == "planned-pr-context/42"
         assert len(output["files"]) == 3
         assert output["manifest"]["version"] == 1
@@ -142,7 +142,7 @@ class TestFetchSessionsManifestNotFound:
         result = runner.invoke(
             fetch_sessions,
             [
-                "--plan-id",
+                "--pr-number",
                 "42",
                 "--output-dir",
                 str(output_dir),

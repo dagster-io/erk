@@ -50,22 +50,19 @@ Some files are auto-generated (e.g., `tripwires.md`, `index.md`). For these:
    ```
 3. The regenerated file will be correct based on current frontmatter state
 
-## Two-Phase Rebase Pattern
+## Resolve-Conflicts Command
 
-`erk pr rebase` uses a two-phase approach:
+`erk pr resolve-conflicts` handles the Claude TUI phase of conflict resolution. It requires a rebase already in progress — it does not initiate a rebase.
 
-**Phase 1: Mechanical rebase** — Attempts an automated rebase without human intervention:
+**Workflow:**
 
-- If Graphite is enabled and the branch is tracked: runs `gt restack --no-interactive`
-- If Graphite is disabled: runs `git rebase <target>` (requires `--target` option)
+1. User runs `git rebase <branch>` or `gt restack --no-interactive` until conflicts arise
+2. User runs `erk pr resolve-conflicts`
+3. Command verifies rebase in progress via `is_rebase_in_progress()`
+4. Shows conflicted files, asks for confirmation
+5. Launches Claude Code interactively with `/erk:pr-resolve-conflicts` for AI-assisted resolution
 
-**Phase 2: Claude TUI fallback** — If Phase 1 hits conflicts, launches Claude Code interactively with `/erk:pr-rebase` for AI-assisted conflict resolution via `execute_interactive()`.
-
-The Phase 1 strategy selection checks whether Graphite is enabled by inspecting the graphite context object. See the Phase 1 dispatch logic in `src/erk/cli/commands/pr/rebase_cmd.py`.
-
-**Mid-rebase recovery**: If a rebase is already in progress (detected via `is_rebase_in_progress()`), Phase 1 is skipped entirely and Claude TUI launches directly to resolve the existing conflicts.
-
-<!-- Source: src/erk/cli/commands/pr/rebase_cmd.py -->
+<!-- Source: src/erk/cli/commands/pr/resolve_conflicts_cmd.py -->
 
 ## Related Documentation
 

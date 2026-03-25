@@ -8,22 +8,22 @@ from erk.cli.commands.implement_shared import (
     extract_plan_from_current_branch,
     validate_flags,
 )
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.time import FakeTime
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def _issue_plan_store() -> PlannedPRBackend:
-    """Create a PlannedPRBackend for branch name extraction tests.
+def _issue_pr_store() -> ManagedGitHubPrBackend:
+    """Create a ManagedGitHubPrBackend for branch name extraction tests.
 
-    PlannedPRBackend uses branch-name-based plan resolution, which is the behavior
+    ManagedGitHubPrBackend uses branch-name-based plan resolution, which is the behavior
     needed for testing branch name → plan ID extraction.
     """
     fake_github = FakeLocalGitHub()
-    return PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    return ManagedGitHubPrBackend(fake_github, fake_github.issues, time=FakeTime())
 
 
 def test_extract_plan_from_current_branch_with_p_prefix_returns_none() -> None:
@@ -35,7 +35,7 @@ def test_extract_plan_from_current_branch_with_p_prefix_returns_none() -> None:
             local_branches={env.cwd: ["P123-fix-bug-01-16-1200"]},
             current_branches={env.cwd: "P123-fix-bug-01-16-1200"},
         )
-        ctx = build_workspace_test_context(env, git=git, plan_store=_issue_plan_store())
+        ctx = build_workspace_test_context(env, git=git, pr_store=_issue_pr_store())
 
         result = extract_plan_from_current_branch(ctx)
 
@@ -51,7 +51,7 @@ def test_extract_plan_from_current_branch_with_plnd_prefix_returns_none() -> Non
             local_branches={env.cwd: ["plnd/feature-branch-01-16-1200"]},
             current_branches={env.cwd: "plnd/feature-branch-01-16-1200"},
         )
-        ctx = build_workspace_test_context(env, git=git, plan_store=_issue_plan_store())
+        ctx = build_workspace_test_context(env, git=git, pr_store=_issue_pr_store())
 
         result = extract_plan_from_current_branch(ctx)
 
@@ -67,7 +67,7 @@ def test_extract_plan_from_current_branch_returns_none_for_non_plan_branch() -> 
             local_branches={env.cwd: ["feature-branch"]},
             current_branches={env.cwd: "feature-branch"},
         )
-        ctx = build_workspace_test_context(env, git=git, plan_store=_issue_plan_store())
+        ctx = build_workspace_test_context(env, git=git, pr_store=_issue_pr_store())
 
         result = extract_plan_from_current_branch(ctx)
 
@@ -83,7 +83,7 @@ def test_extract_plan_from_current_branch_returns_none_for_main() -> None:
             local_branches={env.cwd: ["main"]},
             current_branches={env.cwd: "main"},
         )
-        ctx = build_workspace_test_context(env, git=git, plan_store=_issue_plan_store())
+        ctx = build_workspace_test_context(env, git=git, pr_store=_issue_pr_store())
 
         result = extract_plan_from_current_branch(ctx)
 
@@ -99,7 +99,7 @@ def test_extract_plan_handles_no_current_branch() -> None:
             local_branches={env.cwd: []},
             # current_branches not set means get_current_branch returns None
         )
-        ctx = build_workspace_test_context(env, git=git, plan_store=_issue_plan_store())
+        ctx = build_workspace_test_context(env, git=git, pr_store=_issue_pr_store())
 
         result = extract_plan_from_current_branch(ctx)
 
@@ -115,7 +115,7 @@ def test_extract_plan_from_legacy_branch_format_returns_none() -> None:
             local_branches={env.cwd: ["123-fix-bug-01-16-1200"]},
             current_branches={env.cwd: "123-fix-bug-01-16-1200"},
         )
-        ctx = build_workspace_test_context(env, git=git, plan_store=_issue_plan_store())
+        ctx = build_workspace_test_context(env, git=git, pr_store=_issue_pr_store())
 
         result = extract_plan_from_current_branch(ctx)
 

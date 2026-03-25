@@ -231,14 +231,14 @@ time = RealTime()
 time.sleep(2.0)  # Actually sleeps for 2 seconds
 ```
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/fake.py -->
+<!-- Source: tests/fakes/gateway/time.py, FakeTime -->
 
-**Testing (FakeTime)**: See `FakeTime` class in `packages/erk-shared/src/erk_shared/gateway/time/fake.py`
+**Testing (FakeTime)**: See `FakeTime` class in `tests/fakes/gateway/time.py`
 
 Usage example:
 
 ```python
-from erk_shared.gateway.time.fake import FakeTime
+from tests.fakes.gateway.time import FakeTime
 
 fake_time = FakeTime()
 fake_time.sleep(2.0)  # Returns immediately, tracks call
@@ -363,15 +363,15 @@ queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
 
 **Source:** See `dispatch_one_shot()` in `src/erk/cli/commands/one_shot_dispatch.py`.
 
-## ctx.plan_backend
+## ctx.pr_backend
 
-- `ctx.plan_backend` — The PlanBackend ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
+- `ctx.pr_backend` — The `ManagedPrBackend` ABC interface. Use for all plan operations including `update_metadata()`, `post_event()`, `create_plan()`, `get_plan()`, `list_plans()`
 
-After PR #8210, the `PlanStore` ABC was consolidated into `PlanBackend`. There is no separate read-side interface.
+After PR #8210, the `PlanStore` ABC was consolidated into `ManagedPrBackend` (formerly `PlanBackend`). There is no separate read-side interface.
 
-<!-- Source: packages/erk-shared/src/erk_shared/plan_store/backend.py, PlanBackend -->
+<!-- Source: packages/erk-shared/src/erk_shared/pr_store/backend.py, ManagedPrBackend -->
 
-**Source:** See `PlanBackend` in `packages/erk-shared/src/erk_shared/plan_store/backend.py`.
+**Source:** See `ManagedPrBackend` in `packages/erk-shared/src/erk_shared/pr_store/backend.py`.
 
 ## TUI Exit-with-Command Pattern
 
@@ -533,7 +533,7 @@ All gateways live under `packages/erk-shared/src/erk_shared/gateway/`:
 # Import ABC from abc.py, implementations from their respective files
 from erk_shared.gateway.git.abc import Git, WorktreeInfo
 from erk_shared.gateway.git.real import RealGit
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from erk_shared.gateway.github.abc import LocalGitHub
 ```
 

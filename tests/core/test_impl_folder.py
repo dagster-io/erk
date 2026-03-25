@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
@@ -27,6 +26,7 @@ from erk_shared.impl_folder import (
     save_plan_ref,
     validate_plan_linkage,
 )
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 BRANCH = "feature/test-branch"
 """Test branch name used across tests."""
@@ -162,7 +162,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
                 body="Test body",
                 state="OPEN",
                 url="https://github.com/owner/repo/issues/42",
-                labels=["erk-pr", "erk-plan"],
+                labels=["erk-pr"],
                 assignees=[],
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
@@ -175,7 +175,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     add_worktree_creation_comment(
         github_issues=issues,
         repo_root=tmp_path,
-        plan_number=42,
+        pr_number=42,
         worktree_name="feature-name",
         branch_name="feature-branch",
     )
@@ -187,7 +187,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     # Verify comment details
     assert issue_number == 42
     assert "✅ Worktree created: **feature-name**" in comment_body
-    assert "erk br co feature-branch" in comment_body
+    assert "erk slot co feature-branch" in comment_body
     assert "/erk:plan-implement" in comment_body
 
     # Round-trip verification: Parse metadata block back out
@@ -199,7 +199,7 @@ def test_add_worktree_creation_comment_success(tmp_path: Path) -> None:
     assert block.key == "erk-worktree-creation"
     assert block.data["worktree_name"] == "feature-name"
     assert block.data["branch_name"] == "feature-branch"
-    assert block.data["plan_number"] == 42
+    assert block.data["pr_number"] == 42
     assert "timestamp" in block.data
     assert isinstance(block.data["timestamp"], str)
     assert len(block.data["timestamp"]) > 0
@@ -218,7 +218,7 @@ def test_add_worktree_creation_comment_issue_not_found(tmp_path: Path) -> None:
         add_worktree_creation_comment(
             github_issues=issues,
             repo_root=tmp_path,
-            plan_number=999,
+            pr_number=999,
             worktree_name="feature-name",
             branch_name="feature-branch",
         )
@@ -495,9 +495,9 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
-        labels=("erk-plan",),
+        labels=("erk-pr",),
         objective_id=99,
         node_ids=None,
     )
@@ -507,9 +507,9 @@ def test_save_plan_ref_success(tmp_path: Path) -> None:
 
     data = json.loads(ref_file.read_text(encoding="utf-8"))
     assert data["provider"] == "github"
-    assert data["plan_id"] == "42"
+    assert data["pr_id"] == "42"
     assert data["url"] == "https://github.com/owner/repo/issues/42"
-    assert data["labels"] == ["erk-plan"]
+    assert data["labels"] == ["erk-pr"]
     assert data["objective_id"] == 99
     assert "created_at" in data
     assert "synced_at" in data
@@ -523,7 +523,7 @@ def test_save_plan_ref_dir_not_exists(tmp_path: Path) -> None:
         save_plan_ref(
             impl_dir,
             provider="github",
-            plan_id="42",
+            pr_number="42",
             url="http://url",
             labels=(),
             objective_id=None,
@@ -539,7 +539,7 @@ def test_save_plan_ref_no_objective(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="http://url",
         labels=(),
         objective_id=None,
@@ -558,7 +558,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/owner/repo/issues/42",
         labels=("erk-pr", "erk-learn"),
         objective_id=99,
@@ -568,7 +568,7 @@ def test_read_plan_ref_roundtrip(tmp_path: Path) -> None:
     ref = read_plan_ref(impl_dir)
     assert ref is not None
     assert ref.provider == "github"
-    assert ref.plan_id == "42"
+    assert ref.pr_id == "42"
     assert ref.url == "https://github.com/owner/repo/issues/42"
     assert ref.labels == ("erk-pr", "erk-learn")
     assert ref.objective_id == 99
@@ -584,7 +584,7 @@ def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
     # Write both files with different data
     ref_data = {
         "provider": "linear",
-        "plan_id": "PROJ-123",
+        "pr_id": "PROJ-123",
         "url": "https://linear.app/proj/PROJ-123",
         "created_at": "2025-01-15T10:00:00+00:00",
         "synced_at": "2025-01-15T10:00:00+00:00",
@@ -604,7 +604,7 @@ def test_read_plan_ref_prefers_ref_json(tmp_path: Path) -> None:
     ref = read_plan_ref(impl_dir)
     assert ref is not None
     assert ref.provider == "linear"
-    assert ref.plan_id == "PROJ-123"
+    assert ref.pr_id == "PROJ-123"
 
 
 def test_read_plan_ref_not_exists(tmp_path: Path) -> None:
@@ -646,7 +646,7 @@ def test_has_plan_ref_with_ref_json(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="http://url",
         labels=(),
         objective_id=None,
@@ -676,7 +676,7 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="42",
+        pr_number="42",
         url="https://github.com/org/repo/issues/42",
         labels=(),
         objective_id=None,
@@ -688,17 +688,17 @@ def test_validate_plan_linkage_both_match(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
-    """Test validation returns plan_id from plan-ref when branch has no issue number.
+    """Test validation returns pr_id from plan-ref when branch has no issue number.
 
     P-prefix branches cannot provide an issue number to validate against.
-    The function returns the plan_id from plan-ref.json without any mismatch check.
+    The function returns the pr_id from plan-ref.json without any mismatch check.
     """
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="99",
+        pr_number="99",
         url="https://github.com/org/repo/issues/99",
         labels=(),
         objective_id=None,
@@ -707,7 +707,7 @@ def test_validate_plan_linkage_mismatch_raises(tmp_path: Path) -> None:
 
     # No longer raises - branch provides no issue number, so no mismatch possible
     result = validate_plan_linkage(impl_dir, "P42-add-feature-01-04-1234")
-    assert result == "99"  # Returns plan_id from plan-ref.json
+    assert result == "99"  # Returns pr_id from plan-ref.json
 
 
 def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
@@ -723,13 +723,13 @@ def test_validate_plan_linkage_branch_only(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_impl_only(tmp_path: Path) -> None:
-    """Test validation returns plan_id when branch has no issue number."""
+    """Test validation returns pr_id when branch has no issue number."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github",
-        plan_id="456",
+        pr_number="456",
         url="https://github.com/org/repo/issues/456",
         labels=(),
         objective_id=None,
@@ -749,13 +749,13 @@ def test_validate_plan_linkage_neither(tmp_path: Path) -> None:
 
 
 def test_validate_plan_linkage_planned_pr_with_plan_ref(tmp_path: Path) -> None:
-    """Test planned-PR branch returns plan_id from plan-ref.json."""
+    """Test planned-PR branch returns pr_id from plan-ref.json."""
     impl_dir = get_impl_dir(tmp_path, branch_name=BRANCH)
     impl_dir.mkdir(parents=True)
     save_plan_ref(
         impl_dir,
         provider="github-draft-pr",
-        plan_id="789",
+        pr_number="789",
         url="https://github.com/org/repo/pull/789",
         labels=(),
         objective_id=None,

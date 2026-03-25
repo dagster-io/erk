@@ -12,6 +12,8 @@ read_when:
 
 Rules triggered by matching actions in code.
 
+**adding a new check to pre-push without updating the Makefile target** → Read [Git Pre-Push Validation](git-pre-push-validation.md) first. Pre-push checks are defined in the Makefile pre-push-check target. The githooks/pre-push script delegates to make pre-push-check.
+
 **adding new coding standards reminders** → Read [Reminder Consolidation Pattern](reminder-consolidation.md) first. Grep for the reminder text across AGENTS.md, hooks, and skills first — it may already exist at another tier. Duplicate reminders waste tokens and teach agents to ignore them. Read reminder-consolidation.md first.
 
 **creating a PreToolUse hook** → Read [PreToolUse Hook Design Patterns](pretooluse-implementation.md) first. Broken hooks fail silently (exit 0, no output) — indistinguishable from correct no-fire behavior. Structure as pure functions + thin orchestrator. Read docs/learned/testing/hook-testing.md first.

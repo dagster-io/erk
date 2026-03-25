@@ -37,4 +37,3 @@ Requiring callers to explicitly pass `--issue-number` when `.erk/impl-context/pl
 ## Related Topics
 
 - [Implementation Folder Lifecycle](impl-folder-lifecycle.md) - Folder structure and lifecycle
-- [Issue Reference Flow](issue-reference-flow.md) - How issue references flow through the system

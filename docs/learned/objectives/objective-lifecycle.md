@@ -247,6 +247,20 @@ erk exec update-objective-node 6423 --node 1.3 --pr ""  # Clear
 
 **Agent workflow**: Single-agent pattern. Agent fetches context, then performs all updates directly (roadmap steps, prose reconciliation, action comment, validation).
 
+### Node Description Reconciliation
+
+When a plan's implementation diverges from the original node description (e.g., the node says `@json_output` but the PR implemented `@json_command`), this is a "naming divergence" contradiction. The description must be updated to reflect what was actually built.
+
+**Workflow**: Update node descriptions BEFORE prose updates, because comment re-rendering uses the current descriptions:
+
+```bash
+erk exec update-objective-node <objective_number> --node <node_id> --description "<corrected description>"
+```
+
+This is treated as documentation correction after the fact — not a failure. The roadmap should be a source of truth for _what exists_, not just _what was intended_.
+
+**Source**: `.claude/commands/erk/system/objective-update-with-landed-pr.md` (reconciliation guidance in Step 2)
+
 ### Indirect Updates
 
 #### `/erk:plan-save` Step 3.5

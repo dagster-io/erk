@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -109,6 +109,7 @@ def test_create_from_branch() -> None:
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch"]},
         )
 
         test_ctx = env.build_context(git=git_ops)

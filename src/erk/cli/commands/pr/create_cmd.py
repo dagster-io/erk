@@ -11,10 +11,10 @@ from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.naming import generate_planned_pr_branch_name
-from erk_shared.output.next_steps import format_plan_next_steps_plain
+from erk_shared.output.next_steps import format_pr_next_steps_plain
 from erk_shared.output.output import user_output
-from erk_shared.plan_store.create_plan_draft_pr import create_plan_draft_pr
-from erk_shared.plan_utils import extract_title_from_plan
+from erk_shared.pr_store.create_plan_draft_pr import create_plan_draft_pr
+from erk_shared.pr_utils import extract_title_from_pr
 
 
 @click.command("create")
@@ -22,11 +22,11 @@ from erk_shared.plan_utils import extract_title_from_plan
     "--file",
     "-f",
     type=click.Path(exists=True, path_type=Path),
-    help="Plan file to read",
+    help="PR file to read",
 )
-@click.option("--title", "-t", type=str, help="Plan title (default: extract from H1)")
+@click.option("--title", "-t", type=str, help="PR title (default: extract from H1)")
 @click.option("--label", "-l", multiple=True, help="Additional labels")
-@click.option("--summary", help="AI-generated summary to display above the collapsed plan")
+@click.option("--summary", help="AI-generated summary to display above the collapsed PR")
 @click.pass_obj
 def pr_create(
     ctx: ErkContext,
@@ -74,10 +74,10 @@ def pr_create(
         Ensure.invariant(False, "No input provided. Use --file or pipe content to stdin.")
 
     # Validate content is not empty
-    Ensure.not_empty(content.strip(), "Plan content is empty. Provide a non-empty plan.")
+    Ensure.not_empty(content.strip(), "PR content is empty. Provide a non-empty PR body.")
 
-    # Build labels: erk-pr + erk-plan + any extra
-    labels = ["erk-pr", "erk-plan"]
+    # Build labels: erk-pr + any extra
+    labels = ["erk-pr"]
     for extra in label:
         if extra not in labels:
             labels.append(extra)
@@ -86,14 +86,14 @@ def pr_create(
     # When plans_repo is configured, plans are stored in a separate repo
     # and source_repo records where implementation will happen
     source_repo: str | None = None
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+    plans_repo = ctx.local_config.github_repo if ctx.local_config else None
     if plans_repo is not None and repo.github is not None:
         source_repo = f"{repo.github.owner}/{repo.github.repo}"
 
     # Generate branch name with LLM slug
     slug = generate_branch_slug(
         ctx.prompt_executor,
-        title if title is not None else extract_title_from_plan(content),
+        title if title is not None else extract_title_from_pr(content),
     )
     branch_name = generate_planned_pr_branch_name(slug, ctx.time.now(), objective_id=None)
 
@@ -124,14 +124,18 @@ def pr_create(
         raise SystemExit(1)
 
     # Display success message with next steps
-    user_output(f"Created plan #{result.plan_number}")
+    user_output(f"Created PR #{result.pr_number}")
     user_output("")
-    user_output(f"Plan: {result.plan_url}")
+    user_output(f"PR: {result.pr_url}")
     user_output(f"Branch: {result.branch_name}")
     user_output("")
     if (
-        result.plan_number is not None
+        result.pr_number is not None
         and result.branch_name is not None
-        and result.plan_url is not None
+        and result.pr_url is not None
     ):
-        user_output(format_plan_next_steps_plain(result.plan_number, url=result.plan_url))
+        user_output(
+            format_pr_next_steps_plain(
+                result.pr_number, url=result.pr_url, branch_name=result.branch_name
+            )
+        )

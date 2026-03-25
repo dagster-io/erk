@@ -1,3 +1,6 @@
 # Impl context folder - contains plan.md extracted from GitHub issues
 # which may not be prettier-formatted (written by Claude during planning)
 .erk/impl-context/
+
+# External npx-managed skills (not our code to format)
+.agents/skills/

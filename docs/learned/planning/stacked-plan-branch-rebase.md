@@ -51,7 +51,7 @@ Before rebasing, the function follows the LBYL pattern: it checks `list_local_br
 
 ## Integration Points
 
-The function is called at three points in `erk br co --for-plan`:
+The function is called at three points in `erk br co --for-pr`:
 
 | Context                  | When                                           |
 | ------------------------ | ---------------------------------------------- |

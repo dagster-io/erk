@@ -1,12 +1,12 @@
 ---
 title: Backend Testing Composition
 read_when:
-  - "testing code that uses PlanBackend"
+  - "testing code that uses ManagedPrBackend"
   - "deciding whether to fake a backend or gateway"
   - "writing tests for exec scripts with backend operations"
 tripwires:
-  - action: "creating a FakePlanBackend for testing caller code"
-    warning: "Use real backend + fake gateway instead. FakeGitHub injected into PlannedPRBackend. Fake backends are only for validating ABC contract across providers."
+  - action: "creating a FakeManagedPrBackend for testing caller code"
+    warning: "Use real backend + fake gateway instead. FakeLocalGitHub injected into ManagedGitHubPrBackend. Fake backends are only for validating ABC contract across providers."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -19,12 +19,12 @@ Pattern for testing code that uses Backend ABCs. The key insight: inject fake ga
 
 ```python
 # Correct: real backend with fake gateway
-fake_github = FakeGitHub()
+fake_github = FakeLocalGitHub()
 fake_issues = FakeGitHubIssues()
-backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+backend = ManagedGitHubPrBackend(fake_github, fake_issues, time=FakeTime())
 
 # Wrong: fake backend for testing callers
-fake_backend = FakePlanBackend()  # Only for ABC contract tests
+fake_backend = FakeManagedPrBackend()  # Only for ABC contract tests
 ```
 
 ### Why Real Backend + Fake Gateway
@@ -43,13 +43,13 @@ See `test_started_posts_comment_and_updates_metadata` in
 [`tests/unit/cli/commands/exec/scripts/test_impl_signal.py`](../../../tests/unit/cli/commands/exec/scripts/test_impl_signal.py)
 for the full test. The key elements:
 
-- Creates a `FakeGitHub` with test PRs
+- Creates a `FakeLocalGitHub` with test PRs
 - Invokes `impl_signal` via `CliRunner` with `ErkContext.for_test(github=fake_github)`
 - Asserts on `fake_github.pr_comments`, `fake_github.updated_pr_bodies`, `fake_github.updated_pr_titles`, etc.
 
 ## When to Use Fake Backends
 
-Fake backends are appropriate only for validating the ABC contract itself across different providers. For example, ensuring both `PlannedPRBackend` and a hypothetical alternative backend implement the same interface correctly.
+Fake backends are appropriate only for validating the ABC contract itself across different providers. For example, ensuring both `ManagedGitHubPrBackend` and a hypothetical alternative backend implement the same interface correctly.
 
 ## Decision Table
 

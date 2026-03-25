@@ -1,4 +1,4 @@
-"""Plan save: creates a draft PR with the plan content.
+"""Plan save: creates a planned PR with the plan content.
 
 Usage:
     erk exec plan-save [OPTIONS]
@@ -27,7 +27,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+from erk.cli.commands.exec.scripts.validate_pr_content import _validate_pr_content
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_branch_manager,
@@ -44,15 +44,18 @@ from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.naming import (
-    InvalidPlanTitle,
+    InvalidPrTitle,
     generate_planned_pr_branch_name,
-    validate_plan_title,
+    validate_pr_title,
 )
-from erk_shared.output.next_steps import format_plan_next_steps_plain
-from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
-from erk_shared.plan_store.planned_pr import PlannedPRBackend
-from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
-from erk_shared.plan_utils import get_title_tag_from_labels
+from erk_shared.output.next_steps import format_pr_next_steps_plain
+from erk_shared.pr_store.planned_pr import ManagedGitHubPrBackend
+from erk_shared.pr_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+from erk_shared.pr_utils import (
+    extract_title_from_pr,
+    get_title_tag_from_labels,
+    resolve_plan_content,
+)
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
     create_plan_saved_branch_marker,
@@ -61,7 +64,7 @@ from erk_shared.scratch.session_markers import (
     get_existing_saved_branch,
     get_existing_saved_issue,
     read_objective_context_marker,
-    read_roadmap_step_marker,
+    read_roadmap_step_markers,
 )
 
 
@@ -153,11 +156,11 @@ def _save_as_planned_pr(
     config = require_local_config(ctx)
     claude_installation = require_claude_installation(ctx)
 
-    title = extract_title_from_plan(plan_content)
+    title = extract_title_from_pr(plan_content)
 
     # Validate plan title before proceeding
-    title_validation = validate_plan_title(title)
-    if isinstance(title_validation, InvalidPlanTitle):
+    title_validation = validate_pr_title(title)
+    if isinstance(title_validation, InvalidPrTitle):
         if output_format == "display":
             click.echo(f"Error: {title_validation.message}", err=True)
         else:
@@ -274,11 +277,14 @@ def _save_as_planned_pr(
     # Build metadata — base_ref_name sets the PR base ref
     metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
 
-    if config.plans_repo is not None:
+    if config.github_repo is not None:
         metadata["source_repo"] = get_repo_identifier(ctx)
 
     if objective_issue is not None:
         metadata["objective_issue"] = objective_issue
+
+    if node_ids is not None:
+        metadata["node_ids"] = list(node_ids)
 
     if session_id is not None:
         metadata["created_from_session"] = session_id
@@ -293,16 +299,14 @@ def _save_as_planned_pr(
     labels = ["erk-pr"]
     if plan_type == "learn":
         labels.append("erk-learn")
-    else:
-        labels.append("erk-plan")
 
-    # Prefix title with [erk-plan] or [erk-learn] for GitHub visibility
+    # Prefix title with [erk-pr] or [erk-learn] for GitHub visibility
     title_tag = get_title_tag_from_labels(labels)
     prefixed_title = f"{title_tag} {title}"
 
     # Create draft PR via backend
-    backend = PlannedPRBackend(github, github_issues, time=RealTime())
-    result = backend.create_plan(
+    backend = ManagedGitHubPrBackend(github, github_issues, time=RealTime())
+    result = backend.create_managed_pr(
         repo_root=repo_root,
         title=prefixed_title,
         content=plan_content,
@@ -311,16 +315,16 @@ def _save_as_planned_pr(
         summary=summary or "",
     )
 
-    if not result.plan_id.isdigit():
-        msg = f"Expected numeric plan_id from planned PR creation, got: {result.plan_id!r}"
+    if not result.pr_id.isdigit():
+        msg = f"Expected numeric pr_id from planned PR creation, got: {result.pr_id!r}"
         raise RuntimeError(msg)
-    plan_number = int(result.plan_id)
+    pr_number = int(result.pr_id)
 
     # Create markers and snapshot
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
-        create_plan_saved_marker(session_id, repo_root, plan_number)
-        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)
+        create_plan_saved_marker(session_id, repo_root, pr_number)
+        create_plan_saved_issue_marker(session_id, repo_root, pr_number, title=title)
         create_plan_saved_branch_marker(session_id, repo_root, branch_name)
 
         snapshot_result = _get_snapshot_result(
@@ -333,22 +337,22 @@ def _save_as_planned_pr(
 
     # Output
     if output_format == "display":
-        click.echo(f"Plan saved as planned PR #{plan_number}")
+        click.echo(f"PR saved as planned PR #{pr_number}")
         click.echo(f"Title: {prefixed_title}")
         click.echo(f"URL: {result.url}")
         click.echo(f"Branch: {branch_name}")
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(format_plan_next_steps_plain(plan_number, url=result.url))
+        click.echo(format_pr_next_steps_plain(pr_number, url=result.url, branch_name=branch_name))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,
-            "plan_number": plan_number,
-            "plan_url": result.url,
+            "pr_number": pr_number,
+            "pr_url": result.url,
             "title": prefixed_title,
             "branch_name": branch_name,
-            "plan_backend": "planned_pr",
+            "pr_backend": "planned_pr",
             "objective_issue": objective_issue,
         }
         if snapshot_result is not None:
@@ -402,9 +406,7 @@ def _save_plan_via_planned_pr(
             click.echo(f"Linked to objective #{objective_issue} from session context", err=True)
 
     if session_id is not None:
-        step_id = read_roadmap_step_marker(session_id, repo_root)
-        if step_id is not None:
-            node_ids = (step_id,)
+        node_ids = read_roadmap_step_markers(session_id, repo_root)
 
     # Extract plan content before dedup so we can key dedup by title
     plan = resolve_plan_content(
@@ -422,7 +424,7 @@ def _save_plan_via_planned_pr(
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
 
-    title = extract_title_from_plan(plan)
+    title = extract_title_from_pr(plan)
 
     # Session deduplication check (keyed by plan title)
     if session_id is not None:
@@ -431,17 +433,17 @@ def _save_plan_via_planned_pr(
             existing_branch = get_existing_saved_branch(session_id, repo_root)
             if output_format == "display":
                 click.echo(
-                    f"This session already saved plan #{existing_issue}. "
+                    f"This session already saved PR #{existing_issue}. "
                     "Skipping duplicate creation.",
                     err=True,
                 )
             else:
                 dedup_response = {
                     "success": True,
-                    "plan_number": existing_issue,
+                    "pr_number": existing_issue,
                     "skipped_duplicate": True,
-                    "message": f"Session already saved plan #{existing_issue}",
-                    "plan_backend": "planned_pr",
+                    "message": f"Session already saved PR #{existing_issue}",
+                    "pr_backend": "planned_pr",
                 }
                 if existing_branch is not None:
                     dedup_response["branch_name"] = existing_branch
@@ -449,7 +451,7 @@ def _save_plan_via_planned_pr(
             return
 
     # Validate plan content
-    valid, error, details = _validate_plan_content(plan)
+    valid, error, details = _validate_pr_content(plan)
     if not valid:
         if output_format == "display":
             click.echo(f"Error: Plan validation failed: {error}", err=True)
@@ -496,24 +498,24 @@ def _save_plan_via_planned_pr(
     "--plan-file",
     type=click.Path(exists=True, path_type=Path),
     default=None,
-    help="Path to specific plan file (highest priority)",
+    help="Path to specific PR file (highest priority)",
 )
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for scoped plan lookup",
+    help="Session ID for scoped PR lookup",
 )
 @click.option(
     "--plan-type",
     type=click.Choice(["standard", "learn"]),
     default=None,
-    help="Plan type: standard (default) or learn",
+    help="PR type: standard (default) or learn",
 )
 @click.option(
     "--learned-from-issue",
     type=int,
     default=None,
-    help="Parent plan number (for learn plans)",
+    help="Parent PR number (for learn plans)",
 )
 @click.option(
     "--created-from-workflow-run-url",
@@ -534,7 +536,7 @@ def _save_plan_via_planned_pr(
 @click.option(
     "--summary",
     default=None,
-    help="AI-generated plan summary for PR description",
+    help="AI-generated PR summary for PR description",
 )
 @click.option(
     "--session-xml-dir",
@@ -565,7 +567,7 @@ def plan_save(
     session_xml_dir: Path | None,
     current_branch_flag: bool,
 ) -> None:
-    """Save plan as a draft PR."""
+    """Save plan as a planned PR."""
     _save_plan_via_planned_pr(
         ctx,
         output_format=output_format,

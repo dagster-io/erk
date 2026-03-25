@@ -3,9 +3,9 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github.fake import FakeLocalGitHub
 from erk_shared.gateway.github.types import PRDetails
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github import FakeLocalGitHub
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -35,7 +35,7 @@ def _make_pr_details(
 
 
 def test_prepare_auto_detects_plan_from_branch() -> None:
-    """Test pr prepare auto-detects plan number from current branch's PR."""
+    """Test pr prepare auto-detects pr number from current branch's PR."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -62,7 +62,7 @@ def test_prepare_auto_detects_plan_from_branch() -> None:
 
 
 def test_prepare_with_explicit_plan_number() -> None:
-    """Test pr prepare with explicit plan number argument."""
+    """Test pr prepare with explicit pr number argument."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()

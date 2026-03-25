@@ -5,11 +5,11 @@ from pathlib import Path
 import pytest
 
 from erk.tui.app import ErkDashApp
-from erk.tui.data.types import PlanFilters
-from erk.tui.operations.logic import extract_learn_plan_number
+from erk.tui.data.types import PrFilters
+from erk.tui.operations.logic import extract_learn_pr_number
 from erk.tui.operations.types import OperationResult
-from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
-from erk_shared.gateway.plan_service.fake import FakePlanService
+from tests.fakes.gateway.plan_data_provider import FakePrDataProvider, make_pr_row
+from tests.fakes.gateway.pr_service import FakePrService
 
 
 class _FakePopen:
@@ -36,13 +36,13 @@ class TestAddressRemoteAsync:
         """_address_remote_async should trigger action_refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -58,7 +58,7 @@ class TestAddressRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._address_remote_async("test-op", 456)
+            app._address_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -70,13 +70,13 @@ class TestAddressRemoteAsync:
         """_address_remote_async should NOT refresh on subprocess failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -92,7 +92,7 @@ class TestAddressRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._address_remote_async("test-op", 456)
+            app._address_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -108,13 +108,13 @@ class TestRebaseRemoteAsync:
         """_rebase_remote_async should pass correct args to subprocess."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -132,7 +132,7 @@ class TestRebaseRemoteAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._rebase_remote_async("test-op", 456)
+            app._rebase_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert captured_args == [
@@ -140,7 +140,7 @@ class TestRebaseRemoteAsync:
                 "launch",
                 "pr-rebase",
                 "--pr",
-                "456",
+                "123",
             ]
 
     @pytest.mark.asyncio
@@ -150,13 +150,13 @@ class TestRebaseRemoteAsync:
         """_rebase_remote_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -172,7 +172,7 @@ class TestRebaseRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._rebase_remote_async("test-op", 456)
+            app._rebase_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -184,13 +184,13 @@ class TestRebaseRemoteAsync:
         """_rebase_remote_async should NOT refresh on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -206,7 +206,7 @@ class TestRebaseRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._rebase_remote_async("test-op", 456)
+            app._rebase_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -222,13 +222,13 @@ class TestLandPrAsync:
         """_land_pr_async should run land-execute with correct args."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -248,10 +248,10 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -260,7 +260,7 @@ class TestLandPrAsync:
                 "erk",
                 "exec",
                 "land-execute",
-                "--pr-number=456",
+                "--pr-number=123",
                 "--branch=test-branch",
                 "-f",
             ]
@@ -272,13 +272,13 @@ class TestLandPrAsync:
         """_land_pr_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -296,10 +296,10 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -312,13 +312,13 @@ class TestLandPrAsync:
         """_land_pr_async should NOT refresh on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -336,10 +336,10 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -352,21 +352,20 @@ class TestLandPrAsync:
         """_land_pr_async should chain objective update when objective_issue is set."""
         import subprocess
 
-        provider = FakePlanDataProvider(
+        provider = FakePrDataProvider(
             plans=[
-                make_plan_row(
+                make_pr_row(
                     123,
                     "Test Plan",
-                    pr_number=456,
                     pr_head_branch="test-branch",
                     objective_issue=789,
                 )
             ],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -386,10 +385,10 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=789,
-                plan_id=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -399,7 +398,7 @@ class TestLandPrAsync:
                 "exec",
                 "objective-update-after-land",
                 "--objective=789",
-                "--pr=456",
+                "--pr=123",
                 "--branch=test-branch",
             ]
 
@@ -410,13 +409,13 @@ class TestLandPrAsync:
         """_land_pr_async should NOT chain objective update without objective."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -436,10 +435,10 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
@@ -447,19 +446,19 @@ class TestLandPrAsync:
             assert len(captured_calls) == 1
 
     @pytest.mark.asyncio
-    async def test_land_pr_includes_plan_number_flag(
+    async def test_land_pr_includes_pr_number_flag(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_land_pr_async should include --plan-number when plan_id is set."""
+        """_land_pr_async should include --pr-number when pr_number is set."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -479,10 +478,10 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=42,
+                learn_source_pr=42,
             )
             await pilot.pause(0.3)
 
@@ -491,10 +490,10 @@ class TestLandPrAsync:
                 "erk",
                 "exec",
                 "land-execute",
-                "--pr-number=456",
+                "--pr-number=123",
                 "--branch=test-branch",
                 "-f",
-                "--plan-number=42",
+                "--linked-pr-number=42",
             ]
 
     @pytest.mark.asyncio
@@ -504,13 +503,13 @@ class TestLandPrAsync:
         """_land_pr_async should show toast when learn plan is created."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -538,18 +537,18 @@ class TestLandPrAsync:
 
             app._land_pr_async(
                 op_id="test-op",
-                pr_number=456,
+                pr_number=123,
                 branch="test-branch",
                 objective_issue=None,
-                plan_id=None,
+                learn_source_pr=None,
             )
             await pilot.pause(0.3)
 
             assert any("learn plan #999" in n.lower() for n in notifications)
 
 
-class TestExtractLearnPlanNumber:
-    """Tests for extract_learn_plan_number helper."""
+class TestExtractLearnPrNumber:
+    """Tests for extract_learn_pr_number helper."""
 
     def test_extracts_number_from_output(self) -> None:
         """Should extract learn plan number when present in output."""
@@ -558,7 +557,7 @@ class TestExtractLearnPlanNumber:
             output_lines=("Some output", "Created learn plan #1234", "Done"),
             return_code=0,
         )
-        assert extract_learn_plan_number(result) == 1234
+        assert extract_learn_pr_number(result) == 1234
 
     def test_returns_none_when_not_present(self) -> None:
         """Should return None when no learn plan line in output."""
@@ -567,7 +566,7 @@ class TestExtractLearnPlanNumber:
             output_lines=("Some output", "Done"),
             return_code=0,
         )
-        assert extract_learn_plan_number(result) is None
+        assert extract_learn_pr_number(result) is None
 
     def test_extracts_from_middle_of_line(self) -> None:
         """Should extract number even when text surrounds the pattern."""
@@ -576,7 +575,7 @@ class TestExtractLearnPlanNumber:
             output_lines=("Info: Created learn plan #5678 successfully",),
             return_code=0,
         )
-        assert extract_learn_plan_number(result) == 5678
+        assert extract_learn_pr_number(result) == 5678
 
 
 class TestDispatchToQueueAsync:
@@ -589,13 +588,13 @@ class TestDispatchToQueueAsync:
         """_dispatch_to_queue_async should run correct subprocess command."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -624,13 +623,13 @@ class TestDispatchToQueueAsync:
         """_dispatch_to_queue_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -658,13 +657,13 @@ class TestDispatchToQueueAsync:
         """_dispatch_to_queue_async should NOT refresh on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -696,13 +695,13 @@ class TestCloseObjectiveAsync:
         """_close_objective_async should run correct subprocess command."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -731,13 +730,13 @@ class TestCloseObjectiveAsync:
         """_close_objective_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -769,13 +768,13 @@ class TestCheckObjectiveAsync:
         """_check_objective_async should run correct subprocess command."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -804,13 +803,13 @@ class TestCheckObjectiveAsync:
         """_check_objective_async should NOT trigger refresh (read-only)."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -843,13 +842,13 @@ class TestOneShotPlanAsync:
         """_one_shot_plan_async should run correct subprocess command."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -879,13 +878,13 @@ class TestOneShotPlanAsync:
         """_one_shot_plan_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -917,13 +916,13 @@ class TestOneShotDispatchAsync:
         """_one_shot_dispatch_async should run correct subprocess command."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -953,13 +952,13 @@ class TestOneShotDispatchAsync:
         """_one_shot_dispatch_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -987,13 +986,13 @@ class TestOneShotDispatchAsync:
         """_one_shot_dispatch_async should NOT refresh on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1025,13 +1024,13 @@ class TestRewriteRemoteAsync:
         """_rewrite_remote_async should trigger action_refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1047,7 +1046,7 @@ class TestRewriteRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._rewrite_remote_async("test-op", 456)
+            app._rewrite_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -1059,13 +1058,13 @@ class TestRewriteRemoteAsync:
         """_rewrite_remote_async should NOT refresh on subprocess failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1081,7 +1080,7 @@ class TestRewriteRemoteAsync:
 
             count_before = provider.fetch_count
 
-            app._rewrite_remote_async("test-op", 456)
+            app._rewrite_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -1093,13 +1092,13 @@ class TestRewriteRemoteAsync:
         """_rewrite_remote_async should pass correct args to subprocess."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1117,7 +1116,7 @@ class TestRewriteRemoteAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._rewrite_remote_async("test-op", 456)
+            app._rewrite_remote_async("test-op", 123)
             await pilot.pause(0.3)
 
             assert captured_args == [
@@ -1125,7 +1124,7 @@ class TestRewriteRemoteAsync:
                 "launch",
                 "pr-rewrite",
                 "--pr",
-                "456",
+                "123",
             ]
 
 
@@ -1139,13 +1138,13 @@ class TestCmuxCheckoutAsync:
         """_cmux_checkout_async should run cmux-open-pr with correct args."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1167,7 +1166,7 @@ class TestCmuxCheckoutAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._cmux_checkout_async("test-op", 456, "test-branch")
+            app._cmux_checkout_async("test-op", 123, "test-branch")
             await pilot.pause(0.3)
 
             assert len(captured_popen_calls) == 1
@@ -1176,7 +1175,7 @@ class TestCmuxCheckoutAsync:
                 "exec",
                 "cmux-open-pr",
                 "--pr",
-                "456",
+                "123",
                 "--branch",
                 "test-branch",
                 "--mode",
@@ -1190,13 +1189,13 @@ class TestCmuxCheckoutAsync:
         """_cmux_checkout_async should trigger refresh after success."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1216,7 +1215,7 @@ class TestCmuxCheckoutAsync:
 
             count_before = provider.fetch_count
 
-            app._cmux_checkout_async("test-op", 456, "test-branch")
+            app._cmux_checkout_async("test-op", 123, "test-branch")
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
@@ -1228,13 +1227,13 @@ class TestCmuxCheckoutAsync:
         """_cmux_checkout_async should NOT refresh on failure."""
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1250,7 +1249,7 @@ class TestCmuxCheckoutAsync:
 
             count_before = provider.fetch_count
 
-            app._cmux_checkout_async("test-op", 456, "test-branch")
+            app._cmux_checkout_async("test-op", 123, "test-branch")
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before
@@ -1268,13 +1267,13 @@ class TestCmuxFocusWorkspace:
         import shutil
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1316,13 +1315,13 @@ class TestCmuxFocusWorkspace:
         import shutil
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan", pr_head_branch="test-branch")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1355,13 +1354,13 @@ class TestCmuxFocusWorkspace:
         import shutil
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )
@@ -1387,13 +1386,13 @@ class TestCmuxFocusWorkspace:
         import shutil
         import subprocess
 
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
+        provider = FakePrDataProvider(
+            plans=[make_pr_row(123, "Test Plan")],
         )
-        filters = PlanFilters.default()
+        filters = PrFilters.default()
         app = ErkDashApp(
             provider=provider,
-            service=FakePlanService(repo_root=tmp_path),
+            service=FakePrService(repo_root=tmp_path),
             filters=filters,
             refresh_interval=0,
         )

@@ -6,7 +6,7 @@ so higher-layer tests can rely on it as a trustworthy test double.
 
 from pathlib import Path
 
-from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+from tests.fakes.gateway.agent_docs import FakeAgentDocs
 
 
 def test_has_docs_dir_returns_configured_value() -> None:

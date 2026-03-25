@@ -23,17 +23,16 @@ PR NUMBER: {pr_number}
 
 {review_body}
 
-## Step 2: Get Existing Review Comment
+## Step 2: Get Existing Activity Log
 
-Fetch the existing review comment to preserve the activity log:
+Fetch the existing activity log to preserve prior entries:
 
 ```
-gh pr view {pr_number} --json comments \\
-  --jq '.comments[] | select(.body | contains("{marker}")) | .body'
+erk exec get-review-activity-log --pr-number {pr_number} --marker "{marker}"
 ```
 
-If a comment exists, extract the Activity Log section (everything after
-`### Activity Log`). You will append to this log.
+This returns JSON with `activity_log` (the text after `### Activity Log` from
+any existing summary comment). If `found` is false, start a fresh log.
 
 ## Step 3: Get the Diff
 

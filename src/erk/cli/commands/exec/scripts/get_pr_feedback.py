@@ -33,7 +33,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.github.checks import GitHubChecks
 from erk_shared.gateway.github.issues.types import IssueComment
-from erk_shared.gateway.github.types import PRReviewThread
+from erk_shared.gateway.github.types import PRReview, PRReviewThread
 from erk_shared.non_ideal_state import BranchDetectionFailed
 
 # --- JSON output types ---
@@ -51,6 +51,14 @@ class ReviewThreadDict(TypedDict):
     line: int | None
     is_outdated: bool
     comments: list[ReviewCommentDict]
+
+
+class ReviewDict(TypedDict):
+    id: str
+    author: str
+    body: str
+    state: str
+    submitted_at: str
 
 
 class DiscussionCommentDict(TypedDict):
@@ -80,6 +88,17 @@ def _format_thread(thread: PRReviewThread) -> ReviewThreadDict:
         "line": thread.line,
         "is_outdated": thread.is_outdated,
         "comments": comments,
+    }
+
+
+def _format_review(review: PRReview) -> ReviewDict:
+    """Format a PRReview for JSON output."""
+    return {
+        "id": review.id,
+        "author": review.author,
+        "body": review.body,
+        "state": review.state,
+        "submitted_at": review.submitted_at,
     }
 
 
@@ -123,8 +142,13 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
     else:
         pr_details = GitHubChecks.pr_by_number(github, repo_root, pr).ensure()
 
-    # Parallel fetch of review threads and discussion comments
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    # Parallel fetch of reviews, review threads, and discussion comments
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        reviews_future = executor.submit(
+            github.get_pr_reviews,
+            repo_root,
+            pr_details.number,
+        )
         threads_future = executor.submit(
             github.get_pr_review_threads,
             repo_root,
@@ -137,6 +161,8 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
             repo_root,
             pr_details.number,
         )
+
+        reviews = reviews_future.result()
 
         try:
             threads = threads_future.result()
@@ -153,6 +179,7 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
         "pr_number": pr_details.number,
         "pr_url": pr_details.url,
         "pr_title": pr_details.title,
+        "reviews": [_format_review(r) for r in reviews],
         "review_threads": [_format_thread(t) for t in valid_threads],
         "discussion_comments": [_format_discussion_comment(c) for c in comments],
     }

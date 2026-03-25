@@ -8,9 +8,9 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
 from erk_shared.context.context import ErkContext
-from erk_shared.gateway.github.fake import FakeLocalGitHub
-from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.issues.types import IssueInfo
+from tests.fakes.gateway.github import FakeLocalGitHub
+from tests.fakes.gateway.github_issues import FakeGitHubIssues
 
 
 def _make_issue(
@@ -26,7 +26,7 @@ def _make_issue(
         body=body,
         state="OPEN",
         url=f"https://github.com/test/repo/issues/{number}",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=now,
         updated_at=now,
@@ -62,7 +62,7 @@ def test_update_issue_body_success() -> None:
 
 def test_update_issue_body_with_markdown() -> None:
     """Test updating issue body with markdown content."""
-    issue = _make_issue(99, "Markdown Test [erk-plan]", "Old content")
+    issue = _make_issue(99, "Markdown Test [erk-pr]", "Old content")
     fake_gh = FakeGitHubIssues(issues={99: issue})
     runner = CliRunner()
 

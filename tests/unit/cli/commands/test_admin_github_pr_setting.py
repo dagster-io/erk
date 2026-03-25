@@ -3,8 +3,8 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.gateway.github_admin.fake import FakeGitHubAdmin
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.gateway.github_admin import FakeGitHubAdmin
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 

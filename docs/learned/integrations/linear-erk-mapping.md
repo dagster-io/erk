@@ -60,7 +60,7 @@ Problems:
 | `state` (OPEN/CLOSED) | `Issue.state`                        | Linear has richer states (backlog/todo/in_progress/done/canceled) |
 | `labels`              | `Issue.labels`                       | Direct mapping                                                    |
 | `assignees`           | `Issue.assignee` + subscribers       | Linear is single-assignee                                         |
-| `erk-plan` label      | Custom label or Project membership   | Could use either approach                                         |
+| `erk-pr` label        | Custom label or Project membership   | Could use either approach                                         |
 | `worktree_name`       | Custom field or external             | Not native to Linear                                              |
 | `objective_issue`     | Parent issue relationship            | Native sub-issue support                                          |
 

@@ -36,7 +36,7 @@ Plan context is marked as "primary source of truth" in the prompt, ensuring Clau
 The `_build_context_section()` method assembles context:
 
 1. **Branch info** - Always included (current branch, parent branch)
-2. **Plan context** - If available from `PlanContextProvider`:
+2. **Plan context** - If available from `PrContextProvider`:
    - Full plan markdown
    - Objective summary if linked
    - Instruction to use plan as primary source
@@ -44,7 +44,7 @@ The `_build_context_section()` method assembles context:
 
 ## Plan Context Extraction
 
-Plan context comes from `PlanContextProvider.get_plan_context()`:
+Plan context comes from `PrContextProvider.get_plan_context()`:
 
 1. Extract issue number from branch name (e.g., `P5763-fix-bug` → 5763)
 2. Fetch issue body from GitHub

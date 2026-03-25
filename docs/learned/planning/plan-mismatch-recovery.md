@@ -23,7 +23,7 @@ tripwires:
 ## Recovery: Re-run setup-impl-from-pr
 
 ```bash
-erk exec setup-impl-from-pr <plan_number>
+erk exec setup-impl-from-pr <pr_number>
 ```
 
 This fetches fresh plan content from the PR:
@@ -36,7 +36,7 @@ This fetches fresh plan content from the PR:
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, early exit guard -->
 
-`setup_impl_from_pr` checks for existing impl directories before switching branches. If a matching impl directory already exists (identified by comparing the plan ID), the setup skips branch switching and reuses the existing directory. This prevents abandoning an implementation branch by accidentally checking out the plan branch.
+`setup_impl_from_pr` checks for existing impl directories before switching branches. If a matching impl directory already exists (identified by comparing the PR ID), the setup skips branch switching and reuses the existing directory. This prevents abandoning an implementation branch by accidentally checking out the plan branch.
 
 ## Detection
 
@@ -47,7 +47,7 @@ Compare plan-ref.json metadata against the actual PR state:
 cat .erk/impl-context/*/ref.json
 
 # Compare against PR
-gh pr view <plan_number> --json title,body
+gh pr view <pr_number> --json title,body
 ```
 
 ## Prevention

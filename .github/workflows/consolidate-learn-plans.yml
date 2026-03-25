@@ -24,7 +24,7 @@ on:
         description: "Claude model to use for execution"
         required: false
         type: string
-        default: "claude-opus-4-6"
+        default: "claude-sonnet-4-6"
 
 concurrency:
   group: consolidate-learn-plans-${{ inputs.branch_name }}
@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
-      plan_id: ${{ steps.read_result.outputs.plan_id }}
-      plan_title: ${{ steps.read_result.outputs.plan_title }}
+      pr_number: ${{ steps.read_result.outputs.pr_number }}
+      pr_title: ${{ steps.read_result.outputs.pr_title }}
       base_branch: ${{ steps.trunk.outputs.trunk_branch }}
       has_plans: ${{ steps.read_result.outputs.has_plans }}
     steps:
@@ -82,7 +82,7 @@ jobs:
             echo "Prompt already committed to .erk/impl-context/prompt.md"
           else
             mkdir -p .erk/impl-context
-            printf 'Consolidate all open erk-learn plans into a single documentation update.\nRun /erk:consolidate-learn-plans-plan to query, consolidate, and implement.\n' > .erk/impl-context/prompt.md
+            printf 'Consolidate all open erk-learn plans into a single documentation update.\nRun /erk:system:consolidate-learn-plans-plan to query, consolidate, and implement.\n' > .erk/impl-context/prompt.md
             echo "Prompt written to .erk/impl-context/prompt.md"
           fi
 
@@ -101,7 +101,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:consolidate-learn-plans-plan"
+            "/erk:system:consolidate-learn-plans-plan"
           EXIT_CODE=$?
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           if [ $EXIT_CODE -eq 0 ]; then
@@ -134,15 +134,15 @@ jobs:
           echo "has_plans=$HAS_PLANS" >> $GITHUB_OUTPUT
 
           if [ "$HAS_PLANS" = "true" ]; then
-            PLAN_ID=$(jq -r '.plan_number' .erk/impl-context/plan-result.json)
-            PLAN_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
-            echo "plan_id=$PLAN_ID" >> $GITHUB_OUTPUT
-            echo "plan_title=$PLAN_TITLE" >> $GITHUB_OUTPUT
-            echo "Found plans to consolidate: #$PLAN_ID - $PLAN_TITLE"
+            PR_NUMBER=$(jq -r '.pr_number' .erk/impl-context/plan-result.json)
+            PR_TITLE=$(jq -r '.title' .erk/impl-context/plan-result.json)
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+            echo "Found plans to consolidate: #$PR_NUMBER - $PR_TITLE"
           else
             echo "No learn plans found to consolidate"
-            echo "plan_id=" >> $GITHUB_OUTPUT
-            echo "plan_title=" >> $GITHUB_OUTPUT
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            echo "pr_title=" >> $GITHUB_OUTPUT
           fi
 
       - name: Fail workflow if planning failed
@@ -171,18 +171,18 @@ jobs:
 
   implement:
     needs: consolidate
-    if: needs.consolidate.outputs.has_plans == 'true' && needs.consolidate.outputs.plan_id != ''
+    if: needs.consolidate.outputs.has_plans == 'true' && needs.consolidate.outputs.pr_number != ''
     uses: ./.github/workflows/plan-implement.yml
     with:
-      plan_id: ${{ needs.consolidate.outputs.plan_id }}
-      plan_title: ${{ needs.consolidate.outputs.plan_title }}
+      pr_number: ${{ needs.consolidate.outputs.pr_number }}
+      pr_title: ${{ needs.consolidate.outputs.pr_title }}
       submitted_by: ${{ inputs.submitted_by }}
       distinct_id: ${{ inputs.distinct_id }}
       branch_name: ${{ inputs.branch_name }}
-      pr_number: ${{ inputs.pr_number }}
+      impl_pr_number: ${{ inputs.pr_number }}
       model_name: ${{ inputs.model_name }}
       base_branch: ${{ needs.consolidate.outputs.base_branch }}
-      plan_backend: planned_pr
+      pr_backend: planned_pr
     secrets: inherit
 
   ci-address:
@@ -217,6 +217,7 @@ jobs:
 
       - name: Checkout PR branch
         env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PR_NUMBER: ${{ inputs.pr_number }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |

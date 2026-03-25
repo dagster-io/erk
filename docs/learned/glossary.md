@@ -342,11 +342,11 @@ max_slots = 6
 [pool.checkout]
 commands = ["git fetch origin"]
 
-[plans]
+[github]
 repo = "owner/plans-repo"  # Store plans in separate repo
 ```
 
-When `[plans] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
+When `[github] repo` is configured, plans are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
 
 **Access**: Via `load_config(repo_root)` function.
 
@@ -384,7 +384,7 @@ commands = ["source ~/.zshrc"]
 - `post_create.commands`: Concatenation (repo commands run first, then local)
 - `post_create.shell`: Override (local wins if set)
 - `pool.max_slots`: Override (local wins if set)
-- `plans.repo`: Override (local wins if set)
+- `github.repo`: Override (local wins if set)
 
 **Access**: Via `load_local_config(repo_root)` + `merge_configs_with_local()`.
 
@@ -509,7 +509,7 @@ A frozen dataclass containing all injected dependencies.
 - `shell: Shell` - Shell detection
 - `completion: Completion` - Shell completion generation
 - `script_writer: ScriptWriter` - Activation script generation
-- `plan_store: PlanStore` - Plan storage operations
+- `pr_store: ManagedPrBackend` - Plan storage operations
 - `prompt_executor: PromptExecutor` - Claude CLI execution
 
 **Configuration Fields**:
@@ -545,27 +545,6 @@ A sentinel class returned when a PR lookup fails, preserving lookup context (bra
 **Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
 
 **Related**: [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md)
-
-### will_close_target
-
-A boolean field on `PullRequestInfo` indicating whether a PR will automatically close its linked issue when merged.
-
-**Location**: `packages/erk-shared/src/erk_shared/gateway/github/types.py`
-
-**Source**: Derived from GitHub's `CrossReferencedEvent.willCloseTarget` GraphQL field.
-
-**Values**:
-
-| Value   | Meaning                                                                                      |
-| ------- | -------------------------------------------------------------------------------------------- |
-| `true`  | PR was created with "Closes #N" (or equivalent) in initial body                              |
-| `false` | PR merely references the issue without closing keywords, or keyword was added after creation |
-
-**Display**: In `erk pr list`, PRs with `will_close_target: true` show a link indicator.
-
-**Critical Timing**: This field is determined at PR creation time. Editing the PR body afterward to add "Closes #N" does **not** update `willCloseTarget`. This is why `erk pr dispatch` must include the closing keyword in the initial `create_pr()` call.
-
-**Related**: [GitHub Issue-PR Linkage API Patterns](architecture/github-pr-linkage-api.md), [Issue-PR Linkage Storage](erk/issue-pr-linkage-storage.md)
 
 ---
 
@@ -843,8 +822,8 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 
 **Characteristics**:
 
-- Labeled with `erk-plan` (like all plans)
-- **Issue identification**: Issues have the `erk-learn` label (in addition to `erk-plan`)
+- Labeled with `erk-pr` (like all plans)
+- **Issue identification**: Issues have the `erk-learn` label (in addition to `erk-pr`)
 - Created from session analysis to capture valuable insights
 - Contains documentation items rather than code changes
 - Marked with `plan_type: learn` in the plan-header metadata
@@ -933,7 +912,7 @@ A marker state indicating a merged PR is queued for insight extraction. When `er
 
 ### Session Branch Fields
 
-Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `planned-pr-context/{plan_id}` branches.
+Plan-header metadata fields for tracking pushed session logs. Sessions are accumulated on `planned-pr-context/{pr_number}` branches.
 
 **Fields:**
 

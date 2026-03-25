@@ -26,7 +26,7 @@ Erk has two plan types that share the same draft PR infrastructure (`erk-pr` bas
 
 | Signal                                    | Plan Type      | Label(s)               | Typical Output              |
 | ----------------------------------------- | -------------- | ---------------------- | --------------------------- |
-| Adding features, fixing bugs, refactoring | Implementation | `erk-pr` + `erk-plan`  | Source code, tests, config  |
+| Adding features, fixing bugs, refactoring | Implementation | `erk-pr`               | Source code, tests, config  |
 | Extracting insights from completed work   | Learn          | `erk-pr` + `erk-learn` | Docs in `docs/learned/`     |
 | Consolidating learnings from multiple PRs | Learn          | `erk-pr` + `erk-learn` | Docs, tripwires, checklists |
 

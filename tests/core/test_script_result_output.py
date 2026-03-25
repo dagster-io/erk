@@ -25,9 +25,9 @@ def test_output_for_script_handler_routes_to_stdout() -> None:
         # Act
         result.output_for_script_handler()
 
-        # Assert
+        # Assert - outputs script content, not path
         output = sys.stdout.getvalue()
-        assert output == "/tmp/test_script.sh"
+        assert output == "#!/bin/bash\necho 'test'"
     finally:
         sys.stdout = old_stdout
 
@@ -118,7 +118,7 @@ def test_path_access_still_works() -> None:
 
 def test_fake_script_writer_integration() -> None:
     """Test that ScriptResult works with FakeScriptWriter."""
-    from tests.fakes.script_writer import FakeScriptWriter
+    from tests.fakes.tests.script_writer import FakeScriptWriter
 
     # Arrange
     fake_ops = FakeScriptWriter()

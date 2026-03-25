@@ -48,7 +48,7 @@ from erk.cli.config import LoadedConfig
 from erk.cli.ensure import UserFacingCliError
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -469,7 +469,7 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
         import pytest
 
         with pytest.raises(UserFacingCliError):
-            ensure_worktree_for_branch(ctx, repo, "feature-name", is_plan_derived=False)
+            ensure_worktree_for_branch(ctx, repo, "feature-name", is_pr_derived=False)
 
 
 def test_ensure_worktree_returns_was_created_flag() -> None:
@@ -543,7 +543,7 @@ def test_ensure_worktree_detached_head_error_message() -> None:
         import pytest
 
         with pytest.raises(UserFacingCliError):
-            ensure_worktree_for_branch(ctx, repo, "feature-branch", is_plan_derived=False)
+            ensure_worktree_for_branch(ctx, repo, "feature-branch", is_pr_derived=False)
 
         # No worktrees should be created
         assert len(git_ops.added_worktrees) == 0

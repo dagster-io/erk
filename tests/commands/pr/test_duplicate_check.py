@@ -5,31 +5,31 @@ from datetime import datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.core.fakes import FakePlanListService
-from erk_shared.core.plan_list_service import PlanListData
-from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.core.pr_list_service import PrListData
 from erk_shared.gateway.github.issues.types import IssueInfo
-from erk_shared.gateway.remote_github.fake import FakeRemoteGitHub
-from erk_shared.plan_store.types import Plan, PlanState
-from tests.fakes.prompt_executor import FakePromptExecutor
+from erk_shared.pr_store.types import Plan, PlanState
+from tests.fakes.gateway.console import FakeConsole
+from tests.fakes.gateway.core import FakePrListService
+from tests.fakes.gateway.remote_github import FakeRemoteGitHub
+from tests.fakes.tests.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_pr_backend_with_plans
 
 
 def _make_plan(
     *,
-    plan_identifier: str,
+    pr_identifier: str,
     title: str,
     body: str,
 ) -> Plan:
     return Plan(
-        plan_identifier=plan_identifier,
+        pr_identifier=pr_identifier,
         title=title,
         body=body,
         state=PlanState.OPEN,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
-        labels=["erk-pr", "erk-plan"],
+        url=f"https://github.com/owner/repo/issues/{pr_identifier}",
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
         updated_at=datetime(2025, 1, 1),
@@ -38,10 +38,10 @@ def _make_plan(
     )
 
 
-def _make_plan_list_service(plans: list[Plan]) -> FakePlanListService:
-    """Create a FakePlanListService from a list of Plan objects."""
-    return FakePlanListService(
-        data=PlanListData(plans=plans, pr_linkages={}, workflow_runs={}),
+def _make_pr_list_service(plans: list[Plan]) -> FakePrListService:
+    """Create a FakePrListService from a list of Plan objects."""
+    return FakePrListService(
+        data=PrListData(plans=plans, pr_linkages={}, workflow_runs={}),
     )
 
 
@@ -60,9 +60,9 @@ def test_no_duplicates_found() -> None:
         simulated_prompt_output='{"duplicates": []}',
     )
     existing = _make_plan(
-        plan_identifier="100", title="Refactor auth", body="Restructure auth flow"
+        pr_identifier="100", title="[erk-pr] Refactor auth", body="Restructure auth flow"
     )
-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+    pr_store, _ = create_pr_backend_with_plans({"100": existing})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -70,8 +70,8 @@ def test_no_duplicates_found() -> None:
             env,
             prompt_executor=executor,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([existing]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([existing]),
         )
 
         result = runner.invoke(
@@ -92,9 +92,9 @@ def test_duplicate_detected() -> None:
         simulated_prompt_output=llm_output,
     )
     existing = _make_plan(
-        plan_identifier="100", title="Dark mode support", body="Add dark mode to app"
+        pr_identifier="100", title="[erk-pr] Dark mode support", body="Add dark mode to app"
     )
-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+    pr_store, _ = create_pr_backend_with_plans({"100": existing})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -102,8 +102,8 @@ def test_duplicate_detected() -> None:
             env,
             prompt_executor=executor,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([existing]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([existing]),
         )
 
         result = runner.invoke(
@@ -115,14 +115,14 @@ def test_duplicate_detected() -> None:
 
         assert result.exit_code == 1
         assert "Potential duplicate(s) found" in result.output
-        assert '#100: "Dark mode support"' in result.output
+        assert '#100: "[erk-pr] Dark mode support"' in result.output
         assert "Both add dark mode" in result.output
 
 
 def test_no_existing_plans() -> None:
-    """No existing open plans returns exit code 0 with message."""
+    """No existing open PRs returns exit code 0 with message."""
     executor = FakePromptExecutor()
-    plan_store, _ = create_plan_store_with_plans({})
+    pr_store, _ = create_pr_backend_with_plans({})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -130,8 +130,8 @@ def test_no_existing_plans() -> None:
             env,
             prompt_executor=executor,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([]),
         )
 
         result = runner.invoke(
@@ -142,7 +142,7 @@ def test_no_existing_plans() -> None:
         )
 
         assert result.exit_code == 0
-        assert "No existing open plans" in result.output
+        assert "No existing open PRs" in result.output
         # Should not have called LLM
         assert len(executor.prompt_calls) == 0
 
@@ -152,8 +152,8 @@ def test_llm_error_graceful_degradation() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_error="LLM unavailable",
     )
-    existing = _make_plan(plan_identifier="100", title="Existing plan", body="body")
-    plan_store, _ = create_plan_store_with_plans({"100": existing})
+    existing = _make_plan(pr_identifier="100", title="[erk-pr] Existing plan", body="body")
+    pr_store, _ = create_pr_backend_with_plans({"100": existing})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -161,8 +161,8 @@ def test_llm_error_graceful_degradation() -> None:
             env,
             prompt_executor=executor,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([existing]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([existing]),
         )
 
         result = runner.invoke(
@@ -198,9 +198,9 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output=llm_output,
     )
-    plan_100 = _make_plan(plan_identifier="100", title="Plan A", body="body A")
-    plan_200 = _make_plan(plan_identifier="200", title="Plan B", body="body B for checking")
-    plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
+    plan_100 = _make_plan(pr_identifier="100", title="[erk-pr] Plan A", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="[erk-pr] Plan B", body="body B for checking")
+    pr_store, _ = create_pr_backend_with_plans({"100": plan_100, "200": plan_200})
 
     issue_200 = IssueInfo(
         number=200,
@@ -208,7 +208,7 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
         body="body B for checking",
         state="OPEN",
         url="https://github.com/owner/repo/issues/200",
-        labels=["erk-pr", "erk-plan"],
+        labels=["erk-pr"],
         assignees=[],
         created_at=datetime(2025, 1, 1),
         updated_at=datetime(2025, 1, 1),
@@ -222,7 +222,6 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
         dispatch_run_id="run-1",
         issues={200: issue_200},
         issue_comments=None,
-        pr_references=None,
     )
 
     runner = CliRunner()
@@ -231,14 +230,14 @@ def test_plan_flag_fetches_and_excludes_self() -> None:
             env,
             prompt_executor=executor,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([plan_100, plan_200]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([plan_100, plan_200]),
             remote_github=fake_remote,
         )
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "200"],
+            ["pr", "duplicate-check", "--pr", "200"],
             obj=ctx,
         )
 
@@ -260,9 +259,9 @@ def test_progress_reporting_lists_plans() -> None:
     executor = FakePromptExecutor(
         simulated_prompt_output='{"duplicates": []}',
     )
-    plan_100 = _make_plan(plan_identifier="100", title="Refactor auth", body="body A")
-    plan_200 = _make_plan(plan_identifier="200", title="Add dark mode", body="body B")
-    plan_store, _ = create_plan_store_with_plans({"100": plan_100, "200": plan_200})
+    plan_100 = _make_plan(pr_identifier="100", title="[erk-pr] Refactor auth", body="body A")
+    plan_200 = _make_plan(pr_identifier="200", title="[erk-pr] Add dark mode", body="body B")
+    pr_store, _ = create_pr_backend_with_plans({"100": plan_100, "200": plan_200})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -270,8 +269,8 @@ def test_progress_reporting_lists_plans() -> None:
             env,
             prompt_executor=executor,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([plan_100, plan_200]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([plan_100, plan_200]),
         )
 
         result = runner.invoke(
@@ -282,15 +281,15 @@ def test_progress_reporting_lists_plans() -> None:
         )
 
         assert result.exit_code == 0
-        assert "Checking against 2 open plan(s):" in result.output
-        assert "#100: Refactor auth" in result.output
-        assert "#200: Add dark mode" in result.output
+        assert "Checking against 2 open PR(s):" in result.output
+        assert "#100: [erk-pr] Refactor auth" in result.output
+        assert "#200: [erk-pr] Add dark mode" in result.output
         assert "Analyzing for semantic duplicates..." in result.output
 
 
 def test_plan_flag_not_found() -> None:
     """--plan with nonexistent plan ID returns exit code 1 with error."""
-    plan_store, _ = create_plan_store_with_plans({})
+    pr_store, _ = create_pr_backend_with_plans({})
     fake_remote = FakeRemoteGitHub(
         authenticated_user="test-user",
         default_branch_name="main",
@@ -299,7 +298,6 @@ def test_plan_flag_not_found() -> None:
         dispatch_run_id="run-1",
         issues={},
         issue_comments=None,
-        pr_references=None,
     )
 
     runner = CliRunner()
@@ -307,14 +305,14 @@ def test_plan_flag_not_found() -> None:
         ctx = build_workspace_test_context(
             env,
             console=_non_interactive_console(),
-            plan_store=plan_store,
-            plan_list_service=_make_plan_list_service([]),
+            pr_store=pr_store,
+            pr_list_service=_make_pr_list_service([]),
             remote_github=fake_remote,
         )
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "999"],
+            ["pr", "duplicate-check", "--pr", "999"],
             obj=ctx,
         )
 
@@ -322,8 +320,8 @@ def test_plan_flag_not_found() -> None:
         assert "not found" in result.output
 
 
-def test_plan_and_file_mutually_exclusive() -> None:
-    """Using both --plan and --file produces an error."""
+def test_pr_and_file_mutually_exclusive() -> None:
+    """Using both --pr and --file produces an error."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env)
@@ -337,7 +335,7 @@ def test_plan_and_file_mutually_exclusive() -> None:
 
         result = runner.invoke(
             cli,
-            ["pr", "duplicate-check", "--plan", "100", "--file", temp_path],
+            ["pr", "duplicate-check", "--pr", "100", "--file", temp_path],
             obj=ctx,
         )
 

@@ -42,11 +42,11 @@ The filtering happens early in `/local:replan-learn-plans` (Step 1b) to avoid wa
 A plan accumulates labels through its lifecycle — `erk-consolidated` is additive, not a replacement:
 
 1. `/erk:learn` creates plan → labeled `erk-learn`
-2. `/local:replan-learn-plans` consolidates N plans → new plan labeled `erk-learn` + `erk-consolidated` + `erk-plan`
+2. `/local:replan-learn-plans` consolidates N plans → new plan labeled `erk-learn` + `erk-consolidated` + `erk-pr`
 3. Original N plans are closed with a cross-reference comment
 4. Future consolidation runs skip the `erk-consolidated` plan automatically
 
-The `erk-plan` label is added during consolidation (Step 7.4 of `/erk:replan`) to make consolidated plans dispatchable via `erk pr dispatch`, which requires this label.
+The `erk-pr` label is added during consolidation (Step 7.4 of `/erk:replan`) to make consolidated plans dispatchable via `erk pr dispatch`, which requires this label.
 
 ## Edge Case: All Plans Already Consolidated
 

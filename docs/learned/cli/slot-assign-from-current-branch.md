@@ -38,7 +38,7 @@ This mirrors `erk wt create --from-current-branch`, which uses the same Graphite
 
 ## Skill Rename Convention
 
-The `refac-` prefix convention for refactoring-category skills (e.g., `refac-cli-push-down`, `refac-mock-to-fake`, `refac-module-to-subpackage`) was established in the same PR that added this flag.
+The `refac-` prefix convention for refactoring-category skills (e.g., `refac-cli-push-down`, `fdt-refactor-mock-to-fake`, `refac-module-to-subpackage`) was established in the same PR that added this flag.
 
 ## Related Documentation
 

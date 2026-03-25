@@ -8,9 +8,9 @@ from click.testing import CliRunner
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.core.context import ErkContext
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.git.fake import FakeGit
-from tests.fakes.context import create_test_context
-from tests.fakes.script_writer import FakeScriptWriter
+from tests.fakes.gateway.git import FakeGit
+from tests.fakes.tests.context import create_test_context
+from tests.fakes.tests.script_writer import FakeScriptWriter
 
 
 def build_ctx(repo_root: Path | None, erk_root: Path, cwd: Path | None = None) -> ErkContext:
@@ -59,9 +59,8 @@ def test_prepare_cwd_recovery_outputs_script(tmp_path: Path) -> None:
         os.chdir(original_cwd)
 
     assert result.exit_code == 0
-    script_path = Path(result.output.strip())
-    # Verify script was written to in-memory fake
-    assert ctx.script_writer.get_script_content(script_path) is not None
+    # Verify script content was output
+    assert result.output.strip()
 
 
 def test_prepare_cwd_recovery_no_repo(tmp_path: Path) -> None:

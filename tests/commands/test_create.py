@@ -1,12 +1,10 @@
 """Tests for erk create command output behavior."""
 
-from pathlib import Path
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.gateway.git.abc import WorktreeInfo
-from erk_shared.gateway.git.fake import FakeGit
+from tests.fakes.gateway.git import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -58,10 +56,8 @@ def test_create_from_current_branch_outputs_script_path_to_stdout() -> None:
             "but should be written to stdout via machine_output()."
         )
 
-        # Assert: Script path is a valid path to activation script
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None, "Script path should reference a valid script"
+        # Assert: Script content was output
+        script_content = result.stdout
 
         # Assert: Script contains cd command to new worktree
         expected_worktree_path = repo_dir / "worktrees" / "my-feature"
@@ -109,7 +105,7 @@ def test_create_with_from_branch_trunk_errors() -> None:
         # Error message should match checkout command for consistency
         assert "Cannot create worktree for trunk branch" in result.stderr
         assert "main" in result.stderr
-        assert "erk br co root" in result.stderr
+        assert "erk slot co root" in result.stderr
         assert "root worktree" in result.stderr
 
         # Verify no worktree was created
