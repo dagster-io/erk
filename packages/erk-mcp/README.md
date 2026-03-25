@@ -80,4 +80,4 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Then start the server before launching Claude Code. The `pr_list`, `pr_view`, and `one_shot` tools will be available in your session.
+Then start the server before launching Claude Code. The `pr_list`, `pr_view`, `one_shot`, `workflow_run_list`, `workflow_run_status`, and `workflow_run_logs` tools will be available in your session.

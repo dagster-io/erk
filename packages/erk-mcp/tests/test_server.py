@@ -345,6 +345,36 @@ class TestMachineCommandTool:
         pr_view_tool = [t for t in tools if t.name == "pr_view"][0]
         assert pr_view_tool.cli_command_path == ("json", "pr", "view")
 
+    def test_discovered_tools_include_workflow_run_list(self) -> None:
+        tools = _build_machine_command_tools()
+        tool_names = {t.name for t in tools}
+        assert "workflow_run_list" in tool_names
+
+    def test_workflow_run_list_tool_has_subcommand_path(self) -> None:
+        tools = _build_machine_command_tools()
+        workflow_run_list_tool = [t for t in tools if t.name == "workflow_run_list"][0]
+        assert workflow_run_list_tool.cli_command_path == ("json", "run", "list")
+
+    def test_discovered_tools_include_workflow_run_status(self) -> None:
+        tools = _build_machine_command_tools()
+        tool_names = {t.name for t in tools}
+        assert "workflow_run_status" in tool_names
+
+    def test_workflow_run_status_tool_has_subcommand_path(self) -> None:
+        tools = _build_machine_command_tools()
+        workflow_run_status_tool = [t for t in tools if t.name == "workflow_run_status"][0]
+        assert workflow_run_status_tool.cli_command_path == ("json", "run", "status")
+
+    def test_discovered_tools_include_workflow_run_logs(self) -> None:
+        tools = _build_machine_command_tools()
+        tool_names = {t.name for t in tools}
+        assert "workflow_run_logs" in tool_names
+
+    def test_workflow_run_logs_tool_has_subcommand_path(self) -> None:
+        tools = _build_machine_command_tools()
+        workflow_run_logs_tool = [t for t in tools if t.name == "workflow_run_logs"][0]
+        assert workflow_run_logs_tool.cli_command_path == ("json", "run", "logs")
+
 
 class TestCreateMcp:
     """Tests for create_mcp() factory function."""
@@ -409,4 +439,11 @@ class TestRootProtectedResourceMetadata:
         tools = asyncio.run(server.list_tools())
         tool_names = {t.name for t in tools}
 
-        assert tool_names == {"pr_list", "pr_view", "one_shot"}
+        assert tool_names == {
+            "one_shot",
+            "pr_list",
+            "pr_view",
+            "workflow_run_list",
+            "workflow_run_logs",
+            "workflow_run_status",
+        }
