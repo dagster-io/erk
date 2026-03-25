@@ -32,6 +32,21 @@
       "raw_size_kb": 691,
       "xml_size_kb": 122,
       "git_branch": "colton/erk-mcp-oauth-bearer"
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-25T12:59:55.642892+00:00",
+      "files": [
+        "impl--6f863782-8949-4c6e-a489-54834e87ccdf-part1.xml",
+        "impl--6f863782-8949-4c6e-a489-54834e87ccdf-part2.xml"
+      ],
+      "user_turns": 4,
+      "duration_minutes": 38,
+      "raw_size_kb": 632,
+      "xml_size_kb": 89,
+      "git_branch": "colton/erk-mcp-workflows"
     }
   ]
 }
