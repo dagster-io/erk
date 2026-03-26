@@ -73,7 +73,7 @@ Assembles the GitHub issue in a 7-step flow:
 | Roadmap         | Issue body    | `objective-roadmap` YAML (steps with status/pr)                       | Frequent (via update-objective-node) |
 | Content         | First comment | `objective-body` (exploration notes, context, rendered roadmap table) | After PR landing (reconciliation)    |
 
-The `_build_objective_roadmap_block()` function extracts pre-existing metadata blocks from the plan content, validates v2 format, and re-renders to normalize structure.
+When `--roadmap-json` is not used, `create_objective_issue()` extracts pre-existing roadmap metadata blocks from the plan content, validates v2 format, and re-renders to normalize structure.
 
 ## Scratch Directory
 
