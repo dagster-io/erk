@@ -391,10 +391,16 @@ class RealPrDataProvider(PrDataProvider):
         plans: list[Plan] = []
         for item in fetched_items:
             issue_info = IssueInfo(
-                number=item.number, title=item.title, body=item.body,
-                state=item.state, url=item.url, labels=item.labels,
-                assignees=item.assignees, created_at=item.created_at,
-                updated_at=item.updated_at, author=item.author,
+                number=item.number,
+                title=item.title,
+                body=item.body,
+                state=item.state,
+                url=item.url,
+                labels=item.labels,
+                assignees=item.assignees,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+                author=item.author,
             )
             plans.append(github_issue_to_plan(issue_info))
         worktree_by_pr_number = self._build_worktree_mapping()
