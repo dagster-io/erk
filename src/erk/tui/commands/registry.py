@@ -114,11 +114,6 @@ def _display_copy_teleport(ctx: CommandContext) -> str:
     return f"erk slot teleport {ctx.row.pr_number}"
 
 
-def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
-    """Display name for copy_teleport_new_slot command."""
-    return f"erk slot teleport {ctx.row.pr_number} --new-slot"
-
-
 def _display_cmux_checkout(ctx: CommandContext) -> str:
     """Display name for cmux_checkout command."""
     return f"erk pr checkout {ctx.row.pr_number} --script"
@@ -126,7 +121,7 @@ def _display_cmux_checkout(ctx: CommandContext) -> str:
 
 def _display_cmux_teleport(ctx: CommandContext) -> str:
     """Display name for cmux_teleport command."""
-    return f"erk slot teleport {ctx.row.pr_number} --new-slot --script --sync"
+    return f"erk slot teleport {ctx.row.pr_number} --script --sync"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -452,16 +447,6 @@ def get_all_commands() -> list[CommandDefinition]:
             launch_key=None,
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
             get_display_name=_display_copy_teleport,
-        ),
-        CommandDefinition(
-            id="copy_teleport_new_slot",
-            name="erk slot teleport --new-slot",
-            description="teleport (new slot)",
-            category=CommandCategory.COPY,
-            shortcut=None,
-            launch_key=None,
-            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
-            get_display_name=_display_copy_teleport_new_slot,
         ),
         CommandDefinition(
             id="copy_close_pr",

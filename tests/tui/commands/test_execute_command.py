@@ -127,16 +127,6 @@ class TestExecuteCommandCopyCommands:
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
-    def test_copy_teleport_new_slot_copies_command(self) -> None:
-        """copy_teleport_new_slot copies the teleport --new-slot command."""
-        row = make_pr_row(123, "Test")
-        executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_teleport_new_slot")
-        expected_cmd = "erk slot teleport 123 --new-slot"
-        assert executor.copied_texts == [expected_cmd]
-        assert f"Copied: {expected_cmd}" in executor.notifications
-
     def test_copy_prepare_copies_command(self) -> None:
         """copy_prepare copies the prepare command."""
         row = make_pr_row(123, "Test")

@@ -297,8 +297,8 @@ def test_teleport_already_tracked_retracks() -> None:
         assert len(git.created_tracking_branches) == 0  # Fresh tracking not called
 
 
-def test_teleport_new_slot_existing_worktree_navigates() -> None:
-    """Teleport --new-slot navigates to existing worktree instead of erroring."""
+def test_teleport_existing_worktree_navigates() -> None:
+    """Teleport navigates to existing worktree and force-resets branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         other_worktree_path = env.repo.worktrees_dir / "other"
@@ -318,14 +318,14 @@ def test_teleport_new_slot_existing_worktree_navigates() -> None:
             },
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(slot_group, ["teleport", "300", "--new-slot"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "300"], obj=ctx)
         assert result.exit_code == 0
         assert "feature-existing" in result.output
         assert str(other_worktree_path) in result.output
 
 
-def test_teleport_new_slot_existing_worktree_script_mode() -> None:
-    """Teleport --new-slot --script navigates to existing worktree with valid script."""
+def test_teleport_existing_worktree_script_mode() -> None:
+    """Teleport --script navigates to existing worktree with valid script."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         env.setup_repo_structure()
@@ -348,7 +348,7 @@ def test_teleport_new_slot_existing_worktree_script_mode() -> None:
             },
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(slot_group, ["teleport", "301", "--new-slot", "--script"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "301", "--script"], obj=ctx)
         assert result.exit_code == 0
         script_content = result.stdout
         assert script_content.strip() != ""
@@ -356,11 +356,11 @@ def test_teleport_new_slot_existing_worktree_script_mode() -> None:
         assert "gt submit --no-interactive" not in script_content
 
 
-def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
-    """Test teleport --new-slot --script --sync includes gt submit in activation script.
+def test_teleport_script_mode_with_sync_includes_gt_submit() -> None:
+    """Test teleport --script --sync includes gt submit in activation script.
 
-    When teleporting into a new slot with --script and --sync, the activation
-    script should contain 'gt submit --no-interactive' as a post-cd command.
+    When teleporting with --script and --sync, the activation script should
+    contain 'gt submit --no-interactive' as a post-cd command.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -378,7 +378,7 @@ def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
         result = runner.invoke(
-            slot_group, ["teleport", "200", "--new-slot", "--script", "--sync"], obj=ctx
+            slot_group, ["teleport", "200", "--script", "--sync"], obj=ctx
         )
 
         assert result.exit_code == 0
@@ -387,8 +387,8 @@ def test_teleport_new_slot_script_mode_with_sync_includes_gt_submit() -> None:
         assert "gt submit --no-interactive" in script_content
 
 
-def test_teleport_new_slot_script_mode_without_sync_omits_gt_submit() -> None:
-    """Test teleport --new-slot --script without --sync omits gt submit.
+def test_teleport_script_mode_without_sync_omits_gt_submit() -> None:
+    """Test teleport --script without --sync omits gt submit.
 
     When --sync is not passed, the activation script should not include
     gt submit even in script mode.
@@ -408,7 +408,7 @@ def test_teleport_new_slot_script_mode_without_sync_omits_gt_submit() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=True)
 
-        result = runner.invoke(slot_group, ["teleport", "201", "--new-slot", "--script"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "201", "--script"], obj=ctx)
 
         assert result.exit_code == 0
         script_content = result.stdout
@@ -446,7 +446,7 @@ def test_teleport_in_place_script_mode_with_sync_includes_gt_submit() -> None:
 
 
 def test_teleport_in_place_updates_slot_assignment() -> None:
-    """Teleport in a slot-assigned worktree updates the slot assignment to the new branch."""
+    """Teleport at an existing worktree updates its slot assignment to the new branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(500, "new-feature-branch")
@@ -455,9 +455,16 @@ def test_teleport_in_place_updates_slot_assignment() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "old-branch"},
-            local_branches={env.cwd: ["main", "old-branch"]},
+            local_branches={env.cwd: ["main", "old-branch", "new-feature-branch"]},
             remote_branches={env.cwd: ["origin/main", "origin/new-feature-branch"]},
             repository_roots={env.cwd: env.cwd},
+            # Branch already in this worktree (as if env.cwd is the branch's worktree)
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="new-feature-branch", is_root=True),
+                ]
+            },
+            ahead_behind={(env.cwd, "new-feature-branch"): (0, 1)},
         )
 
         # Write initial pool state with a slot assigned to old-branch at env.cwd
@@ -561,8 +568,8 @@ def test_teleport_dry_run_no_mutations() -> None:
         assert len(git.checked_out_branches) == 0
 
 
-def test_teleport_dry_run_new_slot() -> None:
-    """Dry run with --new-slot shows 'Would create new worktree slot'."""
+def test_teleport_dry_run_no_existing_worktree() -> None:
+    """Dry run shows 'Would allocate new worktree slot' when branch has no worktree."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(123, "feature-branch")
@@ -575,9 +582,9 @@ def test_teleport_dry_run_new_slot() -> None:
             remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
-        result = runner.invoke(slot_group, ["teleport", "123", "--new-slot", "--dry-run"], obj=ctx)
+        result = runner.invoke(slot_group, ["teleport", "123", "--dry-run"], obj=ctx)
         assert result.exit_code == 0
-        assert "Would create new worktree slot" in result.output
+        assert "Would allocate new worktree slot" in result.output
         assert "[DRY RUN] No changes made" in result.output
 
 

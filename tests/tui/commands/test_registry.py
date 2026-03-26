@@ -101,7 +101,6 @@ def test_checkout_and_teleport_available_when_pr_exists() -> None:
     assert "copy_pr_checkout_script" in cmd_ids
     assert "copy_pr_checkout_plain" in cmd_ids
     assert "copy_teleport" in cmd_ids
-    assert "copy_teleport_new_slot" in cmd_ids
 
 
 def test_checkout_and_teleport_available_with_pr_number() -> None:
@@ -113,7 +112,6 @@ def test_checkout_and_teleport_available_with_pr_number() -> None:
     assert "copy_pr_checkout_script" in cmd_ids
     assert "copy_pr_checkout_plain" in cmd_ids
     assert "copy_teleport" in cmd_ids
-    assert "copy_teleport_new_slot" in cmd_ids
 
 
 def test_close_pr_always_available() -> None:
@@ -336,14 +334,6 @@ def test_display_name_copy_teleport_shows_pr() -> None:
     assert get_display_name(cmd, ctx) == "erk slot teleport 5831"
 
 
-def test_display_name_copy_teleport_new_slot_shows_pr() -> None:
-    """copy_teleport_new_slot should show the PR number with --new-slot."""
-    row = make_pr_row(5831, "Test Plan")
-    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_teleport_new_slot")
-    assert get_display_name(cmd, ctx) == "erk slot teleport 5831 --new-slot"
-
-
 def test_display_name_copy_cmux_checkout() -> None:
     """copy_cmux_checkout generates checkout command."""
     row = make_pr_row(5831, "Test Plan", pr_head_branch="feature-branch")
@@ -359,7 +349,7 @@ def test_display_name_copy_cmux_teleport() -> None:
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_teleport")
     result = get_display_name(cmd, ctx)
-    assert result == "erk slot teleport 5831 --new-slot --script --sync"
+    assert result == "erk slot teleport 5831 --script --sync"
 
 
 def test_display_name_cmux_checkout_action() -> None:
@@ -872,7 +862,6 @@ def test_commands_available_in_plans_view() -> None:
         "copy_pr_checkout_script",
         "copy_pr_checkout_plain",
         "copy_teleport",
-        "copy_teleport_new_slot",
         "copy_dispatch",
         "copy_replan",
         "copy_land",
@@ -936,7 +925,7 @@ def test_get_copy_text_copy_cmux_teleport() -> None:
     row = make_pr_row(123, "Test", pr_head_branch="my-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     result = get_copy_text("copy_cmux_teleport", ctx)
-    assert result == "erk slot teleport 123 --new-slot --script --sync"
+    assert result == "erk slot teleport 123 --script --sync"
 
 
 # === Launch Key Safety Tests ===

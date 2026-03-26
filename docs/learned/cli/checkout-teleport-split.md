@@ -35,12 +35,12 @@ erk pr checkout <REFERENCE> [--no-slot] [-f/--force] [--script]
 ### `erk slot teleport` (heavyweight, remote-first)
 
 ```
-erk slot teleport <PR_NUMBER> [--new-slot] [-f/--force] [--sync] [--script]
+erk slot teleport <PR_NUMBER> [-f/--force] [--sync] [--script]
 ```
 
 - Force-resets local branch to match remote exactly
 - `--sync` runs `gt submit --no-interactive` after teleport
-- Two modes: in-place (default) or `--new-slot` for fresh worktree
+- Automatically ensures the branch has a worktree slot (allocates one if needed)
 - Shows divergence info and asks confirmation before overwriting
 
 ## Key Files
@@ -59,7 +59,7 @@ erk exec cmux-open-pr --pr <NUMBER> [--branch <BRANCH>] [--mode {checkout|telepo
 ```
 
 - `--mode checkout` (default): lightweight, runs `erk pr checkout {pr} --script`
-- `--mode teleport`: heavyweight, runs `erk slot teleport {pr} --new-slot --script --sync`
+- `--mode teleport`: heavyweight, runs `erk slot teleport {pr} --script --sync`
 
 ## TUI Integration
 
@@ -71,6 +71,6 @@ The TUI has separate registry entries and keybindings for checkout and teleport,
 | --------------------------------- | ------------------------------ |
 | Review a PR locally               | `checkout`                     |
 | Match remote after agent push     | `teleport`                     |
-| Fresh worktree with Graphite sync | `teleport --new-slot --sync`   |
+| Fresh worktree with Graphite sync | `teleport --sync`              |
 | CMUX workspace for quick review   | `cmux-open-pr --mode checkout` |
 | CMUX workspace matching remote    | `cmux-open-pr --mode teleport` |
