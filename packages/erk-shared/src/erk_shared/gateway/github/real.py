@@ -2599,7 +2599,13 @@ query {{
                     parsed_prs = [pr for pr, _ in prs_with_timestamps]
                     pr_linkages[issue.number] = parsed_prs
 
-                items.append(FetchedIssue(issue=issue, linked_prs=parsed_prs))
+                items.append(FetchedIssue(
+                    number=issue.number, title=issue.title, body=issue.body,
+                    state=issue.state, url=issue.url, labels=issue.labels,
+                    assignees=issue.assignees, created_at=issue.created_at,
+                    updated_at=issue.updated_at, author=issue.author,
+                    linked_prs=parsed_prs,
+                ))
 
             # Create self-linkage for PullRequest nodes (isDraft only present on PRs)
             elif "isDraft" in node:
@@ -2621,7 +2627,13 @@ query {{
                     base_ref_name=node.get("baseRefName"),
                 )
                 pr_linkages[issue.number] = [pr_info]
-                items.append(FetchedPullRequest(issue=issue, pr_info=pr_info))
+                items.append(FetchedPullRequest(
+                    number=issue.number, title=issue.title, body=issue.body,
+                    state=issue.state, url=issue.url, labels=issue.labels,
+                    assignees=issue.assignees, created_at=issue.created_at,
+                    updated_at=issue.updated_at, author=issue.author,
+                    pr_info=pr_info,
+                ))
 
         return (items, pr_linkages)
 

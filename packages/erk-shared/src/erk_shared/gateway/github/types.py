@@ -5,12 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import Any, Literal, TypedDict
 
 from erk_shared.non_ideal_state import EnsurableResult
-
-if TYPE_CHECKING:
-    from erk_shared.gateway.github.issues.types import IssueInfo
 
 PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
@@ -261,19 +258,33 @@ class PullRequestInfo:
 
 
 @dataclass(frozen=True)
-class FetchedIssue:
+class CommonIssuePRFields:
+    """Common fields shared by issues and pull requests from issueOrPullRequest queries."""
+
+    number: int
+    title: str
+    body: str
+    state: str
+    url: str
+    labels: list[str]
+    assignees: list[str]
+    created_at: datetime
+    updated_at: datetime
+    author: str
+
+
+@dataclass(frozen=True)
+class FetchedIssue(CommonIssuePRFields):
     """An issue fetched via issueOrPullRequest, with its linked PRs."""
 
-    issue: IssueInfo
     linked_prs: list[PullRequestInfo]
 
 
 @dataclass(frozen=True)
-class FetchedPullRequest:
+class FetchedPullRequest(CommonIssuePRFields):
     """A pull request fetched via issueOrPullRequest, with native PR metadata."""
 
-    issue: IssueInfo  # Base issue fields (number, title, body, etc.)
-    pr_info: PullRequestInfo  # Native PR metadata (checks, draft, conflicts)
+    pr_info: PullRequestInfo
 
 
 # Discriminated union for issueOrPullRequest query results

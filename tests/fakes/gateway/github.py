@@ -1280,7 +1280,13 @@ class FakeLocalGitHub(LocalGitHub):
             linked_prs = self._pr_plan_linkages.get(issue.number, [])
             if linked_prs:
                 pr_linkages[issue.number] = linked_prs
-            fetched_items.append(FetchedIssue(issue=issue, linked_prs=linked_prs))
+            fetched_items.append(FetchedIssue(
+                number=issue.number, title=issue.title, body=issue.body,
+                state=issue.state, url=issue.url, labels=issue.labels,
+                assignees=issue.assignees, created_at=issue.created_at,
+                updated_at=issue.updated_at, author=issue.author,
+                linked_prs=linked_prs,
+            ))
 
         return (fetched_items, pr_linkages)
 

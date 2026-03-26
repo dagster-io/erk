@@ -382,8 +382,8 @@ def test_parse_issues_by_numbers_response_single_issue() -> None:
 
     assert len(items) == 1
     assert isinstance(items[0], FetchedIssue)
-    assert items[0].issue.number == 100
-    assert items[0].issue.title == "Plan A"
+    assert items[0].number == 100
+    assert items[0].title == "Plan A"
     assert pr_linkages == {}
 
 
@@ -403,7 +403,7 @@ def test_parse_issues_by_numbers_response_multiple_issues() -> None:
 
     items, _ = github._parse_issues_by_numbers_response(response, repo_id)
 
-    numbers = {item.issue.number for item in items}
+    numbers = {item.number for item in items}
     assert numbers == {100, 200}
 
 
@@ -424,7 +424,7 @@ def test_parse_issues_by_numbers_response_skips_null_nodes() -> None:
     items, _ = github._parse_issues_by_numbers_response(response, repo_id)
 
     assert len(items) == 1
-    assert items[0].issue.number == 100
+    assert items[0].number == 100
 
 
 def test_parse_issues_by_numbers_response_empty_repository() -> None:
@@ -487,7 +487,7 @@ def test_parse_pr_node_creates_self_linkage() -> None:
 
     assert len(items) == 1
     assert isinstance(items[0], FetchedPullRequest)
-    assert items[0].issue.number == 100
+    assert items[0].number == 100
     assert 100 in pr_linkages
     assert len(pr_linkages[100]) == 1
     pr_info = pr_linkages[100][0]
@@ -555,7 +555,7 @@ def test_parse_mixed_issues_and_prs() -> None:
     items, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
 
     assert len(items) == 2
-    numbers = {item.issue.number for item in items}
+    numbers = {item.number for item in items}
     assert numbers == {100, 200}
     # Issue has no linkages (empty timeline), PR has self-linkage
     assert 100 not in pr_linkages
