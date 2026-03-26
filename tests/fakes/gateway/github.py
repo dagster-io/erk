@@ -17,8 +17,10 @@ from erk_shared.gateway.github.types import (
     BodyContent,
     BodyFile,
     BodyText,
+    FetchedIssue,
     GitHubRepoLocation,
     IssueFilterState,
+    IssueOrPullRequest,
     MergeError,
     MergeResult,
     PRCheckRun,
@@ -1255,7 +1257,7 @@ class FakeLocalGitHub(LocalGitHub):
         *,
         location: GitHubRepoLocation,
         plan_numbers: list[int],
-    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[IssueOrPullRequest], dict[int, list[PullRequestInfo]]]:
         """Filter pre-configured issues by number, returning matching PR linkages.
 
         Args:
@@ -1263,7 +1265,7 @@ class FakeLocalGitHub(LocalGitHub):
             plan_numbers: List of plan numbers to fetch
 
         Returns:
-            Tuple of (filtered_issues, pr_linkages for those plans)
+            Tuple of (fetched_items, pr_linkages for those plans)
         """
         if not plan_numbers:
             return ([], {})
@@ -1271,12 +1273,30 @@ class FakeLocalGitHub(LocalGitHub):
         number_set = set(plan_numbers)
         filtered_issues = [issue for issue in self._issues_data if issue.number in number_set]
 
+        fetched_items: list[IssueOrPullRequest] = []
         pr_linkages: dict[int, list[PullRequestInfo]] = {}
-        for issue in filtered_issues:
-            if issue.number in self._pr_plan_linkages:
-                pr_linkages[issue.number] = self._pr_plan_linkages[issue.number]
 
-        return (filtered_issues, pr_linkages)
+        for issue in filtered_issues:
+            linked_prs = self._pr_plan_linkages.get(issue.number, [])
+            if linked_prs:
+                pr_linkages[issue.number] = linked_prs
+            fetched_items.append(
+                FetchedIssue(
+                    number=issue.number,
+                    title=issue.title,
+                    body=issue.body,
+                    state=issue.state,
+                    url=issue.url,
+                    labels=issue.labels,
+                    assignees=issue.assignees,
+                    created_at=issue.created_at,
+                    updated_at=issue.updated_at,
+                    author=issue.author,
+                    linked_prs=linked_prs,
+                )
+            )
+
+        return (fetched_items, pr_linkages)
 
     def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
         """Record workflow run cancellation in mutation tracking list."""

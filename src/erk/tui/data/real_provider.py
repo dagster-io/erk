@@ -20,6 +20,7 @@ from erk.tui.data.types import FetchTimings, PrFilters, PrRowData, RunRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.gateway.github.graphql_queries import GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY
+from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import (
     extract_objective_slug,
 )
@@ -382,12 +383,26 @@ class RealPrDataProvider(PrDataProvider):
         if not pr_ids:
             return []
 
-        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+        fetched_items, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
             location=self._location,
             plan_numbers=list(pr_ids),
         )
 
-        plans = [github_issue_to_plan(issue) for issue in issues]
+        plans: list[Plan] = []
+        for item in fetched_items:
+            issue_info = IssueInfo(
+                number=item.number,
+                title=item.title,
+                body=item.body,
+                state=item.state,
+                url=item.url,
+                labels=item.labels,
+                assignees=item.assignees,
+                created_at=item.created_at,
+                updated_at=item.updated_at,
+                author=item.author,
+            )
+            plans.append(github_issue_to_plan(issue_info))
         worktree_by_pr_number = self._build_worktree_mapping()
 
         # Extract dispatch node IDs from planned PRs for workflow run lookup

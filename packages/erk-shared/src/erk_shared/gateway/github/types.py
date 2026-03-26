@@ -1,5 +1,7 @@
 """Type definitions for GitHub operations."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -253,6 +255,40 @@ class PullRequestInfo:
     review_decision: str | None = None
     # Base branch name (the target branch) - optional, populated by some API calls
     base_ref_name: str | None = None
+
+
+@dataclass(frozen=True)
+class CommonIssuePRFields:
+    """Common fields shared by issues and pull requests from issueOrPullRequest queries."""
+
+    number: int
+    title: str
+    body: str
+    state: str
+    url: str
+    labels: list[str]
+    assignees: list[str]
+    created_at: datetime
+    updated_at: datetime
+    author: str
+
+
+@dataclass(frozen=True)
+class FetchedIssue(CommonIssuePRFields):
+    """An issue fetched via issueOrPullRequest, with its linked PRs."""
+
+    linked_prs: list[PullRequestInfo]
+
+
+@dataclass(frozen=True)
+class FetchedPullRequest(CommonIssuePRFields):
+    """A pull request fetched via issueOrPullRequest, with native PR metadata."""
+
+    pr_info: PullRequestInfo
+
+
+# Discriminated union for issueOrPullRequest query results
+IssueOrPullRequest = FetchedIssue | FetchedPullRequest
 
 
 class _NotAvailable:

@@ -49,9 +49,12 @@ from erk_shared.gateway.github.types import (
     BodyContent,
     BodyFile,
     BodyText,
+    FetchedIssue,
+    FetchedPullRequest,
     GitHubRepoId,
     GitHubRepoLocation,
     IssueFilterState,
+    IssueOrPullRequest,
     MergeError,
     MergeResult,
     PRCheckRun,
@@ -2462,7 +2465,7 @@ class RealLocalGitHub(LocalGitHub):
         *,
         location: GitHubRepoLocation,
         plan_numbers: list[int],
-    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[IssueOrPullRequest], dict[int, list[PullRequestInfo]]]:
         """Fetch specific issues by number with full PR linkage data.
 
         Uses issueOrPullRequest to handle both issues and merged PRs.
@@ -2552,7 +2555,7 @@ query {{
         self,
         response: dict[str, Any],
         repo_id: GitHubRepoId,
-    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[IssueOrPullRequest], dict[int, list[PullRequestInfo]]]:
         """Parse GraphQL response from issues-by-numbers query.
 
         Iterates over aliased keys (issue_8070, etc.) and parses each node.
@@ -2562,9 +2565,9 @@ query {{
             repo_id: GitHub repository identity
 
         Returns:
-            Tuple of (issues, pr_linkages)
+            Tuple of (items, pr_linkages) where items are FetchedIssue | FetchedPullRequest
         """
-        issues: list[IssueInfo] = []
+        items: list[IssueOrPullRequest] = []
         pr_linkages: dict[int, list[PullRequestInfo]] = {}
 
         repo_data = response.get("data", {}).get("repository", {})
@@ -2576,7 +2579,6 @@ query {{
             issue = self._parse_issue_node(node)
             if issue is None:
                 continue
-            issues.append(issue)
 
             # Parse PR linkages from timelineItems (only present on Issue type)
             timeline_items = node.get("timelineItems")
@@ -2591,33 +2593,65 @@ query {{
                     if result is not None:
                         prs_with_timestamps.append(result)
 
+                parsed_prs: list[PullRequestInfo] = []
                 if prs_with_timestamps:
                     prs_with_timestamps.sort(key=lambda x: x[1], reverse=True)
-                    pr_linkages[issue.number] = [pr for pr, _ in prs_with_timestamps]
+                    parsed_prs = [pr for pr, _ in prs_with_timestamps]
+                    pr_linkages[issue.number] = parsed_prs
+
+                items.append(
+                    FetchedIssue(
+                        number=issue.number,
+                        title=issue.title,
+                        body=issue.body,
+                        state=issue.state,
+                        url=issue.url,
+                        labels=issue.labels,
+                        assignees=issue.assignees,
+                        created_at=issue.created_at,
+                        updated_at=issue.updated_at,
+                        author=issue.author,
+                        linked_prs=parsed_prs,
+                    )
+                )
 
             # Create self-linkage for PullRequest nodes (isDraft only present on PRs)
             elif "isDraft" in node:
                 checks_passing, checks_counts = parse_status_rollup(node.get("statusCheckRollup"))
                 has_conflicts = parse_mergeable_status(node.get("mergeable"))
-                pr_linkages[issue.number] = [
-                    PullRequestInfo(
+                pr_info = PullRequestInfo(
+                    number=issue.number,
+                    state=node.get("state", "OPEN"),
+                    url=node.get("url", ""),
+                    is_draft=node.get("isDraft", False),
+                    title=node.get("title"),
+                    checks_passing=checks_passing,
+                    owner=repo_id.owner,
+                    repo=repo_id.repo,
+                    has_conflicts=has_conflicts,
+                    checks_counts=checks_counts,
+                    head_branch=node.get("headRefName"),
+                    review_decision=node.get("reviewDecision"),
+                    base_ref_name=node.get("baseRefName"),
+                )
+                pr_linkages[issue.number] = [pr_info]
+                items.append(
+                    FetchedPullRequest(
                         number=issue.number,
-                        state=node.get("state", "OPEN"),
-                        url=node.get("url", ""),
-                        is_draft=node.get("isDraft", False),
-                        title=node.get("title"),
-                        checks_passing=checks_passing,
-                        owner=repo_id.owner,
-                        repo=repo_id.repo,
-                        has_conflicts=has_conflicts,
-                        checks_counts=checks_counts,
-                        head_branch=node.get("headRefName"),
-                        review_decision=node.get("reviewDecision"),
-                        base_ref_name=node.get("baseRefName"),
+                        title=issue.title,
+                        body=issue.body,
+                        state=issue.state,
+                        url=issue.url,
+                        labels=issue.labels,
+                        assignees=issue.assignees,
+                        created_at=issue.created_at,
+                        updated_at=issue.updated_at,
+                        author=issue.author,
+                        pr_info=pr_info,
                     )
-                ]
+                )
 
-        return (issues, pr_linkages)
+        return (items, pr_linkages)
 
     def cancel_workflow_run(self, repo_root: Path, run_id: str) -> None:
         """Cancel an in-progress or queued workflow run via REST API."""

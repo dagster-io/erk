@@ -11,6 +11,7 @@ from erk_shared.gateway.github.types import (
     BodyContent,
     GitHubRepoLocation,
     IssueFilterState,
+    IssueOrPullRequest,
     MergeError,
     MergeResult,
     PRCheckRun,
@@ -888,7 +889,7 @@ class LocalGitHub(ABC):
         *,
         location: GitHubRepoLocation,
         plan_numbers: list[int],
-    ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
+    ) -> tuple[list[IssueOrPullRequest], dict[int, list[PullRequestInfo]]]:
         """Fetch specific issues by number with full PR linkage data.
 
         Uses issueOrPullRequest(number: N) to handle both issues and merged PRs.
@@ -900,8 +901,8 @@ class LocalGitHub(ABC):
             plan_numbers: List of plan/PR numbers to fetch
 
         Returns:
-            Tuple of (issues, pr_linkages) where:
-            - issues: List of IssueInfo objects for found issues
+            Tuple of (items, pr_linkages) where:
+            - items: List of IssueOrPullRequest (FetchedIssue | FetchedPullRequest)
             - pr_linkages: Mapping of plan_number -> list of linked PRs
         """
         ...

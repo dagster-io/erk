@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from erk_shared.gateway.github.types import GitHubRepoId, RepoInfo
+from erk_shared.gateway.github.types import FetchedIssue, FetchedPullRequest, GitHubRepoId, RepoInfo
 from tests.test_utils.context_builders import real_github_for_test
 
 
@@ -366,7 +366,7 @@ def _make_issue_node(
 
 
 def test_parse_issues_by_numbers_response_single_issue() -> None:
-    """Single issue node is parsed into one IssueInfo."""
+    """Single issue node is parsed into one FetchedIssue."""
     github = real_github_for_test()
     repo_id = GitHubRepoId(owner="acme", repo="widgets")
 
@@ -378,11 +378,12 @@ def test_parse_issues_by_numbers_response_single_issue() -> None:
         }
     }
 
-    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+    items, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
 
-    assert len(issues) == 1
-    assert issues[0].number == 100
-    assert issues[0].title == "Plan A"
+    assert len(items) == 1
+    assert isinstance(items[0], FetchedIssue)
+    assert items[0].number == 100
+    assert items[0].title == "Plan A"
     assert pr_linkages == {}
 
 
@@ -400,9 +401,9 @@ def test_parse_issues_by_numbers_response_multiple_issues() -> None:
         }
     }
 
-    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+    items, _ = github._parse_issues_by_numbers_response(response, repo_id)
 
-    numbers = {i.number for i in issues}
+    numbers = {item.number for item in items}
     assert numbers == {100, 200}
 
 
@@ -420,10 +421,10 @@ def test_parse_issues_by_numbers_response_skips_null_nodes() -> None:
         }
     }
 
-    issues, _ = github._parse_issues_by_numbers_response(response, repo_id)
+    items, _ = github._parse_issues_by_numbers_response(response, repo_id)
 
-    assert len(issues) == 1
-    assert issues[0].number == 100
+    assert len(items) == 1
+    assert items[0].number == 100
 
 
 def test_parse_issues_by_numbers_response_empty_repository() -> None:
@@ -482,10 +483,11 @@ def test_parse_pr_node_creates_self_linkage() -> None:
         }
     }
 
-    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+    items, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
 
-    assert len(issues) == 1
-    assert issues[0].number == 100
+    assert len(items) == 1
+    assert isinstance(items[0], FetchedPullRequest)
+    assert items[0].number == 100
     assert 100 in pr_linkages
     assert len(pr_linkages[100]) == 1
     pr_info = pr_linkages[100][0]
@@ -550,10 +552,10 @@ def test_parse_mixed_issues_and_prs() -> None:
         }
     }
 
-    issues, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
+    items, pr_linkages = github._parse_issues_by_numbers_response(response, repo_id)
 
-    assert len(issues) == 2
-    numbers = {i.number for i in issues}
+    assert len(items) == 2
+    numbers = {item.number for item in items}
     assert numbers == {100, 200}
     # Issue has no linkages (empty timeline), PR has self-linkage
     assert 100 not in pr_linkages
