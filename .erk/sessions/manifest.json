@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9405,
+  "sessions": [
+    {
+      "session_id": "082ead79-35d5-4ea4-a669-efaaf6b4ada7",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-26T06:00:20.646509+00:00",
+      "files": [
+        "impl-082ead79-35d5-4ea4-a669-efaaf6b4ada7-082ead79-35d5-4ea4-a669-efaaf6b4ada7.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 82,
+      "xml_size_kb": 24,
+      "git_branch": "plnd/fix-ci-update-pr-body-blan-03-24-1735"
+    }
+  ]
+}
