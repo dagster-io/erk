@@ -380,7 +380,7 @@ def test_log_backward_compat_erk_plan_key() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(
             env,
-            plan_store=store,
+            pr_store=store,
             issues=fake_issues,
             remote_github=_make_fake_remote(issue, [comment]),
         )

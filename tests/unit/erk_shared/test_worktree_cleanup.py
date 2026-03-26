@@ -92,8 +92,8 @@ def test_get_plan_info_for_worktree_with_open_plan() -> None:
         header_fields={"erk-worktree-name": "feature-wt"},
         labels=["erk-pr"],
         assignees=[],
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
+        created_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
         metadata={},
         objective_id=None,
     )
@@ -118,8 +118,8 @@ def test_get_plan_info_for_worktree_with_closed_plan() -> None:
         header_fields={"erk-worktree-name": "closed-wt"},
         labels=["erk-pr"],
         assignees=[],
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
+        created_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
         metadata={},
         objective_id=None,
     )
@@ -233,8 +233,8 @@ def test_close_plan_for_worktree_closes_open_plan() -> None:
         header_fields={"erk-worktree-name": "feature-wt"},
         labels=["erk-pr"],
         assignees=[],
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
+        created_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
         metadata={},
         objective_id=None,
     )
@@ -260,8 +260,8 @@ def test_close_plan_for_worktree_returns_none_for_closed_plan() -> None:
         header_fields={"erk-worktree-name": "closed-wt"},
         labels=["erk-pr"],
         assignees=[],
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
+        created_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC),
         metadata={},
         objective_id=None,
     )
