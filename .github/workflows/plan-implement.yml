@@ -459,7 +459,6 @@ jobs:
           fi
           erk exec ci-update-pr-body \
             --pr-number "${{ inputs.pr_number }}" \
-
             --run-id "${{ github.run_id }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             $PLANNED_PR_FLAG
