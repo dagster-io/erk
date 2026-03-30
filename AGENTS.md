@@ -154,7 +154,7 @@ Skills persist for the entire session. Once loaded, they remain in context.
 
 **npx skills:** Use `-a claude` for Claude Code skills. The `.agents/` canonical directory covers Codex. Do NOT use `--all` — this repo does not support Windsurf or Cursor.
 
-**Modifying skills?** Read [NPX Skill Management](docs/learned/capabilities/npx-skill-management.md) first — covers authored vs npx-installed skills, `metadata.internal`, `skills-lock.json`, and the `_UNBUNDLED_SKILLS` registry.
+**Adding or modifying skills?** Read [NPX Skill Management](docs/learned/capabilities/npx-skill-management.md) first — covers authored vs npx-installed skills, `metadata.internal`, `skills-lock.json`, and the `_UNBUNDLED_SKILLS` registry.
 
 ## Documentation-First Discovery
 

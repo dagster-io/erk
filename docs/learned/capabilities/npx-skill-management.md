@@ -86,7 +86,7 @@ When migrating a skill from erk's bundle to external npx distribution (example: 
 
 ## metadata.internal
 
-The `metadata.internal: true` frontmatter field hides a skill from `npx skills` CLI discovery and the [skills.sh](https://skills.sh) public leaderboard. All erk-authored skills (the 20 SKILL.md files in `.claude/skills/`) use this field because they are private, repo-specific skills not intended for public consumption.
+The `metadata.internal: true` frontmatter field hides a skill from `npx skills` CLI discovery and the [skills.sh](https://skills.sh) public leaderboard. All erk-authored skills in `.claude/skills/` use this field because they are private, repo-specific skills not intended for public consumption.
 
 NPX-managed skills in `.agents/skills/` are controlled by their source repositories and should NOT have `metadata.internal` added here — their visibility is managed by the upstream repo.
 
