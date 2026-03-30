@@ -1,6 +1,8 @@
 ---
 name: cmux
 description: This skill should be used when working with cmux, the terminal multiplexer application. Use when users mention cmux commands, workspace management, terminal pane operations, or cmux integration with erk. Essential for understanding cmux's workspace model, CLI commands, and scripting patterns.
+metadata:
+  internal: true
 ---
 
 # cmux - Terminal Multiplexer

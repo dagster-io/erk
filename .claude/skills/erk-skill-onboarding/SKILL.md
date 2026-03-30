@@ -4,6 +4,8 @@ description: >
   Guide for adding new skills to the erk project. Use when creating a new skill, registering
   a skill in bundled/unbundled registries, classifying codex portability, or debugging why a
   skill isn't appearing in tests or capability lists.
+metadata:
+  internal: true
 ---
 
 # Erk Skill Onboarding

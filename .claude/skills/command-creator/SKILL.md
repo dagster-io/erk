@@ -1,6 +1,8 @@
 ---
 name: command-creator
 description: This skill should be used when creating a Claude Code slash command. Use when users ask to "create a command", "make a slash command", "add a command", or want to document a workflow as a reusable command. Essential for creating optimized, agent-executable slash commands with proper structure and best practices.
+metadata:
+  internal: true
 ---
 
 # Command Creator

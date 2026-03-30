@@ -1,6 +1,8 @@
 ---
 name: erk-diff-analysis
 description: Internal skill for commit message generation. Only load when explicitly requested by name or invoked by commands.
+metadata:
+  internal: true
 ---
 
 # Diff Analysis

@@ -154,6 +154,8 @@ Skills persist for the entire session. Once loaded, they remain in context.
 
 **npx skills:** Use `-a claude` for Claude Code skills. The `.agents/` canonical directory covers Codex. Do NOT use `--all` — this repo does not support Windsurf or Cursor.
 
+**Adding or modifying skills?** Read [NPX Skill Management](docs/learned/capabilities/npx-skill-management.md) first — covers authored vs npx-installed skills, `metadata.internal`, `skills-lock.json`, and the `_UNBUNDLED_SKILLS` registry.
+
 ## Documentation-First Discovery
 
 Before launching Plan or Explore agents, search for relevant documentation:
@@ -167,15 +169,16 @@ Before launching Plan or Explore agents, search for relevant documentation:
 
 This grep step is mandatory for ALL coding tasks. It costs milliseconds and prevents re-learning lessons already documented.
 
-| Topic Area                   | Check First                                  |
-| ---------------------------- | -------------------------------------------- |
-| Session logs, ~/.claude/     | `docs/learned/sessions/`                     |
-| CLI commands, Click          | `docs/learned/cli/`                          |
-| Testing patterns             | `docs/learned/testing/`                      |
-| Hooks                        | `docs/learned/hooks/`                        |
-| Planning, .erk/impl-context/ | `docs/learned/planning/`                     |
-| Architecture patterns        | `docs/learned/architecture/`                 |
-| TUI, Textual                 | `docs/learned/tui/`, `docs/learned/textual/` |
+| Topic Area                     | Check First                                  |
+| ------------------------------ | -------------------------------------------- |
+| Session logs, ~/.claude/       | `docs/learned/sessions/`                     |
+| CLI commands, Click            | `docs/learned/cli/`                          |
+| Testing patterns               | `docs/learned/testing/`                      |
+| Hooks                          | `docs/learned/hooks/`                        |
+| Planning, .erk/impl-context/   | `docs/learned/planning/`                     |
+| Architecture patterns          | `docs/learned/architecture/`                 |
+| TUI, Textual                   | `docs/learned/tui/`, `docs/learned/textual/` |
+| Skills, SKILL.md, capabilities | `docs/learned/capabilities/`                 |
 
 **Anti-pattern:** Skipping the grep because the task "seems simple"
 **Anti-pattern:** Going straight to source files without checking docs/learned/
