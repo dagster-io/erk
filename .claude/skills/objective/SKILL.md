@@ -5,6 +5,8 @@ description: >
   to complete. Use when users want to create multi-plan tracking documents, log progress across
   related PRs, capture lessons learned, or coordinate work that spans multiple erk-prs.
   Objectives are human-first coordination documents, not executable plans.
+metadata:
+  internal: true
 ---
 
 # Objective Skill

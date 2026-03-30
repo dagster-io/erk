@@ -7,6 +7,8 @@ description: >
   or when a user says things like "split this module", "break this file apart",
   "convert to subpackage", or "this file is too big". Also use when a user identifies
   a large Python file and wants to reorganize it without changing behavior.
+metadata:
+  internal: true
 ---
 
 # Module to Subpackage

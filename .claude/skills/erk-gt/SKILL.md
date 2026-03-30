@@ -4,6 +4,8 @@ description:
   Erk-specific Graphite (gt) patterns. Supplements the official `graphite` skill
   with agent safety rules, metadata internals, worktree integration, and debugging.
   Load the `graphite` skill first for base gt knowledge.
+metadata:
+  internal: true
 ---
 
 # Erk Graphite Patterns

@@ -1,6 +1,8 @@
 ---
 name: erk-planning
 description: "[REMOVED] This skill has been deleted. Plan management is now handled by slash commands and AGENTS.md."
+metadata:
+  internal: true
 ---
 
 This skill has been removed. Use the following instead:

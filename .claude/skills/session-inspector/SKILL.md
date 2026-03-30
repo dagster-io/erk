@@ -6,6 +6,8 @@ description: >
   extract tool call patterns, debug agent execution, or understand what happened in previous
   sessions. Essential for understanding Claude Code's ~/.claude/projects/ structure, JSONL
   session format, and the erk extraction pipeline.
+metadata:
+  internal: true
 ---
 
 # Session Inspector

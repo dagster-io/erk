@@ -9,7 +9,7 @@ If your current task matches, read the linked document **before writing code**.
 ## Categories
 
 - [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
-- [capabilities/](capabilities/)
+- [capabilities/](capabilities/) — Explore when modifying or adding skills, managing SKILL.md metadata, or working with npx-installed skills. Add docs here for skill management and capabilities.
 - [changelog/](changelog/)
 - [checklists/](checklists/)
 - [ci/](ci/)

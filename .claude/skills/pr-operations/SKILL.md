@@ -1,6 +1,8 @@
 ---
 name: pr-operations
 description: Use when working with PR review comments, resolving threads, or replying to discussion comments. Essential for understanding the correct erk exec commands for PR thread operations.
+metadata:
+  internal: true
 ---
 
 # PR Operations Skill

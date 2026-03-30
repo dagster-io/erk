@@ -1,6 +1,8 @@
 ---
 name: rename-swarm
 description: Parallel bulk rename across many files using a swarm of haiku agents. Use when mechanically renaming identifiers, parameters, or keys across 5+ files.
+metadata:
+  internal: true
 ---
 
 You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.

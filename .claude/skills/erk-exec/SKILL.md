@@ -5,6 +5,8 @@ description: >
   to understand syntax, find the right command for a task, or learn
   common workflows. Always check syntax with -h or load this skill
   before running erk exec commands.
+metadata:
+  internal: true
 ---
 
 # erk exec Guide

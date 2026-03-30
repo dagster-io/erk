@@ -84,6 +84,22 @@ When migrating a skill from erk's bundle to external npx distribution (example: 
 | Unbundled (npx-managed) | `.agents/skills/` + `_UNBUNDLED_SKILLS`         | npx + skills-lock.json | Skills with separate GitHub repos/versioning              |
 | Tombstone               | `bundled_skills()` with `[REMOVED]` description | erk package            | Deleted skills that need to overwrite stale installations |
 
+## metadata.internal
+
+The `metadata.internal: true` frontmatter field hides a skill from `npx skills` CLI discovery and the [skills.sh](https://skills.sh) public leaderboard. All erk-authored skills (the 20 SKILL.md files in `.claude/skills/`) use this field because they are private, repo-specific skills not intended for public consumption.
+
+NPX-managed skills in `.agents/skills/` are controlled by their source repositories and should NOT have `metadata.internal` added here — their visibility is managed by the upstream repo.
+
+```yaml
+# In .claude/skills/<name>/SKILL.md frontmatter
+---
+name: my-skill
+description: ...
+metadata:
+  internal: true
+---
+```
+
 ## Related Documentation
 
 - [Skill Deletion Patterns](skill-deletion-patterns.md) — How to properly delete a skill

@@ -1,6 +1,8 @@
 ---
 name: npx-skills
 description: This skill should be used when working with the npx skills CLI (skills@1.4.5 by Vercel Labs) for managing agent skills — installing, discovering, updating, and publishing portable AI agent instructions. Use when users mention npx skills commands, skill installation, skills.sh, agentskills.io, skills-lock.json, or the open agent skills ecosystem. Essential for understanding the skills mental model, SKILL.md format, and multi-agent interoperability.
+metadata:
+  internal: true
 ---
 
 # npx skills CLI
