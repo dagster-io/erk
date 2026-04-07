@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "pr_number": 9412,
+  "sessions": [
+    {
+      "session_id": "8ab8df1d-6189-43ba-b761-f9c8b0bb7907",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-04-07T06:10:10.434374+00:00",
+      "files": [
+        "impl-8ab8df1d-6189-43ba-b761-f9c8b0bb7907-8ab8df1d-6189-43ba-b761-f9c8b0bb7907.xml"
+      ],
+      "user_turns": 2,
+      "duration_minutes": 1,
+      "raw_size_kb": 132,
+      "xml_size_kb": 29,
+      "git_branch": "plnd/remove-pr-desc-update-04-07-0607"
+    }
+  ]
+}
