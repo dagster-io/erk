@@ -118,7 +118,7 @@ git push
 
 #### PF-6: Done
 
-Skip `update-pr-description` and `upload-impl-session` — plan PRs have their own formatting and lifecycle.
+Skip `upload-impl-session` — plan PRs have their own formatting and lifecycle.
 
 Report the final summary in the same format as Phase 4's final summary, then stop.
 
@@ -387,19 +387,7 @@ If the user explicitly skipped any comments during the process, list them:
 - #5: src/legacy.py:100 - "Refactor this module" (user deferred)
 ```
 
-### Phase 5: Update PR Title and Body
-
-After all review comments have been addressed, update the PR to reflect the full scope of changes.
-
-Run:
-
-```bash
-erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
-```
-
-This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
-
-### Phase 6: Upload Address Session
+### Phase 5: Upload Address Session
 
 After addressing review comments, upload the session for cross-machine learning.
 Resolve the pr_id from the current branch, then push the session:
