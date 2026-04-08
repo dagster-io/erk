@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: d5c0167db -->
+<!-- As of: 9dd9b0585 -->
 
 ### Added
 
@@ -21,16 +21,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add branch column to Runs tab with vim-style j/k navigation (10aa81f32)
 - Add `--json` and MCP exposure to `erk pr list` and `erk pr view` (8bad317c7)
 - Add prompt validation to one-shot planning workflow to reject invalid prompts (f5c0312ad)
+- Add `erk slot goto` command for navigating to existing worktree slots by number or name (72b5f4e2f)
+- Add `erk exec reopen-contested-threads` command to detect and reopen PR review threads with unaddressed reviewer pushback (6e2548f79)
+- Add `--dry-run` flag to `erk pr teleport` for previewing discard/modify operations without making changes (ffaab70af)
+- Surface PR-level review submissions (APPROVED, CHANGES_REQUESTED, COMMENTED) in feedback pipeline alongside inline thread comments (b49e37fb1)
+- Support multi-node objective planning: `/erk:objective-plan` now accepts multiple `--node` flags (aacb5907c)
 
 ### Changed
 
 - Identify plans by `[erk-pr]`/`[erk-learn]` title prefix instead of `erk-plan` label, simplifying label scheme to two core labels (a024e215e)
 - Rename `[plans]` config section to `[github]` with backwards compatibility fallback (80f4e949c)
 - Rename `--plan` to `--pr` across launch/dispatch commands (064a2988e)
-- Rename plan terminology to PR across core types, gateway interfaces, CLI parameters, JSON output, TUI, and user-facing messages (34ff359af, fe929afcb, 5b8bb600f, 9a193b43c, 63c9de528, 5c628ddd2, bcc0c2d73, 17dfd5e4c)
+- Rename plan terminology to PR across entire codebase including core types, gateway interfaces, CLI parameters, JSON output, TUI, user-facing messages, exec scripts, workflow YAML inputs, labels, and module paths (34ff359af, fe929afcb, 5b8bb600f, 9a193b43c, 63c9de528, 5c628ddd2, bcc0c2d73, 17dfd5e4c, 15a4e8cd2, 71a07de79, c740b46ab, 3a32a79a0, 62bfe4ed7, 06b522b5d, 36232637d, bd6b3aee5, 5ff062f58, 2b4c64531)
 - Optimize Runs tab initial load from ~2-3s to ~1s via parallel batch queries (70f0d48a0)
 - Hide `--stack` flag on `erk land` from default help output (052d4bb0e)
 - Hide `erk reconcile` and `learn` commands from default CLI help output (396ac2bd9, cbcdf9f23)
+- Merge `erk wt create-from` into `erk wt create --from-branch`, eliminating the separate command (7eb08d36e)
+- Replace `erk pr rebase` with `erk pr resolve-conflicts`, focusing on conflict resolution for in-progress rebases (a66eedb96)
+- Replace full state sparkline with frontier sparkline showing compressed notation for objective nodes (dc464360e)
+- Accept GitHub URLs and Graphite URLs as PR references across all CLI commands (247a436f2)
+- Fix `source <(erk ... --script)` to output script content instead of file paths, enabling process substitution (95b8132ad)
+- Generate copy-pasteable `source <(erk slot co ...)` commands in next-steps output (81c3fa6b5)
+- Remove `--new-slot` flag and stack-in-place behavior from `erk slot checkout` (15487ef44)
+- Replace `erk br co --for-plan` with `erk slot co` in next-steps output (a3147ebc3)
+- Switch remote dispatch workflows to Sonnet 4.6 (211f5a0bc)
+- Standardize "planned PR" terminology in user-facing copy, replacing "draft PR" references (3fb10a9c5)
 
 ### Fixed
 
@@ -38,10 +53,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix objectives view 'p' shortcut to open objective issue instead of PR URL (519e224ad)
 - Fix Runs tab branch column showing "master" for all workflow_dispatch runs (ce0c6873b)
 - Fix stale branch checkout in plan-implement workflow causing implementation on outdated code (50147f1c6)
+- Fix TUI close command failing silently with Graphite URLs (61fdf0205)
+- Fix `get_ahead_behind` comparing HEAD instead of named branch (cc568acbe)
+- Fix TUI land command argument mismatch and detail screen landing bug (1a2d56da9)
+- Fix multi-node landing to auto-discover all objective nodes from plan-header metadata (a778d3823)
+- Fix pipe characters in objective roadmap table cells breaking markdown rendering (1b470f094)
+- Fix "p" keybinding to open objective issues in browser (48a460f31)
+- Fix blank line breaking ci-update-pr-body invocation in plan-implement workflow (caae1efa1)
+- Fix statusline model indicator to correctly display Opus/Sonnet/Haiku with 1M context (3155e0417)
+- Fix plan ID extraction from result JSON in CI workflows (82f7c70cf)
 
 ### Removed
 
 - Remove default `.mcp.json` configuration; users must now configure MCP server locally (62ff56b05)
+- Remove `erk branch create` command, covered by `gt create` and `erk slot checkout/assign` (6e029b5bc)
+- Remove dead PR-to-issue linkage infrastructure (edf4a0561)
+- Remove `erk-plan-review` label system, consolidate to file-based detection (8f0836d45)
 
 ## [0.9.11] - 2026-03-09 12:23 PT
 
