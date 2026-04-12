@@ -1199,12 +1199,15 @@ def main():
         github_data = None
         if cwd:
             # Quick check: skip all git work if not in a repo
-            in_git_repo = subprocess.run(
-                ["git", "rev-parse", "--is-inside-work-tree"],
-                cwd=cwd,
-                capture_output=True,
-                check=False,
-            ).returncode == 0
+            in_git_repo = (
+                subprocess.run(
+                    ["git", "rev-parse", "--is-inside-work-tree"],
+                    cwd=cwd,
+                    capture_output=True,
+                    check=False,
+                ).returncode
+                == 0
+            )
 
             if in_git_repo:
                 # Create context with real gateways
