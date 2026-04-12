@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -95,7 +94,7 @@ def create_context(cwd: str) -> StatuslineContext:
         remote_url = git.remote.get_remote_url(repo_root, "origin")
         owner, name = parse_git_remote_url(remote_url)
         repo_info = RepoInfo(owner=owner, name=name)
-    except (ValueError, subprocess.CalledProcessError):
+    except (ValueError, RuntimeError):
         # Not in a git repo, no origin remote, or URL unparseable - repo_info stays None
         pass
 

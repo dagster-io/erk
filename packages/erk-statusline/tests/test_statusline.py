@@ -1710,3 +1710,29 @@ class TestGetModelCode:
     def test_empty_display_name(self) -> None:
         result = get_model_code(display_name="", model_id="unknown")
         assert result == "?"
+
+
+class TestMainNonGitDirectory:
+    """Test that main() handles non-git directories gracefully."""
+
+    def test_non_git_directory_renders_clean_statusline(self) -> None:
+        """main() should render a clean statusline without errors in a non-git directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            stdin_payload = {
+                "workspace": {"current_dir": tmpdir},
+                "session_id": "test",
+                "model": {"display_name": "Claude Sonnet 4.6", "id": "claude-sonnet-4-6"},
+            }
+            printed: list[str] = []
+
+            def capture_print(*args: object, **kwargs: object) -> None:
+                printed.append(args[0])
+
+            with patch("json.load", return_value=stdin_payload):
+                with patch("builtins.print", side_effect=capture_print):
+                    main()
+
+            assert len(printed) == 1
+            output = str(printed[0])
+            assert "error" not in output
+            assert "(S)" in output
