@@ -1198,24 +1198,33 @@ def main():
         objective_issue = None
         github_data = None
         if cwd:
-            # Create context with real gateways
-            ctx = create_context(cwd)
+            # Quick check: skip all git work if not in a repo
+            in_git_repo = subprocess.run(
+                ["git", "rev-parse", "--is-inside-work-tree"],
+                cwd=cwd,
+                capture_output=True,
+                check=False,
+            ).returncode == 0
 
-            branch, is_dirty = get_git_status_via_gateway(ctx)
-            if branch:
-                # Get git root and worktree info using gateways
-                repo_root = get_git_root_via_gateway(ctx)
-                if repo_root is not None:
-                    git_root = str(repo_root)
-                    is_linked_worktree, worktree_name = get_worktree_info_via_gateway(
-                        ctx, repo_root
-                    )
-                    relative_cwd = get_relative_cwd(cwd, git_root)
-                    new_plan_file = find_new_plan_file(git_root)
-                    pr_number = get_pr_number(git_root)
-                    objective_issue = get_objective_issue(git_root)
-                    # Fetch GitHub data using gateway for Graphite PR cache
-                    github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
+            if in_git_repo:
+                # Create context with real gateways
+                ctx = create_context(cwd)
+
+                branch, is_dirty = get_git_status_via_gateway(ctx)
+                if branch:
+                    # Get git root and worktree info using gateways
+                    repo_root = get_git_root_via_gateway(ctx)
+                    if repo_root is not None:
+                        git_root = str(repo_root)
+                        is_linked_worktree, worktree_name = get_worktree_info_via_gateway(
+                            ctx, repo_root
+                        )
+                        relative_cwd = get_relative_cwd(cwd, git_root)
+                        new_plan_file = find_new_plan_file(git_root)
+                        pr_number = get_pr_number(git_root)
+                        objective_issue = get_objective_issue(git_root)
+                        # Fetch GitHub data using gateway for Graphite PR cache
+                        github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
 
         # Get model code
         model_code = get_model_code(
